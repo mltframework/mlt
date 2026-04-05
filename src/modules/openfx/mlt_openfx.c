@@ -23,6 +23,96 @@
 #include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+static inline uint16_t f32_to_f16(float f)
+{
+    uint32_t x;
+    memcpy(&x, &f, sizeof(x));
+    uint16_t sign = (x >> 31) & 0x0001U;
+    int32_t exp = ((x >> 23) & 0x00FFU) - 127 + 15;
+    uint16_t mant = (x >> 13) & 0x03FFU;
+    if (exp <= 0)
+        return (uint16_t) (sign << 15);
+    if (exp >= 31)
+        return (uint16_t) ((sign << 15) | 0x7C00U);
+    return (uint16_t) ((sign << 15) | ((uint16_t) exp << 10) | mant);
+}
+
+static inline float f16_to_f32(uint16_t h)
+{
+    uint32_t sign = (h >> 15) & 0x0001U;
+    uint32_t exp = (h >> 10) & 0x001FU;
+    uint32_t mant = h & 0x03FFU;
+    uint32_t x;
+    if (exp == 0)
+        x = (sign << 31) | (mant << 13);
+    else if (exp == 31)
+        x = (sign << 31) | (0xFFU << 23) | (mant << 13);
+    else
+        x = (sign << 31) | ((exp - 15 + 127) << 23) | (mant << 13);
+    float f;
+    memcpy(&f, &x, sizeof(f));
+    return f;
+}
+
+uint16_t *mltofx_rgba64_to_half(const uint16_t *src, int n_pixels)
+{
+    int count = n_pixels * 4;
+    uint16_t *dst = malloc((size_t) count * sizeof(uint16_t));
+    if (!dst)
+        return NULL;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int i = 0; i < count; ++i)
+        dst[i] = f32_to_f16((float) src[i] * (1.0f / 65535.0f));
+    return dst;
+}
+
+void mltofx_half_to_rgba64(const uint16_t *src, uint16_t *dst, int n_pixels)
+{
+    int count = n_pixels * 4;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int i = 0; i < count; ++i) {
+        float v = f16_to_f32(src[i]);
+        v = v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v);
+        dst[i] = (uint16_t) (v * 65535.0f + 0.5f);
+    }
+}
+
+float *mltofx_rgba64_to_float(const uint16_t *src, int n_pixels)
+{
+    int count = n_pixels * 4;
+    float *dst = malloc((size_t) count * sizeof(float));
+    if (!dst)
+        return NULL;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int i = 0; i < count; ++i)
+        dst[i] = (float) src[i] * (1.0f / 65535.0f);
+    return dst;
+}
+
+void mltofx_float_to_rgba64(const float *src, uint16_t *dst, int n_pixels)
+{
+    int count = n_pixels * 4;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int i = 0; i < count; ++i) {
+        float v = src[i];
+        v = v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v);
+        dst[i] = (uint16_t) (v * 65535.0f + 0.5f);
+    }
+}
 
 /* OpenFX Header files https://github.com/AcademySoftwareFoundation/openfx/tree/main/include */
 #include <ofxDrawSuite.h>
@@ -1393,6 +1483,8 @@ void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
     propSetString(host_properties, kOfxImageEffectPropContext, 0, kOfxImageEffectContextFilter);
     propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 0, kOfxBitDepthByte);
     propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 1, kOfxBitDepthShort);
+    propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 2, kOfxBitDepthHalf);
+    propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 3, kOfxBitDepthFloat);
     propSetString(host_properties,
                   kOfxImageEffectPropSupportedComponents,
                   0,
@@ -1463,7 +1555,8 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
                                  int width,
                                  int height,
                                  mlt_image_format format,
-                                 double pixel_aspect_ratio)
+                                 double pixel_aspect_ratio,
+                                 const char *ofx_depth)
 {
     mlt_properties clip;
     mlt_properties clip_prop;
@@ -1476,13 +1569,29 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
     int depth_byte_size = 4;
     char *depth_format = kOfxBitDepthByte;
     char *prop_component = kOfxImageComponentRGBA;
-    if (format == mlt_image_rgba64) {
+    if (ofx_depth) {
+        depth_format = (char *) ofx_depth;
+        if (!strcmp(ofx_depth, kOfxBitDepthFloat))
+            depth_byte_size = 16;
+        else if (!strcmp(ofx_depth, kOfxBitDepthShort) || !strcmp(ofx_depth, kOfxBitDepthHalf))
+            depth_byte_size = 8;
+        else
+            depth_byte_size = 4;
+    } else if (format == mlt_image_rgba64) {
         depth_byte_size = 8;
         depth_format = kOfxBitDepthShort;
     } else if (format == mlt_image_rgb) {
         depth_byte_size = 3;
         prop_component = kOfxImageComponentRGB;
     }
+    mlt_log_debug(NULL,
+                  "[openfx] %s: format=%s, depth=%s\n",
+                  __FUNCTION__,
+        format == mlt_image_rgba64
+            ? "rgba64"
+                      : (format == mlt_image_rgba ? "rgba"
+                                                  : (format == mlt_image_rgb ? "rgb" : "Unknown")),
+        depth_format);
 
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRowBytes, 0, width * depth_byte_size);
     propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropPixelDepth, 0, depth_format);
@@ -1577,7 +1686,8 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
                                  int width,
                                  int height,
                                  mlt_image_format format,
-                                 double pixel_aspect_ratio)
+                                 double pixel_aspect_ratio,
+                                 const char *ofx_depth)
 {
     mlt_properties clip;
     mlt_properties clip_prop;
@@ -1590,7 +1700,15 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
     int depth_byte_size = 4;
     char *depth_format = kOfxBitDepthByte;
     char *prop_component = kOfxImageComponentRGBA;
-    if (format == mlt_image_rgba64) {
+    if (ofx_depth) {
+        depth_format = (char *) ofx_depth;
+        if (!strcmp(ofx_depth, kOfxBitDepthFloat))
+            depth_byte_size = 16;
+        else if (!strcmp(ofx_depth, kOfxBitDepthShort) || !strcmp(ofx_depth, kOfxBitDepthHalf))
+            depth_byte_size = 8;
+        else
+            depth_byte_size = 4;
+    } else if (format == mlt_image_rgba64) {
         depth_byte_size = 8;
         depth_format = kOfxBitDepthShort;
     } else if (format == mlt_image_rgb) {
@@ -1761,13 +1879,14 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
                       kOfxImageEffectPropSupportedPixelDepths,
                       i,
                       &depth);
-        if (!strcmp(depth, kOfxBitDepthByte) || !strcmp(depth, kOfxBitDepthShort)) {
+        if (!strcmp(depth, kOfxBitDepthByte) || !strcmp(depth, kOfxBitDepthShort)
+            || !strcmp(depth, kOfxBitDepthHalf) || !strcmp(depth, kOfxBitDepthFloat)) {
             break;
         }
     }
     if (i == count) {
         mlt_log_verbose(NULL,
-                        "[openfx] Plugin does not support byte or short pixels: %s\n",
+                        "[openfx] Plugin does not support byte, short, half, or float pixels: %s\n",
                         plugin->pluginIdentifier);
         // since no pixel depth is supported by us then plugin is load fail so we must not unload it
         return 0;
@@ -2396,6 +2515,10 @@ mltofx_depths_mask mltofx_plugin_supported_depths(mlt_properties image_effect)
             mask |= mltofx_depth_byte;
         } else if (strcmp(str, kOfxBitDepthShort) == 0) {
             mask |= mltofx_depth_short;
+        } else if (strcmp(str, kOfxBitDepthHalf) == 0) {
+            mask |= mltofx_depth_half;
+        } else if (strcmp(str, kOfxBitDepthFloat) == 0) {
+            mask |= mltofx_depth_float;
         }
     }
 

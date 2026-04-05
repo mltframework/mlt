@@ -47,14 +47,28 @@ static int filter_get_image(mlt_frame frame,
     mltofx_components_mask plugin_support_components = mltofx_plugin_supported_components(
         image_effect);
 
-    if ((plugin_support_depths & mltofx_depth_short)
-        && (plugin_support_components & (mltofx_components_rgba | mltofx_components_rgb))
-        && !(*format == mlt_image_rgba || *format == mlt_image_rgb)) {
-        *format = mlt_image_rgba64;
-    } else if ((plugin_support_components & mltofx_components_rgba) && !(*format == mlt_image_rgb)) {
-        *format = mlt_image_rgba;
+    int plugin_handles_16bit = plugin_support_depths
+                               & (mltofx_depth_short | mltofx_depth_half | mltofx_depth_float);
+    int plugin_wants_rgba = plugin_support_components & mltofx_components_rgba;
+    int plugin_wants_rgb = plugin_support_components & mltofx_components_rgb;
+
+    if (*format == mlt_image_rgb || *format == mlt_image_rgba || *format == mlt_image_yuv422
+        || *format == mlt_image_yuv420p) {
+        // Keep 8-bit only when the plugin can handle byte
+        if (plugin_support_depths & mltofx_depth_byte) {
+            *format = plugin_wants_rgba ? mlt_image_rgba : mlt_image_rgb;
+        } else if (plugin_handles_16bit && (plugin_wants_rgba || plugin_wants_rgb)) {
+            *format = mlt_image_rgba64;
+        } else {
+            *format = mlt_image_rgb;
+        }
     } else {
-        *format = mlt_image_rgb;
+        // 10-bit or higher
+        if (plugin_handles_16bit && (plugin_wants_rgba || plugin_wants_rgb)) {
+            *format = mlt_image_rgba64;
+        } else {
+            *format = plugin_wants_rgba ? mlt_image_rgba : mlt_image_rgb;
+        }
     }
 
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
@@ -131,16 +145,6 @@ static int filter_get_image(mlt_frame frame,
             }
         }
 
-        mltofx_begin_sequence_render(plugin, image_effect);
-
-        // According to OpenFX documentation: Note that hosts that
-        // have constant sized imagery need not call this action, only
-        // hosts that allow image sizes to vary need call this.
-        // mltofx_get_region_of_definition(plugin, image_effect);
-
-        mltofx_get_regions_of_interest(plugin, image_effect, (double) *width, (double) *height);
-        mltofx_get_clip_preferences(plugin, image_effect);
-
         struct mlt_image_s src_img;
         mlt_image_set_values(&src_img, *image, *format, *width, *height);
 
@@ -151,23 +155,111 @@ static int filter_get_image(mlt_frame frame,
 
         uint8_t *src_copy = src_img_copy.data;
 
-        memcpy(src_copy, *image, mlt_image_calculate_size(&src_img));
+        // Determine depth conversion path early so clip metadata can be set before
+        // the pre-render OFX actions (GetClipPreferences, GetRegionsOfInterest).
+        // Some plugins read clip depth/bounds during those actions
+        // to set up their transformation pipeline and fail if the clips have no metadata.
+        int use_half = (*format == mlt_image_rgba64)
+                       && !(plugin_support_depths & mltofx_depth_short)
+                       && (plugin_support_depths & mltofx_depth_half);
+        int use_float = (*format == mlt_image_rgba64)
+                        && !(plugin_support_depths & mltofx_depth_short)
+                        && !(plugin_support_depths & mltofx_depth_half)
+                        && (plugin_support_depths & mltofx_depth_float);
+        const char *ofx_depth = use_half ? kOfxBitDepthHalf : use_float ? kOfxBitDepthFloat : NULL;
+
+        // Prime both clips with correct metadata (depth, bounds, PAR, rowbytes) before
+        // calling any pre-render actions. Use *image as a temporary data pointer — the
+        // plugin must not access pixel data outside of Render via clipGetImage.
         mltofx_set_source_clip_data(plugin,
                                     image_effect,
-                                    src_copy,
+                                    *image,
                                     *width,
                                     *height,
                                     *format,
-                                    pixel_aspect_ratio);
+                                    pixel_aspect_ratio,
+                                    ofx_depth);
         mltofx_set_output_clip_data(plugin,
                                     image_effect,
                                     *image,
                                     *width,
                                     *height,
                                     *format,
-                                    pixel_aspect_ratio);
+                                    pixel_aspect_ratio,
+                                    ofx_depth);
+
+        // Correct OFX pre-render action order: GetClipPreferences → GetRegionsOfInterest
+        // → BeginSequenceRender.
+        mltofx_get_clip_preferences(plugin, image_effect);
+
+        // According to OpenFX documentation: Note that hosts that
+        // have constant sized imagery need not call this action, only
+        // hosts that allow image sizes to vary need call this.
+        // mltofx_get_region_of_definition(plugin, image_effect);
+
+        mltofx_get_regions_of_interest(plugin, image_effect, (double) *width, (double) *height);
+        mltofx_begin_sequence_render(plugin, image_effect);
+
+        uint16_t *half_src = NULL;
+        uint16_t *half_out = NULL;
+        float *float_src = NULL;
+        float *float_out = NULL;
+        if (use_half) {
+            int n_pixels = *width * *height;
+            half_src = mltofx_rgba64_to_half((const uint16_t *) *image, n_pixels);
+            half_out = malloc((size_t) n_pixels * 4 * sizeof(uint16_t));
+            if (!half_src || !half_out) {
+                free(half_src);
+                free(half_out);
+                use_half = 0;
+            }
+        } else if (use_float) {
+            int n_pixels = *width * *height;
+            float_src = mltofx_rgba64_to_float((const uint16_t *) *image, n_pixels);
+            float_out = malloc((size_t) n_pixels * 4 * sizeof(float));
+            if (!float_src || !float_out) {
+                free(float_src);
+                free(float_out);
+                use_float = 0;
+            }
+        } else {
+            // Short/byte path: need a separate read-only copy since src and dst are different
+            memcpy(src_copy, *image, mlt_image_calculate_size(&src_img));
+        }
+
+        // Update clip data pointers to the actual (possibly converted) buffers before render.
+        mltofx_set_source_clip_data(plugin,
+                                    image_effect,
+                                    use_half    ? (uint8_t *) half_src
+                                    : use_float ? (uint8_t *) float_src
+                                                : src_copy,
+                                    *width,
+                                    *height,
+                                    *format,
+                                    pixel_aspect_ratio,
+                                    ofx_depth);
+        mltofx_set_output_clip_data(plugin,
+                                    image_effect,
+                                    use_half    ? (uint8_t *) half_out
+                                    : use_float ? (uint8_t *) float_out
+                                                : *image,
+                                    *width,
+                                    *height,
+                                    *format,
+                                    pixel_aspect_ratio,
+                                    ofx_depth);
 
         mltofx_action_render(plugin, image_effect, *width, *height);
+
+        if (use_half) {
+            mltofx_half_to_rgba64(half_out, (uint16_t *) *image, *width * *height);
+            free(half_src);
+            free(half_out);
+        } else if (use_float) {
+            mltofx_float_to_rgba64(float_out, (uint16_t *) *image, *width * *height);
+            free(float_src);
+            free(float_out);
+        }
 
         mlt_image_close(&src_img_copy);
 

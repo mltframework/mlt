@@ -8,6 +8,8 @@ add_custom_target(Other_openfx_Files SOURCES
   filter_openfx.yml
 )
 
+find_package(OpenMP)
+
 if(GPL AND TARGET PkgConfig::glib)
   include(GenerateExportHeader)
   generate_export_header(mltopenfx)
@@ -17,6 +19,9 @@ if(GPL AND TARGET PkgConfig::glib)
   target_include_directories(mltopenfx PRIVATE openfx/include)
   if(NOT MSVC)
     target_link_libraries(mltopenfx PRIVATE m)
+  endif()
+  if(OpenMP_C_FOUND)
+    target_link_libraries(mltopenfx PRIVATE OpenMP::OpenMP_C)
   endif()
 endif()
 
