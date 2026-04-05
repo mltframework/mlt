@@ -62,8 +62,10 @@ static void update_plugin_params(mlt_properties properties,
     for (int i = 0; i < params_count; ++i) {
         char *param_key = mlt_properties_get_name(params, i);
         mlt_properties param = mlt_properties_get_data(params, param_key, NULL);
+        if (!param)
+            continue;
         char *param_name = mlt_properties_get(param, "identifier");
-        if (!param || !param_name)
+        if (!param_name)
             continue;
         char *type = mlt_properties_get(param, "type");
         char *widget = mlt_properties_get(param, "widget");

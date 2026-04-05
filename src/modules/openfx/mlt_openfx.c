@@ -81,7 +81,9 @@ void mltofx_half_to_rgba64(const uint16_t *src, uint16_t *dst, int n_pixels)
 #pragma omp parallel for schedule(static)
 #endif
     for (int i = 0; i < count; ++i) {
-        float v = f16_to_f32(src[i]);
+        float v = f16_to_f32(src[i]);
+        if (!isfinite(v))
+            v = 0.0f;
         v = v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v);
         dst[i] = (uint16_t) (v * 65535.0f + 0.5f);
     }
@@ -108,7 +110,9 @@ void mltofx_float_to_rgba64(const float *src, uint16_t *dst, int n_pixels)
 #pragma omp parallel for schedule(static)
 #endif
     for (int i = 0; i < count; ++i) {
-        float v = src[i];
+        float v = src[i];
+        if (!isfinite(v))
+            v = 0.0f;
         v = v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v);
         dst[i] = (uint16_t) (v * 65535.0f + 0.5f);
     }
