@@ -105,22 +105,18 @@ public:
         int error = 0;
         auto pos = mlt_frame_original_position(frame);
         if (!::qstrcmp("loop", mlt_properties_get(properties(), "eof"))) {
-            pos %= duration();
+            pos %= std::max(1, duration());
         }
         pos += toMltFps(composition()->animation->first_frame.get());
 
-        QImage image(*width, *height, QImage::Format_ARGB32);
-        image.fill(Qt::transparent);
-
-        auto renderer = renderer::RendererRegistry::instance().default_renderer(10);
-        renderer->set_image_surface(&image);
-        renderer->render_start();
-        composition()->paint(renderer.get(), toGlaxnimateFps(pos), model::VisualNode::Render);
-        renderer->render_end();
-
         auto bg = mlt_properties_get_color(properties(), "background");
+        auto background = QColor(bg.r, bg.g, bg.b, bg.a);
+        auto image = composition()->render_image(toGlaxnimateFps(pos),
+                                                 {*width, *height},
+                                                 background);
+
+        // workaround for Glaxnimate 0.6.0 not using background
         if (bg.a > 0) {
-            auto background = QColor(bg.r, bg.g, bg.b, bg.a);
             QPainter painter(&image);
             painter.setCompositionMode(QPainter::CompositionMode_DestinationOver);
             painter.fillRect(image.rect(), background);
