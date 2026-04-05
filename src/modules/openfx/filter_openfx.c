@@ -141,14 +141,29 @@ static int filter_get_image(mlt_frame frame,
     int use_float = (*format == mlt_image_rgba64) && !(plugin_support_depths & mltofx_depth_short)
                     && !(plugin_support_depths & mltofx_depth_half)
                     && (plugin_support_depths & mltofx_depth_float);
+    // For the float path, pre-allocate the output buffer before priming so the
+    // clip metadata advertises the correct row bytes with a valid float-sized pointer.
+    uint16_t *half_src = NULL, *half_out = NULL;
+    float *float_src = NULL, *float_out = NULL;
+    uint8_t *src_copy = NULL;
+    struct mlt_image_s src_img_copy;
+
+    if (use_float) {
+        int n = *width * *height;
+        float_out = malloc((size_t) n * 4 * sizeof(float));
+        if (!float_out)
+            use_float = 0;
+    }
+
     const char *ofx_depth = use_half ? kOfxBitDepthHalf : use_float ? kOfxBitDepthFloat : NULL;
+    uint8_t *prime_buf = use_float ? (uint8_t *) float_out : *image;
 
     // Prime both clips with correct metadata before pre-render actions.
     // Some plugins (e.g. spatial transforms) read clip depth/bounds during
     // GetClipPreferences / GetRegionsOfInterest to set up their pipeline.
     mltofx_set_source_clip_data(plugin,
                                 image_effect,
-                                *image,
+                                prime_buf,
                                 *width,
                                 *height,
                                 *format,
@@ -156,7 +171,7 @@ static int filter_get_image(mlt_frame frame,
                                 ofx_depth);
     mltofx_set_output_clip_data(plugin,
                                 image_effect,
-                                *image,
+                                prime_buf,
                                 *width,
                                 *height,
                                 *format,
@@ -169,32 +184,27 @@ static int filter_get_image(mlt_frame frame,
     mltofx_begin_sequence_render(plugin, image_effect);
 
     // Convert source to the plugin's expected format and allocate output buffer.
-    uint16_t *half_src = NULL, *half_out = NULL;
-    float *float_src = NULL, *float_out = NULL;
-    uint8_t *src_copy = NULL;
-    struct mlt_image_s src_img_copy;
-
     if (use_half) {
         int n = *width * *height;
         half_src = mltofx_rgba64_to_half((const uint16_t *) *image, n);
         half_out = malloc((size_t) n * 4 * sizeof(uint16_t));
         if (!half_src || !half_out) {
+            mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to allocate half-float buffers\n");
             free(half_src);
-            half_src = NULL;
             free(half_out);
-            half_out = NULL;
-            use_half = 0;
+            mltofx_end_sequence_render(plugin, image_effect);
+            mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+            return 1;
         }
     } else if (use_float) {
         int n = *width * *height;
         float_src = mltofx_rgba64_to_float((const uint16_t *) *image, n);
-        float_out = malloc((size_t) n * 4 * sizeof(float));
-        if (!float_src || !float_out) {
-            free(float_src);
-            float_src = NULL;
+        if (!float_src) {
+            mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to allocate float source buffer\n");
             free(float_out);
-            float_out = NULL;
-            use_float = 0;
+            mltofx_end_sequence_render(plugin, image_effect);
+            mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+            return 1;
         }
     } else {
         // Short/byte path: keep a read-only source copy separate from the output buffer.

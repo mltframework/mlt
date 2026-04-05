@@ -1571,10 +1571,10 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
                   (OfxPropertySetHandle *) &clip_prop);
 
     int depth_byte_size = 4;
-    char *depth_format = kOfxBitDepthByte;
-    char *prop_component = kOfxImageComponentRGBA;
+    const char *depth_format = kOfxBitDepthByte;
+    const char *prop_component = kOfxImageComponentRGBA;
     if (ofx_depth) {
-        depth_format = (char *) ofx_depth;
+        depth_format = ofx_depth;
         if (!strcmp(ofx_depth, kOfxBitDepthFloat))
             depth_byte_size = 16;
         else if (!strcmp(ofx_depth, kOfxBitDepthShort) || !strcmp(ofx_depth, kOfxBitDepthHalf))
@@ -1702,10 +1702,10 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
                   (OfxPropertySetHandle *) &clip_prop);
 
     int depth_byte_size = 4;
-    char *depth_format = kOfxBitDepthByte;
-    char *prop_component = kOfxImageComponentRGBA;
+    const char *depth_format = kOfxBitDepthByte;
+    const char *prop_component = kOfxImageComponentRGBA;
     if (ofx_depth) {
-        depth_format = (char *) ofx_depth;
+        depth_format = ofx_depth;
         if (!strcmp(ofx_depth, kOfxBitDepthFloat))
             depth_byte_size = 16;
         else if (!strcmp(ofx_depth, kOfxBitDepthShort) || !strcmp(ofx_depth, kOfxBitDepthHalf))
