@@ -2019,10 +2019,13 @@ mlt_properties mlt_properties_parse_yaml(const char *filename)
                 if (strncmp(ptemp, "...", 3) == 0)
                     break;
 
-                // Chomp the newline, but only if present (last line may lack one)
+                // Chomp any trailing line ending characters, but only if present
+                // (last line may lack one).
                 int len = strlen(temp);
-                if (len > 0 && (temp[len - 1] == '\n' || temp[len - 1] == '\r'))
+                while (len > 0 && (temp[len - 1] == '\n' || temp[len - 1] == '\r')) {
                     temp[len - 1] = '\0';
+                    len--;
+                }
 
                 // Skip blank lines, comment lines, and document separator
                 if (strcmp(ptemp, "") && ptemp[0] != '#' && strncmp(ptemp, "---", 3)
