@@ -32,7 +32,6 @@ parameters:
     title: MLT image format
     type: string
     description: Set to the same image format that the transition needs.
-    values:
     mutable: yes
     default: rgba
     values:
