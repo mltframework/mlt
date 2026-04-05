@@ -128,9 +128,13 @@ foreach(service_name IN LISTS service_names)
 
   if((NOT schema_result EQUAL 0) OR schema_invalid_output)
     message(STATUS "[runtime-kwalify:${LIST_QUERY}] ${service_name} ... FAIL")
-    # Clean up kwalify output: strip surrounding whitespace, collapse multiple blank lines
-    string(STRIP "${schema_output}" detail)
+    # Clean up kwalify output (stdout + stderr): strip surrounding whitespace, collapse multiple blank lines
+    set(raw_detail "${schema_output}\n${schema_error}")
+    string(STRIP "${raw_detail}" detail)
     string(REGEX REPLACE "\n[ \t]*\n[ \t]*" "\n" detail "${detail}")
+    if(detail STREQUAL "")
+      set(detail "(no output from kwalify)")
+    endif()
     string(REPLACE "\n" "\n    " detail "    ${detail}")
     string(APPEND failure_text "\n[${service_name}]\n${detail}\n")
     math(EXPR failure_count "${failure_count} + 1")
