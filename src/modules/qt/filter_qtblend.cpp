@@ -98,7 +98,6 @@ static int filter_get_image(mlt_frame frame,
                                     mlt_properties_get_double(frame_properties, "qtblend_scalingy"));
         // Consumer scaling was already applied to b_width/b_height
         // Always request an image that follows the consumer aspect ratio
-        double consumer_dar = normalized_width * consumer_ar / normalized_height;
         int tmpWidth = b_width;
         int tmpHeight = b_height;
         double scaleFactor = qMax(*width / rect.w, *height / rect.h);
