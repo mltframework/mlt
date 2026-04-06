@@ -107,7 +107,7 @@ static int filter_get_image(mlt_frame frame,
             tmpWidth *= scaleFactor;
             tmpHeight *= scaleFactor;
         }
-        if (consumer_dar > b_dar) {
+        if (tmpWidth > tmpHeight) {
             *width = qBound(qRound(normalized_width * qtblendScaleX),
                             tmpWidth,
                             MLT_QTBLEND_MAX_DIMENSION);
