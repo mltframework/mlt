@@ -39,8 +39,20 @@
 __attribute__((constructor)) static void pin_mltqt_in_memory()
 {
     Dl_info info;
-    if (dladdr((const void *) pin_mltqt_in_memory, &info) && info.dli_fname)
-        dlopen(info.dli_fname, RTLD_NOW | RTLD_NODELETE);
+    // Clear any stale error before calling dladdr.
+    dlerror();
+    if (dladdr(reinterpret_cast<const void *>(pin_mltqt_in_memory), &info)
+        && info.dli_fname) {
+        void *handle = dlopen(info.dli_fname, RTLD_NOW | RTLD_NODELETE);
+        if (!handle) {
+            // Pinning keeps this DSO and its Qt dependencies resident so that
+            // __cxa_atexit destructors registered by Qt still have valid memory
+            // when they run during process teardown.  If pinning fails we log a
+            // warning — the process *may* crash on exit.
+            mlt_log_warning(NULL, "mltqt: failed to pin DSO (%s) in memory: %s\n",
+                            info.dli_fname, dlerror());
+        }
+    }
 }
 #endif
 
