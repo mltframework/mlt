@@ -20,11 +20,35 @@
 #include <QApplication>
 #include <QImageReader>
 #include <QLocale>
+#include <memory>
 
 #if defined(Q_OS_UNIX) && !defined(Q_OS_MAC) && !defined(Q_OS_ANDROID)
 #include <X11/Xlib.h>
 #include <cstdlib>
 #endif
+
+#if defined(Q_OS_UNIX)
+#include <dlfcn.h>
+// Prevent this DSO and all its Qt dependencies from being unloaded when
+// mlt_factory_close() calls dlclose(). Qt registers destructors via __cxa_atexit
+// that reference static data (QMetaType registrations, weak COMDAT guard symbols)
+// in this DSO or its dependents. If this DSO is unloaded first, those destructors
+// run with dangling pointers into unmapped memory and crash.
+// RTLD_NODELETE keeps this DSO and all libraries it depends on resident until
+// process exit, where __cxa_finalize runs cleanly on still-mapped memory.
+__attribute__((constructor)) static void pin_mltqt_in_memory()
+{
+    Dl_info info;
+    if (dladdr((const void *) pin_mltqt_in_memory, &info) && info.dli_fname)
+        dlopen(info.dli_fname, RTLD_NOW | RTLD_NODELETE);
+}
+#endif
+
+// When MLT creates the QApplication it must also destroy it. Storing it in a
+// static unique_ptr ensures deletion during __cxa_finalize for this DSO,
+// before libQt6Widgets.so is unmapped. Without this, Qt's EarlyMainThread
+// cleanup crashes dereferencing the now-unmapped QApplication vtable.
+static std::unique_ptr<QApplication> s_app;
 
 bool createQApplicationIfNeeded(mlt_service service)
 {
@@ -53,7 +77,7 @@ bool createQApplicationIfNeeded(mlt_service service)
             mlt_properties_set(mlt_global_properties(), "qt_argv", "MLT");
         static int argc = 1;
         static char *argv[] = {mlt_properties_get(mlt_global_properties(), "qt_argv")};
-        new QApplication(argc, argv);
+        s_app = std::make_unique<QApplication>(argc, argv);
         const char *localename = mlt_properties_get_lcnumeric(MLT_SERVICE_PROPERTIES(service));
         QLocale::setDefault(QLocale(localename));
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
