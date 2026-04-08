@@ -39,28 +39,37 @@
 __attribute__((constructor)) static void pin_mltqt_in_memory()
 {
     Dl_info info;
-    // Clear any stale error before calling dladdr.
-    dlerror();
+    dlerror(); // Clear any stale error before calling dladdr.
     if (dladdr(reinterpret_cast<const void *>(pin_mltqt_in_memory), &info)
         && info.dli_fname) {
         void *handle = dlopen(info.dli_fname, RTLD_NOW | RTLD_NODELETE);
         if (!handle) {
             // Pinning keeps this DSO and its Qt dependencies resident so that
             // __cxa_atexit destructors registered by Qt still have valid memory
-            // when they run during process teardown.  If pinning fails we log a
+            // when they run during process teardown. If pinning fails we log a
             // warning — the process *may* crash on exit.
-            mlt_log_warning(NULL, "mltqt: failed to pin DSO (%s) in memory: %s\n",
+            mlt_log_warning(NULL,
+                            "mltqt: failed to pin DSO (%s) in memory: %s\n",
                             info.dli_fname, dlerror());
         }
     }
 }
 #endif
 
-// When MLT creates the QApplication it must also destroy it. Storing it in a
-// static unique_ptr ensures deletion during __cxa_finalize for this DSO,
-// before libQt6Widgets.so is unmapped. Without this, Qt's EarlyMainThread
-// cleanup crashes dereferencing the now-unmapped QApplication vtable.
+// QApplication lifetime: stored in unique_ptr for leak protection, but deleted
+// via an explicit atexit() handler to ensure correct destruction order. The atexit
+// handler is registered AFTER QApplication construction, so it runs BEFORE Qt's
+// own internal atexit cleanup (LIFO ordering). The unique_ptr destructor then
+// becomes a no-op during __cxa_finalize since s_app is already null.
 static std::unique_ptr<QApplication> s_app;
+
+static void destroy_qapplication()
+{
+    if (s_app) {
+        s_app->processEvents();
+        s_app.reset();
+    }
+}
 
 bool createQApplicationIfNeeded(mlt_service service)
 {
@@ -95,6 +104,7 @@ bool createQApplicationIfNeeded(mlt_service service)
 #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
         QImageReader::setAllocationLimit(1024);
 #endif
+        atexit(destroy_qapplication);
     }
     return true;
 }
