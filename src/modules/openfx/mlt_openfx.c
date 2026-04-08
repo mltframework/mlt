@@ -29,6 +29,15 @@
 #include <omp.h>
 #endif
 
+/* OpenFX Header files https://github.com/AcademySoftwareFoundation/openfx/tree/main/include */
+#include <ofxDrawSuite.h>
+#include <ofxGPURender.h>
+#include <ofxImageEffect.h>
+#include <ofxOpenGLRender.h>
+#include <ofxParametricParam.h>
+#include <ofxProgress.h>
+#include <ofxTimeLine.h>
+
 static inline uint16_t f32_to_f16(float f)
 {
     uint32_t x;
@@ -82,9 +91,8 @@ void mltofx_half_to_rgba64(const uint16_t *src, uint16_t *dst, int n_pixels)
 #endif
     for (int i = 0; i < count; ++i) {
         float v = f16_to_f32(src[i]);
-        if (!isfinite(v))
-            v = 0.0f;
-        v = v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v);
+        // This clamping using >= and <= handles NaN and +/-inf
+        v = (v >= 0.0f) ? (v <= 1.0f ? v : 1.0f) : 0.0f;
         dst[i] = (uint16_t) (v * 65535.0f + 0.5f);
     }
 }
@@ -111,21 +119,11 @@ void mltofx_float_to_rgba64(const float *src, uint16_t *dst, int n_pixels)
 #endif
     for (int i = 0; i < count; ++i) {
         float v = src[i];
-        if (!isfinite(v))
-            v = 0.0f;
-        v = v < 0.0f ? 0.0f : (v > 1.0f ? 1.0f : v);
+        // This clamping using >= and <= handles NaN and +/-inf
+        v = (v >= 0.0f) ? (v <= 1.0f ? v : 1.0f) : 0.0f;
         dst[i] = (uint16_t) (v * 65535.0f + 0.5f);
     }
 }
-
-/* OpenFX Header files https://github.com/AcademySoftwareFoundation/openfx/tree/main/include */
-#include <ofxDrawSuite.h>
-#include <ofxGPURender.h>
-#include <ofxImageEffect.h>
-#include <ofxOpenGLRender.h>
-#include <ofxParametricParam.h>
-#include <ofxProgress.h>
-#include <ofxTimeLine.h>
 
 static OfxStatus propGetInt(OfxPropertySetHandle properties,
                             const char *property,
