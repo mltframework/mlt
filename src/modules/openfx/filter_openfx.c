@@ -78,10 +78,12 @@ static void update_plugin_params(mlt_properties properties,
         } else if (strcmp(type, "float") == 0) {
             double value = mlt_properties_anim_get_double(properties, param_name, position, length);
             mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_double, value);
-        } else if (strcmp(type, "integer") == 0 || strcmp(type, "string") == 0
-                   || strcmp(type, "boolean") == 0) {
+        } else if (strcmp(type, "integer") == 0 || strcmp(type, "boolean") == 0) {
             int value = mlt_properties_anim_get_int(properties, param_name, position, length);
             mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_int, value);
+        } else if (strcmp(type, "string") == 0) {
+            char *value = mlt_properties_anim_get(properties, param_name, position, length);
+            mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_string, value);
         } else if (strcmp(type, "color") == 0) {
             mlt_color value
                 = mlt_properties_anim_get_color(properties, param_name, position, length);
