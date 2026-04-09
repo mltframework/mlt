@@ -938,9 +938,13 @@ static OfxStatus paramSetValueImpl(OfxParamHandle paramHandle, va_list ap)
         // OFX plugin passes an integer index; convert to string label for MltOfxParamValue.
         int index = va_arg(ap, int);
         char *label = NULL;
-        propGetString((OfxPropertySetHandle) param_props, kOfxParamPropChoiceOption, index, &label);
-        if (label)
-            propSetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, label);
+        OfxStatus status = propGetString((OfxPropertySetHandle) param_props,
+                                         kOfxParamPropChoiceOption,
+                                         index,
+                                         &label);
+        if (status != kOfxStatOK || !label)
+            return status != kOfxStatOK ? status : kOfxStatErrBadIndex;
+        propSetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, label);
     } else if (strcmp(param_type, kOfxParamTypeDouble) == 0) {
         double value = va_arg(ap, double);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
