@@ -772,7 +772,7 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
         if (status == kOfxStatOK && label) {
             int count = 0;
             propGetDimension((OfxPropertySetHandle) param_props, kOfxParamPropChoiceOption, &count);
-            *value = 0;
+            int found = 0;
             for (int i = 0; i < count; i++) {
                 char *option = NULL;
                 propGetString((OfxPropertySetHandle) param_props,
@@ -781,8 +781,17 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
                               &option);
                 if (option && strcmp(option, label) == 0) {
                     *value = i;
+                    found = 1;
                     break;
                 }
+            }
+            if (!found) {
+                status = propGetInt((OfxPropertySetHandle) param_props,
+                                    "OfxParamPropDefault",
+                                    0,
+                                    value);
+                if (status != kOfxStatOK)
+                    return kOfxStatErrUnknown;
             }
         } else {
             status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, value);
