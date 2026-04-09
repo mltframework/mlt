@@ -83,7 +83,8 @@ static void update_plugin_params(mlt_properties properties,
             mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_int, value);
         } else if (strcmp(type, "string") == 0) {
             char *value = mlt_properties_anim_get(properties, param_name, position, length);
-            mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_string, value);
+            if (value)
+                mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_string, value);
         } else if (strcmp(type, "color") == 0) {
             mlt_color value
                 = mlt_properties_anim_get_color(properties, param_name, position, length);
