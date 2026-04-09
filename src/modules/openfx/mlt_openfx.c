@@ -754,12 +754,37 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
     mlt_properties param_props = mlt_properties_get_properties(param, "p");
 
     if (strcmp(param_type, kOfxParamTypeInteger) == 0
-        || strcmp(param_type, kOfxParamTypeBoolean) == 0
-        || strcmp(param_type, kOfxParamTypeChoice) == 0) {
+        || strcmp(param_type, kOfxParamTypeBoolean) == 0) {
         int *value = va_arg(ap, int *);
         OfxStatus status
             = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
         if (status != kOfxStatOK) {
+            status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, value);
+            if (status != kOfxStatOK)
+                return kOfxStatErrUnknown;
+        }
+    } else if (strcmp(param_type, kOfxParamTypeChoice) == 0) {
+        // MltOfxParamValue stores the string label; convert to integer index for the OFX plugin.
+        int *value = va_arg(ap, int *);
+        char *label = NULL;
+        OfxStatus status
+            = propGetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, &label);
+        if (status == kOfxStatOK && label) {
+            int count = 0;
+            propGetDimension((OfxPropertySetHandle) param_props, kOfxParamPropChoiceOption, &count);
+            *value = 0;
+            for (int i = 0; i < count; i++) {
+                char *option = NULL;
+                propGetString((OfxPropertySetHandle) param_props,
+                              kOfxParamPropChoiceOption,
+                              i,
+                              &option);
+                if (option && strcmp(option, label) == 0) {
+                    *value = i;
+                    break;
+                }
+            }
+        } else {
             status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, value);
             if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
@@ -897,10 +922,16 @@ static OfxStatus paramSetValueImpl(OfxParamHandle paramHandle, va_list ap)
     mlt_properties param_props = mlt_properties_get_properties(param, "p");
 
     if (strcmp(param_type, kOfxParamTypeInteger) == 0
-        || strcmp(param_type, kOfxParamTypeChoice) == 0
         || strcmp(param_type, kOfxParamTypeBoolean) == 0) {
         int value = va_arg(ap, int);
         propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
+    } else if (strcmp(param_type, kOfxParamTypeChoice) == 0) {
+        // OFX plugin passes an integer index; convert to string label for MltOfxParamValue.
+        int index = va_arg(ap, int);
+        char *label = NULL;
+        propGetString((OfxPropertySetHandle) param_props, kOfxParamPropChoiceOption, index, &label);
+        if (label)
+            propSetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, label);
     } else if (strcmp(param_type, kOfxParamTypeDouble) == 0) {
         double value = va_arg(ap, double);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
@@ -2271,6 +2302,11 @@ void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_ty
 {
     mlt_properties param = NULL;
     paramGetHandle((OfxParamSetHandle) params, key, (OfxParamHandle *) &param, NULL);
+    if (!param)
+        return;
+    mlt_properties param_props = mlt_properties_get_properties(param, "p");
+    if (!param_props)
+        return;
 
     va_list ap;
     va_start(ap, type);
@@ -2278,27 +2314,35 @@ void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_ty
     switch (type) {
     case mltofx_prop_int: {
         int value = va_arg(ap, int);
-        paramSetValue((OfxParamHandle) param, value);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
     } break;
 
     case mltofx_prop_double: {
         double value = va_arg(ap, double);
-        paramSetValue((OfxParamHandle) param, value);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
     } break;
 
     case mltofx_prop_string: {
         char *value = va_arg(ap, char *);
-        paramSetValue((OfxParamHandle) param, value);
+        propSetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
     } break;
 
     case mltofx_prop_color: {
         mlt_color value = va_arg(ap, mlt_color);
-        paramSetValue((OfxParamHandle) param, value);
+        double red = (double) value.r / 255.0;
+        double green = (double) value.g / 255.0;
+        double blue = (double) value.b / 255.0;
+        double alpha = (double) value.a / 255.0;
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, alpha);
     } break;
 
     case mltofx_prop_double2d: {
         mlt_rect value = va_arg(ap, mlt_rect);
-        paramSetValue((OfxParamHandle) param, value);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value.x);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
     } break;
 
     default:
