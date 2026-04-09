@@ -1915,7 +1915,7 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
         }
     }
     if (i == count) {
-        mlt_log_verbose(NULL, "[openfx] Plugin not a filter: %s\n", plugin->pluginIdentifier);
+        mlt_log_debug(NULL, "[openfx] Plugin not a filter: %s\n", plugin->pluginIdentifier);
         // since plugin is not filter then load fail so we must not unload it
         return 0;
     }

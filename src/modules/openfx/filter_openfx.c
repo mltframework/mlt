@@ -27,6 +27,8 @@ extern OfxHost MltOfxHost;
 extern mlt_properties mltofx_context;
 extern mlt_properties mltofx_dl;
 
+static const char OFX_IMAGE_EFFECT[] = "_ofx_image_effect";
+
 static mlt_image_format select_image_format(mlt_image_format incoming,
                                             mltofx_depths_mask plugin_support_depths,
                                             int plugin_handles_16bit,
@@ -103,7 +105,7 @@ static int filter_get_image(mlt_frame frame,
     mlt_filter filter = (mlt_filter) mlt_frame_pop_service(frame);
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
     OfxPlugin *plugin = mlt_properties_get_data(properties, "ofx_plugin", NULL);
-    mlt_properties image_effect = mlt_properties_get_properties(properties, "ofx_image_effect");
+    mlt_properties image_effect = mlt_properties_get_properties(properties, OFX_IMAGE_EFFECT);
     mlt_properties params = mlt_properties_get_properties(image_effect, "mltofx_params");
     mlt_properties image_effect_params = mlt_properties_get_properties(image_effect, "params");
 
@@ -276,7 +278,7 @@ static void filter_close(mlt_filter filter)
 {
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
     OfxPlugin *plugin = mlt_properties_get_data(properties, "ofx_plugin", NULL);
-    mlt_properties image_effect = mlt_properties_get_properties(properties, "ofx_image_effect");
+    mlt_properties image_effect = mlt_properties_get_properties(properties, OFX_IMAGE_EFFECT);
     mltofx_destroy_instance(plugin, image_effect);
     filter->child = NULL;
     filter->close = NULL;
@@ -337,7 +339,7 @@ mlt_filter filter_openfx_init(mlt_profile profile, mlt_service_type type, const 
     mlt_properties_set_properties(image_effect, "render_in_args", mlt_properties_new());
     mlt_properties_close(mlt_properties_get_properties(image_effect, "render_in_args"));
     mlt_properties_set_data(properties, "ofx_plugin", pt, 0, NULL, NULL);
-    mlt_properties_set_properties(properties, "ofx_image_effect", image_effect);
+    mlt_properties_set_properties(properties, OFX_IMAGE_EFFECT, image_effect);
     mlt_properties_close(image_effect);
     mlt_properties_close(params);
     filter->process = filter_process;
