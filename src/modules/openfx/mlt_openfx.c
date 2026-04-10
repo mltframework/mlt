@@ -23,6 +23,11 @@
 #include <math.h>
 #include <stdarg.h>
 #include <stdbool.h>
+#include <stdint.h>
+#include <string.h>
+#ifdef _OPENMP
+#include <omp.h>
+#endif
 
 /* OpenFX Header files https://github.com/AcademySoftwareFoundation/openfx/tree/main/include */
 #include <ofxDrawSuite.h>
@@ -32,6 +37,93 @@
 #include <ofxParametricParam.h>
 #include <ofxProgress.h>
 #include <ofxTimeLine.h>
+
+static inline uint16_t f32_to_f16(float f)
+{
+    uint32_t x;
+    memcpy(&x, &f, sizeof(x));
+    uint16_t sign = (x >> 31) & 0x0001U;
+    int32_t exp = ((x >> 23) & 0x00FFU) - 127 + 15;
+    uint16_t mant = (x >> 13) & 0x03FFU;
+    if (exp <= 0)
+        return (uint16_t) (sign << 15);
+    if (exp >= 31)
+        return (uint16_t) ((sign << 15) | 0x7C00U);
+    return (uint16_t) ((sign << 15) | ((uint16_t) exp << 10) | mant);
+}
+
+static inline float f16_to_f32(uint16_t h)
+{
+    uint32_t sign = (h >> 15) & 0x0001U;
+    uint32_t exp = (h >> 10) & 0x001FU;
+    uint32_t mant = h & 0x03FFU;
+    uint32_t x;
+    if (exp == 0)
+        x = (sign << 31) | (mant << 13);
+    else if (exp == 31)
+        x = (sign << 31) | (0xFFU << 23) | (mant << 13);
+    else
+        x = (sign << 31) | ((exp - 15 + 127) << 23) | (mant << 13);
+    float f;
+    memcpy(&f, &x, sizeof(f));
+    return f;
+}
+
+uint16_t *mltofx_rgba64_to_half(const uint16_t *src, int n_pixels)
+{
+    int count = n_pixels * 4;
+    uint16_t *dst = malloc((size_t) count * sizeof(uint16_t));
+    if (!dst)
+        return NULL;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int i = 0; i < count; ++i)
+        dst[i] = f32_to_f16((float) src[i] * (1.0f / 65535.0f));
+    return dst;
+}
+
+void mltofx_half_to_rgba64(const uint16_t *src, uint16_t *dst, int n_pixels)
+{
+    int count = n_pixels * 4;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int i = 0; i < count; ++i) {
+        float v = f16_to_f32(src[i]);
+        // This clamping using >= and <= handles NaN and +/-inf
+        v = (v >= 0.0f) ? (v <= 1.0f ? v : 1.0f) : 0.0f;
+        dst[i] = (uint16_t) (v * 65535.0f + 0.5f);
+    }
+}
+
+float *mltofx_rgba64_to_float(const uint16_t *src, int n_pixels)
+{
+    int count = n_pixels * 4;
+    float *dst = malloc((size_t) count * sizeof(float));
+    if (!dst)
+        return NULL;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int i = 0; i < count; ++i)
+        dst[i] = (float) src[i] * (1.0f / 65535.0f);
+    return dst;
+}
+
+void mltofx_float_to_rgba64(const float *src, uint16_t *dst, int n_pixels)
+{
+    int count = n_pixels * 4;
+#ifdef _OPENMP
+#pragma omp parallel for schedule(static)
+#endif
+    for (int i = 0; i < count; ++i) {
+        float v = src[i];
+        // This clamping using >= and <= handles NaN and +/-inf
+        v = (v >= 0.0f) ? (v <= 1.0f ? v : 1.0f) : 0.0f;
+        dst[i] = (uint16_t) (v * 65535.0f + 0.5f);
+    }
+}
 
 static OfxStatus propGetInt(OfxPropertySetHandle properties,
                             const char *property,
@@ -64,7 +156,7 @@ static OfxStatus clipDefine(OfxImageEffectHandle imageEffect,
                             const char *name,
                             OfxPropertySetHandle *propertySet)
 {
-    mlt_log_debug(NULL, "clipDefine: `%s` ## %p\n", name, propertySet);
+    mlt_log_debug(NULL, "[openfx] clipDefine: `%s` ## %p\n", name, propertySet);
     if (!imageEffect)
         return kOfxStatErrBadHandle;
     mlt_properties set = mlt_properties_get_properties((mlt_properties) imageEffect, "clips");
@@ -570,7 +662,7 @@ static OfxStatus paramDefine(OfxParamSetHandle paramSet,
                              const char *name,
                              OfxPropertySetHandle *propertySet)
 {
-    mlt_log_debug(NULL, "`%s`:`%s`\n", name, paramType);
+    mlt_log_debug(NULL, "[openfx] paramDefine: `%s`:`%s`\n", name, paramType);
     if (paramSet == NULL)
         return kOfxStatErrBadHandle;
     mlt_properties params = (mlt_properties) paramSet;
@@ -662,12 +754,46 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
     mlt_properties param_props = mlt_properties_get_properties(param, "p");
 
     if (strcmp(param_type, kOfxParamTypeInteger) == 0
-        || strcmp(param_type, kOfxParamTypeBoolean) == 0
-        || strcmp(param_type, kOfxParamTypeChoice) == 0) {
+        || strcmp(param_type, kOfxParamTypeBoolean) == 0) {
         int *value = va_arg(ap, int *);
         OfxStatus status
             = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
         if (status != kOfxStatOK) {
+            status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, value);
+            if (status != kOfxStatOK)
+                return kOfxStatErrUnknown;
+        }
+    } else if (strcmp(param_type, kOfxParamTypeChoice) == 0) {
+        // MltOfxParamValue stores the string label; convert to integer index for the OFX plugin.
+        int *value = va_arg(ap, int *);
+        char *label = NULL;
+        OfxStatus status
+            = propGetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, &label);
+        if (status == kOfxStatOK && label) {
+            int count = 0;
+            propGetDimension((OfxPropertySetHandle) param_props, kOfxParamPropChoiceOption, &count);
+            int found = 0;
+            for (int i = 0; i < count; i++) {
+                char *option = NULL;
+                propGetString((OfxPropertySetHandle) param_props,
+                              kOfxParamPropChoiceOption,
+                              i,
+                              &option);
+                if (option && strcmp(option, label) == 0) {
+                    *value = i;
+                    found = 1;
+                    break;
+                }
+            }
+            if (!found) {
+                status = propGetInt((OfxPropertySetHandle) param_props,
+                                    "OfxParamPropDefault",
+                                    0,
+                                    value);
+                if (status != kOfxStatOK)
+                    return kOfxStatErrUnknown;
+            }
+        } else {
             status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, value);
             if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
@@ -805,10 +931,20 @@ static OfxStatus paramSetValueImpl(OfxParamHandle paramHandle, va_list ap)
     mlt_properties param_props = mlt_properties_get_properties(param, "p");
 
     if (strcmp(param_type, kOfxParamTypeInteger) == 0
-        || strcmp(param_type, kOfxParamTypeChoice) == 0
         || strcmp(param_type, kOfxParamTypeBoolean) == 0) {
         int value = va_arg(ap, int);
         propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
+    } else if (strcmp(param_type, kOfxParamTypeChoice) == 0) {
+        // OFX plugin passes an integer index; convert to string label for MltOfxParamValue.
+        int index = va_arg(ap, int);
+        char *label = NULL;
+        OfxStatus status = propGetString((OfxPropertySetHandle) param_props,
+                                         kOfxParamPropChoiceOption,
+                                         index,
+                                         &label);
+        if (status != kOfxStatOK || !label)
+            return status != kOfxStatOK ? status : kOfxStatErrBadIndex;
+        propSetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, label);
     } else if (strcmp(param_type, kOfxParamTypeDouble) == 0) {
         double value = va_arg(ap, double);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
@@ -838,6 +974,10 @@ static OfxStatus paramSetValueImpl(OfxParamHandle paramHandle, va_list ap)
         mlt_rect value = va_arg(ap, mlt_rect);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value.x);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
+    } else if (strcmp(param_type, kOfxParamTypeString) == 0
+               || strcmp(param_type, kOfxParamTypeStrChoice) == 0) {
+        char *value = va_arg(ap, char *);
+        propSetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
     }
 
     return kOfxStatOK;
@@ -856,7 +996,7 @@ static OfxStatus paramSetValue(OfxParamHandle paramHandle, ...)
 
 static OfxStatus paramSetValueAtTime(OfxParamHandle paramHandle, OfxTime time, ...)
 {
-    mlt_log_debug(NULL, "<----paramSetValueAtTime---->\n");
+    mlt_log_debug(NULL, "[openfx] paramSetValueAtTime\n");
     if (!paramHandle)
         return kOfxStatErrBadHandle;
     va_list ap;
@@ -1078,25 +1218,25 @@ static OfxStatus getColour(OfxDrawContextHandle context,
                             OfxStandardColour std_colour,
                             OfxRGBAColourF *colour)
 {
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    mlt_log_debug(NULL, "[openfx] OfxDrawSuite `%s`\n", __FUNCTION__);
     return kOfxStatOK;
 }
 
 static OfxStatus setColour(OfxDrawContextHandle context, const OfxRGBAColourF *colour)
 {
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    mlt_log_debug(NULL, "[openfx] OfxDrawSuite `%s`\n", __FUNCTION__);
     return kOfxStatOK;
 }
 
 static OfxStatus setLineWidth(OfxDrawContextHandle context, float width)
 {
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    mlt_log_debug(NULL, "[openfx] OfxDrawSuite `%s`\n", __FUNCTION__);
     return kOfxStatOK;
 }
 
 static OfxStatus setLineStipple(OfxDrawContextHandle context, OfxDrawLineStipplePattern pattern)
 {
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    mlt_log_debug(NULL, "[openfx] OfxDrawSuite `%s`\n", __FUNCTION__);
     return kOfxStatOK;
 }
 
@@ -1105,7 +1245,7 @@ static OfxStatus draw(OfxDrawContextHandle context,
                         const OfxPointD *points,
                         int point_count)
 {
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    mlt_log_debug(NULL, "[openfx] OfxDrawSuite `%s`\n", __FUNCTION__);
     return kOfxStatOK;
 }
 
@@ -1114,7 +1254,7 @@ static OfxStatus drawText(OfxDrawContextHandle context,
                             const OfxPointD *pos,
                             int alignment)
 {
-    mlt_log_debug(NULL, "OfxDrawSuite `%s`\n", __FUNCTION__);
+    mlt_log_debug(NULL, "[openfx] OfxDrawSuite `%s`\n", __FUNCTION__);
     return kOfxStatOK;
 }
 
@@ -1267,7 +1407,7 @@ static OfxImageEffectOpenGLRenderSuiteV1 MltOfxOpenGLRenderSuiteV1
 
 static void mltofx_log_status_code(OfxStatus code, char *msg)
 {
-    mlt_log_debug(NULL, "output of `%s` is ", msg);
+    mlt_log_debug(NULL, "[openfx] output of `%s` is ", msg);
     switch (code) {
     case kOfxStatOK:
         mlt_log_debug(NULL, "kOfxStatOK\n");
@@ -1337,7 +1477,7 @@ static void mltofx_log_status_code(OfxStatus code, char *msg)
 
 const void *MltOfxfetchSuite(OfxPropertySetHandle host, const char *suiteName, int suiteVersion)
 {
-    mlt_log_debug(NULL, "fetchSuite: `%s` v%d\n", suiteName, suiteVersion);
+    mlt_log_debug(NULL, "[openfx] fetchSuite: `%s` v%d\n", suiteName, suiteVersion);
     if (strcmp(suiteName, kOfxImageEffectSuite) == 0 && suiteVersion == 1) {
         return &MltOfxImageEffectSuiteV1;
     } else if (strcmp(suiteName, kOfxParameterSuite) == 0 && suiteVersion == 1) {
@@ -1370,7 +1510,7 @@ const void *MltOfxfetchSuite(OfxPropertySetHandle host, const char *suiteName, i
         return NULL;
     }
 
-    mlt_log_debug(NULL, "%s v%d is not supported\n", suiteName, suiteVersion);
+    mlt_log_debug(NULL, "[openfx] %s v%d is not supported\n", suiteName, suiteVersion);
     return NULL;
 }
 
@@ -1378,7 +1518,7 @@ OfxHost MltOfxHost = {NULL, MltOfxfetchSuite};
 
 void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
 {
-    mlt_log_debug(NULL, "Initializing OpenFX host properties\n");
+    mlt_log_debug(NULL, "[openfx] Initializing OpenFX host properties\n");
     // Core host identity and API version
     propSetString(host_properties, kOfxPropName, 0, "MLT");
     propSetString(host_properties, kOfxPropLabel, 0, "MLT");
@@ -1393,6 +1533,8 @@ void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
     propSetString(host_properties, kOfxImageEffectPropContext, 0, kOfxImageEffectContextFilter);
     propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 0, kOfxBitDepthByte);
     propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 1, kOfxBitDepthShort);
+    propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 2, kOfxBitDepthHalf);
+    propSetString(host_properties, kOfxImageEffectPropSupportedPixelDepths, 3, kOfxBitDepthFloat);
     propSetString(host_properties,
                   kOfxImageEffectPropSupportedComponents,
                   0,
@@ -1463,7 +1605,8 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
                                  int width,
                                  int height,
                                  mlt_image_format format,
-                                 double pixel_aspect_ratio)
+                                 double pixel_aspect_ratio,
+                                 const char *ofx_depth)
 {
     mlt_properties clip;
     mlt_properties clip_prop;
@@ -1474,15 +1617,31 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
                   (OfxPropertySetHandle *) &clip_prop);
 
     int depth_byte_size = 4;
-    char *depth_format = kOfxBitDepthByte;
-    char *prop_component = kOfxImageComponentRGBA;
-    if (format == mlt_image_rgba64) {
+    const char *depth_format = kOfxBitDepthByte;
+    const char *prop_component = kOfxImageComponentRGBA;
+    if (ofx_depth) {
+        depth_format = ofx_depth;
+        if (!strcmp(ofx_depth, kOfxBitDepthFloat))
+            depth_byte_size = 16;
+        else if (!strcmp(ofx_depth, kOfxBitDepthShort) || !strcmp(ofx_depth, kOfxBitDepthHalf))
+            depth_byte_size = 8;
+        else
+            depth_byte_size = 4;
+    } else if (format == mlt_image_rgba64) {
         depth_byte_size = 8;
         depth_format = kOfxBitDepthShort;
     } else if (format == mlt_image_rgb) {
         depth_byte_size = 3;
         prop_component = kOfxImageComponentRGB;
     }
+    mlt_log_debug(NULL,
+                  "[openfx] %s: format=%s, depth=%s\n",
+                  __FUNCTION__,
+                  format == mlt_image_rgba64
+                      ? "rgba64"
+                      : (format == mlt_image_rgba ? "rgba"
+                                                  : (format == mlt_image_rgb ? "rgb" : "Unknown")),
+                  depth_format);
 
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRowBytes, 0, width * depth_byte_size);
     propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropPixelDepth, 0, depth_format);
@@ -1577,7 +1736,8 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
                                  int width,
                                  int height,
                                  mlt_image_format format,
-                                 double pixel_aspect_ratio)
+                                 double pixel_aspect_ratio,
+                                 const char *ofx_depth)
 {
     mlt_properties clip;
     mlt_properties clip_prop;
@@ -1588,9 +1748,17 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
                   (OfxPropertySetHandle *) &clip_prop);
 
     int depth_byte_size = 4;
-    char *depth_format = kOfxBitDepthByte;
-    char *prop_component = kOfxImageComponentRGBA;
-    if (format == mlt_image_rgba64) {
+    const char *depth_format = kOfxBitDepthByte;
+    const char *prop_component = kOfxImageComponentRGBA;
+    if (ofx_depth) {
+        depth_format = ofx_depth;
+        if (!strcmp(ofx_depth, kOfxBitDepthFloat))
+            depth_byte_size = 16;
+        else if (!strcmp(ofx_depth, kOfxBitDepthShort) || !strcmp(ofx_depth, kOfxBitDepthHalf))
+            depth_byte_size = 8;
+        else
+            depth_byte_size = 4;
+    } else if (format == mlt_image_rgba64) {
         depth_byte_size = 8;
         depth_format = kOfxBitDepthShort;
     } else if (format == mlt_image_rgb) {
@@ -1747,7 +1915,7 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
         }
     }
     if (i == count) {
-        mlt_log_verbose(NULL, "[openfx] Plugin not a filter: %s\n", plugin->pluginIdentifier);
+        mlt_log_debug(NULL, "[openfx] Plugin not a filter: %s\n", plugin->pluginIdentifier);
         // since plugin is not filter then load fail so we must not unload it
         return 0;
     }
@@ -1761,13 +1929,14 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
                       kOfxImageEffectPropSupportedPixelDepths,
                       i,
                       &depth);
-        if (!strcmp(depth, kOfxBitDepthByte) || !strcmp(depth, kOfxBitDepthShort)) {
+        if (!strcmp(depth, kOfxBitDepthByte) || !strcmp(depth, kOfxBitDepthShort)
+            || !strcmp(depth, kOfxBitDepthHalf) || !strcmp(depth, kOfxBitDepthFloat)) {
             break;
         }
     }
     if (i == count) {
         mlt_log_verbose(NULL,
-                        "[openfx] Plugin does not support byte or short pixels: %s\n",
+                        "[openfx] Plugin does not support byte, short, half, or float pixels: %s\n",
                         plugin->pluginIdentifier);
         // since no pixel depth is supported by us then plugin is load fail so we must not unload it
         return 0;
@@ -2146,6 +2315,11 @@ void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_ty
 {
     mlt_properties param = NULL;
     paramGetHandle((OfxParamSetHandle) params, key, (OfxParamHandle *) &param, NULL);
+    if (!param)
+        return;
+    mlt_properties param_props = mlt_properties_get_properties(param, "p");
+    if (!param_props)
+        return;
 
     va_list ap;
     va_start(ap, type);
@@ -2153,27 +2327,35 @@ void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_ty
     switch (type) {
     case mltofx_prop_int: {
         int value = va_arg(ap, int);
-        paramSetValue((OfxParamHandle) param, value);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
     } break;
 
     case mltofx_prop_double: {
         double value = va_arg(ap, double);
-        paramSetValue((OfxParamHandle) param, value);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
     } break;
 
     case mltofx_prop_string: {
         char *value = va_arg(ap, char *);
-        paramSetValue((OfxParamHandle) param, value);
+        propSetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
     } break;
 
     case mltofx_prop_color: {
         mlt_color value = va_arg(ap, mlt_color);
-        paramSetValue((OfxParamHandle) param, value);
+        double red = (double) value.r / 255.0;
+        double green = (double) value.g / 255.0;
+        double blue = (double) value.b / 255.0;
+        double alpha = (double) value.a / 255.0;
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, alpha);
     } break;
 
     case mltofx_prop_double2d: {
         mlt_rect value = va_arg(ap, mlt_rect);
-        paramSetValue((OfxParamHandle) param, value);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value.x);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
     } break;
 
     default:
@@ -2396,6 +2578,10 @@ mltofx_depths_mask mltofx_plugin_supported_depths(mlt_properties image_effect)
             mask |= mltofx_depth_byte;
         } else if (strcmp(str, kOfxBitDepthShort) == 0) {
             mask |= mltofx_depth_short;
+        } else if (strcmp(str, kOfxBitDepthHalf) == 0) {
+            mask |= mltofx_depth_half;
+        } else if (strcmp(str, kOfxBitDepthFloat) == 0) {
+            mask |= mltofx_depth_float;
         }
     }
 

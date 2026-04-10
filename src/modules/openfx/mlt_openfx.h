@@ -46,6 +46,8 @@ typedef enum {
     mltofx_depth_none = 0,
     mltofx_depth_byte = 1,
     mltofx_depth_short = 2,
+    mltofx_depth_half = 4,
+    mltofx_depth_float = 8,
 } mltofx_depths_mask;
 
 typedef enum {
@@ -66,7 +68,8 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
                                  int width,
                                  int height,
                                  mlt_image_format format,
-                                 double pixel_aspect_ratio);
+                                 double pixel_aspect_ratio,
+                                 const char *ofx_depth);
 
 void mltofx_set_output_clip_data(OfxPlugin *plugin,
                                  mlt_properties image_effect,
@@ -74,7 +77,8 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
                                  int width,
                                  int height,
                                  mlt_image_format format,
-                                 double pixel_aspect_ratio);
+                                 double pixel_aspect_ratio,
+                                 const char *ofx_depth);
 
 int mltofx_detect_plugin(OfxPlugin *plugin);
 
@@ -100,5 +104,13 @@ void mltofx_action_render(OfxPlugin *plugin, mlt_properties image_effect, int wi
 mltofx_depths_mask mltofx_plugin_supported_depths(mlt_properties image_effect);
 
 mltofx_components_mask mltofx_plugin_supported_components(mlt_properties image_effect);
+
+uint16_t *mltofx_rgba64_to_half(const uint16_t *src, int n_pixels);
+
+void mltofx_half_to_rgba64(const uint16_t *src, uint16_t *dst, int n_pixels);
+
+float *mltofx_rgba64_to_float(const uint16_t *src, int n_pixels);
+
+void mltofx_float_to_rgba64(const float *src, uint16_t *dst, int n_pixels);
 
 #endif
