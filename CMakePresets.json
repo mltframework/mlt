@@ -91,6 +91,25 @@
                 "BUILD_TESTING": "OFF",
                 "MOD_GDK": "OFF"
             }
+        },
+        {
+            "name": "msys2-debug",
+            "displayName": "msys2 (debug)",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "BUILD_TESTING": "OFF",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_PREFIX_PATH": "C:/Qt/$env{QT_VERSION}/mingw_64;C:/msys64/mingw64;C:/msys64/clangarm64",
+                "MOD_GLAXNIMATE_QT6": "ON",
+                "MOD_MOVIT": "OFF"
+            },
+            "environment": {
+                "PKG_CONFIG_PATH": "C:/Projects/Shotcut/lib/pkgconfig;C:/msys64/mingw64/lib/pkgconfig;C:/msys64/clangarm64/lib/pkgconfig;$penv{PKG_CONFIG_PATH}",
+                "Path": "C:/msys64/usr/local/bin;C:/msys64/mingw64/bin;C:/msys64/clangarm64/bin;$penv{Path}",
+                "QT_VERSION": "6.8.3"
+            },
+            "generator": "Ninja"
         }
     ],
     "buildPresets": [
