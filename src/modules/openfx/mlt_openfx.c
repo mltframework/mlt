@@ -2376,11 +2376,11 @@ void mltofx_get_clip_preferences(OfxPlugin *plugin, mlt_properties image_effect)
     mltofx_log_status_code(status_code, kOfxImageEffectActionGetClipPreferences);
 }
 
-void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_effect)
+void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_effect, double ofx_time)
 {
     mlt_properties get_rod_in_args = mlt_properties_get_properties(image_effect, "get_rod_in_args");
 
-    propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxPropTime, 0, 0.0);
+    propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxPropTime, 0, ofx_time);
 
     propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxImageEffectPropRenderScale, 0, 1.0);
     propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxImageEffectPropRenderScale, 1, 1.0);
@@ -2396,17 +2396,15 @@ void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_eff
     mltofx_log_status_code(status_code, kOfxImageEffectActionGetRegionOfDefinition);
 }
 
-void mltofx_get_regions_of_interest(OfxPlugin *plugin,
-                                    mlt_properties image_effect,
-                                    double width,
-                                    double height)
+void mltofx_get_regions_of_interest(
+    OfxPlugin *plugin, mlt_properties image_effect, double ofx_time, double width, double height)
 {
     mlt_properties get_roi_in_args = mlt_properties_get_properties(image_effect, "get_roi_in_args");
     mlt_properties get_roi_out_args = mlt_properties_get_properties(image_effect,
                                                                     "get_roi_out_args");
 
-    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxPropTime, 0, 0.0);
-    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxPropTime, 1, 0.0);
+    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxPropTime, 0, ofx_time);
+    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxPropTime, 1, ofx_time);
     propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxImageEffectPropRenderScale, 0, 1.0);
     propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxImageEffectPropRenderScale, 1, 1.0);
 
@@ -2434,18 +2432,18 @@ void mltofx_get_regions_of_interest(OfxPlugin *plugin,
     mltofx_log_status_code(status_code, kOfxImageEffectActionGetRegionsOfInterest);
 }
 
-void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect)
+void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect, double ofx_time)
 {
     mlt_properties begin_sequence_props = mlt_properties_get_properties(image_effect,
                                                                         "begin_sequence_props");
     propSetDouble((OfxPropertySetHandle) begin_sequence_props,
                   kOfxImageEffectPropFrameRange,
                   0,
-                  0.0);
+                  ofx_time);
     propSetDouble((OfxPropertySetHandle) begin_sequence_props,
                   kOfxImageEffectPropFrameRange,
                   1,
-                  0.0);
+                  ofx_time);
     propSetDouble((OfxPropertySetHandle) begin_sequence_props, kOfxImageEffectPropFrameStep, 0, 1.0);
 
     propSetInt((OfxPropertySetHandle) begin_sequence_props, kOfxPropIsInteractive, 0, 0);
@@ -2478,13 +2476,19 @@ void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect
     mltofx_log_status_code(status_code, kOfxImageEffectActionBeginSequenceRender);
 }
 
-void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect)
+void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect, double ofx_time)
 {
     mlt_properties end_sequence_props = mlt_properties_get_properties(image_effect,
                                                                       "end_sequence_props");
-    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropFrameRange, 0, 0.0);
+    propSetDouble((OfxPropertySetHandle) end_sequence_props,
+                  kOfxImageEffectPropFrameRange,
+                  0,
+                  ofx_time);
 
-    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropFrameRange, 1, 0.0);
+    propSetDouble((OfxPropertySetHandle) end_sequence_props,
+                  kOfxImageEffectPropFrameRange,
+                  1,
+                  ofx_time);
 
     propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropFrameStep, 0, 1.0);
 
@@ -2512,10 +2516,11 @@ void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect)
     mltofx_log_status_code(status_code, kOfxImageEffectActionEndSequenceRender);
 }
 
-void mltofx_action_render(OfxPlugin *plugin, mlt_properties image_effect, int width, int height)
+void mltofx_action_render(
+    OfxPlugin *plugin, mlt_properties image_effect, double ofx_time, int width, int height)
 {
     mlt_properties render_in_args = mlt_properties_get_properties(image_effect, "render_in_args");
-    propSetDouble((OfxPropertySetHandle) render_in_args, kOfxPropTime, 0, 0.0);
+    propSetDouble((OfxPropertySetHandle) render_in_args, kOfxPropTime, 0, ofx_time);
 
     propSetString((OfxPropertySetHandle) render_in_args,
                   kOfxImageEffectPropFieldToRender,

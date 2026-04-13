@@ -88,18 +88,19 @@ void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_ty
 
 void mltofx_get_clip_preferences(OfxPlugin *plugin, mlt_properties image_effect);
 
-void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_effect);
+void mltofx_get_region_of_definition(OfxPlugin *plugin,
+                                     mlt_properties image_effect,
+                                     double ofx_time);
 
-void mltofx_get_regions_of_interest(OfxPlugin *plugin,
-                                    mlt_properties image_effect,
-                                    double width,
-                                    double height);
+void mltofx_get_regions_of_interest(
+    OfxPlugin *plugin, mlt_properties image_effect, double ofx_time, double width, double height);
 
-void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect);
+void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect, double ofx_time);
 
-void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect);
+void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect, double ofx_time);
 
-void mltofx_action_render(OfxPlugin *plugin, mlt_properties image_effect, int width, int height);
+void mltofx_action_render(
+    OfxPlugin *plugin, mlt_properties image_effect, double ofx_time, int width, int height);
 
 mltofx_depths_mask mltofx_plugin_supported_depths(mlt_properties image_effect);
 

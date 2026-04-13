@@ -135,6 +135,7 @@ static int filter_get_image(mlt_frame frame,
 
     mlt_position position = mlt_filter_get_position(filter, frame);
     mlt_position length = mlt_filter_get_length2(filter, frame);
+    double ofx_time = (double) position;
 
     // Determine depth conversion needed for the 16-bit path (short > half > float).
     int use_half = (*format == mlt_image_rgba64) && !(plugin_support_depths & mltofx_depth_short)
@@ -220,8 +221,8 @@ static int filter_get_image(mlt_frame frame,
 
     // OFX pre-render action order: GetClipPreferences → GetRegionsOfInterest → BeginSequenceRender
     mltofx_get_clip_preferences(plugin, image_effect);
-    mltofx_get_regions_of_interest(plugin, image_effect, (double) *width, (double) *height);
-    mltofx_begin_sequence_render(plugin, image_effect);
+    mltofx_get_regions_of_interest(plugin, image_effect, ofx_time, (double) *width, (double) *height);
+    mltofx_begin_sequence_render(plugin, image_effect, ofx_time);
 
     // Point clips at the actual render buffers before calling Render.
     mltofx_set_source_clip_data(plugin,
@@ -241,8 +242,8 @@ static int filter_get_image(mlt_frame frame,
                                 pixel_aspect_ratio,
                                 ofx_depth);
 
-    mltofx_action_render(plugin, image_effect, *width, *height);
-    mltofx_end_sequence_render(plugin, image_effect);
+    mltofx_action_render(plugin, image_effect, ofx_time, *width, *height);
+    mltofx_end_sequence_render(plugin, image_effect, ofx_time);
 
     mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
