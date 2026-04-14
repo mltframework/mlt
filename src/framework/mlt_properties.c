@@ -2177,6 +2177,45 @@ static inline int is_yaml_keyword(const char *s)
     return !strcmp(s, "null") || !strcmp(s, "~");
 }
 
+static inline int is_scientific_notation(const char *s)
+{
+    if (!s)
+        return 0;
+    const char *p = s;
+    if (*p == '-' || *p == '+')
+        p++;
+    if (!isdigit((unsigned char) *p))
+        return 0;
+    while (*p && (isdigit((unsigned char) *p) || *p == '.'))
+        p++;
+    return *p == 'e' || *p == 'E';
+}
+
+/** Write a scientific notation value as fixed-point decimal for kwalify compatibility.
+ *
+ * \private \memberof strbuf_s
+ * \param output a string buffer
+ * \param value a string in scientific notation (e.g. "1e-08")
+ */
+static void strbuf_write_fixed_point(strbuf output, const char *value)
+{
+    double d = strtod(value, NULL);
+    const char *ep = strpbrk(value, "eE");
+    int exp = atoi(ep + 1);
+    int prec = (exp < 0 ? -exp : 0) + 7;
+    char buf[64];
+    snprintf(buf, sizeof(buf), "%.*f", prec, d);
+    // Strip trailing zeros after decimal point
+    if (strchr(buf, '.')) {
+        char *end = buf + strlen(buf) - 1;
+        while (*end == '0')
+            *end-- = '\0';
+        if (*end == '.')
+            *end = '\0';
+    }
+    strbuf_printf(output, "%s\n", buf);
+}
+
 /** Convert a line string into a YAML block literal.
  *
  * \private \memberof strbuf_s
@@ -2240,9 +2279,8 @@ static void serialise_yaml(mlt_properties self, strbuf output, int indent, int i
                         output_yaml_block_literal(output,
                                                   value,
                                                   indent + strlen(name) + strlen("|"));
-                    } else if (!strcmp(value, "1e-08")) {
-                        // Special case for numeric values not accepted by kwalify
-                        strbuf_printf(output, "%.8f\n", 1e-8);
+                    } else if (is_scientific_notation(value)) {
+                        strbuf_write_fixed_point(output, value);
                     } else if (has_reserved_char(value) || is_yaml_keyword(value)
                                || is_numeric_identifier(name, value)) {
                         strbuf_printf(output, "\"");
@@ -2282,9 +2320,8 @@ static void serialise_yaml(mlt_properties self, strbuf output, int indent, int i
                 if (strchr(value, '\n')) {
                     strbuf_printf(output, "|\n");
                     output_yaml_block_literal(output, value, indent + strlen(name) + strlen(": "));
-                } else if (!strcmp(value, "1e-08")) {
-                    // Special case for numeric values not accepted by kwalify
-                    strbuf_printf(output, "%.8f\n", 1e-8);
+                } else if (is_scientific_notation(value)) {
+                    strbuf_write_fixed_point(output, value);
                 } else if (has_reserved_char(value) || is_yaml_keyword(value)
                            || is_numeric_identifier(name, value)) {
                     strbuf_printf(output, "\"");

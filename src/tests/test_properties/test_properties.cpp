@@ -460,6 +460,32 @@ private Q_SLOTS:
         free(serializedYaml);
     }
 
+    void SerializesScientificNotationAsFixedPoint()
+    {
+        // Negative exponent in a map value
+        Properties p;
+        p.set("minimum", "1e-08");
+        char *yaml = p.serialise_yaml();
+        QVERIFY(QString(yaml).contains("minimum: 0.00000001\n"));
+        free(yaml);
+
+        // Negative exponent in a sequence value
+        Properties seq;
+        Properties child;
+        child.set("1", "2.5e-3");
+        seq.set("values", child.get_properties(), 0);
+        yaml = seq.serialise_yaml();
+        QVERIFY(QString(yaml).contains("  - 0.0025\n"));
+        free(yaml);
+
+        // Positive exponent should also produce fixed-point
+        Properties p2;
+        p2.set("maximum", "1e+02");
+        yaml = p2.serialise_yaml();
+        QVERIFY(QString(yaml).contains("maximum: 100\n"));
+        free(yaml);
+    }
+
     void ParsesYamlTiny()
     {
         QTemporaryFile tempFile;
