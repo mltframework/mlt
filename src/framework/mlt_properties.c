@@ -2159,7 +2159,7 @@ static inline int has_reserved_char(const char *string)
            || strchr(string, ',') || strchr(string, '*');
 }
 
-static inline int is_numeric_identifier(const char *name, char *s)
+static inline int is_numeric_identifier(const char *name, const char *s)
 {
     if (strcmp(name, "identifier"))
         return 0;
@@ -2247,7 +2247,7 @@ static void serialise_yaml(mlt_properties self, strbuf output, int indent, int i
                                || is_numeric_identifier(name, value)) {
                         strbuf_printf(output, "\"");
                         strbuf_escape(output, value, '"');
-                        strbuf_printf(output, "\"\n", value);
+                        strbuf_printf(output, "\"\n");
                     } else if (strchr(value, '"')) {
                         strbuf_printf(output, "'%s'\n", value);
                     } else {
