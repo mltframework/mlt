@@ -207,22 +207,17 @@ static int filter_get_image(mlt_frame frame,
     int image_size = mlt_image_format_size(*format, *width, *height, NULL);
 
     char *interps = mlt_properties_get(frame_properties, "consumer.rescale");
-    if (interps) {
-        interps = strdup(interps);
-    }
-    bool hqPainting = interps && strcmp(interps, "nearest") != 0;
-    free(interps);
+    bool hqPainting = strcmp(interps, "nearest") != 0;
 
     // resize to rect
     bool scaled = false;
     QImage scaledSource;
-    bool downscale = rect.w < b_width || rect.h < b_height;
     if (distort) {
         if (rect.w != b_width || rect.h != b_height) {
-            if (downscale) {
+            if (rect.w < b_width || rect.h < b_height) {
                 scaled = true;
-                scaledSource = sourceImage.scaled(rect.w,
-                                                  rect.h,
+                scaledSource = sourceImage.scaled(qRound(rect.w),
+                                                  qRound(rect.h),
                                                   Qt::IgnoreAspectRatio,
                                                   hqPainting ? Qt::SmoothTransformation
                                                              : Qt::FastTransformation);
@@ -238,18 +233,26 @@ static int filter_get_image(mlt_frame frame,
         } else {
             scale = rect.h / b_height * b_ar;
         }
-        // Center image in rect
-        transform.translate((rect.w - (b_width * scale)) / 2.0, (rect.h - (b_height * scale)) / 2.0);
-        if (scale != 1.) {
-            if (downscale) {
-                scaled = true;
-                scaledSource = sourceImage.scaled(sourceImage.size() * scale,
-                                                  Qt::IgnoreAspectRatio,
-                                                  hqPainting ? Qt::SmoothTransformation
-                                                             : Qt::FastTransformation);
-            } else {
-                transform.scale(scale, scale);
-            }
+        if (scale < 1.) {
+            // Use higher quality QImage scaling
+            scaled = true;
+            const QSize finalSize(qRound(sourceImage.width() * scale),
+                                  qRound(sourceImage.height() * scale));
+            // Center image in rect
+            transform.translate((rect.w - finalSize.width()) / 2.0,
+                                (rect.h - finalSize.height()) / 2.0);
+            // Scale
+            scaledSource = sourceImage.scaled(finalSize,
+                                              Qt::IgnoreAspectRatio,
+                                              hqPainting ? Qt::SmoothTransformation
+                                                         : Qt::FastTransformation);
+        } else if (scale > 1.) {
+            // Use QPainter scaling
+            // Center image in rect
+            transform.translate((rect.w - (b_width * scale)) / 2.0,
+                                (rect.h - (b_height * scale)) / 2.0);
+            // Scale
+            transform.scale(scale, scale);
         }
     }
 
@@ -274,6 +277,7 @@ static int filter_get_image(mlt_frame frame,
     }
     // finish Qt drawing
     painter.end();
+
     convert_qimage_to_mlt(&destImage, dest_image, *width, *height);
     *image = dest_image;
     mlt_frame_set_image(frame, *image, *width * *height * 4, mlt_pool_release);

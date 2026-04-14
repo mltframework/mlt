@@ -185,11 +185,6 @@ static int get_image(mlt_frame a_frame,
     // This is not a field-aware transform.
     mlt_properties_set_int(b_properties, "consumer.progressive", 1);
 
-    // Suppress padding and aspect normalization.
-    char *interps = mlt_properties_get(properties, "consumer.rescale");
-    if (interps)
-        interps = strdup(interps);
-
     // Check profile dar vs image dar image
     if (!forceAlpha && rect.w == -1 && b_dar != mlt_profile_dar(profile)) {
         // Activate transparency if the clips don't have the same aspect ratio
@@ -233,7 +228,6 @@ static int get_image(mlt_frame a_frame,
                 *height = b_height;
             }
             *image = b_image;
-            free(interps);
             return 0;
         }
     }
@@ -248,9 +242,31 @@ static int get_image(mlt_frame a_frame,
     }
     if (*format != mlt_image_rgba64)
         *format = mlt_image_rgba;
+
+    bool scaled = false;
+    QImage scaledSource;
+
+    // We don't do subpixel smoothing for nearest neighbour interpolation
+    // so people can use that to upscale pixel art and keep the hard edges.
+    char *interps = mlt_properties_get(properties, "consumer.rescale");
+    bool hqPainting = strcmp(interps, "nearest") != 0;
+
+    // convert top mlt image to qimage
+    QImage topImg;
+    convert_mlt_to_qimage(b_image, &topImg, b_width, b_height, *format);
+
     if (distort) {
         if (b_width != 0 && b_height != 0) {
-            transform.scale(rect.w / b_width, rect.h / b_height);
+            if (rect.w < b_width || rect.h < b_height) {
+                scaled = true;
+                scaledSource = topImg.scaled(qRound(rect.w),
+                                             qRound(rect.h),
+                                             Qt::IgnoreAspectRatio,
+                                             hqPainting ? Qt::SmoothTransformation
+                                                        : Qt::FastTransformation);
+            } else {
+                transform.scale(rect.w / b_width, rect.h / b_height);
+            }
         }
     } else if (rect.w > 0 && rect.h > 0) {
         double resize_dar = rect.w * consumer_ar / rect.h;
@@ -266,15 +282,32 @@ static int get_image(mlt_frame a_frame,
                 scale *= transformScale;
             }
         }
-        transform.translate((rect.w - (b_width * scale)) / 2.0, (rect.h - (b_height * scale)) / 2.0);
-        transform.scale(scale, scale);
+        if (scale < 1.) {
+            // Use higher quality QImage scaling
+            scaled = true;
+            const QSize finalSize(qRound(topImg.width() * scale), qRound(topImg.height() * scale));
+            // Center image in rect
+            transform.translate((rect.w - finalSize.width()) / 2.0,
+                                (rect.h - finalSize.height()) / 2.0);
+            // Scale
+            scaledSource = topImg.scaled(finalSize,
+                                         Qt::IgnoreAspectRatio,
+                                         hqPainting ? Qt::SmoothTransformation
+                                                    : Qt::FastTransformation);
+        } else if (scale > 1.) {
+            // Use QPainter scaling
+            // Center image in rect
+            transform.translate((rect.w - (b_width * scale)) / 2.0,
+                                (rect.h - (b_height * scale)) / 2.0);
+            // Scale
+            transform.scale(scale, scale);
+        }
     }
 
     // Get bottom frame
     uint8_t *a_image = NULL;
     error = mlt_frame_get_image(a_frame, &a_image, format, width, height, 0);
     if (error) {
-        free(interps);
         return error;
     }
     // Prepare output image
@@ -284,17 +317,9 @@ static int get_image(mlt_frame a_frame,
     // Copy bottom frame in output
     memcpy(*image, a_image, image_size);
 
-    // We don't do subpixel smoothing for nearest neighbour interpolation
-    // so people can use that to upscale pixel art and keep the hard edges.
-    bool hqPainting = interps && strcmp(interps, "nearest") != 0;
-
     // convert bottom mlt image to qimage
     QImage bottomImg;
     convert_mlt_to_qimage(*image, &bottomImg, *width, *height, *format);
-
-    // convert top mlt image to qimage
-    QImage topImg;
-    convert_mlt_to_qimage(b_image, &topImg, b_width, b_height, *format);
 
     // setup Qt drawing
     QPainter painter(&bottomImg);
@@ -304,7 +329,11 @@ static int get_image(mlt_frame a_frame,
     painter.setOpacity(opacity);
 
     // Composite top frame
-    painter.drawImage(0, 0, topImg);
+    if (scaled) {
+        painter.drawImage(0, 0, scaledSource);
+    } else {
+        painter.drawImage(0, 0, topImg);
+    }
 
     // finish Qt drawing
     painter.end();
@@ -312,7 +341,6 @@ static int get_image(mlt_frame a_frame,
     mlt_frame_set_image(a_frame, *image, image_size, mlt_pool_release);
     // Remove potentially large image on the B frame.
     mlt_frame_set_image(b_frame, NULL, 0, NULL);
-    free(interps);
     return error;
 }
 
