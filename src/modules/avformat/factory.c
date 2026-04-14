@@ -209,13 +209,8 @@ static void add_parameters(mlt_properties params,
             break;
         case AV_OPT_TYPE_STRING:
             mlt_properties_set(p, "type", "string");
-            if (opt->default_val.str) {
-                size_t len = strlen(opt->default_val.str) + 3;
-                char *quoted = malloc(len);
-                snprintf(quoted, len, "'%s'", opt->default_val.str);
-                mlt_properties_set(p, "default", quoted);
-                free(quoted);
-            }
+            if (opt->default_val.str && strcmp(opt->default_val.str, ""))
+                mlt_properties_set(p, "default", opt->default_val.str);
             break;
         case AV_OPT_TYPE_RATIONAL:
             mlt_properties_set(p, "type", "string");
@@ -227,13 +222,8 @@ static void add_parameters(mlt_properties params,
             break;
         case AV_OPT_TYPE_COLOR:
             mlt_properties_set(p, "type", "color");
-            if (opt->default_val.str) {
-                size_t len = strlen(opt->default_val.str) + 3;
-                char *quoted = malloc(len);
-                snprintf(quoted, len, "'%s'", opt->default_val.str);
-                mlt_properties_set(p, "default", quoted);
-                free(quoted);
-            }
+            if (opt->default_val.str && strcmp(opt->default_val.str, ""))
+                mlt_properties_set(p, "default", opt->default_val.str);
         default:
             mlt_properties_set(p, "type", "string");
             break;

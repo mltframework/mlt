@@ -2155,7 +2155,8 @@ static void strbuf_escape(strbuf output, const char *value, char c)
 static inline int has_reserved_char(const char *string)
 {
     return strchr(string, ':') || strchr(string, '[') || strchr(string, ']') || strchr(string, '{')
-           || strchr(string, '}') || strchr(string, '\'') || strchr(string, '#');
+           || strchr(string, '}') || strchr(string, '\'') || strchr(string, '#')
+           || strchr(string, ',');
 }
 
 static inline int is_numeric_string(const char *s)
