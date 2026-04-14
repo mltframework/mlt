@@ -2146,9 +2146,9 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
             }
 
             if (strcmp(coordinate_system, kOfxParamCoordinatesCanonical) == 0) {
-                mlt_properties_set_int(p, "normalized_coordinates", 0);
+                mlt_properties_set(p, "normalized_coordinates", "no");
             } else if (strcmp(coordinate_system, kOfxParamCoordinatesNormalised) == 0) {
-                mlt_properties_set_int(p, "normalized_coordinates", 1);
+                mlt_properties_set(p, "normalized_coordinates", "yes");
             }
         }
 
