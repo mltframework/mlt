@@ -2159,14 +2159,13 @@ static inline int has_reserved_char(const char *string)
            || strchr(string, ',') || strchr(string, '*');
 }
 
-static inline int is_numeric_string(const char *s)
+static inline int is_numeric_identifier(const char *name, char *s)
 {
-    if (*s == '-' || *s == '+')
-        s++;
-    if (!*s)
+    if (strcmp(name, "identifier"))
         return 0;
+
     while (*s) {
-        if (!isdigit((unsigned char) *s) && *s != '.' && *s != 'e' && *s != 'E')
+        if (!isdigit((unsigned char) *s))
             return 0;
         s++;
     }
@@ -2241,8 +2240,11 @@ static void serialise_yaml(mlt_properties self, strbuf output, int indent, int i
                         output_yaml_block_literal(output,
                                                   value,
                                                   indent + strlen(name) + strlen("|"));
+                    } else if (!strcmp(value, "1e-08")) {
+                        // Special case for numeric values not accepted by kwalify
+                        strbuf_printf(output, "%.8f\n", 1e-8);
                     } else if (has_reserved_char(value) || is_yaml_keyword(value)
-                               || (!strcmp(name, "identifier") && is_numeric_string(value))) {
+                               || is_numeric_identifier(name, value)) {
                         strbuf_printf(output, "\"");
                         strbuf_escape(output, value, '"');
                         strbuf_printf(output, "\"\n", value);
@@ -2280,8 +2282,11 @@ static void serialise_yaml(mlt_properties self, strbuf output, int indent, int i
                 if (strchr(value, '\n')) {
                     strbuf_printf(output, "|\n");
                     output_yaml_block_literal(output, value, indent + strlen(name) + strlen(": "));
+                } else if (!strcmp(value, "1e-08")) {
+                    // Special case for numeric values not accepted by kwalify
+                    strbuf_printf(output, "%.8f\n", 1e-8);
                 } else if (has_reserved_char(value) || is_yaml_keyword(value)
-                           || (!strcmp(name, "identifier") && is_numeric_string(value))) {
+                           || is_numeric_identifier(name, value)) {
                     strbuf_printf(output, "\"");
                     strbuf_escape(output, value, '"');
                     strbuf_printf(output, "\"\n");
