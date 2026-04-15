@@ -2179,16 +2179,13 @@ static inline int is_yaml_keyword(const char *s)
 
 static inline int is_scientific_notation(const char *s)
 {
-    if (!s)
+    char *end = NULL;
+
+    if (!s || !*s || !strpbrk(s, "eE"))
         return 0;
-    const char *p = s;
-    if (*p == '-' || *p == '+')
-        p++;
-    if (!isdigit((unsigned char) *p))
-        return 0;
-    while (*p && (isdigit((unsigned char) *p) || *p == '.'))
-        p++;
-    return *p == 'e' || *p == 'E';
+
+    strtod(s, &end);
+    return end != s && *end == '\0';
 }
 
 /** Write a scientific notation value as fixed-point decimal for kwalify compatibility.
@@ -2199,12 +2196,32 @@ static inline int is_scientific_notation(const char *s)
  */
 static void strbuf_write_fixed_point(strbuf output, const char *value)
 {
-    double d = strtod(value, NULL);
+    double d;
     const char *ep = strpbrk(value, "eE");
     int exp = atoi(ep + 1);
     int prec = (exp < 0 ? -exp : 0) + 7;
     char buf[64];
+
+#if defined(__GLIBC__) || defined(__APPLE__) || (defined(__FreeBSD_version) && __FreeBSD_version >= 900506)
+    mlt_locale_t c_locale = newlocale(LC_NUMERIC_MASK, "C", NULL);
+    mlt_locale_t orig_locale = c_locale ? uselocale(c_locale) : (mlt_locale_t) 0;
+    d = strtod(value, NULL);
     snprintf(buf, sizeof(buf), "%.*f", prec, d);
+    if (c_locale) {
+        uselocale(orig_locale);
+        freelocale(c_locale);
+    }
+#else
+    char *orig_localename = strdup(setlocale(LC_NUMERIC, NULL));
+    setlocale(LC_NUMERIC, "C");
+    d = strtod(value, NULL);
+    snprintf(buf, sizeof(buf), "%.*f", prec, d);
+    if (orig_localename) {
+        setlocale(LC_NUMERIC, orig_localename);
+        free(orig_localename);
+    }
+#endif
+
     // Strip trailing zeros after decimal point
     if (strchr(buf, '.')) {
         char *end = buf + strlen(buf) - 1;

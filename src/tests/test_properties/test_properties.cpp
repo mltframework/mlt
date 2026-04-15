@@ -484,6 +484,41 @@ private Q_SLOTS:
         yaml = p2.serialise_yaml();
         QVERIFY(QString(yaml).contains("maximum: 100\n"));
         free(yaml);
+
+        // Non-numeric strings that merely start with digits must not be rewritten.
+        Properties p3;
+        p3.set("currency", "1euro");
+        p3.set("example", "1example");
+        yaml = p3.serialise_yaml();
+        QVERIFY(QString(yaml).contains("currency: 1euro\n"));
+        QVERIFY(QString(yaml).contains("example: 1example\n"));
+        free(yaml);
+    }
+
+    void SerializesScientificNotationUsingCLocale()
+    {
+#if !defined(_WIN32) && (defined(__GLIBC__) || defined(__APPLE__))
+        mlt_locale_t comma_locale = newlocale(LC_NUMERIC_MASK, "de_DE.UTF-8", NULL);
+        if (!comma_locale)
+            comma_locale = newlocale(LC_NUMERIC_MASK, "fr_FR.UTF-8", NULL);
+        if (!comma_locale)
+            QSKIP("No locale with comma decimal separator available");
+
+        mlt_locale_t orig_locale = uselocale(comma_locale);
+
+        Properties p;
+        p.set("minimum", "1e-08");
+        char *yaml = p.serialise_yaml();
+
+        uselocale(orig_locale);
+        freelocale(comma_locale);
+
+        QVERIFY(QString(yaml).contains("minimum: 0.00000001\n"));
+        QVERIFY(!QString(yaml).contains(","));
+        free(yaml);
+#else
+        QSKIP("Thread-local locale switching test not supported on this platform");
+#endif
     }
 
     void ParsesYamlTiny()
