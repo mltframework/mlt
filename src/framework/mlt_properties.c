@@ -2202,7 +2202,8 @@ static void strbuf_write_fixed_point(strbuf output, const char *value)
     int prec = (exp < 0 ? -exp : 0) + 7;
     char buf[64];
 
-#if defined(__GLIBC__) || defined(__APPLE__) || (defined(__FreeBSD_version) && __FreeBSD_version >= 900506)
+#if defined(__GLIBC__) || defined(__APPLE__) \
+    || (defined(__FreeBSD_version) && __FreeBSD_version >= 900506)
     mlt_locale_t c_locale = newlocale(LC_NUMERIC_MASK, "C", NULL);
     mlt_locale_t orig_locale = c_locale ? uselocale(c_locale) : (mlt_locale_t) 0;
     d = strtod(value, NULL);
