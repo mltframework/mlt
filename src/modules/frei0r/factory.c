@@ -172,6 +172,7 @@ static mlt_properties fill_param_info(mlt_service_type type, const char *service
     mlt_properties_set(metadata, "identifier", service_name);
     mlt_properties_set(metadata, "description", info.explanation);
     mlt_properties_set(metadata, "creator", info.author);
+    mlt_properties_set(metadata, "language", "en");
     switch (type) {
     case mlt_service_producer_type:
         mlt_properties_set(metadata, "type", "producer");

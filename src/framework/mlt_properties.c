@@ -2156,17 +2156,16 @@ static inline int has_reserved_char(const char *string)
 {
     return strchr(string, ':') || strchr(string, '[') || strchr(string, ']') || strchr(string, '{')
            || strchr(string, '}') || strchr(string, '\'') || strchr(string, '#')
-           || strchr(string, ',');
+           || strchr(string, ',') || strchr(string, '*');
 }
 
-static inline int is_numeric_string(const char *s)
+static inline int is_numeric_identifier(const char *name, const char *s)
 {
-    if (*s == '-' || *s == '+')
-        s++;
-    if (!*s)
+    if (strcmp(name, "identifier"))
         return 0;
+
     while (*s) {
-        if (!isdigit((unsigned char) *s) && *s != '.' && *s != 'e' && *s != 'E')
+        if (!isdigit((unsigned char) *s))
             return 0;
         s++;
     }
@@ -2176,6 +2175,63 @@ static inline int is_numeric_string(const char *s)
 static inline int is_yaml_keyword(const char *s)
 {
     return !strcmp(s, "null") || !strcmp(s, "~");
+}
+
+static inline int is_scientific_notation(const char *s)
+{
+    char *end = NULL;
+
+    if (!s || !*s || !strpbrk(s, "eE"))
+        return 0;
+
+    strtod(s, &end);
+    return end != s && *end == '\0';
+}
+
+/** Write a scientific notation value as fixed-point decimal for kwalify compatibility.
+ *
+ * \private \memberof strbuf_s
+ * \param output a string buffer
+ * \param value a string in scientific notation (e.g. "1e-08")
+ */
+static void strbuf_write_fixed_point(strbuf output, const char *value)
+{
+    double d;
+    const char *ep = strpbrk(value, "eE");
+    int exp = atoi(ep + 1);
+    int prec = (exp < 0 ? -exp : 0) + 7;
+    char buf[64];
+
+#if defined(__GLIBC__) || defined(__APPLE__) \
+    || (defined(__FreeBSD_version) && __FreeBSD_version >= 900506)
+    mlt_locale_t c_locale = newlocale(LC_NUMERIC_MASK, "C", NULL);
+    mlt_locale_t orig_locale = c_locale ? uselocale(c_locale) : (mlt_locale_t) 0;
+    d = strtod(value, NULL);
+    snprintf(buf, sizeof(buf), "%.*f", prec, d);
+    if (c_locale) {
+        uselocale(orig_locale);
+        freelocale(c_locale);
+    }
+#else
+    char *orig_localename = strdup(setlocale(LC_NUMERIC, NULL));
+    setlocale(LC_NUMERIC, "C");
+    d = strtod(value, NULL);
+    snprintf(buf, sizeof(buf), "%.*f", prec, d);
+    if (orig_localename) {
+        setlocale(LC_NUMERIC, orig_localename);
+        free(orig_localename);
+    }
+#endif
+
+    // Strip trailing zeros after decimal point
+    if (strchr(buf, '.')) {
+        char *end = buf + strlen(buf) - 1;
+        while (*end == '0')
+            *end-- = '\0';
+        if (*end == '.')
+            *end = '\0';
+    }
+    strbuf_printf(output, "%s\n", buf);
 }
 
 /** Convert a line string into a YAML block literal.
@@ -2241,11 +2297,13 @@ static void serialise_yaml(mlt_properties self, strbuf output, int indent, int i
                         output_yaml_block_literal(output,
                                                   value,
                                                   indent + strlen(name) + strlen("|"));
+                    } else if (is_scientific_notation(value)) {
+                        strbuf_write_fixed_point(output, value);
                     } else if (has_reserved_char(value) || is_yaml_keyword(value)
-                               || (!strcmp(name, "identifier") && is_numeric_string(value))) {
+                               || is_numeric_identifier(name, value)) {
                         strbuf_printf(output, "\"");
                         strbuf_escape(output, value, '"');
-                        strbuf_printf(output, "\"\n", value);
+                        strbuf_printf(output, "\"\n");
                     } else if (strchr(value, '"')) {
                         strbuf_printf(output, "'%s'\n", value);
                     } else {
@@ -2280,8 +2338,10 @@ static void serialise_yaml(mlt_properties self, strbuf output, int indent, int i
                 if (strchr(value, '\n')) {
                     strbuf_printf(output, "|\n");
                     output_yaml_block_literal(output, value, indent + strlen(name) + strlen(": "));
+                } else if (is_scientific_notation(value)) {
+                    strbuf_write_fixed_point(output, value);
                 } else if (has_reserved_char(value) || is_yaml_keyword(value)
-                           || (!strcmp(name, "identifier") && is_numeric_string(value))) {
+                           || is_numeric_identifier(name, value)) {
                     strbuf_printf(output, "\"");
                     strbuf_escape(output, value, '"');
                     strbuf_printf(output, "\"\n");
