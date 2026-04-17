@@ -155,7 +155,7 @@ parameters:
     mutable: yes
     widget: text
 
-    # READ ONLY:
+# READ ONLY:
   - identifier: gps_start_text
     title: GPS start time
     description: Date and time of the first valid GPS point.

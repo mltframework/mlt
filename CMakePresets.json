@@ -1,5 +1,5 @@
 {
-    "version": 3,
+    "version": 6,
     "configurePresets": [
         {
             "name": "vcpkg",
@@ -15,19 +15,20 @@
                 "MOD_FREI0R": "OFF",
                 "MOD_GDK": "ON",
                 "MOD_JACKRACK": "OFF",
-                "USE_LV2": "OFF",
                 "USE_VST2": "OFF",
+                "USE_LV2": "OFF",
                 "MOD_KDENLIVE": "ON",
                 "MOD_NDI": "OFF",
                 "MOD_NORMALIZE": "ON",
                 "MOD_OLDFILM": "ON",
                 "MOD_OPENCV": "ON",
+                "MOD_OPENFX": "OFF",
                 "MOD_MOVIT": "OFF",
                 "MOD_PLUS": "ON",
                 "MOD_PLUSGPL": "OFF",
                 "MOD_QT6": "ON",
                 "MOD_SOX": "OFF",
-                "MOD_GLAXNIMATE_QT6": "OFF",
+                "MOD_GLAXNIMATE_QT6": "ON",
                 "MOD_RESAMPLE": "OFF",
                 "MOD_RTAUDIO": "OFF",
                 "MOD_RUBBERBAND": "ON",
@@ -43,6 +44,114 @@
             "name": "vcpkg-ninja",
             "inherits": "vcpkg",
             "generator": "Ninja"
-      }
+        },
+        {
+            "name": "_cc-debug-base",
+            "hidden": true,
+            "generator": "Ninja",
+            "environment": {
+                "QT_VERSION": "6.8.3",
+                "PATH": "$env{HOME}/Qt/$env{QT_VERSION}/macos/bin:$env{HOME}/opt/bin:/usr/local/bin:/opt/local/bin:$penv{PATH}",
+                "PKG_CONFIG_PATH": "$env{HOME}/.local/lib/pkgconfig:$env{HOME}/.local/lib64/pkgconfig:$env{HOME}/opt/lib/pkgconfig:$env{HOME}/lib/pkgconfig:/usr/local/lib/pkgconfig:/opt/local/lib/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:$penv{PKG_CONFIG_PATH}"
+            },
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_C_FLAGS": "-I/usr/local/include",
+                "CMAKE_INSTALL_PREFIX": "$env{HOME}/opt",
+                "CMAKE_PREFIX_PATH": "$env{HOME}/Qt/$env{QT_VERSION}/gcc_64;$env{HOME}/Qt/$env{QT_VERSION}/macos;$env{HOME}/.local;$env{HOME}/opt;/usr/local;/opt/local",
+                "MOD_SDL1": "OFF",
+                "RELOCATABLE": "OFF"
+            }
+        },
+        {
+            "name": "cc-debug-linux",
+            "displayName": "default system compiler (debug)",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "inherits": "_cc-debug-base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Linux"
+            },
+            "cacheVariables": {
+                "BUILD_TESTING": "ON"
+            }
+        },
+        {
+            "name": "cc-debug-macos",
+            "displayName": "default system compiler (debug)",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "inherits": "_cc-debug-base",
+            "condition": {
+                "type": "equals",
+                "lhs": "${hostSystemName}",
+                "rhs": "Darwin"
+            },
+            "cacheVariables": {
+                "BUILD_TESTING": "OFF",
+                "MOD_GDK": "OFF"
+            }
+        },
+        {
+            "name": "msys2-debug",
+            "displayName": "msys2 (debug)",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "cacheVariables": {
+                "BUILD_TESTING": "OFF",
+                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
+                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_PREFIX_PATH": "C:/Qt/$env{QT_VERSION}/mingw_64;C:/msys64/mingw64;C:/msys64/clangarm64",
+                "MOD_GLAXNIMATE_QT6": "ON",
+                "MOD_MOVIT": "OFF"
+            },
+            "environment": {
+                "PKG_CONFIG_PATH": "C:/Projects/Shotcut/lib/pkgconfig;C:/msys64/mingw64/lib/pkgconfig;C:/msys64/clangarm64/lib/pkgconfig;$penv{PKG_CONFIG_PATH}",
+                "Path": "C:/msys64/usr/local/bin;C:/msys64/mingw64/bin;C:/msys64/clangarm64/bin;$penv{Path}",
+                "QT_VERSION": "6.8.3"
+            },
+            "generator": "Ninja"
+        }
+    ],
+    "buildPresets": [
+        {
+            "name": "clang-format-linux",
+            "configurePreset": "cc-debug-linux",
+            "targets": ["clang-format"]
+        },
+        {
+            "name": "install-linux",
+            "configurePreset": "cc-debug-linux",
+            "targets": ["install"]
+        },
+        {
+            "name": "clang-format-macos",
+            "configurePreset": "cc-debug-macos",
+            "targets": ["clang-format"]
+        },
+        {
+            "name": "install-macos",
+            "configurePreset": "cc-debug-macos",
+            "targets": ["install"]
+        }
+    ],
+    "workflowPresets": [
+        {
+            "name": "clang-format_install-linux",
+            "displayName": "clang-format, build, install (Linux)",
+            "steps": [
+                { "type": "configure", "name": "cc-debug-linux" },
+                { "type": "build", "name": "clang-format-linux" },
+                { "type": "build", "name": "install-linux" }
+            ]
+        },
+        {
+            "name": "clang-format_install-macos",
+            "displayName": "clang-format, build, install (macOS)",
+            "steps": [
+                { "type": "configure", "name": "cc-debug-macos" },
+                { "type": "build", "name": "clang-format-macos" },
+                { "type": "build", "name": "install-macos" }
+            ]
+        }
     ]
 }

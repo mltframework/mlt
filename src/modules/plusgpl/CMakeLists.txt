@@ -40,5 +40,6 @@ install(FILES
   filter_lumaliftgaingamma.yml
   filter_outline.yml
   filter_rotoscoping.yml
+  filter_telecide.yml
   DESTINATION ${MLT_INSTALL_DATA_DIR}/plusgpl
 )

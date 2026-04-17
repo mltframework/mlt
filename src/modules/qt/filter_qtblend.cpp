@@ -1,6 +1,6 @@
 /*
  * filter_qtblend.cpp -- Qt composite filter
- * Copyright (C) 2015-2025 Meltytech, LLC
+ * Copyright (C) 2015-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -98,7 +98,6 @@ static int filter_get_image(mlt_frame frame,
                                     mlt_properties_get_double(frame_properties, "qtblend_scalingy"));
         // Consumer scaling was already applied to b_width/b_height
         // Always request an image that follows the consumer aspect ratio
-        double consumer_dar = normalized_width * consumer_ar / normalized_height;
         int tmpWidth = b_width;
         int tmpHeight = b_height;
         double scaleFactor = qMax(*width / rect.w, *height / rect.h);
@@ -107,7 +106,7 @@ static int filter_get_image(mlt_frame frame,
             tmpWidth *= scaleFactor;
             tmpHeight *= scaleFactor;
         }
-        if (consumer_dar > b_dar) {
+        if (tmpWidth > tmpHeight) {
             *width = qBound(qRound(normalized_width * qtblendScaleX),
                             tmpWidth,
                             MLT_QTBLEND_MAX_DIMENSION);
@@ -160,18 +159,29 @@ static int filter_get_image(mlt_frame frame,
     transform.translate(rect.x, rect.y);
     opacity = rect.o;
     hasAlpha = rect.o < 1 || rect.x != 0 || rect.y != 0 || rect.w != *width || rect.h != *height
-               || rect.w / b_dar < *height || rect.h * b_dar < *width || b_width < *width
-               || b_height < *height;
+               || rect.w / b_dar < *height || rect.h * b_dar < *width || b_width != *width
+               || b_height != *height;
 
     if (mlt_properties_get(properties, "rotation")) {
         double angle = mlt_properties_anim_get_double(properties, "rotation", position, length);
         if (angle != 0.0) {
-            if (mlt_properties_get_int(properties, "rotate_center")) {
+            if (mlt_properties_get(properties, "rotate_anchor")) {
+                mlt_rect anchor
+                    = mlt_properties_anim_get_rect(properties, "rotate_anchor", position, length);
+                // Use custom anchor point (x,y are normalized 0-1 coordinates) where 0, 0 is top left and 1, 1 is bottom right
+                // negative values are allowed so its possible to rotate around a point outside the rectangle
+                double anchor_x = anchor.x * rect.w;
+                double anchor_y = anchor.y * rect.h;
+                transform.translate(anchor_x, anchor_y);
+                transform.rotate(angle);
+                transform.translate(-anchor_x, -anchor_y);
+            } else if (mlt_properties_get_int(properties, "rotate_center")) {
+                // old style rotation (from center) to keep compatibility, equivalent to rotate_anchor = 0.5, 0.5
                 transform.translate(rect.w / 2.0, rect.h / 2.0);
                 transform.rotate(angle);
                 transform.translate(-rect.w / 2.0, -rect.h / 2.0);
             } else {
-                // old style rotation (from top left corner) to keep compatibility
+                // old style rotation (from top left corner) to keep compatibility, equivalent to rotate_anchor = 0, 0
                 transform.rotate(angle);
             }
             hasAlpha = true;

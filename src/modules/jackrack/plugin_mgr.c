@@ -5,7 +5,7 @@
  * Copyright (C) Robert Ham 2002, 2003 (node@users.sourceforge.net)
  *
  * Modifications for MLT:
- * Copyright (C) 2004-2024 Meltytech, LLC
+ * Copyright (C) 2004-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -972,32 +972,20 @@ static void vst2_mgr_get_path_plugins(vst2_mgr_t *vst2_mgr)
     char *vst_path, *dir;
 
     vst_path = g_strdup(getenv("VST_PATH"));
-#ifdef _WIN32
     if (!vst_path) {
-        vst_path = malloc(strlen(mlt_environment("MLT_APPDIR")) + strlen("\\lib\\vst") + 1);
-        strcpy(vst_path, mlt_environment("MLT_APPDIR"));
-        strcat(vst_path, "\\lib\\vst");
-    }
-#elif defined(RELOCATABLE)
-#ifdef __APPLE__
-#define VST2_SUBDIR "/PlugIns/vst"
+#ifdef _WIN32
+        vst_path = g_strdup("C:/Program Files/Common Files/VST2;C:/Program Files/Steinberg/VSTPlugins;C:/Program Files/VSTPlugins;C:/Program Files (x86)/Common Files/VST2;C:/Program Files (x86)/Steinberg/VSTPlugins;C:/Program Files (x86)/VSTPlugins");
+#elif __APPLE__
+        vst_path = g_strdup("/Library/Audio/Plug-Ins/VST:~/Library/Audio/Plug-Ins/VST");
 #else
-#define VST2_SUBDIR "/lib/vst"
-#endif
-    {
-        vst_path = malloc(strlen(mlt_environment("MLT_APPDIR")) + strlen(VST2_SUBDIR) + 1);
-        strcpy(vst_path, mlt_environment("MLT_APPDIR"));
-        strcat(vst_path, VST2_SUBDIR);
-    }
-#else
-    if (!vst_path)
         vst_path = g_strdup("/usr/local/lib/vst:/usr/lib/vst:/usr/lib64/vst");
 #endif
+    }
 
     for (dir = strtok(vst_path, MLT_DIRLIST_DELIMITER); dir;
          dir = strtok(NULL, MLT_DIRLIST_DELIMITER))
       {
-	vst2_mgr_get_dir_plugins(vst2_mgr, dir);
+    vst2_mgr_get_dir_plugins(vst2_mgr, dir);
       }
 
     g_free(vst_path);

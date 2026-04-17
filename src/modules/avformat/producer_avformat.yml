@@ -2,7 +2,7 @@ schema_version: 0.3
 type: producer
 identifier: avformat
 title: FFmpeg Reader
-version: 5
+version: 6
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -286,3 +286,8 @@ parameters:
     title: Filtergraph
     type: string
     description: Filtergraph to apply to resource. Uses libavfilter syntax.
+
+  - identifier: lut
+    title: LUT File
+    type: string
+    description: Path to a LUT file applied to the resource using the ffmpeg lut3d filter.

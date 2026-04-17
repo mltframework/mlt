@@ -1,6 +1,6 @@
 /*
  * factory.c -- the factory method interfaces
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -209,13 +209,8 @@ static void add_parameters(mlt_properties params,
             break;
         case AV_OPT_TYPE_STRING:
             mlt_properties_set(p, "type", "string");
-            if (opt->default_val.str) {
-                size_t len = strlen(opt->default_val.str) + 3;
-                char *quoted = malloc(len);
-                snprintf(quoted, len, "'%s'", opt->default_val.str);
-                mlt_properties_set(p, "default", quoted);
-                free(quoted);
-            }
+            if (opt->default_val.str && strcmp(opt->default_val.str, ""))
+                mlt_properties_set(p, "default", opt->default_val.str);
             break;
         case AV_OPT_TYPE_RATIONAL:
             mlt_properties_set(p, "type", "string");
@@ -227,17 +222,24 @@ static void add_parameters(mlt_properties params,
             break;
         case AV_OPT_TYPE_COLOR:
             mlt_properties_set(p, "type", "color");
-            if (opt->default_val.str) {
-                size_t len = strlen(opt->default_val.str) + 3;
-                char *quoted = malloc(len);
-                snprintf(quoted, len, "'%s'", opt->default_val.str);
-                mlt_properties_set(p, "default", quoted);
-                free(quoted);
-            }
+            if (opt->default_val.str && strcmp(opt->default_val.str, ""))
+                mlt_properties_set(p, "default", opt->default_val.str);
         default:
             mlt_properties_set(p, "type", "string");
             break;
         }
+
+        // Fix up minimum/maximum if serialized as scientific notation (invalid YAML number)
+        const char *props[] = {"minimum", "maximum", NULL};
+        for (int pi = 0; props[pi]; pi++) {
+            const char *v = mlt_properties_get(p, props[pi]);
+            if (v && (strchr(v, 'e') || strchr(v, 'E'))) {
+                char strbuf[32];
+                snprintf(strbuf, sizeof(strbuf), "%f", mlt_properties_get_double(p, props[pi]));
+                mlt_properties_set(p, props[pi], strbuf);
+            }
+        }
+
         // If the option belongs to a group (unit) and is not a constant (keyword value)
         if (opt->unit && opt->type != AV_OPT_TYPE_CONST) {
             // Create a 'values' sequence.
@@ -338,6 +340,7 @@ static mlt_properties avfilter_metadata(mlt_service_type type, const char *id, v
     mlt_properties_set(metadata, "version", LIBAVFILTER_IDENT);
     mlt_properties_set(metadata, "identifier", id);
     mlt_properties_set(metadata, "description", f->description);
+    mlt_properties_set(metadata, "language", "en");
     mlt_properties_set(
         metadata,
         "notes",

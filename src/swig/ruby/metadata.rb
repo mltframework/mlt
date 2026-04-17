@@ -119,19 +119,25 @@ def output(mlt_type, services, type_title)
       filename = File.join($folder, type_title + name.capitalize.gsub('.', '-'))
 #      puts "Processing #{filename}"
       begin
-        yml = YAML.load(meta.serialise_yaml)
-        if yml
-          File.open(filename + '.md', 'w') do |f|
-            f.puts $processor.result(binding)
-          end
-        else
-          puts "Failed to write file for #{filename}"
-        end
-        filename = type_title + name.capitalize.gsub('.', '-')
-        index.puts "* [#{name}](../#{filename}/): #{meta.get('title')}\n"
-      rescue SyntaxError
-          puts "Failed to parse YAML for #{filename}"
+        raw = meta.serialise_yaml
+        yml = YAML.load(raw)
+      rescue => e
+        puts "Failed to parse YAML for #{filename}: #{e.message}"
+        # Write bad YAML to a temp file for inspection
+        tmp_filename = "/tmp/bad_#{name}.yaml"
+        File.write(tmp_filename, raw)
+        puts "See #{tmp_filename}"
+        next
       end
+      if yml
+        File.open(filename + '.md', 'w') do |f|
+          f.puts $processor.result(binding)
+        end
+      else
+        puts "Failed to write file for #{filename}"
+      end
+      filename = type_title + name.capitalize.gsub('.', '-')
+      index.puts "* [#{name}](../#{filename}/): #{meta.get('title')}\n"
     else
       puts "No metadata for #{name} #{type_title}"
     end unless name.start_with?('lv2.', 'vst2.')
