@@ -454,7 +454,10 @@ extern void mlt_chain_attach_normalizers(mlt_chain self)
         char temp[PATH_MAX];
         snprintf(temp, PATH_MAX, "%s/chain_normalizers.ini", mlt_environment("MLT_DATA"));
         normalisers = mlt_properties_load(temp);
-        mlt_factory_register_for_clean_up(normalisers, (mlt_destructor) mlt_properties_close);
+        if(normalisers)
+            mlt_factory_register_for_clean_up(normalisers, (mlt_destructor) mlt_properties_close);
+        else
+            mlt_log_error("Failed to load normalizers from %s\n", temp);
     }
 
     // Apply normalisers
