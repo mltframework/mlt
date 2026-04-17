@@ -1,7 +1,7 @@
 /*
  * factory.c -- the factory method interfaces
  * Copyright (c) 2008 Marco Gittler <g.marco@freenet.de>
- * Copyright (C) 2009-2025 Meltytech, LLC
+ * Copyright (C) 2009-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -208,7 +208,7 @@ static mlt_properties fill_param_info(mlt_service_type type, const char *service
                                 0,
                                 (mlt_destructor) mlt_properties_close,
                                 NULL);
-        f0r_param_info_t paraminfo;
+        f0r_param_info_t paraminfo = {NULL, 0, NULL};
         param_info(&paraminfo, j);
         mlt_properties_set(pnum, "identifier", string);
         mlt_properties_set(pnum, "title", paraminfo.name);
