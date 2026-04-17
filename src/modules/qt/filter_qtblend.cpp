@@ -246,13 +246,14 @@ static int filter_get_image(mlt_frame frame,
                                               Qt::IgnoreAspectRatio,
                                               hqPainting ? Qt::SmoothTransformation
                                                          : Qt::FastTransformation);
-        } else if (scale > 1.) {
-            // Use QPainter scaling
+        } else {
             // Center image in rect
             transform.translate((rect.w - (b_width * scale)) / 2.0,
                                 (rect.h - (b_height * scale)) / 2.0);
-            // Scale
-            transform.scale(scale, scale);
+            if (scale > 1.) {
+                // Use QPainter scaling
+                transform.scale(scale, scale);
+            }
         }
     }
 
