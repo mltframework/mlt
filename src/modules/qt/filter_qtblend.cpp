@@ -218,7 +218,7 @@ static int filter_get_image(mlt_frame frame,
 
     char *interps = mlt_properties_get(frame_properties, "consumer.rescale");
     bool hqPainting = interps
-                      && (strcmp(interps, "nearest") == 0 || !strcmp(interps, "neighbor") == 0);
+                      && strcmp(interps, "nearest") && strcmp(interps, "neighbor");
 
     // resize to rect
     bool scaled = false;
