@@ -249,8 +249,7 @@ static int get_image(mlt_frame a_frame,
     // We don't do subpixel smoothing for nearest neighbour interpolation
     // so people can use that to upscale pixel art and keep the hard edges.
     char *interps = mlt_properties_get(properties, "consumer.rescale");
-    bool hqPainting = interps
-                      && strcmp(interps, "nearest") && strcmp(interps, "neighbor");
+    bool hqPainting = interps && strcmp(interps, "nearest") && strcmp(interps, "neighbor");
 
     // convert top mlt image to qimage
     QImage topImg;
