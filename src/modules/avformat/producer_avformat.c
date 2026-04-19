@@ -477,6 +477,9 @@ static AVRational guess_frame_rate(producer_avformat self, AVStream *stream)
             frame_rate.num = 48000;
             frame_rate.den = 1001;
             break;
+        case AVMEDIA_TYPE_SUBTITLE:
+            mlt_properties_set(meta_media, key, "subtitle");
+            break;
         default:
             break;
         }
