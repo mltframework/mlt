@@ -3,7 +3,7 @@
  * \brief video output definition
  * \see mlt_profile_s
  *
- * Copyright (C) 2007-2022 Meltytech, LLC
+ * Copyright (C) 2007-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -26,6 +26,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 
 /** the default subdirectory of the datadir for holding profiles */
 #define PROFILES_DIR "/profiles/"
@@ -44,10 +45,13 @@ static mlt_profile mlt_profile_select(const char *name)
 {
     char *filename = NULL;
     const char *prefix = getenv("MLT_PROFILES_PATH");
-    mlt_properties properties = mlt_properties_load(name);
+    mlt_properties properties = NULL;
     mlt_profile profile = NULL;
+    struct stat file_info;
 
     // Try to load from file specification
+    if (name && !mlt_stat(name, &file_info))
+        properties = mlt_properties_load(name);
     if (properties && mlt_properties_get_int(properties, "width")) {
         filename = calloc(1, strlen(name) + 1);
     }
