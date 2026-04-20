@@ -3,7 +3,7 @@
  * \brief provides a map between service and shared objects
  * \see mlt_repository_s
  *
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -122,6 +122,14 @@ mlt_repository mlt_repository_init(const char *directory)
     for (i = 0; i < count; i++) {
         int flags = RTLD_NOW;
         const char *object_name = mlt_properties_get_value(dir, i);
+
+        // Skip invalid current & parent entries
+        if (!object_name)
+            continue;
+        size_t object_name_len = strlen(object_name);
+        if ((object_name_len >= 2 && strcmp(object_name + object_name_len - 2, "/.") == 0)
+            || (object_name_len >= 3 && strcmp(object_name + object_name_len - 3, "/..") == 0))
+            continue;
 
         // check if the plugin was asked to be skipped through MLT_REPOSITORY_DENY
         int ignore = 0;
