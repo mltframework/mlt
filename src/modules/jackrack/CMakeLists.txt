@@ -40,7 +40,7 @@ if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
     target_compile_definitions(mltjackrack PRIVATE RELOCATABLE)
   endif()
 
-  install(FILES filter_jack.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
+  install(FILES filter_jack.yml blacklist.txt DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
 
   if(TARGET JACK::JACK)
     target_sources(mltjackrack PRIVATE filter_jackrack.c)
@@ -60,7 +60,7 @@ target_link_libraries(mltladspa PRIVATE mlt Threads::Threads)
 
 if(USE_LV2 AND GPL)
   target_compile_definitions(mltladspa PRIVATE WITH_LV2)
-  install(FILES filter_lv2.yml producer_lv2.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
+  install(FILES filter_lv2.yml producer_lv2.yml lv2blacklist.txt DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
 endif()
 
 if(USE_VST2 AND GPL)
