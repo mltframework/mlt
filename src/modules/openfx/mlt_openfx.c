@@ -2093,7 +2093,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
         // in accordance with the metadata schema.
         mlt_properties p = mlt_properties_new();
         char key[20];
-        snprintf(key, 20, "%d", mlt_param_count++);
+        snprintf(key, sizeof(key), "%d", mlt_param_count++);
         mlt_properties_set_data(params, key, p, 0, (mlt_destructor) mlt_properties_close, NULL);
 
         mlt_properties_set(p, "identifier", name);
@@ -2191,8 +2191,8 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                         || default_value2 >= FLT_MAX)
                         default_value2 = 0.0;
 
-                    char default_value[20] = "";
-                    sprintf(default_value, "%.4f %.4f", default_value1, default_value2);
+                    char default_value[90] = "";
+                    snprintf(default_value, sizeof(default_value), "%.4f %.4f", default_value1, default_value2);
                     mlt_properties_set(p, "default", default_value);
 
                 } else if (strcmp(param_type, kOfxParamTypeString) == 0) {
@@ -2207,7 +2207,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                     propGetDouble((OfxPropertySetHandle) ppp, p_name, 3, &a);
 
                     char default_value[10] = "#000000FF";
-                    sprintf(default_value,
+                    snprintf(default_value, sizeof(default_value),
                             "#%02X%02X%02X%02X",
                             (unsigned char) (a * 255.0),
                             (unsigned char) (r * 255.0),
@@ -2222,7 +2222,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                     propGetDouble((OfxPropertySetHandle) ppp, p_name, 2, &b);
 
                     char default_value[10] = "#000000FF";
-                    sprintf(default_value,
+                    snprintf(default_value, sizeof(default_value),
                             "#%02X%02X%02XFF",
                             (unsigned char) (r * 255.0),
                             (unsigned char) (g * 255.0),
@@ -2246,7 +2246,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
 
                     for (int jtr = 0; jtr < count; ++jtr) {
                         key[0] = '\0';
-                        sprintf(key, "%d", jtr);
+                        snprintf(key, sizeof(key), "%d", jtr);
                         char *choice_str = NULL;
                         propGetString((OfxPropertySetHandle) ppp,
                                       kOfxParamPropChoiceOption,
