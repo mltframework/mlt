@@ -248,6 +248,9 @@ char* getlocale()
 
 FILE* win32_fopen(const char *filename_utf8, const char *mode_utf8)
 {
+	if (!filename_utf8 || !mode_utf8)
+		return NULL;
+
 	// Convert UTF-8 to wide chars.
 	int n = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, filename_utf8, -1, NULL, 0);
 	if (n > 0) {
@@ -258,11 +261,13 @@ FILE* win32_fopen(const char *filename_utf8, const char *mode_utf8)
 				wchar_t *mode_w = (wchar_t *) calloc(m, sizeof(wchar_t));
 				if (mode_w) {
 					MultiByteToWideChar(CP_UTF8, 0, filename_utf8, -1, filename_w, n);
-					MultiByteToWideChar(CP_UTF8, 0, mode_utf8, -1, mode_w, n);
+					MultiByteToWideChar(CP_UTF8, 0, mode_utf8, -1, mode_w, m);
 					FILE *fh = _wfopen(filename_w, mode_w);
 					free(mode_w);
-					if (fh)
+					if (fh) {
+						free(filename_w);
 						return fh;
+					}
 				}
 			}
 			free(filename_w);
