@@ -1,4 +1,4 @@
-schema_version: 0.1
+schema_version: 7.2
 type: producer
 identifier: kdenlivetitle
 title: Kdenlive Titler
@@ -9,3 +9,5 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+image_formats:
+  - rgba

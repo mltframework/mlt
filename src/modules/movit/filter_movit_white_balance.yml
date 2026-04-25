@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.2
 type: filter
 identifier: movit.white_balance
 title: White Balance (GLSL)
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Steinar H. Gunderson
 license: GPLv2
@@ -10,7 +10,8 @@ language: en
 tags:
   - Video
 description: Color correction in LMS color space.
-
+image_formats:
+  - glsl
 parameters:
   - identifier: neutral_color
     title: Neutral Color

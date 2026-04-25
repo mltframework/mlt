@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.2
 type: filter # consumer, filter, producer, or transition
 identifier: typewriter
 title: TypeWriter
-version: 0.3.5
+version: 1
 copyright: Copyright (C) Rafal Lalik
 license: GPL
 language: en
@@ -11,10 +11,11 @@ tags:
   - Video
 description: |
     Typewriter effect applied to kdenlivetitler producer
-
 notes: >
     Original development: https://github.com/rlalik/mlt_extra_modules
-
+image_formats:
+  - rgba
+  - rgba64
 parameters:
   - identifier: step_length
     title: Distance between basic steps

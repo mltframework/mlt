@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: movit.opacity
 title: Opacity (GLSL)
-version: 5
+version: 6
 copyright: Meltytech, LLC
 creator: Steinar H. Gunderson
 license: GPLv2
@@ -16,7 +16,8 @@ notes: >
   then this preserves that by multiplying the opacity level with the alpha channel.
   This filter is especially handy when used in conjunction with movit.overlay.
   You can also use this to fade a clip from and to black.
-
+image_formats:
+  - glsl
 parameters:
   - identifier: opacity
     title: Opacity

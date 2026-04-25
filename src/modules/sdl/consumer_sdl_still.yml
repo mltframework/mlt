@@ -1,11 +1,13 @@
-schema_version: 0.1
+schema_version: 7.2
 type: consumer
 identifier: sdl_still
 title: SDL RGB (*DEPRECATED*)
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Charles Yates
 license: LGPLv2.1
 language: en
 tags:
   - Video
+image_formats:
+  - rgba

@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: consumer
 identifier: decklink
 title: Blackmagic Design DeckLink Output
-version: 3
+version: 4
 copyright: Copyright (C) 2010-2025 Meltytech, LLC
 license: LGPL
 language: en
@@ -19,6 +19,11 @@ notes: >
 bugs:
   - Only internal keying is supported at this time.
   - Only 8-bit Y'CbCr or RGBA (key) is supported at this time.
+audio_formats:
+  - s16
+image_formats:
+  - rgba
+  - yuv422
 parameters:
   - identifier: resource
     argument: yes

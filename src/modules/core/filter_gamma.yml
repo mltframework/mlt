@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: gamma
 title: Gamma
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Charles Yates
 license: LGPLv2.1
@@ -10,6 +10,8 @@ language: en
 tags:
   - Video
 description: Adjust image luma using a non-linear power-law curve.
+image_formats:
+  - yuv422
 parameters:
   - identifier: gamma
     argument: yes

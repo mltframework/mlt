@@ -1,8 +1,8 @@
-schema_version: 0.2
+schema_version: 7.2
 type: filter
 identifier: audiomap
 title: Remap Channels
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Maksym Veremeyenko
 license: LGPLv2.1
@@ -10,6 +10,13 @@ language: en
 tags:
   - Audio
 description: Copy/swap channels according to given mapping.
+audio_formats:
+  - f32le
+  - float
+  - s16
+  - s32
+  - s32le
+  - u8
 parameters:
   - identifier: '0'
     title: Source of channel 0

@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: consumer
 identifier: ndi
 title: NDI Output (*DEPRECATED*)
-version: 1.0
+version: 2
 creator: Maksym Veremeyenko
 license: LGPLv2.1
 language: en
@@ -11,6 +11,11 @@ tags:
   - Video
   - Network
 description: Audio/Video over IP output using NewTek's NDI technology
+audio_formats:
+  - s16
+image_formats:
+  - rgba
+  - yuv422
 parameters:
   - identifier: resource
     argument: yes

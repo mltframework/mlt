@@ -1,8 +1,8 @@
-schema_version: 0.3
+schema_version: 7.2
 type: filter
 identifier: dance
 title: Dance
-version: 1
+version: 2
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -11,7 +11,9 @@ tags:
 description: >
   An audio visualization filter that moves the image around proportional to the 
   magnitude of the audio spectrum.
-  
+image_formats:
+  - rgba
+  - rgba64
 parameters:
   - identifier: frequency_low
     title: Low Frequency

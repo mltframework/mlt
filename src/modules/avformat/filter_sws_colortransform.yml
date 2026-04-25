@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: sws_colortransform
 title: libswscale Color Transform
-version: 1
+version: 2
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -13,7 +13,15 @@ description: >
   Convert image to and from linear color transfer characteristics using libswscale.
   This filter is designed to work with the color_transform filter to provide
   efficient linear color space conversion.
-
+image_formats:
+  - rgb
+  - rgba
+  - rgba64
+  - yuv420p
+  - yuv420p10
+  - yuv422
+  - yuv422p16
+  - yuv444p10
 parameters:
   - identifier: transfer
     title: Target Transfer Characteristic

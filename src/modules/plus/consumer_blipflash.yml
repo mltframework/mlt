@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: consumer
 identifier: blipflash
 title: Blip Flash
-version: 1
+version: 2
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -12,6 +12,10 @@ tags:
 description: >
   Calculate the A/V sync for a blip flash source. 
   Sync can be recalculated whenever a blip or a flash is detected.
+audio_formats:
+  - float
+image_formats:
+  - yuv422
 parameters:
   - identifier: resource
     argument: yes

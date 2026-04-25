@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.2
 type: filter
 identifier: resize
 title: Pad
-version: 2
+version: 3
 copyright: Meltytech, LLC
 creator: Charles Yates <charles.yates@pandora.be>
 license: LGPLv2.1
@@ -16,3 +16,8 @@ notes: >
   requested after an upstream rescale filter first scales the image to maximise 
   usage of the image area. This filter is automatically invoked by the loader
   as part of image normalization.
+image_formats:
+  - rgb
+  - rgba
+  - yuv420p
+  - yuv422

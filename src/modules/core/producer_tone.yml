@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.2
 type: producer
 identifier: tone
 title: Tone
-version: 1
+version: 2
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -10,6 +10,8 @@ tags:
   - Audio
 description: >
   Generate audio tones.
+audio_formats:
+  - float
 parameters:
   - identifier: frequency
     title: Frequency

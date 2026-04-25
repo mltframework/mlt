@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: vst2
 title: VST2
-version: 2
+version: 3
 license: GPLv2
 language: en
 url: https://www.steinberg.net/en/company/technologies.html
@@ -12,7 +12,8 @@ tags:
 description: Process audio using VST2 plugins.
 notes: >
   Automatically adapts to the number of channels and sampling rate of the consumer.
-
+audio_formats:
+  - float
 parameters:
   - identifier: channel_mask
     title: Channel Mask

@@ -1,8 +1,8 @@
-schema_version: 0.3
+schema_version: 7.2
 type: consumer
 identifier: avformat
 title: FFmpeg Output
-version: 6
+version: 7
 copyright: Copyright (C) 2003-2019 Meltytech, LLC
 license: LGPL
 language: en
@@ -33,6 +33,22 @@ notes: >
   Please note that the exact options depend on the version of libavformat and
   libavcodec on your system.
 
+audio_formats:
+  - s16
+  - s32
+  - s32le
+  - float
+  - f32le
+  - u8
+image_formats:
+  - rgb
+  - rgba
+  - rgba64
+  - yuv420p
+  - yuv420p10
+  - yuv422
+  - yuv422p16
+  - yuv444p10
 parameters:
   - identifier: target
     argument: yes

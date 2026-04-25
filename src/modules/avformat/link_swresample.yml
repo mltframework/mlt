@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: link
 identifier: swresample
 title: FFmpeg Audio Resampler
-version: 1
+version: 2
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -15,3 +15,10 @@ description: >
   
   This link can be added to a chain to normalize audio from the producer to
   provide the rate, channels and format requested by the consumer.
+audio_formats:
+  - s16
+  - s32
+  - s32le
+  - float
+  - f32le
+  - u8
