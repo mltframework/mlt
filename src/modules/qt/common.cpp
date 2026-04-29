@@ -144,8 +144,8 @@ void adjust_mlt_mipmap_size(double scaleTarget, int *b_width, int *b_height)
 // Normalize source dimensions to consumer PAR to handle anamorphic sources
 void normalize_mlt_source_size(double b_ar, double consumer_ar, int *b_width, int b_height)
 {
-    if (b_ar != consumer_ar && b_height > 0) {
+    if (b_ar > 0.0 && consumer_ar > 0.0 && b_ar != consumer_ar && b_height > 0) {
         *b_width = qRound(*b_width * b_ar / consumer_ar);
-        *b_width = qMax(1, *b_width);
     }
+    *b_width = qMax(1, *b_width);
 }
