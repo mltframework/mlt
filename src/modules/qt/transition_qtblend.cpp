@@ -162,7 +162,7 @@ static int get_image(mlt_frame a_frame,
         b_height = *height;
         b_width = *width;
     }*/
-    
+
     // Normalize source dimensions to consumer PAR to handle anamorphic sources
     if (b_ar != consumer_ar && b_height > 0) {
         b_width = qRound(b_width * b_ar / consumer_ar);
@@ -189,11 +189,11 @@ static int get_image(mlt_frame a_frame,
                 }
             }
         }
-        
+
         while (mltMipmapScale * 0.85 >= scaleTarget && mltMipmapScale > 0.001) {
             mltMipmapScale *= 0.85;
         }
-        
+
         if (mltMipmapScale < 1.0) {
             b_width = qRound(b_width * mltMipmapScale);
             b_height = qRound(b_height * mltMipmapScale);
@@ -310,8 +310,7 @@ static int get_image(mlt_frame a_frame,
             }
         }
         // Center image in rect
-        transform.translate((rect.w - (b_width * scale)) / 2.0,
-                            (rect.h - (b_height * scale)) / 2.0);
+        transform.translate((rect.w - (b_width * scale)) / 2.0, (rect.h - (b_height * scale)) / 2.0);
         // Use QPainter scaling for everything
         transform.scale(scale, scale);
     }

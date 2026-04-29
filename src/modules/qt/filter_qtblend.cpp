@@ -165,8 +165,8 @@ static int filter_get_image(mlt_frame frame,
 
     // Apply MLT Mipmapping
     // Adjust requested dimension so MLT (libswscale) does the preliminary downscaling.
-    // Using a step of 0.85 provides a tight bound to target resolution (maximizing quality 
-    // and preventing QPainter aliasing) while keeping the requested dimensions stable 
+    // Using a step of 0.85 provides a tight bound to target resolution (maximizing quality
+    // and preventing QPainter aliasing) while keeping the requested dimensions stable
     // across small animation increments (preventing resampling jitter).
     double mltMipmapScale = 1.0;
     if (rect.w > 0 && rect.h > 0 && b_width > 0 && b_height > 0) {
@@ -181,11 +181,11 @@ static int filter_get_image(mlt_frame frame,
                 scaleTarget = rect.h / b_height;
             }
         }
-        
+
         while (mltMipmapScale * 0.85 >= scaleTarget && mltMipmapScale > 0.001) {
             mltMipmapScale *= 0.85;
         }
-        
+
         if (mltMipmapScale < 1.0) {
             b_width = qRound(b_width * mltMipmapScale);
             b_height = qRound(b_height * mltMipmapScale);
@@ -271,8 +271,7 @@ static int filter_get_image(mlt_frame frame,
             scale = rect.h / b_height;
         }
         // Center image in rect
-        transform.translate((rect.w - (b_width * scale)) / 2.0,
-                            (rect.h - (b_height * scale)) / 2.0);
+        transform.translate((rect.w - (b_width * scale)) / 2.0, (rect.h - (b_height * scale)) / 2.0);
         // Use QPainter scaling for everything
         transform.scale(scale, scale);
     }
