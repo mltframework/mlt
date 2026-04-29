@@ -160,6 +160,7 @@ static int filter_get_image(mlt_frame frame,
     // Normalize source dimensions to consumer PAR to handle anamorphic sources
     if (b_ar != consumer_ar && b_height > 0) {
         b_width = qRound(b_width * b_ar / consumer_ar);
+        b_width = qMax(1, b_width);
     }
 
     // Apply MLT Mipmapping
