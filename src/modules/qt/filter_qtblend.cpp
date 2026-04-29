@@ -158,17 +158,14 @@ static int filter_get_image(mlt_frame frame,
     }
 
     // Normalize source dimensions to consumer PAR to handle anamorphic sources
-    if (b_ar != consumer_ar && b_height > 0) {
-        b_width = qRound(b_width * b_ar / consumer_ar);
-        b_width = qMax(1, b_width);
-    }
+    normalize_mlt_source_size(b_ar, consumer_ar, &b_width, b_height);
 
-    // Apply MLT Mipmapping
+
+    // Fix for bug #1228 and optimization.
     // Adjust requested dimension so MLT (libswscale) does the preliminary downscaling.
-    // Using a step of 0.85 provides a tight bound to target resolution (maximizing quality
-    // and preventing QPainter aliasing) while keeping the requested dimensions stable
-    // across small animation increments (preventing resampling jitter).
-    double mltMipmapScale = 1.0;
+    // Using a step defined by MLT_QT_MIPMAP_STEP provides a tight bound to target resolution
+    // (maximizing quality and preventing QPainter aliasing) while keeping the requested
+    // dimensions stable across small animation increments.
     if (rect.w > 0 && rect.h > 0 && b_width > 0 && b_height > 0) {
         double scaleTarget;
         if (distort) {
@@ -181,17 +178,7 @@ static int filter_get_image(mlt_frame frame,
                 scaleTarget = rect.h / b_height;
             }
         }
-
-        while (mltMipmapScale * 0.85 >= scaleTarget && mltMipmapScale > 0.001) {
-            mltMipmapScale *= 0.85;
-        }
-
-        if (mltMipmapScale < 1.0) {
-            b_width = qRound(b_width * mltMipmapScale);
-            b_height = qRound(b_height * mltMipmapScale);
-            b_width = qMax(1, b_width);
-            b_height = qMax(1, b_height);
-        }
+        adjust_mlt_mipmap_size(scaleTarget, &b_width, &b_height);
     }
 
     transform.translate(rect.x, rect.y);

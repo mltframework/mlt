@@ -121,3 +121,31 @@ int create_image(mlt_frame frame,
 
     return error;
 }
+
+
+
+// Helper for mipmapping calculation shared in filter_qtblend and transition_qtblend
+void adjust_mlt_mipmap_size(double scaleTarget, int *b_width, int *b_height)
+{
+    double mltMipmapScale = 1.0;
+    while (mltMipmapScale * MLT_QT_MIPMAP_STEP >= scaleTarget && mltMipmapScale > 0.001) {
+        mltMipmapScale *= MLT_QT_MIPMAP_STEP;
+    }
+
+    if (mltMipmapScale < 1.0) {
+        *b_width = qRound(*b_width * mltMipmapScale);
+        *b_height = qRound(*b_height * mltMipmapScale);
+        *b_width = qMax(1, *b_width);
+        *b_height = qMax(1, *b_height);
+    }
+}
+
+
+// Normalize source dimensions to consumer PAR to handle anamorphic sources
+void normalize_mlt_source_size(double b_ar, double consumer_ar, int *b_width, int b_height)
+{
+    if (b_ar != consumer_ar && b_height > 0) {
+        *b_width = qRound(*b_width * b_ar / consumer_ar);
+        *b_width = qMax(1, *b_width);
+    }
+}
