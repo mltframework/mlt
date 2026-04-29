@@ -88,6 +88,10 @@ static int get_image(mlt_frame a_frame,
         b_width = *width;
         b_height = *height;
     }
+    // Special case - aspect_ratio = 0
+    if (mlt_frame_get_aspect_ratio(b_frame) == 0) {
+        mlt_frame_set_aspect_ratio(b_frame, consumer_ar);
+    }
     double b_ar = mlt_frame_get_aspect_ratio(b_frame);
     double b_dar = b_ar * b_width / b_height;
     double geometry_dar = consumer_ar * normalized_width / normalized_height;
@@ -192,9 +196,6 @@ static int get_image(mlt_frame a_frame,
         adjust_mlt_mipmap_size(scaleTarget, &b_width, &b_height);
     }
 
-    if (mlt_frame_get_aspect_ratio(b_frame) == 0) {
-        mlt_frame_set_aspect_ratio(b_frame, consumer_ar);
-    }
 
     if (mlt_properties_get(transition_properties, "rotation")) {
         double angle
