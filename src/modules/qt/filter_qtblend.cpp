@@ -160,7 +160,6 @@ static int filter_get_image(mlt_frame frame,
     // Normalize source dimensions to consumer PAR to handle anamorphic sources
     normalize_mlt_source_size(b_ar, consumer_ar, &b_width, b_height);
 
-
     // Fix for bug #1228 and optimization.
     // Adjust requested dimension so MLT (libswscale) does the preliminary downscaling.
     // Using a step defined by MLT_QT_MIPMAP_STEP provides a tight bound to target resolution

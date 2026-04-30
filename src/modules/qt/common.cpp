@@ -122,8 +122,6 @@ int create_image(mlt_frame frame,
     return error;
 }
 
-
-
 // Helper for mipmapping calculation shared in filter_qtblend and transition_qtblend
 void adjust_mlt_mipmap_size(double scaleTarget, int *b_width, int *b_height)
 {
@@ -142,7 +140,6 @@ void adjust_mlt_mipmap_size(double scaleTarget, int *b_width, int *b_height)
         *b_height = qMax(1, *b_height);
     }
 }
-
 
 // Normalize source dimensions to consumer PAR to handle anamorphic sources
 void normalize_mlt_source_size(double b_ar, double consumer_ar, int *b_width, int b_height)

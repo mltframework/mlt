@@ -196,7 +196,6 @@ static int get_image(mlt_frame a_frame,
         adjust_mlt_mipmap_size(scaleTarget, &b_width, &b_height);
     }
 
-
     if (mlt_properties_get(transition_properties, "rotation")) {
         double angle
             = mlt_properties_anim_get_double(transition_properties, "rotation", position, length);
