@@ -246,6 +246,27 @@ static inline int is_known_prefix(const char *resource)
     return 0;
 }
 
+static inline int is_absolute_path(const char *path)
+{
+    int drive_letter = strlen(path) > 3 && path[1] == ':' && (path[2] == '/' || path[2] == '\\');
+    return path[0] == '/' || path[0] == '\\' || drive_letter;
+}
+
+static void set_root_property(deserialise_context context, const char *root)
+{
+    const char *document_root = mlt_properties_get(context->producer_map, "root");
+
+    if (root && root[0] && document_root && document_root[0] && !is_absolute_path(root)
+        && !strchr(root, ':')) {
+        char *qualified = malloc(strlen(document_root) + strlen(root) + 2);
+        sprintf(qualified, "%s/%s", document_root, root);
+        mlt_properties_set_string(context->producer_map, "root", qualified);
+        free(qualified);
+    } else {
+        mlt_properties_set_string(context->producer_map, "root", root);
+    }
+}
+
 // Prepend the property value with the document root
 static inline void qualify_property(deserialise_context context,
                                     mlt_properties properties,
@@ -265,10 +286,7 @@ static inline void qualify_property(deserialise_context context,
         // Qualify file name properties
         if (root != NULL && strcmp(root, "")) {
             char *full_resource = calloc(1, n);
-            int drive_letter = strlen(resource) > 3 && resource[1] == ':'
-                               && (resource[2] == '/' || resource[2] == '\\');
-            if (resource[0] != '/' && resource[0] != '\\' && !drive_letter
-                && !is_known_prefix(resource)) {
+            if (!is_absolute_path(resource) && !is_known_prefix(resource)) {
                 if (prefix_size)
                     strncat(full_resource, resource_orig, prefix_size);
                 strcat(full_resource, root);
@@ -1631,10 +1649,14 @@ static void on_start_element(void *ctx, const xmlChar *name, const xmlChar **att
         on_start_consumer(context, name, atts);
     else if (xmlStrcmp(name, _x("westley")) == 0 || xmlStrcmp(name, _x("mlt")) == 0) {
         for (; atts != NULL && *atts != NULL; atts += 2) {
-            if (xmlStrcmp(atts[0], _x("LC_NUMERIC")))
+            if (xmlStrcmp(atts[0], _x("LC_NUMERIC")) == 0) {
+                if (!context->lc_numeric)
+                    context->lc_numeric = strdup(_s(atts[1]));
+            } else if (xmlStrcmp(atts[0], _x("root")) == 0) {
+                set_root_property(context, _s(atts[1]));
+            } else {
                 mlt_properties_set_string(context->producer_map, _s(atts[0]), _s(atts[1]));
-            else if (!context->lc_numeric)
-                context->lc_numeric = strdup(_s(atts[1]));
+            }
         }
     }
 }

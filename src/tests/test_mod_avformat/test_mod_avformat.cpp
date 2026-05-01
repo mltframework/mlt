@@ -16,6 +16,9 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <QDir>
+#include <QFile>
+#include <QTemporaryDir>
 #include <QtTest>
 
 #include <mlt++/Mlt.h>
@@ -41,6 +44,33 @@ private Q_SLOTS:
     {
         Profile profile;
         Producer producer(profile, "avformat-novalidate:blue.mpg");
+    }
+
+    void XmlRelativeRootIsRelativeToDocument()
+    {
+        QTemporaryDir tempDir;
+        QVERIFY(tempDir.isValid());
+        QVERIFY(QDir(tempDir.path()).mkpath("subdir"));
+
+        const QString xmlPath = tempDir.filePath("subdir/project.mlt");
+        QFile xmlFile(xmlPath);
+        QVERIFY(xmlFile.open(QIODevice::WriteOnly | QIODevice::Text));
+        xmlFile.write(R"(<?xml version="1.0"?>
+<mlt root=".">
+  <producer id="producer0">
+    <property name="mlt_service">avformat-novalidate</property>
+    <property name="resource">../media.mp4</property>
+  </producer>
+</mlt>
+)");
+        xmlFile.close();
+
+        Profile profile;
+        Producer producer(profile, "xml", xmlPath.toUtf8().constData());
+
+        QVERIFY(producer.is_valid());
+        QCOMPARE(QString::fromUtf8(producer.get("resource")),
+                 QDir(tempDir.filePath("subdir")).filePath("./../media.mp4"));
     }
 };
 
