@@ -284,6 +284,13 @@ static mlt_consumer create_consumer(mlt_profile profile, char *id)
     return consumer;
 }
 
+static int consumer_is_xml(mlt_consumer consumer)
+{
+    mlt_properties properties = consumer ? MLT_CONSUMER_PROPERTIES(consumer) : NULL;
+    const char *service = properties ? mlt_properties_get(properties, "mlt_service") : NULL;
+    return service && !strcmp(service, "xml");
+}
+
 static int load_consumer(mlt_consumer *consumer, mlt_profile profile, int argc, char **argv)
 {
     int i;
@@ -955,11 +962,13 @@ int main(int argc, char **argv)
     // Look for the consumer option to load profile settings from consumer properties
     backup_profile = mlt_profile_clone(profile);
 
-    // Try to initialize QApplication on the main thread to prevent crash
-    mlt_filter_close(mlt_factory_filter(profile, "qtcrop", NULL));
-
     if (load_consumer(&consumer, profile, argc, argv) != EXIT_SUCCESS)
         return error;
+
+    // The XML consumer serializes the graph and should not instantiate Qt filters here.
+    // Other paths keep the main-thread Qt preflight for filters used during rendering.
+    if (!consumer_is_xml(consumer))
+        mlt_filter_close(mlt_factory_filter(profile, "qtcrop", NULL));
 
     // If the consumer changed the profile, then it is explicit.
     if (backup_profile && !profile->is_explicit
