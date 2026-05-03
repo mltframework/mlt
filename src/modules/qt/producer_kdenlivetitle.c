@@ -186,6 +186,7 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
 static void producer_close(mlt_producer producer)
 {
     producer_ktitle self = producer->child;
+    pthread_mutex_destroy(&self->mutex);
     producer->close = NULL;
     mlt_service_cache_purge(MLT_PRODUCER_SERVICE(producer));
     mlt_producer_close(producer);
@@ -202,8 +203,17 @@ mlt_producer producer_kdenlivetitle_init(mlt_profile profile,
     producer_ktitle self = calloc(1, sizeof(struct producer_ktitle_s));
     if (self != NULL && mlt_producer_init(&self->parent, self) == 0) {
         mlt_producer producer = &self->parent;
+
         /* Get the properties interface */
         mlt_properties properties = MLT_PRODUCER_PROPERTIES(producer);
+
+        /* Initialize the mutex */
+        if (pthread_mutex_init(&self->mutex, NULL) != 0) {
+            mlt_producer_close(producer);
+            free(self);
+            return NULL;
+        }
+
         /* Callback registration */
         producer->get_frame = producer_get_frame;
         producer->close = (mlt_destructor) producer_close;
