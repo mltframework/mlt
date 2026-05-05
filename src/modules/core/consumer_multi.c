@@ -122,6 +122,9 @@ static void attach_normalizers(mlt_profile profile, mlt_service service)
 
     // Apply normalizers
     for (i = 0; i < mlt_properties_count(normalizers); i++) {
+        const char *key = mlt_properties_get_name(normalizers, i);
+        if (!key || !strcmp(key, "image_convert"))
+            continue;
         char *value = mlt_properties_get_value(normalizers, i);
         mlt_tokeniser_parse_new(tokeniser, value, ",");
         int created = 0;
@@ -136,20 +139,27 @@ static void attach_normalizers(mlt_profile profile, mlt_service service)
     // Close the tokeniser
     mlt_tokeniser_close(tokeniser);
 
-    // Attach the audio and video format converters
-    int created = 0;
-    // movit.convert skips setting the frame->convert_image pointer if GLSL cannot be used.
-    mlt_filter filter = mlt_factory_filter(profile, "movit.convert", NULL);
-    if (filter != NULL) {
-        mlt_properties_set_int(MLT_FILTER_PROPERTIES(filter), "_loader", 1);
-        mlt_service_attach(service, filter);
-        mlt_filter_close(filter);
-        created = 1;
+    // Attach image converters from loader.ini image_convert (all listed, in order).
+    {
+        char *value = mlt_properties_get(normalizers, "image_convert");
+        if (value) {
+            mlt_tokeniser tokeniser2 = mlt_tokeniser_init();
+            mlt_tokeniser_parse_new(tokeniser2, value, ",");
+            for (int j = 0; j < mlt_tokeniser_count(tokeniser2); j++) {
+                char *name = mlt_tokeniser_get_string(tokeniser2, j);
+                if (name) {
+                    mlt_filter f = mlt_factory_filter(profile, name, NULL);
+                    if (f) {
+                        mlt_properties_set_int(MLT_FILTER_PROPERTIES(f), "_loader", 1);
+                        mlt_service_attach(service, f);
+                        mlt_filter_close(f);
+                    }
+                }
+            }
+            mlt_tokeniser_close(tokeniser2);
+        }
     }
-    // avcolor_space and imageconvert only set frame->convert_image if it has not been set.
-    create_filter(profile, service, "avcolor_space", &created);
-    if (!created)
-        create_filter(profile, service, "imageconvert", &created);
+    int created = 0;
     create_filter(profile, service, "audioconvert", &created);
 }
 

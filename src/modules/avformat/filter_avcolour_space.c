@@ -1,6 +1,6 @@
 /*
  * filter_avcolour_space.c -- Colour space filter
- * Copyright (C) 2004-2025 Meltytech, LLC
+ * Copyright (C) 2004-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -355,9 +355,7 @@ static int convert_image(mlt_frame frame,
 
 static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
 {
-    if (!frame->convert_image)
-        frame->convert_image = convert_image;
-
+    mlt_frame_push_convert_image(frame, convert_image);
     return frame;
 }
 

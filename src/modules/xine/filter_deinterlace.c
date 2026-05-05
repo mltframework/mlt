@@ -1,6 +1,6 @@
 /*
  * filter_deinterlace.c -- deinterlace filter
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -141,8 +141,7 @@ static int deinterlace_yadif(mlt_frame frame,
     // Check that we aren't already progressive
     if (!error && previous_image && !progressive) {
         // OK, now we know we have work to do and can request the image in our format
-        frame->convert_image(previous_frame, &previous_image, format, mlt_image_yuv422);
-
+        mlt_frame_convert_image(previous_frame, &previous_image, format, mlt_image_yuv422);
         mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
         // Get the current frame's image
@@ -351,9 +350,8 @@ static int filter_get_image(mlt_frame frame,
 
             if (!error && !progressive) {
                 // OK, now we know we have work to do and can request the image in our format
-                error = frame->convert_image(frame, image, format, mlt_image_yuv422);
+                error = mlt_frame_convert_image(frame, image, format, mlt_image_yuv422);
 
-                // Check that we aren't already progressive
                 if (!error && *image && *format == mlt_image_yuv422) {
                     // Deinterlace the image using one of the Xine deinterlacers
                     int image_size = mlt_image_format_size(*format, *width, *height, NULL);

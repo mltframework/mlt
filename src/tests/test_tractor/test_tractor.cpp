@@ -19,6 +19,7 @@
 #include <QString>
 #include <QtTest>
 
+#include <framework/mlt.h>
 #include <mlt++/Mlt.h>
 using namespace Mlt;
 
@@ -401,6 +402,37 @@ private Q_SLOTS:
         t.remove_track(1);
         QCOMPARE(t.count(), 1);
         QCOMPARE(filter.get_track(), 0);
+    }
+
+    void ConvertImagePropagatesThroughMultitrack()
+    {
+        // The tractor's producer_get_image calls mlt_frame_copy_convert_image to
+        // propagate converters from each track frame onto the merged frame.
+        Tractor t(profile);
+        QVERIFY(t.is_valid());
+
+        // Wrap the track producer in loader so that image converter filters
+        // (avcolor_space, imageconvert) are attached and pushed onto track frames.
+        Producer p1(profile, "loader", "noise");
+        QVERIFY(p1.is_valid());
+        t.set_track(p1, 0);
+
+        mlt_frame merged = NULL;
+        mlt_service_get_frame(MLT_PRODUCER_SERVICE(t.get_producer()), &merged, 0);
+        QVERIFY(merged != NULL);
+
+        // Calling get_image triggers producer_get_image in the tractor, which pulls
+        // track frames through the loader filter chain (causing converters to be pushed
+        // onto them), then copies them onto the merged frame via
+        // mlt_frame_copy_convert_image.
+        uint8_t *image = NULL;
+        mlt_image_format fmt = mlt_image_rgb;
+        int width = 0, height = 0;
+        mlt_frame_get_image(merged, &image, &fmt, &width, &height, 0);
+
+        QVERIFY(mlt_frame_has_convert_image(merged));
+
+        mlt_frame_close(merged);
     }
 };
 

@@ -261,7 +261,7 @@ static int filter_get_image(mlt_frame frame,
     }
 
     if (*format != requested_format) {
-        frame->convert_image(frame, image, format, mlt_image_rgba);
+        mlt_frame_convert_image(frame, image, format, mlt_image_rgba);
         *format = mlt_image_rgba;
     }
 

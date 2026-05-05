@@ -1,6 +1,6 @@
 /*
  * link_timeremap.c
- * Copyright (C) 2020-2025 Meltytech, LLC
+ * Copyright (C) 2020-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -629,18 +629,7 @@ static int link_get_frame(mlt_link self, mlt_frame_ptr frame, int index)
     // Copy some useful properties from one of the source frames.
     (*frame)->convert_image = src_frame->convert_image;
     (*frame)->convert_audio = src_frame->convert_audio;
-    mlt_filter cpu_csc = (mlt_filter) mlt_properties_get_data(MLT_FRAME_PROPERTIES(src_frame),
-                                                              "_movit cpu_convert",
-                                                              NULL);
-    if (cpu_csc) {
-        mlt_properties_inc_ref(MLT_FILTER_PROPERTIES(cpu_csc));
-        mlt_properties_set_data(MLT_FRAME_PROPERTIES(*frame),
-                                "_movit cpu_convert",
-                                cpu_csc,
-                                0,
-                                (mlt_destructor) mlt_filter_close,
-                                NULL);
-    }
+    mlt_frame_copy_convert_image(*frame, src_frame);
     mlt_properties_pass_list(MLT_FRAME_PROPERTIES(*frame),
                              MLT_FRAME_PROPERTIES(src_frame),
                              "audio_frequency");

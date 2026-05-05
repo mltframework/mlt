@@ -1,6 +1,6 @@
 /*
  * producer_loader.c -- auto-load producer by file name extension
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -195,29 +195,30 @@ static void create_filter(mlt_profile profile,
     free(id);
 }
 
-static void attach_normalizers(mlt_profile profile, mlt_producer producer, int nogl)
+static void ensure_normalizers_loaded(void)
 {
-    // Loop variable
-    int i;
-
-    // Tokeniser
-    mlt_tokeniser tokeniser = mlt_tokeniser_init();
-
-    // We only need to load the normalizing properties once
     if (normalizers == NULL) {
         char temp[PATH_MAX];
         snprintf(temp, sizeof(temp), "%s/core/loader.ini", mlt_environment("MLT_DATA"));
         normalizers = mlt_properties_load(temp);
         mlt_factory_register_for_clean_up(normalizers, (mlt_destructor) mlt_properties_close);
     }
+}
 
-    // Apply normalizers
-    for (i = 0; i < mlt_properties_count(normalizers); i++) {
-        int j = 0;
+static void attach_normalizers(mlt_profile profile, mlt_producer producer, int nogl)
+{
+    mlt_tokeniser tokeniser = mlt_tokeniser_init();
+
+    ensure_normalizers_loaded();
+
+    for (int i = 0; i < mlt_properties_count(normalizers); i++) {
+        const char *key = mlt_properties_get_name(normalizers, i);
+        if (!key || !strcmp(key, "image_convert"))
+            continue;
         int created = 0;
         char *value = mlt_properties_get_value(normalizers, i);
         mlt_tokeniser_parse_new(tokeniser, value, ",");
-        for (j = 0; !created && j < mlt_tokeniser_count(tokeniser); j++) {
+        for (int j = 0; !created && j < mlt_tokeniser_count(tokeniser); j++) {
             const char *filter_name = mlt_tokeniser_get_string(tokeniser, j);
             if (!nogl || (filter_name && strncmp(filter_name, "movit.", 6)))
                 create_filter(profile, producer, filter_name, &created);
@@ -225,6 +226,24 @@ static void attach_normalizers(mlt_profile profile, mlt_producer producer, int n
     }
 
     // Close the tokeniser
+    mlt_tokeniser_close(tokeniser);
+}
+
+static void attach_image_converters(mlt_profile profile, mlt_producer producer, int nogl)
+{
+    ensure_normalizers_loaded();
+    char *value = mlt_properties_get(normalizers, "image_convert");
+    if (!value)
+        return;
+    mlt_tokeniser tokeniser = mlt_tokeniser_init();
+    mlt_tokeniser_parse_new(tokeniser, value, ",");
+    for (int j = 0; j < mlt_tokeniser_count(tokeniser); j++) {
+        const char *name = mlt_tokeniser_get_string(tokeniser, j);
+        if (name && (!nogl || strncmp(name, "movit.", 6) != 0)) {
+            int created = 0;
+            create_filter(profile, producer, name, &created);
+        }
+    }
     mlt_tokeniser_close(tokeniser);
 }
 
@@ -253,15 +272,10 @@ mlt_producer producer_loader_init(mlt_profile profile,
         attach_normalizers(profile, producer, nogl);
 
     if (producer && mlt_service_identify(MLT_PRODUCER_SERVICE(producer)) != mlt_service_chain_type) {
-        // Always let the image and audio be converted
+        // Always let the image and audio be converted.
+        // Image converters are loaded from loader.ini image_convert in order.
+        attach_image_converters(profile, producer, nogl);
         int created = 0;
-        // movit.convert skips setting the frame->convert_image pointer if GLSL cannot be used.
-        if (!nogl)
-            create_filter(profile, producer, "movit.convert", &created);
-        // avcolor_space and imageconvert only set frame->convert_image if it has not been set.
-        create_filter(profile, producer, "avcolor_space", &created);
-        if (!created)
-            create_filter(profile, producer, "imageconvert", &created);
         create_filter(profile, producer, "audioconvert", &created);
     }
 

@@ -3,7 +3,7 @@
  * \brief interface for all frame classes
  * \see mlt_frame_s
  *
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -52,6 +52,16 @@ typedef int (*mlt_get_audio)(mlt_frame self,
                              int *channels,
                              int *samples);
 
+/** Callback function to convert image format.
+ *
+ * Registered converters are tried in order. Return non-zero to indicate the
+ * conversion was not handled so the next registered converter will be tried.
+ */
+typedef int (*mlt_convert_image)(mlt_frame self,
+                                 uint8_t **image,
+                                 mlt_image_format *input,
+                                 mlt_image_format output);
+
 /** \brief Frame class
  *
  * The frame is the primary data object that gets passed around to and through services.
@@ -91,7 +101,9 @@ struct mlt_frame_s
 {
     struct mlt_properties_s parent; /**< \private A frame extends properties. */
 
-    /** Convert the image format (callback function).
+    /** Image format conversion dispatcher (read-only after init).
+	 * Always set to mlt_frame_convert_image by mlt_frame_init().
+	 * Do not set this field directly; use mlt_frame_push_convert_image() instead.
 	 * \param self a frame
 	 * \param[in,out] image a buffer of image data
 	 * \param[in,out] input the image format of supplied image data
@@ -171,6 +183,17 @@ MLT_EXPORT mlt_producer mlt_frame_get_original_producer(mlt_frame self);
 MLT_EXPORT void mlt_frame_close(mlt_frame self);
 MLT_EXPORT mlt_properties mlt_frame_unique_properties(mlt_frame self, mlt_service service);
 MLT_EXPORT mlt_properties mlt_frame_get_unique_properties(mlt_frame self, mlt_service service);
+MLT_EXPORT void mlt_frame_push_convert_image(mlt_frame self, mlt_convert_image convert);
+MLT_EXPORT int mlt_frame_has_convert_image(mlt_frame self);
+MLT_EXPORT int mlt_frame_convert_image(mlt_frame self,
+                                       uint8_t **image,
+                                       mlt_image_format *format,
+                                       mlt_image_format output);
+MLT_EXPORT int mlt_frame_next_convert_image(mlt_frame self,
+                                            uint8_t **image,
+                                            mlt_image_format *format,
+                                            mlt_image_format output);
+MLT_EXPORT void mlt_frame_copy_convert_image(mlt_frame dst, mlt_frame src);
 MLT_EXPORT mlt_frame mlt_frame_clone(mlt_frame self, int is_deep);
 MLT_EXPORT mlt_frame mlt_frame_clone_audio(mlt_frame self, int is_deep);
 MLT_EXPORT mlt_frame mlt_frame_clone_image(mlt_frame self, int is_deep);

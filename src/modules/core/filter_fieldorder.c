@@ -1,6 +1,6 @@
 /*
  * filter_fieldorder.c -- change field dominance
- * Copyright (C) 2011-2019 Meltytech, LLC
+ * Copyright (C) 2011-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -54,8 +54,8 @@ static int get_image(mlt_frame frame,
             && mlt_properties_get(properties, "progressive")
             && mlt_properties_get_int(properties, "progressive") == 0) {
             // We only work with non-planar formats
-            if (*format == mlt_image_yuv420p && frame->convert_image)
-                error = frame->convert_image(frame, image, format, mlt_image_yuv422);
+            if (*format == mlt_image_yuv420p && mlt_frame_has_convert_image(frame))
+                error = mlt_frame_convert_image(frame, image, format, mlt_image_yuv422);
 
             // Make a new image
             int bpp;

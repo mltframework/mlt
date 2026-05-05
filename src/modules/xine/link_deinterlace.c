@@ -1,6 +1,6 @@
 /*
  * link_deinterlace.c
- * Copyright (C) 2023 Meltytech, LLC
+ * Copyright (C) 2023-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -75,10 +75,10 @@ static int link_get_image(mlt_frame frame,
     if (srcimg.data) // Maybe already received during progressive check
     {
         if (srcimg.format != mlt_image_yuv422) {
-            error = frame->convert_image(frame,
-                                         (uint8_t **) &srcimg.data,
-                                         &srcimg.format,
-                                         mlt_image_yuv422);
+            error = mlt_frame_convert_image(frame,
+                                            (uint8_t **) &srcimg.data,
+                                            &srcimg.format,
+                                            mlt_image_yuv422);
             if (error) {
                 mlt_log_error(MLT_LINK_SERVICE(self), "Failed to convert image\n");
                 return error;

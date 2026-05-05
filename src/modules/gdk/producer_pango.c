@@ -712,8 +712,8 @@ static int producer_get_image(mlt_frame frame,
             }
 
             // convert image
-            if (frame->convert_image && cached->format != *format) {
-                frame->convert_image(frame, &buf, &cached->format, *format);
+            if (mlt_frame_has_convert_image(frame) && cached->format != *format) {
+                mlt_frame_convert_image(frame, &buf, &cached->format, *format);
                 *format = cached->format;
                 if (buf != buf_save)
                     mlt_pool_release(buf_save);
