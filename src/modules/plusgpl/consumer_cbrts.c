@@ -34,9 +34,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <sys/types.h>
-#include <unistd.h>
 
-#include <strings.h>
 // includes for socket IO
 #if (_POSIX_C_SOURCE >= 1 || _XOPEN_SOURCE || _POSIX_SOURCE) && (_POSIX_TIMERS > 0)
 #if !(defined(__FreeBSD_kernel__) && defined(__GLIBC__))
@@ -48,12 +46,18 @@
 #include <sys/types.h>
 #endif
 #endif
-#include <sys/time.h>
 #include <time.h>
 
 #ifdef _MSC_VER
 #define strncasecmp _strnicmp
 #define strcasecmp _stricmp
+#define STDOUT_FILENO _fileno(stdin)
+#include <BaseTsd.h>
+typedef SSIZE_T ssize_t;
+#else
+#include <strings.h>
+#include <sys/time.h>
+#include <unistd.h>
 #endif
 
 #define TSP_BYTES (188)
@@ -268,7 +272,11 @@ static void load_sections(consumer_cbrts self, mlt_properties properties)
 #ifdef si_pid
 #undef si_pid
 #endif
-            char si_pid[len + 1];
+            char *si_pid = (char *) malloc(len + 1);
+            if (!si_pid) {
+                mlt_log_error(NULL, "Memory allocation failed for si_pid\n");
+                return;
+            }
 
             si_name[len - 3 - 5] = 0;
             strcpy(si_pid, "si.");
@@ -282,7 +290,13 @@ static void load_sections(consumer_cbrts self, mlt_properties properties)
                 ts_section *section = load_section(filename);
                 if (section) {
                     // Determine the periodicity of the section, if supplied
-                    char si_time[len + 1];
+                    char *si_time = (char *) malloc(len + 1);
+                    if (!si_time) {
+                        mlt_log_error(NULL, "Memory allocation failed for si_time\n");
+                        free(si_pid);
+                        free(si_name);
+                        return;
+                    }
 
                     strcpy(si_time, "si.");
                     strcat(si_time, si_name);
@@ -318,8 +332,11 @@ static void load_sections(consumer_cbrts self, mlt_properties properties)
                                             section->size,
                                             free,
                                             NULL);
+
+                    free(si_time);
                 }
             }
+            free(si_pid);
             free(si_name);
         }
     }
