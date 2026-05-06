@@ -537,10 +537,10 @@ static int producer_get_frame(mlt_producer parent, mlt_frame_ptr frame, int trac
                                                   subtitle_properties);
                 }
 
-                // Copy the format conversion callbacks
+                // Copy only audio conversion callbacks here. Image conversion callbacks
+                // must come from the track frame that is ultimately selected for video.
                 if (!(*frame)->convert_audio && temp->convert_audio)
                     (*frame)->convert_audio = temp->convert_audio;
-                mlt_frame_copy_convert_image(*frame, temp);
 
                 // Check for last track
                 done = mlt_properties_get_int(temp_properties, "last_track");
