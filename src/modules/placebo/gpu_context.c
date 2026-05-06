@@ -83,7 +83,8 @@ static pl_renderer s_renderer = NULL;
 static pl_cache s_cache = NULL;
 
 static int s_initialized = 0;
-static int s_gpu_failed = 0;
+static int s_gpu_failed = 0;   /* permanent failure flag; suppresses retries */
+static int s_gpu_shutdown = 0; /* set during placebo_gpu_release(); prevents reinit */
 static void release_gpu_locked(void);
 
 /* ---------- Mutex (SRWLOCK on Windows is statically initializable, unlike CRITICAL_SECTION) ---------- */
@@ -325,7 +326,7 @@ done:
 pl_gpu placebo_gpu_get(void)
 {
     LOCK();
-    if (!s_initialized && !s_gpu_failed) {
+    if (!s_initialized && !s_gpu_failed && !s_gpu_shutdown) {
         if (!init_gpu()) {
             /* Free any partial resources (pl_log, cache, loader handles) before
              * setting the permanent failure flag to suppress future retries. */
@@ -502,6 +503,7 @@ static void release_gpu_locked(void)
     s_gpu = NULL;
     s_initialized = 0;
     s_gpu_failed = 0;
+    s_gpu_shutdown = 0;
 }
 
 void placebo_gpu_release(void)
@@ -512,6 +514,7 @@ void placebo_gpu_release(void)
         return;
     }
 
+    s_gpu_shutdown = 1; /* block any reinit triggered by in-flight tex destructors */
     save_cache();
     release_gpu_locked();
 
