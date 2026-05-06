@@ -140,7 +140,6 @@ static int filter_get_image(mlt_frame frame,
                                                  .host_readable = true, ));
     if (!dst_tex) {
         mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to create dest texture\n");
-        pl_tex_destroy(gpu, &src_tex);
         placebo_render_unlock();
         return 1;
     }
@@ -224,6 +223,7 @@ static int filter_get_image(mlt_frame frame,
         placebo_render_lock();
         pl_tex_destroy(gpu, &dst_tex);
         placebo_render_unlock();
+        *image = NULL;
         return 1;
     }
 
