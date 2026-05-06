@@ -43,7 +43,7 @@ pl_renderer placebo_renderer_get(void);
 void placebo_render_lock(void);
 void placebo_render_unlock(void);
 
-/* Tear down all GPU resources. Registered via atexit on first init. */
+/* Tear down all GPU resources. Registered for cleanup on first init. */
 void placebo_gpu_release(void);
 
 /* Interpret an opaque placebo image payload as a libplacebo texture handle. */

@@ -83,6 +83,8 @@ static pl_renderer s_renderer = NULL;
 static pl_cache s_cache = NULL;
 
 static int s_initialized = 0;
+static int s_gpu_failed = 0;
+static void release_gpu_locked(void);
 
 /* ---------- Mutex (SRWLOCK on Windows is statically initializable, unlike CRITICAL_SECTION) ---------- */
 
@@ -130,7 +132,7 @@ static void get_cache_path(char *buf, size_t len)
 
 static void load_cache(void)
 {
-    char path[512];
+    char path[PATH_MAX];
     get_cache_path(path, sizeof(path));
     if (path[0] == '\0')
         return;
@@ -308,10 +310,10 @@ static int init_gpu(void)
     return 0;
 
 done:
-    if (s_cache)
+    if (s_cache) {
         pl_gpu_set_cache(s_gpu, s_cache);
-
-    load_cache();
+        load_cache();
+    }
 
     mlt_factory_register_for_clean_up(NULL, (mlt_destructor) placebo_gpu_release);
 
@@ -323,13 +325,16 @@ done:
 pl_gpu placebo_gpu_get(void)
 {
     LOCK();
-    if (!s_initialized) {
-        s_initialized = 1;
+    if (!s_initialized && !s_gpu_failed) {
         if (!init_gpu()) {
-            /* Stay initialized=1 to prevent retry spam on every frame */
+            /* Free any partial resources (pl_log, cache, loader handles) before
+             * setting the permanent failure flag to suppress future retries. */
+            release_gpu_locked();
+            s_gpu_failed = 1;
             UNLOCK();
             return NULL;
         }
+        s_initialized = 1;
     }
     pl_gpu result = s_gpu;
     UNLOCK();
@@ -441,16 +446,9 @@ int placebo_frame_set_tex(mlt_frame frame, pl_tex tex)
 
 /* ---------- GPU teardown ---------- */
 
-void placebo_gpu_release(void)
+/* Internal: free all GPU resources. Caller must hold s_mutex. */
+static void release_gpu_locked(void)
 {
-    LOCK();
-    if (!s_initialized) {
-        UNLOCK();
-        return;
-    }
-
-    save_cache();
-
     if (s_renderer) {
         pl_renderer_destroy(&s_renderer);
         s_renderer = NULL;
@@ -503,6 +501,19 @@ void placebo_gpu_release(void)
 
     s_gpu = NULL;
     s_initialized = 0;
+    s_gpu_failed = 0;
+}
+
+void placebo_gpu_release(void)
+{
+    LOCK();
+    if (!s_initialized) {
+        UNLOCK();
+        return;
+    }
+
+    save_cache();
+    release_gpu_locked();
 
     UNLOCK();
 }
