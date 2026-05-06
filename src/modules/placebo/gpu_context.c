@@ -1,6 +1,6 @@
 /*
  * gpu_context.c -- shared libplacebo GPU lifecycle (singleton)
- * Copyright (C) 2025 D-Ogi
+ * Copyright (C) 2025-2026 D-Ogi
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -19,6 +19,7 @@
 
 #include "gpu_context.h"
 
+#include <framework/mlt_factory.h>
 #include <framework/mlt_frame.h>
 #include <libplacebo/cache.h>
 #include <libplacebo/dispatch.h>
@@ -103,6 +104,11 @@ static pthread_mutex_t s_render_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static void get_cache_path(char *buf, size_t len)
 {
+    const char *override = getenv("MLT_PLACEBO_CACHE_PATH");
+    if (override && override[0] != '\0') {
+        snprintf(buf, len, "%s", override);
+        return;
+    }
 #ifdef _WIN32
     char appdata[MAX_PATH] = {0};
     if (SUCCEEDED(SHGetFolderPathA(NULL, CSIDL_APPDATA, NULL, 0, appdata))) {
@@ -305,7 +311,7 @@ done:
 
     load_cache();
 
-    atexit(placebo_gpu_release);
+    mlt_factory_register_for_clean_up(NULL, (mlt_destructor) placebo_gpu_release);
 
     return 1;
 }

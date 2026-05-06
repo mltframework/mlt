@@ -1,6 +1,6 @@
 /*
  * filter_placebo_render.c -- GPU-accelerated renderer via libplacebo
- * Copyright (C) 2025 D-Ogi
+ * Copyright (C) 2025-2026 D-Ogi
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

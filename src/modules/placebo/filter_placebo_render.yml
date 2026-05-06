@@ -3,7 +3,7 @@ type: filter
 identifier: placebo.render
 title: GPU Render (libplacebo)
 version: 1
-copyright: Copyright (C) 2025 D-Ogi
+copyright: Copyright (C) 2025-2026 D-Ogi
 creator: D-Ogi
 license: LGPLv2.1
 language: en
@@ -13,6 +13,9 @@ description: >
   GPU-accelerated scaling, debanding, dithering and tonemapping via libplacebo.
   Uses D3D11 on Windows, Vulkan elsewhere. Processes every frame through
   pl_renderer with configurable quality presets and scaling algorithms.
+  The compiled shader cache is stored in a platform-specific location and can
+  be overridden by setting the MLT_PLACEBO_CACHE_PATH environment variable to
+  an absolute path for the cache file.
 
 parameters:
   - identifier: preset

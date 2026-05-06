@@ -3,7 +3,7 @@ type: filter
 identifier: placebo.shader
 title: GPU Shader (libplacebo)
 version: 1
-copyright: Copyright (C) 2025 D-Ogi
+copyright: Copyright (C) 2025-2026 D-Ogi
 creator: D-Ogi
 license: LGPLv2.1
 language: en
@@ -13,6 +13,9 @@ description: >
   Load and apply a custom mpv/libplacebo .hook shader file for GPU-accelerated
   video processing. Supports Anime4K, FSRCNNX, film grain, and other
   mpv-compatible user shaders. The shader file is hot-reloaded when modified.
+  The compiled shader cache is stored in a platform-specific location and can
+  be overridden by setting the MLT_PLACEBO_CACHE_PATH environment variable to
+  an absolute path for the cache file.
 
 parameters:
   - identifier: shader_path
