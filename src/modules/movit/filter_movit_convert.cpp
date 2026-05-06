@@ -625,7 +625,7 @@ static int convert_image(mlt_frame frame,
     // sent into the chain.
     if (output_format == mlt_image_movit) {
         if (*format != mlt_image_rgba && *format != mlt_image_rgba64 && mlt_frame_get_alpha(frame)) {
-            mlt_log_verbose(
+            mlt_log_debug(
                 NULL,
                 "filter movit.convert: frame has alpha but format is %s, converting to RGBA\n",
                 mlt_image_format_name(*format));
