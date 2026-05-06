@@ -363,7 +363,7 @@ static int filter_get_image(mlt_frame frame,
     if (error || !*image)
         return error;
 
-    mlt_log_verbose(NULL, "[placebo.shader] Got image from upstream: format=%d\n", *format);
+    mlt_log_debug(NULL, "[placebo.shader] Got image from upstream: format=%d\n", *format);
 
     int w = *width;
     int h = *height;

@@ -128,9 +128,15 @@ static int convert_image(mlt_frame frame,
                          mlt_image_format *format,
                          mlt_image_format output_format)
 {
+    // Succeed quickly if there is nothing for any converter to do
     if (*format == output_format && *format != mlt_image_private)
         return 0;
 
+    // Fail fast if not converting to or from mlt_image_private
+    if (*format != mlt_image_private && output_format != mlt_image_private)
+        return 1;
+
+    // Reuse existing GPU texture
     if (placebo_frame_is_tex(frame, *format) && placebo_frame_wants_tex(frame, output_format))
         return 0;
 
@@ -143,10 +149,10 @@ static int convert_image(mlt_frame frame,
     if (!gpu || !rgba_fmt || !image || width < 1 || height < 1)
         return 1;
 
-    mlt_log_verbose(NULL,
-                    "[placebo.convert] Converting from format %d to %d\n",
-                    *format,
-                    output_format);
+    mlt_log_debug(NULL,
+                  "[placebo.convert] Converting from format %d to %d\n",
+                  *format,
+                  output_format);
     if (placebo_frame_wants_tex(frame, output_format))
         return upload_rgba(frame, image, format, width, height, gpu, rgba_fmt);
 
