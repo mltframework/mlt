@@ -631,6 +631,7 @@ static int convert_image(mlt_frame frame,
                 mlt_image_format_name(*format));
             if (mlt_frame_next_convert_image(frame, image, format, mlt_image_rgba)) {
                 mlt_log_error(NULL, "filter movit.convert: failed to convert frame to RGBA\n");
+                GlslManager::get_instance()->unlock_service(frame);
                 return 1;
             }
         }
@@ -642,6 +643,7 @@ static int convert_image(mlt_frame frame,
 
         if (!input) {
             mlt_log_error(nullptr, "filter movit.convert: create_input failed\n");
+            GlslManager::get_instance()->unlock_service(frame);
             return 1;
         }
 
@@ -651,6 +653,7 @@ static int convert_image(mlt_frame frame,
         if (!img_copy) {
             mlt_log_error(nullptr, "filter movit.convert: make_input_copy failed\n");
             delete input;
+            GlslManager::get_instance()->unlock_service(frame);
             return 1;
         }
 
@@ -721,6 +724,7 @@ static int convert_image(mlt_frame frame,
 
                 if (!input) {
                     delete chain;
+                    GlslManager::get_instance()->unlock_service(frame);
                     return 1;
                 }
 
@@ -744,6 +748,7 @@ static int convert_image(mlt_frame frame,
                 uint8_t *planar = make_input_copy(*format, *image, width, height);
 
                 if (!planar) {
+                    GlslManager::get_instance()->unlock_service(frame);
                     return 1;
                 }
 
