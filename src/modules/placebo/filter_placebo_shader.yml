@@ -1,0 +1,38 @@
+schema_version: 7.0
+type: filter
+identifier: placebo.shader
+title: GPU Shader (libplacebo)
+version: 1
+copyright: Copyright (C) 2025 D-Ogi
+creator: D-Ogi
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  Load and apply a custom mpv/libplacebo .hook shader file for GPU-accelerated
+  video processing. Supports Anime4K, FSRCNNX, film grain, and other
+  mpv-compatible user shaders. The shader file is hot-reloaded when modified.
+
+parameters:
+  - identifier: shader_path
+    title: Shader File
+    type: string
+    description: >
+      Absolute path to a .hook or .glsl shader file (mpv user shader format).
+      The file is monitored for changes and automatically reloaded.
+    argument: yes
+    default: ""
+    mutable: yes
+    readonly: no
+    widget: fileopen
+
+  - identifier: shader_text
+    title: Shader Text
+    type: string
+    description: >
+      Inline shader source code as an alternative to shader_path.
+      If both are set, shader_path takes priority.
+    default: ""
+    mutable: yes
+    readonly: no

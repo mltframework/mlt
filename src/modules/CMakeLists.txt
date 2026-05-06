@@ -48,6 +48,10 @@ if(MOD_MOVIT)
   add_subdirectory(movit)
 endif()
 
+if(MOD_PLACEBO)
+  add_subdirectory(placebo)
+endif()
+
 if(MOD_PLUS)
   add_subdirectory(plus)
 endif()
