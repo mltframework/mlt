@@ -344,14 +344,16 @@ static int filter_get_image(mlt_frame frame,
     if (!priv)
         return mlt_frame_get_image(frame, image, format, width, height, writable);
 
-    /* Ensure shader is loaded */
-    if (!ensure_shader(filter, priv, gpu)) {
-        /* No shader available -- pass through */
+    /* Fast path: skip the GPU pipeline entirely when no shader is configured.
+     * Property reads are safe here; we only mutate priv under placebo_render_lock. */
+    const char *shader_path = mlt_properties_get(filter_props, "shader_path");
+    const char *shader_text = mlt_properties_get(filter_props, "shader_text");
+    if ((!shader_path || !*shader_path) && (!shader_text || !*shader_text))
         return mlt_frame_get_image(frame, image, format, width, height, writable);
-    }
 
-    /* Request placebo from upstream. placebo.convert is responsible for any
-     * CPU upload/download around non-placebo filters in the chain. */
+    /* Fetch the upstream image before acquiring the render lock so the
+     * potentially-expensive upstream pipeline runs concurrently with other
+     * frames that are already inside the lock. */
     placebo_frame_set_requested_tex(frame, 1);
     *format = mlt_image_private;
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
@@ -374,9 +376,21 @@ static int filter_get_image(mlt_frame frame,
     if (!src_tex)
         return 1;
 
+    /* Hold the render lock for the entire shader-reload + render sequence.
+     * Without this, concurrent worker threads can race on priv->hooks:
+     * one thread destroys and replaces hooks[0] while another thread is
+     * still using it in pl_render_image (use-after-free / double-destroy). */
+    placebo_render_lock();
+
+    /* Reload shader if path/text/mtime changed; returns 0 if unavailable. */
+    if (!ensure_shader(filter, priv, gpu)) {
+        placebo_render_unlock();
+        /* src_tex is already attached to the frame; pass it through. */
+        return 0;
+    }
+
     /* sampleable is needed so a subsequent placebo filter can bind this
      * texture as its source without re-uploading from RAM. */
-    placebo_render_lock();
     pl_tex dst_tex = pl_tex_create(gpu,
                                    pl_tex_params(.w = w,
                                                  .h = h,
