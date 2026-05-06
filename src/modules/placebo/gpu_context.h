@@ -50,13 +50,20 @@ void placebo_gpu_release(void);
 pl_tex placebo_image_get_tex(const uint8_t *image);
 
 /* Mark or clear a request for a placebo private image during an upstream pull.
-   Nested requests on the same frame are reference-counted. */
+   This is intentionally separate from the actual output marker used by
+   placebo_frame_is_tex()/placebo_frame_set_tex(). A request means "a downstream
+   placebo filter wants private GPU data if a converter can provide it"; it does
+   not mean the frame currently contains such data. Nested requests on the same
+   frame are reference-counted because multiple placebo filters can be stacked
+   during one pull. */
 void placebo_frame_set_requested_tex(mlt_frame frame, int requested);
 
-/* Return non-zero when the frame currently requests a placebo private image. */
+/* Return non-zero when the current conversion target is a placebo private image
+   request, not merely any mlt_image_private use by some other module. */
 int placebo_frame_wants_tex(mlt_frame frame, mlt_image_format format);
 
-/* Return non-zero when the frame currently stores a placebo private image. */
+/* Return non-zero when the frame currently stores a placebo private image.
+   This checks the actual image payload marker, not the transient request state. */
 int placebo_frame_is_tex(mlt_frame frame, mlt_image_format format);
 
 /* Store a libplacebo texture on the frame as mlt_image_private.

@@ -394,6 +394,16 @@ pl_tex placebo_image_get_tex(const uint8_t *image)
     return (pl_tex) image;
 }
 
+/* ---------- mlt_image_private helpers ---------- */
+
+/* Request state and result state must not share one property:
+ * - requests are transient and may nest while multiple placebo filters pull
+ *   upstream on the same frame;
+ * - results describe the frame's current image payload and must only be set
+ *   when that payload really is a placebo texture.
+ * If these are conflated, one filter can clear another filter's in-flight
+ * request or a non-placebo result can be mistaken for a valid private texture. */
+
 void placebo_frame_set_requested_tex(mlt_frame frame, int requested)
 {
     mlt_properties props = MLT_FRAME_PROPERTIES(frame);
