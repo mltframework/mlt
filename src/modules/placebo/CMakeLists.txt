@@ -7,6 +7,7 @@ endif()
 add_library(mltplacebo MODULE
   factory.c
   gpu_context.c gpu_context.h
+  filter_placebo_convert.c
   filter_placebo_render.c
   filter_placebo_shader.c
 )
@@ -49,6 +50,7 @@ set_target_properties(mltplacebo PROPERTIES
 install(TARGETS mltplacebo LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
+  filter_placebo_convert.yml
   filter_placebo_render.yml
   filter_placebo_shader.yml
   DESTINATION ${MLT_INSTALL_DATA_DIR}/placebo

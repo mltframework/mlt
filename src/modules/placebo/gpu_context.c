@@ -19,6 +19,8 @@
 
 #include "gpu_context.h"
 
+#include <string.h>
+
 #include <framework/mlt_factory.h>
 #include <framework/mlt_frame.h>
 #include <libplacebo/cache.h>
@@ -374,82 +376,57 @@ void placebo_render_unlock(void)
     RENDER_UNLOCK();
 }
 
-/* ---------- Frame GPU texture reuse ----------
- *
- * When multiple placebo filters are chained on one producer, each filter
- * would normally upload the frame to GPU, render, and download back to RAM.
- * For N filters that means N uploads and N downloads — the intermediate
- * RAM roundtrips are pure waste because the next placebo filter will
- * re-upload the same data immediately.
- *
- * To avoid this, each placebo filter attaches its output texture to the
- * mlt_frame via put_tex(). The next placebo filter in the chain calls
- * take_tex() to grab it and use it directly as its source, skipping the
- * upload. The download to RAM still happens every time (MLT expects the
- * image buffer to be current), but the upload is eliminated for all
- * filters after the first one.
- *
- * Staleness detection: if a non-placebo CPU filter runs between two
- * placebo filters, it may reallocate the image buffer (e.g. via
- * mlt_frame_get_image with writable=1, which triggers a copy).
- * put_tex() records the buffer pointer, and take_tex() compares it
- * against the current pointer. A mismatch means the texture content
- * no longer matches RAM, so take_tex() returns NULL and the caller
- * falls back to a fresh upload. This is safe because MLT's standard
- * mechanism for a filter to modify frame data is to request a writable
- * buffer, which always produces a new allocation.
- */
-
-typedef struct
+static void placebo_tex_destroy(void *ptr)
 {
-    pl_tex tex;
-    const uint8_t *image_ptr; /* RAM buffer address at time of put_tex */
-} placebo_frame_gpu;
-
-/* Called by mlt_properties when the frame is destroyed or the property
- * is overwritten. Must acquire render_lock because pl_tex_destroy
- * touches GPU state, and this destructor may fire from any thread. */
-static void frame_gpu_destroy(void *ptr)
-{
-    placebo_frame_gpu *d = ptr;
-    if (d && d->tex) {
-        pl_gpu gpu = placebo_gpu_get();
-        if (gpu) {
-            placebo_render_lock();
-            pl_tex_destroy(gpu, &d->tex);
-            placebo_render_unlock();
-        }
-    }
-    free(d);
+    pl_tex tex = (pl_tex) ptr;
+    if (!tex)
+        return;
+    pl_gpu gpu = placebo_gpu_get();
+    if (!gpu)
+        return;
+    placebo_render_lock();
+    pl_tex_destroy(gpu, &tex);
+    placebo_render_unlock();
 }
 
-pl_tex placebo_frame_take_tex(mlt_frame frame, const uint8_t *current_image)
+pl_tex placebo_image_get_tex(const uint8_t *image)
+{
+    return (pl_tex) image;
+}
+
+void placebo_frame_set_requested_tex(mlt_frame frame, int requested)
 {
     mlt_properties props = MLT_FRAME_PROPERTIES(frame);
-    placebo_frame_gpu *d = mlt_properties_get_data(props, "_placebo_gpu", NULL);
-    if (!d || !d->tex)
-        return NULL;
-    if (d->image_ptr != current_image)
-        return NULL; /* buffer was reallocated — texture is stale */
-    pl_tex tex = d->tex;
-    d->tex = NULL; /* transfer ownership to caller; disarm destructor */
-    return tex;
+    int count = mlt_properties_get_int(props, "_placebo_requested");
+
+    if (requested) {
+        count++;
+    } else if (count > 0) {
+        count--;
+    }
+
+    mlt_properties_set_int(props, "_placebo_requested", count);
 }
 
-void placebo_frame_put_tex(mlt_frame frame, pl_tex tex, const uint8_t *image_ptr)
+int placebo_frame_wants_tex(mlt_frame frame, mlt_image_format format)
 {
-    placebo_frame_gpu *d = calloc(1, sizeof(placebo_frame_gpu));
-    d->tex = tex;
-    d->image_ptr = image_ptr;
-    /* If a previous texture was attached, set_data replaces it and
-     * frame_gpu_destroy fires for the old one. After take_tex() the
-     * old entry has tex=NULL so the destructor becomes a no-op. */
-    mlt_properties_set_data(MLT_FRAME_PROPERTIES(frame),
-                            "_placebo_gpu",
-                            d,
-                            0,
-                            frame_gpu_destroy,
-                            NULL);
+    return format == mlt_image_private
+           && mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "_placebo_requested") > 0;
+}
+
+int placebo_frame_is_tex(mlt_frame frame, mlt_image_format format)
+{
+    const char *image_format = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "mlt_image_format");
+    return format == mlt_image_private && image_format && !strcmp(image_format, "placebo");
+}
+
+int placebo_frame_set_tex(mlt_frame frame, pl_tex tex)
+{
+    mlt_properties props = MLT_FRAME_PROPERTIES(frame);
+    mlt_properties_set_int(props, "format", mlt_image_private);
+    mlt_properties_set(props, "mlt_image_format", "placebo");
+    mlt_properties_set_data(props, "alpha", NULL, 0, NULL, NULL);
+    return mlt_frame_set_image(frame, (uint8_t *) tex, 0, placebo_tex_destroy);
 }
 
 /* ---------- GPU teardown ---------- */

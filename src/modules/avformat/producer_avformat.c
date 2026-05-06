@@ -827,8 +827,9 @@ static mlt_image_format pick_image_format(enum AVPixelFormat pix_fmt,
                                           mlt_image_format current_format)
 {
     if (current_format == mlt_image_none || current_format == mlt_image_movit
-        || pix_fmt == AV_PIX_FMT_ARGB || pix_fmt == AV_PIX_FMT_RGBA || pix_fmt == AV_PIX_FMT_ABGR
-        || pix_fmt == AV_PIX_FMT_BGRA || pix_fmt == AV_PIX_FMT_GBRAP) {
+        || current_format == mlt_image_private || pix_fmt == AV_PIX_FMT_ARGB
+        || pix_fmt == AV_PIX_FMT_RGBA || pix_fmt == AV_PIX_FMT_ABGR || pix_fmt == AV_PIX_FMT_BGRA
+        || pix_fmt == AV_PIX_FMT_GBRAP) {
         switch (pix_fmt) {
         case AV_PIX_FMT_ARGB:
         case AV_PIX_FMT_RGBA:
@@ -2516,6 +2517,7 @@ static void convert_image(producer_avformat self,
     case mlt_image_yuv422:
     case mlt_image_movit:
     case mlt_image_opengl_texture:
+    case mlt_image_private:
     case mlt_image_invalid:
         break;
     }

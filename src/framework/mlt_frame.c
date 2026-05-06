@@ -448,6 +448,7 @@ static int generate_test_image(mlt_properties properties,
         case mlt_image_none:
         case mlt_image_movit:
         case mlt_image_opengl_texture:
+        case mlt_image_private:
             *format = mlt_image_yuv422;
             break;
         case mlt_image_invalid:
@@ -1113,15 +1114,13 @@ mlt_frame mlt_frame_clone(mlt_frame self, int is_deep)
         }
         size = 0;
         data = mlt_properties_get_data(properties, "image", &size);
-        if (data && mlt_image_movit != mlt_properties_get_int(properties, "format")) {
+        mlt_image_format format = mlt_properties_get_int(properties, "format");
+        if (data && format != mlt_image_movit && format != mlt_image_private) {
             int width = mlt_properties_get_int(properties, "width");
             int height = mlt_properties_get_int(properties, "height");
 
             if (!size)
-                size = mlt_image_format_size(mlt_properties_get_int(properties, "format"),
-                                             width,
-                                             height,
-                                             NULL);
+                size = mlt_image_format_size(format, width, height, NULL);
             copy = mlt_pool_alloc(size);
             memcpy(copy, data, size);
             mlt_properties_set_data(new_props, "image", copy, size, mlt_pool_release, NULL);
@@ -1255,15 +1254,13 @@ mlt_frame mlt_frame_clone_image(mlt_frame self, int is_deep)
 
     if (is_deep) {
         data = mlt_properties_get_data(properties, "image", &size);
-        if (data && mlt_image_movit != mlt_properties_get_int(properties, "format")) {
+        mlt_image_format format = mlt_properties_get_int(properties, "format");
+        if (data && format != mlt_image_movit && format != mlt_image_private) {
             int width = mlt_properties_get_int(properties, "width");
             int height = mlt_properties_get_int(properties, "height");
 
             if (!size)
-                size = mlt_image_format_size(mlt_properties_get_int(properties, "format"),
-                                             width,
-                                             height,
-                                             NULL);
+                size = mlt_image_format_size(format, width, height, NULL);
             copy = mlt_pool_alloc(size);
             memcpy(copy, data, size);
             mlt_properties_set_data(new_props, "image", copy, size, mlt_pool_release, NULL);

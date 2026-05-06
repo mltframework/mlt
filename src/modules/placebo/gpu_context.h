@@ -46,16 +46,21 @@ void placebo_render_unlock(void);
 /* Tear down all GPU resources. Registered via atexit on first init. */
 void placebo_gpu_release(void);
 
-/* Retrieve a GPU texture left on the frame by a preceding placebo filter.
-   Returns NULL if none exists, or if the image buffer pointer differs from
-   current_image (indicating an intervening CPU filter reallocated it).
-   On success, ownership transfers to the caller who must destroy it. */
-pl_tex placebo_frame_take_tex(mlt_frame frame, const uint8_t *current_image);
+/* Interpret an opaque placebo image payload as a libplacebo texture handle. */
+pl_tex placebo_image_get_tex(const uint8_t *image);
 
-/* Attach a rendered GPU texture to the frame so the next placebo filter
-   in the chain can skip the RAM-to-GPU upload. image_ptr records the
-   current buffer address for staleness detection (see take_tex above).
-   The texture is destroyed automatically if no filter claims it. */
-void placebo_frame_put_tex(mlt_frame frame, pl_tex tex, const uint8_t *image_ptr);
+/* Mark or clear a request for a placebo private image during an upstream pull.
+   Nested requests on the same frame are reference-counted. */
+void placebo_frame_set_requested_tex(mlt_frame frame, int requested);
+
+/* Return non-zero when the frame currently requests a placebo private image. */
+int placebo_frame_wants_tex(mlt_frame frame, mlt_image_format format);
+
+/* Return non-zero when the frame currently stores a placebo private image. */
+int placebo_frame_is_tex(mlt_frame frame, mlt_image_format format);
+
+/* Store a libplacebo texture on the frame as mlt_image_private.
+   The texture lifetime is owned by the frame image property. */
+int placebo_frame_set_tex(mlt_frame frame, pl_tex tex);
 
 #endif /* GPU_CONTEXT_H */

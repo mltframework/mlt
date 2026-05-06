@@ -153,6 +153,14 @@ static int convert_image(mlt_frame frame,
     mlt_properties_clear(properties, "convert_image_height");
 
     if (*format != output_format || out_width) {
+        if (*format == mlt_image_none || *format == mlt_image_movit
+            || *format == mlt_image_opengl_texture || *format == mlt_image_private
+            || *format == mlt_image_invalid || output_format == mlt_image_none
+            || output_format == mlt_image_movit || output_format == mlt_image_opengl_texture
+            || output_format == mlt_image_private || output_format == mlt_image_invalid) {
+            return 1;
+        }
+
         mlt_profile profile = mlt_service_profile(
             MLT_PRODUCER_SERVICE(mlt_frame_get_original_producer(frame)));
         int width = mlt_properties_get_int(properties, "width");

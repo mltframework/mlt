@@ -2,7 +2,7 @@
  * \file mlt_types.h
  * \brief Provides forward definitions of all public types
  *
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -49,7 +49,8 @@ typedef enum {
     mlt_image_yuv420p10, /**< planar YUV 4:2:0, 15bpp, (1 Cr & Cb sample per 2x2 Y samples), little-endian */
     mlt_image_yuv444p10, /**< planar YUV 4:4:4, 30bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian */
     mlt_image_rgba64, /**< 16-bit RGB with alpha channel */
-    mlt_image_invalid
+    mlt_image_invalid,
+    mlt_image_private /**< for module internal use only */
 } mlt_image_format;
 
 /** The set of supported audio formats */
