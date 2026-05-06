@@ -339,14 +339,10 @@ static int filter_get_image(mlt_frame frame,
         return mlt_frame_get_image(frame, image, format, width, height, writable);
     }
 
-    /* Lazily allocate private data; destruction is handled by mlt_properties */
+    /* Private data allocated during init; just read it here (safe). */
     shader_private *priv = mlt_properties_get_data(filter_props, "_shader_priv", NULL);
-    if (!priv) {
-        priv = calloc(1, sizeof(shader_private));
-        if (!priv)
-            return mlt_frame_get_image(frame, image, format, width, height, writable);
-        mlt_properties_set_data(filter_props, "_shader_priv", priv, 0, shader_private_destroy, NULL);
-    }
+    if (!priv)
+        return mlt_frame_get_image(frame, image, format, width, height, writable);
 
     /* Ensure shader is loaded */
     if (!ensure_shader(filter, priv, gpu)) {
@@ -466,6 +462,12 @@ mlt_filter filter_placebo_shader_init(mlt_profile profile,
         mlt_properties props = MLT_FILTER_PROPERTIES(filter);
         mlt_properties_set(props, "shader_path", arg ? arg : "");
         mlt_properties_set(props, "shader_text", "");
+        shader_private *priv = calloc(1, sizeof(shader_private));
+        if (!priv) {
+            mlt_filter_close(filter);
+            return NULL;
+        }
+        mlt_properties_set_data(props, "_shader_priv", priv, 0, shader_private_destroy, NULL);
     }
     return filter;
 }
