@@ -77,6 +77,7 @@ private:
     mlt_deque m_aqueue;
     pthread_mutex_t m_aqueue_lock;
     mlt_deque m_frames;
+    pthread_mutex_t m_frames_lock;
 
     pthread_mutex_t m_op_lock;
     pthread_mutex_t m_op_arg_mutex;
@@ -153,6 +154,7 @@ public:
         pthread_mutex_init(&m_op_lock, &mta);
         pthread_mutex_init(&m_op_arg_mutex, &mta);
         pthread_mutex_init(&m_aqueue_lock, &mta);
+        pthread_mutex_init(&m_frames_lock, &mta);
         pthread_mutexattr_destroy(&mta);
         pthread_cond_init(&m_op_arg_cond, nullptr);
         pthread_create(&m_op_thread, nullptr, op_main, this);
@@ -178,6 +180,7 @@ public:
         mlt_log_debug(getConsumer(), "%s: finished op thread\n", __FUNCTION__);
 
         pthread_mutex_destroy(&m_aqueue_lock);
+        pthread_mutex_destroy(&m_frames_lock);
         pthread_mutex_destroy(&m_op_lock);
         pthread_mutex_destroy(&m_op_arg_mutex);
         pthread_cond_destroy(&m_op_arg_cond);
@@ -500,7 +503,9 @@ protected:
                 return false;
             }
 
+            pthread_mutex_lock(&m_frames_lock);
             mlt_deque_push_back(m_frames, frame);
+            pthread_mutex_unlock(&m_frames_lock);
         }
 
         pthread_mutex_lock(&m_refresh_mutex);
@@ -539,9 +544,11 @@ protected:
         pthread_mutex_unlock(&m_aqueue_lock);
 
         m_buffer = nullptr;
+        pthread_mutex_lock(&m_frames_lock);
         while (IDeckLinkMutableVideoFrame *frame
                = (IDeckLinkMutableVideoFrame *) mlt_deque_pop_back(m_frames))
             SAFE_RELEASE(frame);
+        pthread_mutex_unlock(&m_frames_lock);
 
         mlt_consumer_stopped(getConsumer());
 
@@ -576,8 +583,11 @@ protected:
         mlt_properties consumer_properties = MLT_CONSUMER_PROPERTIES(getConsumer());
         int stride = m_width * (m_isKeyer ? 4 : 2);
         int height = m_height;
-        IDeckLinkMutableVideoFrame *decklinkFrame = static_cast<IDeckLinkMutableVideoFrame *>(
-            mlt_deque_pop_front(m_frames));
+        IDeckLinkMutableVideoFrame *decklinkFrame = nullptr;
+
+        pthread_mutex_lock(&m_frames_lock);
+        decklinkFrame = static_cast<IDeckLinkMutableVideoFrame *>(mlt_deque_pop_front(m_frames));
+        pthread_mutex_unlock(&m_frames_lock);
 
         mlt_log_debug(getConsumer(), "%s: entering\n", __FUNCTION__);
 
@@ -971,7 +981,9 @@ protected:
     {
         mlt_log_debug(getConsumer(), "%s: ENTERING\n", __FUNCTION__);
 
+        pthread_mutex_lock(&m_frames_lock);
         mlt_deque_push_back(m_frames, completedFrame);
+        pthread_mutex_unlock(&m_frames_lock);
 
         //  change priority of video callback thread
         reprio(1);
