@@ -20,7 +20,6 @@
 #include <framework/mlt.h>
 #include <spatialaudio/Ambisonics.h>
 
-static const auto MAX_CHANNELS = 6;
 static const auto AMBISONICS_BLOCK_SIZE = 1024;
 static const auto AMBISONICS_ORDER = 1;
 static const auto AMBISONICS_1_CHANNELS = 4;

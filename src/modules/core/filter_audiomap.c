@@ -24,8 +24,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_CHANNELS 32
-
 static int filter_get_audio(mlt_frame frame,
                             void **buffer,
                             mlt_audio_format *format,
