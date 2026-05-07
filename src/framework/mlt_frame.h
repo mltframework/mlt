@@ -103,7 +103,7 @@ struct mlt_frame_s
 
     /** Image format conversion dispatcher (read-only after init).
 	 * Always set to mlt_frame_convert_image by mlt_frame_init().
-	 * Do not set this field directly; use mlt_frame_push_convert_image() instead.
+	 * Do not set this field directly; use mlt_frame_prepend_convert_image() instead.
 	 * \param self a frame
 	 * \param[in,out] image a buffer of image data
 	 * \param[in,out] input the image format of supplied image data
@@ -183,7 +183,7 @@ MLT_EXPORT mlt_producer mlt_frame_get_original_producer(mlt_frame self);
 MLT_EXPORT void mlt_frame_close(mlt_frame self);
 MLT_EXPORT mlt_properties mlt_frame_unique_properties(mlt_frame self, mlt_service service);
 MLT_EXPORT mlt_properties mlt_frame_get_unique_properties(mlt_frame self, mlt_service service);
-MLT_EXPORT void mlt_frame_push_convert_image(mlt_frame self, mlt_convert_image convert);
+MLT_EXPORT void mlt_frame_append_convert_image(mlt_frame self, mlt_convert_image convert);
 MLT_EXPORT void mlt_frame_prepend_convert_image(mlt_frame self, mlt_convert_image convert);
 MLT_EXPORT int mlt_frame_has_convert_image(mlt_frame self);
 MLT_EXPORT int mlt_frame_convert_image(mlt_frame self,

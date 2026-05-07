@@ -783,7 +783,7 @@ static mlt_frame process(mlt_filter filter, mlt_frame frame)
                                "colorspace",
                                mlt_service_profile(MLT_FILTER_SERVICE(filter))->colorspace);
 
-    mlt_frame_push_convert_image(frame, convert_image);
+    mlt_frame_append_convert_image(frame, convert_image);
 
     return frame;
 }

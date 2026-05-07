@@ -363,7 +363,7 @@ static int convert_image(mlt_frame frame,
 
 static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
 {
-    mlt_frame_push_convert_image(frame, convert_image);
+    mlt_frame_append_convert_image(frame, convert_image);
     return frame;
 }
 
