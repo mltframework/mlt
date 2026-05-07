@@ -432,7 +432,7 @@ int placebo_frame_wants_tex(mlt_frame frame, mlt_image_format format)
 
 int placebo_frame_is_tex(mlt_frame frame, mlt_image_format format)
 {
-    const char *image_format = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "mlt_image_format");
+    const char *image_format = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "mlt_image_private");
     return format == mlt_image_private && image_format && !strcmp(image_format, "placebo");
 }
 
@@ -440,8 +440,8 @@ int placebo_frame_set_tex(mlt_frame frame, pl_tex tex)
 {
     mlt_properties props = MLT_FRAME_PROPERTIES(frame);
     mlt_properties_set_int(props, "format", mlt_image_private);
-    mlt_properties_set(props, "mlt_image_format", "placebo");
-    mlt_properties_set_data(props, "alpha", NULL, 0, NULL, NULL);
+    mlt_properties_set(props, "mlt_image_private", "placebo");
+    mlt_properties_clear(props, "alpha");
     return mlt_frame_set_image(frame, (uint8_t *) tex, 0, placebo_tex_destroy);
 }
 
