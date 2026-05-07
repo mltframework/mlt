@@ -311,7 +311,7 @@ if(MOD_OPENFX)
 endif()
 
 if(MOD_PLACEBO)
-  pkg_check_modules(libplacebo IMPORTED_TARGET libplacebo)
+  pkg_check_modules(libplacebo IMPORTED_TARGET libplacebo>=5.229)
   if(libplacebo_FOUND)
     list(APPEND MLT_SUPPORTED_COMPONENTS placebo)
   else()
