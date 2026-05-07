@@ -862,12 +862,16 @@ static int do_convert_image(
  * \p mlt_frame_convert_image. If \p convert is already registered on this
  * frame it is silently ignored (deduplication). Has no effect if either
  * argument is NULL.
+ * 
+ * This function is primarily used by the \p loader producer per \p loader.ini
+ * to add the default and fallback converters. Most modules or external callers
+ * will want to use \p mlt_frame_prepend_convert_image.
  *
  * \public \memberof mlt_frame_s
  * \param self a frame
  * \param convert the conversion callback to register
  */
-void mlt_frame_push_convert_image(mlt_frame self, mlt_convert_image convert)
+void mlt_frame_append_convert_image(mlt_frame self, mlt_convert_image convert)
 {
     if (!self || !convert)
         return;
@@ -895,6 +899,13 @@ void mlt_frame_push_convert_image(mlt_frame self, mlt_convert_image convert)
  * \p mlt_frame_convert_image. If \p convert is already registered on this
  * frame it is silently ignored (deduplication). Has no effect if either
  * argument is NULL.
+ * 
+ * This is more useful for a specialized or incomplete converter. Return 
+ * error from your callback to hand-off to the next converters, one of which
+ * ought to be able to do the conversion. This is not all-or-nothing; you can
+ * still convert to a supported format that your code handles even if it does
+ * not match the requested format. Simply update the \p format argument and/or
+ * \p image argument and return a non-zero value.
  *
  * \public \memberof mlt_frame_s
  * \param self a frame

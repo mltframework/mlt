@@ -5,11 +5,11 @@ Version 7.40.0
 
 Framework
   - Added list-based image-conversion callback dispatch on mlt_frame.
-    Use `mlt_frame_push_convert_image()` to register a converter instead of
+    Use `mlt_frame_append_convert_image()` to register a converter instead of
     setting `frame->convert_image` directly. Multiple converters are tried in
     registration order; the first that succeeds wins. New public API:
     - `mlt_frame_prepend_convert_image()`
-    - `mlt_frame_push_convert_image()`
+    - `mlt_frame_append_convert_image()`
     - `mlt_frame_convert_image()`
     - `mlt_frame_next_convert_image()`
     - `mlt_frame_has_convert_image()`
@@ -19,7 +19,7 @@ Framework
     External code that set this field directly to a custom function will no
     longer have that function called. If you really need that (never heard of
     someone who does), clear the frame's "_convert_image_callbacks" property
-    and use `mlt_frame_push_convert_image()` instead.
+    and use `mlt_frame_append_convert_image()` instead.
   - Image converters (`movit.convert`, `avcolor_space`, `imageconvert`) are
     now attached data-driven via `loader.ini` key `image_convert`.
 

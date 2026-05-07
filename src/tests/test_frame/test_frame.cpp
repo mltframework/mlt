@@ -143,19 +143,40 @@ private Q_SLOTS:
         mlt_frame_close(frame);
     }
 
-    void HasConvertImageTrueAfterPush()
+    void HasConvertImageTrueAfterAppend()
     {
         mlt_frame frame = mlt_frame_init(NULL);
-        mlt_frame_push_convert_image(frame, convert_always);
+        mlt_frame_append_convert_image(frame, convert_always);
         QCOMPARE(mlt_frame_has_convert_image(frame), 1);
         mlt_frame_close(frame);
     }
 
-    void PushConvertImageDeduplicate()
+    void AppendConvertImageDeduplicate()
     {
         mlt_frame frame = mlt_frame_init(NULL);
-        mlt_frame_push_convert_image(frame, convert_always);
-        mlt_frame_push_convert_image(frame, convert_always); // duplicate — must be ignored
+        mlt_frame_append_convert_image(frame, convert_always);
+        mlt_frame_append_convert_image(frame, convert_always); // duplicate — must be ignored
+        // Invoke the dispatcher: a single converter should be called exactly once.
+        g_convert_calls = 0;
+        mlt_image_format fmt = mlt_image_rgb;
+        mlt_frame_convert_image(frame, NULL, &fmt, mlt_image_rgba);
+        QCOMPARE(g_convert_calls, 1);
+        mlt_frame_close(frame);
+    }
+
+    void HasConvertImageTrueAfterPrepend()
+    {
+        mlt_frame frame = mlt_frame_init(NULL);
+        mlt_frame_prepend_convert_image(frame, convert_always);
+        QCOMPARE(mlt_frame_has_convert_image(frame), 1);
+        mlt_frame_close(frame);
+    }
+
+    void PrependConvertImageDeduplicate()
+    {
+        mlt_frame frame = mlt_frame_init(NULL);
+        mlt_frame_prepend_convert_image(frame, convert_always);
+        mlt_frame_prepend_convert_image(frame, convert_always); // duplicate — must be ignored
         // Invoke the dispatcher: a single converter should be called exactly once.
         g_convert_calls = 0;
         mlt_image_format fmt = mlt_image_rgb;
@@ -168,8 +189,8 @@ private Q_SLOTS:
     {
         // fail → b: only b should run and succeed; fail tries next via mlt_frame_next_convert_image.
         mlt_frame frame = mlt_frame_init(NULL);
-        mlt_frame_push_convert_image(frame, convert_fail);
-        mlt_frame_push_convert_image(frame, convert_b);
+        mlt_frame_append_convert_image(frame, convert_fail);
+        mlt_frame_append_convert_image(frame, convert_b);
         g_convert_calls = 0;
         g_convert_b_calls = 0;
         mlt_image_format fmt = mlt_image_rgb;
@@ -184,7 +205,7 @@ private Q_SLOTS:
     void ConvertImageAllFailReturnsError()
     {
         mlt_frame frame = mlt_frame_init(NULL);
-        mlt_frame_push_convert_image(frame, convert_fail);
+        mlt_frame_append_convert_image(frame, convert_fail);
         g_convert_calls = 0;
         mlt_image_format fmt = mlt_image_rgb;
         int error = mlt_frame_convert_image(frame, NULL, &fmt, mlt_image_rgba);
@@ -195,7 +216,7 @@ private Q_SLOTS:
     void CopyConvertImagePropagatesToClone()
     {
         mlt_frame src = mlt_frame_init(NULL);
-        mlt_frame_push_convert_image(src, convert_always);
+        mlt_frame_append_convert_image(src, convert_always);
         mlt_frame dst = mlt_frame_clone(src, 0);
         QCOMPARE(mlt_frame_has_convert_image(dst), 1);
         g_convert_calls = 0;
@@ -211,9 +232,9 @@ private Q_SLOTS:
     {
         // mlt_frame_copy_convert_image() must not overwrite an existing list on dst.
         mlt_frame src = mlt_frame_init(NULL);
-        mlt_frame_push_convert_image(src, convert_always);
+        mlt_frame_append_convert_image(src, convert_always);
         mlt_frame dst = mlt_frame_init(NULL);
-        mlt_frame_push_convert_image(dst, convert_b);
+        mlt_frame_append_convert_image(dst, convert_b);
         mlt_frame_copy_convert_image(dst, src);
         // dst already had a list — its own converter (convert_b) must still be there.
         g_convert_calls = 0;
