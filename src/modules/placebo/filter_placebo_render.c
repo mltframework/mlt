@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "convert.h"
 #include "gpu_context.h"
 
 #include <framework/mlt_filter.h>
@@ -120,8 +121,9 @@ static int filter_get_image(mlt_frame frame,
 
     if (!placebo_frame_is_tex(frame, *format)) {
         mlt_log_error(MLT_FILTER_SERVICE(filter),
-                      "Expected placebo private input, got %s\n",
-                      mlt_image_format_name(*format));
+                      "Expected placebo private input, got %s (%s)\n",
+                      mlt_image_format_name(*format),
+                      mlt_properties_get(MLT_FRAME_PROPERTIES(frame), MLT_PLACEBO_IMAGE_PRIVATE));
         return 1;
     }
     pl_tex src_tex = placebo_image_get_tex(*image);
@@ -234,6 +236,7 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
 {
     mlt_frame_push_service(frame, filter);
     mlt_frame_push_get_image(frame, filter_get_image);
+    mlt_frame_prepend_convert_image(frame, placebo_convert_image);
     return frame;
 }
 

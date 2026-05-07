@@ -1,5 +1,5 @@
 /*
- * filter_placebo_convert.c -- libplacebo image format converter
+ * convert.c -- libplacebo image format converter
  * Copyright (C) 2026 D-Ogi
  *
  * This library is free software; you can redistribute it and/or
@@ -123,10 +123,10 @@ static int download_rgba(mlt_frame frame,
     return 0;
 }
 
-static int convert_image(mlt_frame frame,
-                         uint8_t **image,
-                         mlt_image_format *format,
-                         mlt_image_format output_format)
+int placebo_convert_image(mlt_frame frame,
+                          uint8_t **image,
+                          mlt_image_format *format,
+                          mlt_image_format output_format)
 {
     // Succeed quickly if there is nothing for any converter to do
     if (*format == output_format && *format != mlt_image_private)
@@ -150,9 +150,9 @@ static int convert_image(mlt_frame frame,
         return 1;
 
     mlt_log_debug(NULL,
-                  "[placebo.convert] Converting from format %d to %d\n",
-                  *format,
-                  output_format);
+                  "[placebo.convert] Converting from format %s to %s\n",
+                  mlt_image_format_name(*format),
+                  mlt_image_format_name(output_format));
     if (placebo_frame_wants_tex(frame, output_format))
         return upload_rgba(frame, image, format, width, height, gpu, rgba_fmt);
 
@@ -160,21 +160,4 @@ static int convert_image(mlt_frame frame,
         return download_rgba(frame, image, format, output_format, width, height, gpu);
 
     return 1;
-}
-
-static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
-{
-    mlt_frame_push_convert_image(frame, convert_image);
-    return frame;
-}
-
-mlt_filter filter_placebo_convert_init(mlt_profile profile,
-                                       mlt_service_type type,
-                                       const char *id,
-                                       char *arg)
-{
-    mlt_filter filter = mlt_filter_new();
-    if (filter)
-        filter->process = filter_process;
-    return filter;
 }

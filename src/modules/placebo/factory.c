@@ -26,10 +26,6 @@ extern mlt_filter filter_placebo_render_init(mlt_profile profile,
                                              mlt_service_type type,
                                              const char *id,
                                              char *arg);
-extern mlt_filter filter_placebo_convert_init(mlt_profile profile,
-                                              mlt_service_type type,
-                                              const char *id,
-                                              char *arg);
 extern mlt_filter filter_placebo_shader_init(mlt_profile profile,
                                              mlt_service_type type,
                                              const char *id,
@@ -44,13 +40,8 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
 
 MLTPLACEBO_EXPORT MLT_REPOSITORY
 {
-    MLT_REGISTER(mlt_service_filter_type, "placebo.convert", filter_placebo_convert_init);
     MLT_REGISTER(mlt_service_filter_type, "placebo.render", filter_placebo_render_init);
     MLT_REGISTER(mlt_service_filter_type, "placebo.shader", filter_placebo_shader_init);
-    MLT_REGISTER_METADATA(mlt_service_filter_type,
-                          "placebo.convert",
-                          metadata,
-                          "filter_placebo_convert.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type,
                           "placebo.render",
                           metadata,

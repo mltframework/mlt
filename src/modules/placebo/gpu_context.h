@@ -27,6 +27,8 @@
 
 #include <framework/mlt_frame.h>
 
+#define MLT_PLACEBO_IMAGE_PRIVATE "mlt_image_private"
+
 /* Return the singleton pl_gpu, lazily initialized on first call.
    Returns NULL on failure. Thread-safe. */
 pl_gpu placebo_gpu_get(void);
