@@ -1,6 +1,6 @@
 /*
  * consumer_decklink.cpp -- output through Blackmagic Design DeckLink
- * Copyright (C) 2010-2025 Meltytech, LLC
+ * Copyright (C) 2010-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -239,6 +239,8 @@ public:
         if (!m_running)
             return;
 
+        bool flushAudio = false;
+
         pthread_mutex_lock(&m_aqueue_lock);
         // When playing rewind or fast forward then we need to keep one
         // frame in the queue to prevent playback stalling.
@@ -246,8 +248,12 @@ public:
         while (mlt_deque_count(m_aqueue) > n)
             mlt_frame_close(mlt_frame(mlt_deque_pop_back(m_aqueue)));
         m_purge = true;
-        m_deckLinkOutput->FlushBufferedAudioSamples();
+        flushAudio = m_isAudio && m_deckLinkOutput;
         pthread_mutex_unlock(&m_aqueue_lock);
+
+        // The DeckLink SDK may re-enter RenderAudioSamples while flushing.
+        if (flushAudio)
+            m_deckLinkOutput->FlushBufferedAudioSamples();
     }
 
 protected:
