@@ -889,6 +889,39 @@ void mlt_frame_push_convert_image(mlt_frame self, mlt_convert_image convert)
     mlt_deque_push_back(list, (void *) convert);
 }
 
+/** Register an image-conversion callback on the frame.
+ *
+ * Callbacks are prepended to a list and dispatched in order by
+ * \p mlt_frame_convert_image. If \p convert is already registered on this
+ * frame it is silently ignored (deduplication). Has no effect if either
+ * argument is NULL.
+ *
+ * \public \memberof mlt_frame_s
+ * \param self a frame
+ * \param convert the conversion callback to register
+ */
+void mlt_frame_prepend_convert_image(mlt_frame self, mlt_convert_image convert)
+{
+    if (!self || !convert)
+        return;
+    mlt_properties props = MLT_FRAME_PROPERTIES(self);
+    mlt_deque list = mlt_properties_get_data(props, CONVERT_IMAGE_CALLBACKS, NULL);
+    if (!list) {
+        list = mlt_deque_init();
+        mlt_properties_set_data(props,
+                                CONVERT_IMAGE_CALLBACKS,
+                                list,
+                                0,
+                                (mlt_destructor) mlt_deque_close,
+                                NULL);
+    }
+    // Deduplicate: don't register the same function pointer twice.
+    for (int i = 0; i < mlt_deque_count(list); i++)
+        if (mlt_deque_peek(list, i) == (void *) convert)
+            return;
+    mlt_deque_push_front(list, (void *) convert);
+}
+
 /** Determine whether any image-conversion callbacks are registered.
  *
  * \public \memberof mlt_frame_s

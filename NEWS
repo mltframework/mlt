@@ -8,6 +8,7 @@ Framework
     Use `mlt_frame_push_convert_image()` to register a converter instead of
     setting `frame->convert_image` directly. Multiple converters are tried in
     registration order; the first that succeeds wins. New public API:
+    - `mlt_frame_prepend_convert_image()`
     - `mlt_frame_push_convert_image()`
     - `mlt_frame_convert_image()`
     - `mlt_frame_next_convert_image()`

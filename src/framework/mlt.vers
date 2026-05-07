@@ -691,6 +691,7 @@ MLT_7.36.0 {
 MLT_7.40.0 {
   global:
     mlt_frame_push_convert_image;
+    mlt_frame_prepend_convert_image;
     mlt_frame_has_convert_image;
     mlt_frame_convert_image;
     mlt_frame_next_convert_image;
