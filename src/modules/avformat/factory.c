@@ -45,7 +45,6 @@ extern mlt_link link_swresample_init(mlt_profile profile, mlt_service_type, cons
 // ffmpeg Header files
 #include "mltavformat_export.h"
 #include <libavcodec/avcodec.h>
-#include <libavdevice/avdevice.h>
 #include <libavfilter/avfilter.h>
 #include <libavformat/avformat.h>
 #include <libavutil/opt.h>
@@ -58,7 +57,6 @@ static void avformat_init()
     // Initialise avformat if necessary
     if (avformat_initialised == 0) {
         avformat_initialised = 1;
-        avdevice_register_all();
         avformat_network_init();
         av_log_set_level(mlt_log_get_level());
         if (getenv("MLT_AVFORMAT_PRODUCER_CACHE")) {
