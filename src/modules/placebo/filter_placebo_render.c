@@ -107,8 +107,7 @@ static int filter_get_image(mlt_frame frame,
         return mlt_frame_get_image(frame, image, format, width, height, writable);
     }
 
-    /* Request placebo from upstream. placebo.convert is responsible for any
-     * CPU upload/download around non-placebo filters in the chain. */
+    /* Request placebo private image format from upstream. */
     placebo_frame_set_requested_tex(frame, 1);
     *format = mlt_image_private;
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);

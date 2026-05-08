@@ -11,8 +11,8 @@ tags:
   - Video
 description: >
   GPU-accelerated scaling, debanding, dithering and tonemapping via libplacebo.
-  Uses D3D11 on Windows, Vulkan elsewhere. Processes every frame through
-  pl_renderer with configurable quality presets and scaling algorithms.
+  Uses D3D11 on Windows, Vulkan elsewhere. Useful as a finishing pass to reduce
+  banding artifacts and improve gradient quality before output.
   The compiled shader cache is stored in a platform-specific location and can
   be overridden by setting the MLT_PLACEBO_CACHE_PATH environment variable to
   an absolute path for the cache file.
@@ -22,12 +22,16 @@ parameters:
     title: Quality Preset
     type: string
     description: >
-      Overall quality preset. "fast" minimizes GPU work, "default" is balanced,
-      "high_quality" enables all enhancements.
+      "fast" minimizes GPU work, "default" is balanced, "high_quality" enables
+      all enhancements.
     default: default
     mutable: yes
     readonly: no
     widget: combo
+    values:
+      - fast
+      - default
+      - high_quality
 
   - identifier: upscaler
     title: Upscaler
@@ -39,6 +43,13 @@ parameters:
     mutable: yes
     readonly: no
     widget: combo
+    values:
+      - bilinear
+      - catmull_rom
+      - mitchell
+      - lanczos
+      - ewa_lanczos
+      - spline36
 
   - identifier: downscaler
     title: Downscaler
@@ -49,6 +60,13 @@ parameters:
     mutable: yes
     readonly: no
     widget: combo
+    values:
+      - bilinear
+      - catmull_rom
+      - mitchell
+      - lanczos
+      - ewa_lanczos
+      - spline36
 
   - identifier: deband
     title: Debanding
@@ -79,6 +97,11 @@ parameters:
     mutable: yes
     readonly: no
     widget: combo
+    values:
+      - blue
+      - ordered_lut
+      - white
+      - none
 
   - identifier: tonemapping
     title: Tone Mapping
@@ -90,3 +113,11 @@ parameters:
     mutable: yes
     readonly: no
     widget: combo
+    values:
+      - auto
+      - clip
+      - mobius
+      - reinhard
+      - hable
+      - bt.2390
+      - spline

@@ -150,7 +150,7 @@ int placebo_convert_image(mlt_frame frame,
         return 1;
 
     mlt_log_debug(NULL,
-                  "[placebo.convert] Converting from format %s to %s\n",
+                  "[placebo] Converting from format %s to %s\n",
                   mlt_image_format_name(*format),
                   mlt_image_format_name(output_format));
     if (placebo_frame_wants_tex(frame, output_format))
