@@ -104,7 +104,7 @@
             "cacheVariables": {
                 "BUILD_TESTING": "OFF",
                 "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
-                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
                 "CMAKE_PREFIX_PATH": "C:/Qt/$env{QT_VERSION}/mingw_64;C:/msys64/mingw64;C:/msys64/clangarm64",
                 "MOD_GLAXNIMATE_QT6": "ON",
                 "MOD_MOVIT": "OFF"
