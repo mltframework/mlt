@@ -31,10 +31,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <strings.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
+#ifdef _MSC_VER
+#define strncasecmp _strnicmp
+#define strcasecmp _stricmp
+#else
+#include <strings.h>
 #include <unistd.h>
+#endif
 
 #include "framework/mlt_factory.h"
 #include "framework/mlt_log.h"
