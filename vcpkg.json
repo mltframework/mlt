@@ -11,6 +11,7 @@
     "libebur128",
     "libexif",
     "libiconv",
+    "libsamplerate",
     "libvorbis",
     "libxml2",
     {
