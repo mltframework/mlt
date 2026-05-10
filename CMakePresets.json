@@ -14,7 +14,7 @@
                 "MOD_DECKLINK": "OFF",
                 "MOD_FREI0R": "ON",
                 "MOD_GDK": "ON",
-                "MOD_JACKRACK": "OFF",
+                "MOD_JACKRACK": "ON",
                 "USE_VST2": "OFF",
                 "USE_LV2": "OFF",
                 "MOD_KDENLIVE": "ON",
