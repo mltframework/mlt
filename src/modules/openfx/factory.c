@@ -71,12 +71,9 @@ static const char *getArchStr()
 #endif
 #define OFX_DIRSEP "\\"
 
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <dirent.h>
-#endif
-
 #include "shlobj.h"
 #include "tchar.h"
+#include <dirent.h>
 #endif
 
 extern mlt_filter filter_openfx_init(mlt_profile profile,
@@ -281,9 +278,13 @@ MLT_REPOSITORY
     char *openfx_path = getenv("OFX_PLUGIN_PATH");
     if (openfx_path) {
         char *path_copy = strdup(openfx_path);
-        char *saveptr;
         for (char *strptr = path_copy;; strptr = NULL) {
+#ifdef _WIN32
+            char *dir = strtok(strptr, MLT_DIRLIST_DELIMITER);
+#else
+            char *saveptr;
             char *dir = strtok_r(strptr, MLT_DIRLIST_DELIMITER, &saveptr);
+#endif
             if (dir == NULL)
                 break;
             scan_ofx_dir(repository, dir, &dli, 0);

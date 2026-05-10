@@ -75,10 +75,11 @@ uint16_t *mltofx_rgba64_to_half(const uint16_t *src, int n_pixels)
     uint16_t *dst = malloc((size_t) count * sizeof(uint16_t));
     if (!dst)
         return NULL;
+    int i;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < count; ++i)
+    for (i = 0; i < count; ++i)
         dst[i] = f32_to_f16((float) src[i] * (1.0f / 65535.0f));
     return dst;
 }
@@ -86,10 +87,11 @@ uint16_t *mltofx_rgba64_to_half(const uint16_t *src, int n_pixels)
 void mltofx_half_to_rgba64(const uint16_t *src, uint16_t *dst, int n_pixels)
 {
     int count = n_pixels * 4;
+    int i;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < count; ++i) {
+    for (i = 0; i < count; ++i) {
         float v = f16_to_f32(src[i]);
         // This clamping using >= and <= handles NaN and +/-inf
         v = (v >= 0.0f) ? (v <= 1.0f ? v : 1.0f) : 0.0f;
@@ -103,10 +105,11 @@ float *mltofx_rgba64_to_float(const uint16_t *src, int n_pixels)
     float *dst = malloc((size_t) count * sizeof(float));
     if (!dst)
         return NULL;
+    int i;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < count; ++i)
+    for (i = 0; i < count; ++i)
         dst[i] = (float) src[i] * (1.0f / 65535.0f);
     return dst;
 }
@@ -114,10 +117,11 @@ float *mltofx_rgba64_to_float(const uint16_t *src, int n_pixels)
 void mltofx_float_to_rgba64(const float *src, uint16_t *dst, int n_pixels)
 {
     int count = n_pixels * 4;
+    int i;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < count; ++i) {
+    for (i = 0; i < count; ++i) {
         float v = src[i];
         // This clamping using >= and <= handles NaN and +/-inf
         v = (v >= 0.0f) ? (v <= 1.0f ? v : 1.0f) : 0.0f;
