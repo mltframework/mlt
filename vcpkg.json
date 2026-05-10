@@ -23,6 +23,7 @@
     "pthreads",
     "qtbase",
     "qtsvg",
+    "rtaudio",
     "rubberband",
     "sdl2",
     "frei0r"
