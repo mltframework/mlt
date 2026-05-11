@@ -384,7 +384,7 @@ if(MOD_SOX)
 endif()
 
 if(MOD_SPATIALAUDIO)
-  pkg_check_modules(spatialaudio REQUIRED IMPORTED_TARGET spatialaudio)
+  pkg_check_modules(spatialaudio REQUIRED IMPORTED_TARGET spatialaudio>=0.4.0)
   list(APPEND MLT_SUPPORTED_COMPONENTS spatialaudio)
 endif()
 
