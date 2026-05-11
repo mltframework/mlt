@@ -80,11 +80,7 @@ public:
         if (binaural && !binauralizer.GetChannelCount()) {
             mlt_log_verbose(MLT_FILTER_SERVICE(filter()),
                             "configuring spatial audio binauralizer\n");
-            error = !binauralizer.Configure(AMBISONICS_ORDER,
-                                            true,
-                                            sampleRate,
-                                            samples,
-                                            tailLength);
+            error = !binauralizer.Configure(AMBISONICS_ORDER, true, sampleRate, samples, tailLength);
             if (!error) {
                 binauralizer.Reset();
             } else {
@@ -101,8 +97,9 @@ public:
                                        sampleRate,
                                        channels == 6   ? Amblib_SpeakerSetUps::kAmblib_51
                                        : channels == 2 ? Amblib_SpeakerSetUps::kAmblib_Stereo
-                                       : channels == 4 ? Amblib_SpeakerSetUps::kAmblib_Quad
-                                                       : Amblib_SpeakerSetUps::kAmblib_CustomSpeakerSetUp,
+                                       : channels == 4
+                                           ? Amblib_SpeakerSetUps::kAmblib_Quad
+                                           : Amblib_SpeakerSetUps::kAmblib_CustomSpeakerSetUp,
                                        channels);
             if (!error) {
                 mlt_log_verbose(MLT_FILTER_SERVICE(filter()),
@@ -139,9 +136,10 @@ public:
             if (!binaural) {
                 mlt_position position = mlt_filter_get_position(filter(), frame);
                 mlt_position length = mlt_filter_get_length2(filter(), frame);
-                processor.SetOrientation(Orientation(-DegreesToRadians(getDouble("yaw", position, length)),
-                                                     DegreesToRadians(getDouble("pitch", position, length)),
-                                                     DegreesToRadians(getDouble("roll", position, length))));
+                processor.SetOrientation(
+                    Orientation(-DegreesToRadians(getDouble("yaw", position, length)),
+                                DegreesToRadians(getDouble("pitch", position, length)),
+                                DegreesToRadians(getDouble("roll", position, length))));
                 processor.Refresh();
                 processor.Process(&bformat, samples);
                 zoomer.SetZoom(getDouble("zoom", position, length));
