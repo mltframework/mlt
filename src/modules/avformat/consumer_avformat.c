@@ -629,7 +629,7 @@ static void apply_properties(void *obj, mlt_properties properties, int flags)
                 || (opt_name[0] == 'a' && (flags & AV_OPT_FLAG_AUDIO_PARAM))))
             opt = av_opt_find(obj, ++opt_name, NULL, flags, search_flags);
         // Apply option if found
-        if (opt && strcmp(opt_name, "channel_layout"))
+        if (opt && strcmp(opt_name, "channel_layout") && strcmp(opt_name, "frame_duration"))
             av_opt_set(obj, opt_name, mlt_properties_get_value(properties, i), search_flags);
     }
 }
