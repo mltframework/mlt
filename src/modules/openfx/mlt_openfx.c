@@ -1260,6 +1260,8 @@ static OfxStatus mutexCreate(OfxMutexHandle *mutex, int lockCount)
 {
     if (!mutex)
         return kOfxStatFailed;
+    if (lockCount < 0)
+        return kOfxStatErrValue;
     OfxMutexImpl *m = (OfxMutexImpl *) malloc(sizeof(OfxMutexImpl));
     if (!m)
         return kOfxStatErrMemory;
@@ -1273,13 +1275,16 @@ static OfxStatus mutexCreate(OfxMutexHandle *mutex, int lockCount)
         return kOfxStatErrMemory;
     }
     *mutex = (OfxMutexHandle) m;
-    // lockCount: if negative, lock abs(lockCount) times; if positive, unlock that many times
-    if (lockCount < 0) {
-        for (int i = 0; i < -lockCount; ++i)
-            pthread_mutex_lock(&m->mtx);
-    } else if (lockCount > 0) {
-        for (int i = 0; i < lockCount; ++i)
-            pthread_mutex_unlock(&m->mtx);
+    for (int i = 0; i < lockCount; ++i) {
+        err = pthread_mutex_lock(&m->mtx);
+        if (err != 0) {
+            while (i-- > 0)
+                pthread_mutex_unlock(&m->mtx);
+            pthread_mutex_destroy(&m->mtx);
+            free(m);
+            *mutex = NULL;
+            return kOfxStatFailed;
+        }
     }
     return kOfxStatOK;
 }
