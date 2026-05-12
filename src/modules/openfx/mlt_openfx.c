@@ -1099,7 +1099,6 @@ static OfxStatus memoryFree(void *allocatedData)
 
 static OfxMemorySuiteV1 MltOfxMemorySuiteV1 = {memoryAlloc, memoryFree};
 
-#include <assert.h>
 // --- Thread-local storage for OFX threading context ---
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 static _Thread_local unsigned int ofx_thread_index = 0;
