@@ -5,7 +5,7 @@ add_library(mltopenfx MODULE
 )
 
 if(MSVC)
-  target_link_libraries(mltopenfx PRIVATE dirent)
+  
 endif()
 
 add_custom_target(Other_openfx_Files SOURCES
@@ -19,9 +19,11 @@ if(GPL AND TARGET PkgConfig::glib)
   generate_export_header(mltopenfx)
   target_compile_options(mltopenfx PRIVATE ${MLT_COMPILE_OPTIONS})
   target_include_directories(mltopenfx PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-  target_link_libraries(mltopenfx PRIVATE mlt PkgConfig::glib ${CMAKE_DL_LIBS})
+  target_link_libraries(mltopenfx PRIVATE mlt PkgConfig::glib ${CMAKE_DL_LIBS} Threads::Threads)
   target_include_directories(mltopenfx PRIVATE openfx/include)
-  if(NOT MSVC)
+  if(MSVC)
+    target_link_libraries(mltopenfx PRIVATE dirent PThreads4W::PThreads4W)
+  else()
     target_link_libraries(mltopenfx PRIVATE m)
   endif()
   if(OpenMP_C_FOUND)
