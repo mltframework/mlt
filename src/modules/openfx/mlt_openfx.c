@@ -1103,14 +1103,17 @@ static OfxMemorySuiteV1 MltOfxMemorySuiteV1 = {memoryAlloc, memoryFree};
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
 static _Thread_local unsigned int ofx_thread_index = 0;
 static _Thread_local int ofx_thread_spawned = 0;
+static _Thread_local unsigned int ofx_multi_thread_depth = 0;
 #else
 static pthread_key_t ofx_thread_index_key;
 static pthread_key_t ofx_thread_spawned_key;
+static pthread_key_t ofx_multi_thread_depth_key;
 static pthread_once_t ofx_thread_keys_once = PTHREAD_ONCE_INIT;
 static void ofx_make_thread_keys(void)
 {
     pthread_key_create(&ofx_thread_index_key, NULL);
     pthread_key_create(&ofx_thread_spawned_key, NULL);
+    pthread_key_create(&ofx_multi_thread_depth_key, NULL);
 }
 static void ofx_set_thread_index(unsigned int idx)
 {
@@ -1132,6 +1135,16 @@ static int ofx_get_thread_spawned(void)
     pthread_once(&ofx_thread_keys_once, ofx_make_thread_keys);
     return (int) (uintptr_t) pthread_getspecific(ofx_thread_spawned_key);
 }
+static void ofx_set_multi_thread_depth(unsigned int depth)
+{
+    pthread_once(&ofx_thread_keys_once, ofx_make_thread_keys);
+    pthread_setspecific(ofx_multi_thread_depth_key, (void *) (uintptr_t) depth);
+}
+static unsigned int ofx_get_multi_thread_depth(void)
+{
+    pthread_once(&ofx_thread_keys_once, ofx_make_thread_keys);
+    return (unsigned int) (uintptr_t) pthread_getspecific(ofx_multi_thread_depth_key);
+}
 #endif
 
 typedef struct
@@ -1147,14 +1160,18 @@ static int ofx_slices_proc(int id, int idx, int jobs, void *cookie)
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
     ofx_thread_index = idx;
     ofx_thread_spawned = 1;
+    ofx_multi_thread_depth++;
 #else
     ofx_set_thread_index(idx);
     ofx_set_thread_spawned(1);
+    ofx_set_multi_thread_depth(ofx_get_multi_thread_depth() + 1);
 #endif
     job->func(idx, jobs, job->customArg);
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    ofx_multi_thread_depth--;
     ofx_thread_spawned = 0;
 #else
+    ofx_set_multi_thread_depth(ofx_get_multi_thread_depth() - 1);
     ofx_set_thread_spawned(0);
 #endif
     return 0;
@@ -1162,25 +1179,39 @@ static int ofx_slices_proc(int id, int idx, int jobs, void *cookie)
 
 static OfxStatus multiThread(OfxThreadFunctionV1 func, unsigned int nThreads, void *customArg)
 {
+    unsigned int maxThreads;
+
     if (!func)
         return kOfxStatFailed;
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    if (ofx_multi_thread_depth)
+        return kOfxStatErrExists;
+#else
+    if (ofx_get_multi_thread_depth())
+        return kOfxStatErrExists;
+#endif
     mlt_log_verbose(NULL, "[openfx] multiThread: func=%p nThreads=%u\n", func, nThreads);
-    if (nThreads == 0)
-        nThreads = mlt_slices_count_normal();
-    if (nThreads < 1)
-        nThreads = 1;
+    maxThreads = (unsigned int) mlt_slices_count_normal();
+    if (maxThreads < 1)
+        maxThreads = 1;
+    if (nThreads == 0 || nThreads > maxThreads)
+        nThreads = maxThreads;
     if (nThreads == 1) {
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
         ofx_thread_index = 0;
         ofx_thread_spawned = 1;
+        ofx_multi_thread_depth++;
 #else
         ofx_set_thread_index(0);
         ofx_set_thread_spawned(1);
+        ofx_set_multi_thread_depth(ofx_get_multi_thread_depth() + 1);
 #endif
         func(0, 1, customArg);
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+        ofx_multi_thread_depth--;
         ofx_thread_spawned = 0;
 #else
+        ofx_set_multi_thread_depth(ofx_get_multi_thread_depth() - 1);
         ofx_set_thread_spawned(0);
 #endif
         return kOfxStatOK;
