@@ -1235,9 +1235,9 @@ static OfxStatus multiThreadIndex(unsigned int *threadIndex)
     if (!threadIndex)
         return kOfxStatFailed;
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
-    *threadIndex = ofx_thread_index;
+    *threadIndex = ofx_thread_spawned ? ofx_thread_index : 0;
 #else
-    *threadIndex = ofx_get_thread_index();
+    *threadIndex = ofx_get_thread_spawned() ? ofx_get_thread_index() : 0;
 #endif
     return kOfxStatOK;
 }
