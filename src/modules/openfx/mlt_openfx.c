@@ -1156,6 +1156,7 @@ typedef struct
 
 static int ofx_slices_proc(int id, int idx, int jobs, void *cookie)
 {
+    (void) id; // unused
     OfxSlicesJob *job = (OfxSlicesJob *) cookie;
 #if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
     ofx_thread_index = idx;
@@ -1295,8 +1296,10 @@ static OfxStatus mutexDestroy(const OfxMutexHandle mutex)
         return kOfxStatErrBadHandle;
     OfxMutexImpl *m = (OfxMutexImpl *) mutex;
     int err = pthread_mutex_destroy(&m->mtx);
+    if (err)
+        return kOfxStatErrBadHandle;
     free(m);
-    return err == 0 ? kOfxStatOK : kOfxStatErrBadHandle;
+    return kOfxStatOK;
 }
 
 static OfxStatus mutexLock(const OfxMutexHandle mutex)

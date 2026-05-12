@@ -4,10 +4,6 @@ add_library(mltopenfx MODULE
   filter_openfx.c
 )
 
-if(MSVC)
-  
-endif()
-
 add_custom_target(Other_openfx_Files SOURCES
   filter_openfx.yml
 )
