@@ -1,5 +1,5 @@
 --- # A metadata schema in Kwalify: http://www.kuwata-lab.com/kwalify/
-# Version: 7.1
+# Version: 7.2
 type: map
 mapping:
   "schema_version": # This should match the version comment above
@@ -58,6 +58,36 @@ mapping:
     type: seq
     sequence:
       - type: str # Can be a sentence or paragraph, preferably not a hyperlink
+  "audio_formats": # The audio formats the service accepts or produces
+    type: seq
+    required: no
+    sequence:
+      - type: str
+        enum:
+          - none
+          - s16
+          - s32
+          - s32le
+          - float
+          - f32le
+          - u8
+  "image_formats": # The image formats the service accepts or produces
+    type: seq
+    required: no
+    sequence:
+      - type: str
+        enum:
+          - none
+          - rgb
+          - rgba
+          - yuv422
+          - yuv420p
+          - glsl
+          - opengl_texture
+          - yuv422p16
+          - yuv420p10
+          - yuv444p10
+          - rgba64
   "parameters": # A list of all of the options for the service
     type: seq
     sequence:

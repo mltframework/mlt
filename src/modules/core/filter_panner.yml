@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: panner
 title: Audio Pan
-version: 2
+version: 3
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -11,6 +11,8 @@ tags:
   - Audio
 description: Pan an audio channel, adjust balance, or adjust fade.
 notes: Only handles up to 6 channels. Needs more work balance for surround and other channel layouts.
+audio_formats:
+  - f32le
 parameters:
   - identifier: start (*deprecated*)
     title: Start

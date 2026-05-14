@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.2
 type: filter
 identifier: movit.flip
 title: Flip (GLSL)
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Steinar H. Gunderson
 license: GPLv2
@@ -10,3 +10,5 @@ language: en
 description: A simple vertical flip.
 tags:
   - Video
+image_formats:
+  - glsl

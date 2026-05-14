@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: boxblur
 title: Box Blur (*DEPRECATED*)
-version: 3
+version: 4
 copyright: Leny Grisel, Jean-Baptiste Mardelle
 creator: Leny Grisel, Jean-Baptiste Mardelle
 license: LGPLv2.1
@@ -11,6 +11,8 @@ notes: >
     This filter is deprecated and will eventually be removed. Use the box_blur filter instead.
 tags:
   - Video
+image_formats:
+  - rgba
 parameters:
   - identifier: start (*DEPRECATED*)
     title: Size

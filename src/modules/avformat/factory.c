@@ -260,6 +260,19 @@ static void add_parameters(mlt_properties params,
     }
 }
 
+static void copy_list_property(mlt_properties dest, const char *name, mlt_properties source)
+{
+    if (!dest || !name || !source || !mlt_properties_count(source))
+        return;
+
+    mlt_properties list = mlt_properties_new();
+    if (!list)
+        return;
+
+    mlt_properties_inherit(list, source);
+    mlt_properties_set_data(dest, name, list, 0, (mlt_destructor) mlt_properties_close, NULL);
+}
+
 static mlt_properties avformat_metadata(mlt_service_type type, const char *id, void *data)
 {
     char file[PATH_MAX];
@@ -331,11 +344,14 @@ static mlt_properties avformat_metadata(mlt_service_type type, const char *id, v
 static mlt_properties avfilter_metadata(mlt_service_type type, const char *id, void *name)
 {
     AVFilter *f = (AVFilter *) avfilter_get_by_name(name);
+    mlt_properties filter_info = mlt_properties_get_data(mlt_global_properties(),
+                                                         "avfilter.filter_info",
+                                                         NULL);
     if (!f)
         return NULL;
 
     mlt_properties metadata = mlt_properties_new();
-    mlt_properties_set_double(metadata, "schema_version", 0.3);
+    mlt_properties_set_double(metadata, "schema_version", 7.2);
     mlt_properties_set(metadata, "title", f->name);
     mlt_properties_set(metadata, "version", LIBAVFILTER_IDENT);
     mlt_properties_set(metadata, "identifier", id);
@@ -362,7 +378,17 @@ static mlt_properties avfilter_metadata(mlt_service_type type, const char *id, v
     if (avfilter_pad_get_type(f->inputs, 0) == AVMEDIA_TYPE_AUDIO) {
         mlt_properties_set(tags, "0", "Audio");
     }
-
+    if (filter_info) {
+        mlt_properties info = mlt_properties_get_data(filter_info, f->name, NULL);
+        if (info) {
+            copy_list_property(metadata,
+                               "audio_formats",
+                               mlt_properties_get_data(info, "audio_formats", NULL));
+            copy_list_property(metadata,
+                               "image_formats",
+                               mlt_properties_get_data(info, "image_formats", NULL));
+        }
+    }
     if (f->priv_class) {
         mlt_properties params = mlt_properties_new();
         mlt_properties_set_data(metadata,
@@ -484,6 +510,15 @@ MLTAVFORMAT_EXPORT MLT_REPOSITORY
     mlt_properties_set_data(mlt_global_properties(),
                             "avfilter.yuv_only",
                             mlt_properties_load(dirname),
+                            0,
+                            (mlt_destructor) mlt_properties_close,
+                            NULL);
+
+    // Load per-filter format and metadata info into global properties.
+    snprintf(dirname, PATH_MAX, "%s/avformat/filter_info.yml", mlt_environment("MLT_DATA"));
+    mlt_properties_set_data(mlt_global_properties(),
+                            "avfilter.filter_info",
+                            mlt_properties_parse_yaml(dirname),
                             0,
                             (mlt_destructor) mlt_properties_close,
                             NULL);

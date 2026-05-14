@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.2
 type: producer
 identifier: noise
 title: Noise
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Charles Yates
 license: LGPLv2.1
@@ -11,3 +11,7 @@ tags:
   - Audio
   - Video
 description: White noise producer
+audio_formats:
+  - s16
+image_formats:
+  - yuv422

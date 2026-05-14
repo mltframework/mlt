@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: transition
 identifier: composite
 title: Composite (*DEPRECATED*)
-version: 2
+version: 3
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -23,6 +23,8 @@ notes: >
   "progressive" is set to 1.
 bugs:
   - Assumes lower field first during field rendering.
+image_formats:
+  - yuv422
 parameters:
   - identifier: factory
     title: Factory

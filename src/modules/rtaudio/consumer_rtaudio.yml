@@ -1,4 +1,4 @@
-schema_version: 0.3
+schema_version: 7.2
 type: consumer
 identifier: rtaudio
 title: RtAudio
@@ -6,7 +6,7 @@ description: >
   RtAudio provides native, realtime audio output across Linux,
   Macintosh OS X, Windows, and some BSD operating systems.
 url: http://www.music.mcgill.ca/~gary/rtaudio/
-version: 2
+version: 3
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 creator: Gary P. Scavone
@@ -14,6 +14,8 @@ license: LGPLv2.1
 language: en
 tags:
   - Audio
+audio_formats:
+  - s16
 parameters:
   - identifier: resource
     title: Device

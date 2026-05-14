@@ -1,8 +1,8 @@
-schema_version: 0.3
+schema_version: 7.2
 type: producer
 identifier: pixbuf
 title: GDK-PixBuf
-version: 2
+version: 3
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -18,7 +18,9 @@ notes: >
   height that maintains the image aspect.
   Environment variable MLT_PIXBUF_PRODUCER_CACHE could be used to to override
   /increase the number of cached converted images for simultaneous use.
-
+image_formats:
+  - rgb
+  - rgba
 parameters:
   - identifier: resource
     title: File

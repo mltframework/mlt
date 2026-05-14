@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: spot_remover
 title: Spot Remover
-version: 2
+version: 3
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -13,6 +13,12 @@ description: >
   
   The new pixel values are interpolated from the nearest pixels immediately
   outside of the specified area.
+image_formats:
+  - rgb
+  - rgba
+  - rgba64
+  - yuv420p
+  - yuv422
 parameters:
   - identifier: rect
     title: Rectangle

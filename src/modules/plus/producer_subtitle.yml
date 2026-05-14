@@ -1,15 +1,18 @@
-schema_version: 7.0
+schema_version: 7.2
 type: producer
 identifier: subtitle
 title: Subtitle
-version: 2
+version: 3
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
 tags:
   - Video
 description: Generate video frames with subtitle overlay
-  
+image_formats:
+  - rgb
+  - rgba
+  - rgba64
 parameters:
   - identifier: resource
     argument: yes

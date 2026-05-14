@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: lumakey
 title: Lumakey
-version: 1
+version: 2
 copyright: Janne Liljeblad
 creator: Janne Liljeblad
 license: LGPLv2.1
@@ -15,7 +15,8 @@ description: >
   This is used together with a compositor to combine two images so that 
   bright or dark areas of source image are overwritten on top of the
   destination image.
-
+image_formats:
+  - rgba
 parameters:
   - identifier: threshold
     title: Threshold

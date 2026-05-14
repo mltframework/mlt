@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.2
 type: filter
 identifier: resample
 title: Resample
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Dan Dennedy <dan@dennedy.org>
 license: LGPLv2.1
@@ -15,6 +15,8 @@ description: >
   
   This filter is automatically invoked by the loader producer to normalize
   audio from the producer to provide the rate requested by the consumer.
+audio_formats:
+  - f32le
 parameters:
   - identifier: frequency
     title: Frequency

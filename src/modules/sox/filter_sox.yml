@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.2
 type: filter
 identifier: sox
 title: SoX
-version: 2
+version: 3
 copyright: Meltytech, LLC
 license: LGPL
 language: en
@@ -14,7 +14,8 @@ description: Process audio using a SoX effect.
 bugs:
   - Some effects are stereo only, but MLT processes each channel separately.
   - Some effects have a temporal side-effect that do not work well.
-
+audio_formats:
+  - s32
 parameters:
   - identifier: effect
     argument: yes

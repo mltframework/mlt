@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.2
 type: transition
 identifier: matte
 title: Matte
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Maksym Veremeyenko
 license: LGPLv2.1
@@ -48,3 +48,5 @@ notes: |
   melt sg_gm_2013_clip_title.matte_full.mp4 -track noise: -track \
     sg_gm_2013_clip_title.fill.mp4 -transition matte a_track=2 \
     b_track=0 -transition qtblend a_track=1 b_track=2
+image_formats:
+  - yuv422

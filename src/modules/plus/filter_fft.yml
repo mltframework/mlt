@@ -1,8 +1,8 @@
-schema_version: 0.3
+schema_version: 7.2
 type: filter
 identifier: fft
 title: FFT
-version: 1
+version: 2
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -12,7 +12,9 @@ description: >
   An audio filter that computes the FFT of the audio.
   This filter does not modify the audio or the image. It only computes the FFT
   and stores the result in the "bins" property of the filter.
-  
+audio_formats:
+  - float
+  - s16
 parameters:
   - identifier: window_size
     title: Window Size

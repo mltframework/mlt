@@ -1,8 +1,8 @@
-schema_version: 0.3
+schema_version: 7.2
 type: producer
 identifier: pango
 title: Pango
-version: 3
+version: 4
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -37,8 +37,9 @@ notes: >
         mlt_producer_close(producer);
         mlt_profile_close(profile);
     };
-
-
+image_formats:
+  - rgb
+  - rgba
 parameters:
   - identifier: resource
     title: File

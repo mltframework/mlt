@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.2
 type: producer
 identifier: blipflash
 title: Blip Flash
-version: 1
+version: 2
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -12,6 +12,12 @@ tags:
 description: >
   Generate periodic synchronized audio blips and video flashes. 
   Blips are a 1kHz tone and last the duration of the flash frame.
+audio_formats:
+  - float
+image_formats:
+  - rgb
+  - rgba
+  - yuv422
 parameters:
   - identifier: period
     title: Flash Period

@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.2
 type: transition
 identifier: vqm
 title: Video Quality Measurement
-version: 2
+version: 3
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: GPLv3
@@ -16,6 +16,8 @@ description: >
   for visual comparison.
 tags:
   - Video
+image_formats:
+  - yuv422
 parameters:
   - identifier: render
     title: Render

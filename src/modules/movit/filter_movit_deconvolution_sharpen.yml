@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: movit.sharpen
 title: Deconvolution Sharpen (GLSL)
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Steinar H. Gunderson
 license: GPLv2
@@ -18,7 +18,8 @@ description: >
   The effect gives generally better results than unsharp masking, but can be very
   GPU intensive, and requires a fair bit of tweaking to get good results without
   ringing and/or excessive noise.
-
+image_formats:
+  - glsl
 parameters:
   - identifier: matrix_size
     title: Matrix Size
