@@ -18,12 +18,17 @@
  */
 
 #include "mlt_openfx.h"
+#include <framework/mlt_slices.h>
 
+#include <errno.h>
 #include <float.h>
 #include <math.h>
+#include <pthread.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #ifdef _OPENMP
 #include <omp.h>
@@ -1094,11 +1099,126 @@ static OfxStatus memoryFree(void *allocatedData)
 
 static OfxMemorySuiteV1 MltOfxMemorySuiteV1 = {memoryAlloc, memoryFree};
 
+// --- Thread-local storage for OFX threading context ---
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+static _Thread_local unsigned int ofx_thread_index = 0;
+static _Thread_local int ofx_thread_spawned = 0;
+static _Thread_local unsigned int ofx_multi_thread_depth = 0;
+#else
+static pthread_key_t ofx_thread_index_key;
+static pthread_key_t ofx_thread_spawned_key;
+static pthread_key_t ofx_multi_thread_depth_key;
+static pthread_once_t ofx_thread_keys_once = PTHREAD_ONCE_INIT;
+static void ofx_make_thread_keys(void)
+{
+    pthread_key_create(&ofx_thread_index_key, NULL);
+    pthread_key_create(&ofx_thread_spawned_key, NULL);
+    pthread_key_create(&ofx_multi_thread_depth_key, NULL);
+}
+static void ofx_set_thread_index(unsigned int idx)
+{
+    pthread_once(&ofx_thread_keys_once, ofx_make_thread_keys);
+    pthread_setspecific(ofx_thread_index_key, (void *) (uintptr_t) idx);
+}
+static void ofx_set_thread_spawned(int val)
+{
+    pthread_once(&ofx_thread_keys_once, ofx_make_thread_keys);
+    pthread_setspecific(ofx_thread_spawned_key, (void *) (uintptr_t) val);
+}
+static unsigned int ofx_get_thread_index(void)
+{
+    pthread_once(&ofx_thread_keys_once, ofx_make_thread_keys);
+    return (unsigned int) (uintptr_t) pthread_getspecific(ofx_thread_index_key);
+}
+static int ofx_get_thread_spawned(void)
+{
+    pthread_once(&ofx_thread_keys_once, ofx_make_thread_keys);
+    return (int) (uintptr_t) pthread_getspecific(ofx_thread_spawned_key);
+}
+static void ofx_set_multi_thread_depth(unsigned int depth)
+{
+    pthread_once(&ofx_thread_keys_once, ofx_make_thread_keys);
+    pthread_setspecific(ofx_multi_thread_depth_key, (void *) (uintptr_t) depth);
+}
+static unsigned int ofx_get_multi_thread_depth(void)
+{
+    pthread_once(&ofx_thread_keys_once, ofx_make_thread_keys);
+    return (unsigned int) (uintptr_t) pthread_getspecific(ofx_multi_thread_depth_key);
+}
+#endif
+
+typedef struct
+{
+    OfxThreadFunctionV1 *func;
+    unsigned int nThreads;
+    void *customArg;
+} OfxSlicesJob;
+
+static int ofx_slices_proc(int id, int idx, int jobs, void *cookie)
+{
+    (void) id; // unused
+    OfxSlicesJob *job = (OfxSlicesJob *) cookie;
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    ofx_thread_index = idx;
+    ofx_thread_spawned = 1;
+    ofx_multi_thread_depth++;
+#else
+    ofx_set_thread_index(idx);
+    ofx_set_thread_spawned(1);
+    ofx_set_multi_thread_depth(ofx_get_multi_thread_depth() + 1);
+#endif
+    job->func(idx, jobs, job->customArg);
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    ofx_multi_thread_depth--;
+    ofx_thread_spawned = 0;
+#else
+    ofx_set_multi_thread_depth(ofx_get_multi_thread_depth() - 1);
+    ofx_set_thread_spawned(0);
+#endif
+    return 0;
+}
+
 static OfxStatus multiThread(OfxThreadFunctionV1 func, unsigned int nThreads, void *customArg)
 {
+    unsigned int maxThreads;
+
     if (!func)
         return kOfxStatFailed;
-    func(0, 1, customArg);
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    if (ofx_multi_thread_depth)
+        return kOfxStatErrExists;
+#else
+    if (ofx_get_multi_thread_depth())
+        return kOfxStatErrExists;
+#endif
+    mlt_log_verbose(NULL, "[openfx] multiThread: func=%p nThreads=%u\n", func, nThreads);
+    maxThreads = (unsigned int) mlt_slices_count_normal();
+    if (maxThreads < 1)
+        maxThreads = 1;
+    if (nThreads == 0 || nThreads > maxThreads)
+        nThreads = maxThreads;
+    if (nThreads == 1) {
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+        ofx_thread_index = 0;
+        ofx_thread_spawned = 1;
+        ofx_multi_thread_depth++;
+#else
+        ofx_set_thread_index(0);
+        ofx_set_thread_spawned(1);
+        ofx_set_multi_thread_depth(ofx_get_multi_thread_depth() + 1);
+#endif
+        func(0, 1, customArg);
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+        ofx_multi_thread_depth--;
+        ofx_thread_spawned = 0;
+#else
+        ofx_set_multi_thread_depth(ofx_get_multi_thread_depth() - 1);
+        ofx_set_thread_spawned(0);
+#endif
+        return kOfxStatOK;
+    }
+    OfxSlicesJob job = {func, nThreads, customArg};
+    mlt_slices_run_normal(nThreads, ofx_slices_proc, &job);
     return kOfxStatOK;
 }
 
@@ -1106,7 +1226,8 @@ static OfxStatus multiThreadNumCPUs(unsigned int *nCPUs)
 {
     if (!nCPUs)
         return kOfxStatFailed;
-    *nCPUs = 1;
+    int count = mlt_slices_count_normal();
+    *nCPUs = count > 0 ? (unsigned int) count : 1;
     return kOfxStatOK;
 }
 
@@ -1114,21 +1235,58 @@ static OfxStatus multiThreadIndex(unsigned int *threadIndex)
 {
     if (!threadIndex)
         return kOfxStatFailed;
-    *threadIndex = 0;
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    *threadIndex = ofx_thread_spawned ? ofx_thread_index : 0;
+#else
+    *threadIndex = ofx_get_thread_spawned() ? ofx_get_thread_index() : 0;
+#endif
     return kOfxStatOK;
 }
 
 int multiThreadIsSpawnedThread(void)
 {
-    return false;
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    return ofx_thread_spawned;
+#else
+    return ofx_get_thread_spawned();
+#endif
 }
+
+typedef struct
+{
+    pthread_mutex_t mtx;
+} OfxMutexImpl;
 
 static OfxStatus mutexCreate(OfxMutexHandle *mutex, int lockCount)
 {
     if (!mutex)
         return kOfxStatFailed;
-    // do nothing single threaded
-    *mutex = 0;
+    if (lockCount < 0)
+        return kOfxStatErrValue;
+    OfxMutexImpl *m = (OfxMutexImpl *) malloc(sizeof(OfxMutexImpl));
+    if (!m)
+        return kOfxStatErrMemory;
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    int err = pthread_mutex_init(&m->mtx, &attr);
+    pthread_mutexattr_destroy(&attr);
+    if (err != 0) {
+        free(m);
+        return kOfxStatErrMemory;
+    }
+    *mutex = (OfxMutexHandle) m;
+    for (int i = 0; i < lockCount; ++i) {
+        err = pthread_mutex_lock(&m->mtx);
+        if (err != 0) {
+            while (i-- > 0)
+                pthread_mutex_unlock(&m->mtx);
+            pthread_mutex_destroy(&m->mtx);
+            free(m);
+            *mutex = NULL;
+            return kOfxStatFailed;
+        }
+    }
     return kOfxStatOK;
 }
 
@@ -1136,7 +1294,11 @@ static OfxStatus mutexDestroy(const OfxMutexHandle mutex)
 {
     if (!mutex)
         return kOfxStatErrBadHandle;
-    // do nothing single threaded
+    OfxMutexImpl *m = (OfxMutexImpl *) mutex;
+    int err = pthread_mutex_destroy(&m->mtx);
+    if (err)
+        return kOfxStatErrBadHandle;
+    free(m);
     return kOfxStatOK;
 }
 
@@ -1144,24 +1306,32 @@ static OfxStatus mutexLock(const OfxMutexHandle mutex)
 {
     if (!mutex)
         return kOfxStatErrBadHandle;
-    // do nothing single threaded
-    return kOfxStatOK;
+    OfxMutexImpl *m = (OfxMutexImpl *) mutex;
+    int err = pthread_mutex_lock(&m->mtx);
+    return err == 0 ? kOfxStatOK : kOfxStatErrBadHandle;
 }
 
 static OfxStatus mutexUnLock(const OfxMutexHandle mutex)
 {
     if (!mutex)
         return kOfxStatErrBadHandle;
-    // do nothing single threaded
-    return kOfxStatOK;
+    OfxMutexImpl *m = (OfxMutexImpl *) mutex;
+    int err = pthread_mutex_unlock(&m->mtx);
+    return err == 0 ? kOfxStatOK : kOfxStatErrBadHandle;
 }
 
 static OfxStatus mutexTryLock(const OfxMutexHandle mutex)
 {
     if (!mutex)
         return kOfxStatErrBadHandle;
-    // do nothing single threaded
-    return kOfxStatOK;
+    OfxMutexImpl *m = (OfxMutexImpl *) mutex;
+    int err = pthread_mutex_trylock(&m->mtx);
+    if (err == 0)
+        return kOfxStatOK;
+    else if (err == EBUSY)
+        return kOfxStatFailed;
+    else
+        return kOfxStatErrBadHandle;
 }
 
 static OfxMultiThreadSuiteV1 MltOfxMultiThreadSuiteV1 = {multiThread,
