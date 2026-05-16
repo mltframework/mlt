@@ -50,7 +50,7 @@
             "hidden": true,
             "generator": "Ninja",
             "environment": {
-                "QT_VERSION": "6.8.3",
+                "QT_VERSION": "6.10.3",
                 "PATH": "$env{HOME}/Qt/$env{QT_VERSION}/macos/bin:$env{HOME}/opt/bin:/usr/local/bin:/opt/local/bin:$penv{PATH}",
                 "PKG_CONFIG_PATH": "$env{HOME}/.local/lib/pkgconfig:$env{HOME}/.local/lib64/pkgconfig:$env{HOME}/opt/lib/pkgconfig:$env{HOME}/lib/pkgconfig:/usr/local/lib/pkgconfig:/opt/local/lib/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:$penv{PKG_CONFIG_PATH}"
             },
@@ -89,6 +89,9 @@
                 "lhs": "${hostSystemName}",
                 "rhs": "Darwin"
             },
+            "environment": {
+                "QT_VERSION": "6.8.3"
+            },
             "cacheVariables": {
                 "BUILD_TESTING": "OFF",
                 "MOD_GDK": "OFF"
@@ -109,7 +112,7 @@
             "environment": {
                 "PKG_CONFIG_PATH": "C:/Projects/Shotcut/lib/pkgconfig;C:/msys64/mingw64/lib/pkgconfig;C:/msys64/clangarm64/lib/pkgconfig;$penv{PKG_CONFIG_PATH}",
                 "Path": "C:/msys64/usr/local/bin;C:/msys64/mingw64/bin;C:/msys64/clangarm64/bin;$penv{Path}",
-                "QT_VERSION": "6.8.3"
+                "QT_VERSION": "6.10.3"
             },
             "generator": "Ninja"
         }
