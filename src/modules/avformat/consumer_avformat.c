@@ -1665,7 +1665,7 @@ static AVStream *add_attached_pic_stream(mlt_consumer consumer,
         return NULL;
     }
 
-    // Allocate packet and read image data into it
+    // Allocate packet and read image data into it.
     ctx->attached_pic_pkt = av_packet_alloc();
     if (!ctx->attached_pic_pkt) {
         mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "attached_pic: could not allocate packet\n");
@@ -1696,6 +1696,16 @@ static AVStream *add_attached_pic_stream(mlt_consumer consumer,
         mlt_log_error(MLT_CONSUMER_SERVICE(consumer),
                       "attached_pic: only JPEG and PNG are supported for '%s'\n",
                       pic_path);
+        av_packet_free(&ctx->attached_pic_pkt);
+        return NULL;
+    }
+
+    if (avformat_query_codec(ctx->oc->oformat, pic_codec_id, FF_COMPLIANCE_UNOFFICIAL) != 1) {
+        mlt_log_warning(MLT_CONSUMER_SERVICE(consumer),
+                        "attached_pic: output format '%s' does not support codec '%s'; "
+                        "ignoring cover art\n",
+                        ctx->oc->oformat->name,
+                        avcodec_get_name(pic_codec_id));
         av_packet_free(&ctx->attached_pic_pkt);
         return NULL;
     }
