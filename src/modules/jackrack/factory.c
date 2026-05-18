@@ -62,7 +62,7 @@ extern mlt_producer producer_ladspa_init(mlt_profile profile,
 
 #include <lv2.h>
 
-/* lv2 extenstions */
+/* lv2 extensions */
 #include <lv2/atom/atom.h>
 #include <lv2/midi/midi.h>
 #include <lv2/port-groups/port-groups.h>
@@ -274,7 +274,7 @@ static mlt_properties metadata(mlt_service_type type, const char *id, char *data
                 mlt_properties_set(p, "title", "Channel Mask");
                 mlt_properties_set(p,
                                    "description",
-                                   "A bitmask inidicating which channels to affect.");
+                                   "A bitmask indicating which channels to affect.");
                 mlt_properties_set(p, "type", "integer");
                 mlt_properties_set(p, "default", "0xFFFFFFFF");
                 mlt_properties_set_int(p, "minimum", 0);
