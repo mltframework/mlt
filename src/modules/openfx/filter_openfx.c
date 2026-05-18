@@ -79,6 +79,12 @@ static void update_plugin_params(mlt_properties properties,
             && strcmp(type, "float") == 0) {
             mlt_rect value = mlt_properties_anim_get_rect(properties, param_name, position, length);
             mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_double2d, value);
+        } else if (widget && (strcmp(widget, "point") == 0 || strcmp(widget, "size") == 0)
+                   && strcmp(type, "integer") == 0) {
+            mlt_rect value = mlt_properties_anim_get_rect(properties, param_name, position, length);
+            int x = (int) value.x;
+            int y = (int) value.y;
+            mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_int2d, x, y);
         } else if (strcmp(type, "float") == 0) {
             double value = mlt_properties_anim_get_double(properties, param_name, position, length);
             mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_double, value);
