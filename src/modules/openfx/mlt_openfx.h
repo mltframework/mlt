@@ -40,6 +40,7 @@ typedef enum {
     mltofx_prop_pointer = 16,
     mltofx_prop_color = 32,
     mltofx_prop_double2d = 64,
+    mltofx_prop_int2d = 128,
 } mltofx_property_type;
 
 typedef enum {

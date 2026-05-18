@@ -973,6 +973,25 @@ static OfxStatus paramSetValueImpl(OfxParamHandle paramHandle, va_list ap)
         double y = va_arg(ap, double);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, x);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, y);
+    } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
+        int x = va_arg(ap, int);
+        int y = va_arg(ap, int);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, x);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, y);
+    } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
+        double x = va_arg(ap, double);
+        double y = va_arg(ap, double);
+        double z = va_arg(ap, double);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, x);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, y);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, z);
+    } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
+        int x = va_arg(ap, int);
+        int y = va_arg(ap, int);
+        int z = va_arg(ap, int);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, x);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, y);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, z);
     } else if (strcmp(param_type, kOfxParamTypeString) == 0
                || strcmp(param_type, kOfxParamTypeStrChoice) == 0) {
         char *value = va_arg(ap, char *);
@@ -2120,10 +2139,8 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
 
 static int param_type_is_supported(const char *type)
 {
-    return strcmp(type, kOfxParamTypeInteger2D) && strcmp(type, kOfxParamTypeDouble3D)
-           && strcmp(type, kOfxParamTypeInteger3D) && strcmp(type, kOfxParamTypeCustom)
-           && strcmp(type, kOfxParamTypeBytes) && strcmp(type, kOfxParamTypePage)
-           && strcmp(type, kOfxParamTypePushButton);
+    return strcmp(type, kOfxParamTypeCustom) && strcmp(type, kOfxParamTypeBytes)
+           && strcmp(type, kOfxParamTypePage) && strcmp(type, kOfxParamTypePushButton);
 }
 
 void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properties mlt_metadata)
@@ -2314,6 +2331,9 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
             } else if (strcmp(coordinate_system, kOfxParamCoordinatesNormalised) == 0) {
                 mlt_properties_set(p, "normalized_coordinates", "yes");
             }
+        } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
+            // can be rendered as 2 integer number input fields
+            mlt_properties_set(p, "type", "integer");
         }
 
         if (strcmp(param_type, kOfxParamTypeGroup) != 0) {
@@ -2526,6 +2546,13 @@ void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_ty
         mlt_rect value = va_arg(ap, mlt_rect);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value.x);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
+    } break;
+
+    case mltofx_prop_int2d: {
+        int x = va_arg(ap, int);
+        int y = va_arg(ap, int);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, x);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, y);
     } break;
 
     default:
