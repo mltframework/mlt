@@ -331,6 +331,20 @@ mlt_filter filter_openfx_init(mlt_profile profile, mlt_service_type type, const 
     }
     mlt_properties params = mlt_properties_new();
     mlt_properties image_effect = mltofx_fetch_params(pt, params, NULL);
+
+    mlt_properties image_effect_params = mlt_properties_get_properties(image_effect, "params");
+    int param_count = mlt_properties_count(image_effect_params);
+    for (int i = 0; i < param_count; ++i) {
+        char *param_name = mlt_properties_get_name(image_effect_params, i);
+        mlt_properties param = mlt_properties_get_properties(image_effect_params, param_name);
+        if (!param)
+            continue;
+        mlt_properties param_props = mlt_properties_get_properties(param, "p");
+        if (!param_props)
+            continue;
+        mlt_properties_set_data(param_props, "_filter_properties", properties, 0, NULL, NULL);
+    }
+
     mltofx_create_instance(pt, image_effect);
 
     mlt_properties_set_properties(image_effect, "begin_sequence_props", mlt_properties_new());

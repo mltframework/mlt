@@ -689,6 +689,7 @@ static OfxStatus paramDefine(OfxParamSetHandle paramSet,
         || strcmp(kOfxParamTypePushButton, paramType) == 0) {
         mlt_properties pt = mlt_properties_new();
         mlt_properties_set_string(pt, "t", paramType);
+        mlt_properties_set_string(pt, "identifier", name);
 
         mlt_properties param_props = mlt_properties_new();
         mlt_properties_set_properties(pt, "p", param_props);
@@ -972,6 +973,95 @@ static OfxStatus paramGetIntegral(OfxParamHandle paramHandle, OfxTime time1, Ofx
     return kOfxStatErrUnsupported;
 }
 
+static uint8_t mltofx_double_to_color_component(double value)
+{
+    if (!(value >= 0.0))
+        value = 0.0;
+    else if (value > 1.0)
+        value = 1.0;
+    return (uint8_t) lrint(value * 255.0);
+}
+
+static void mltofx_sync_filter_property_from_param(mlt_properties param, mlt_properties param_props)
+{
+    mlt_properties filter_properties = mlt_properties_get_data(param_props,
+                                                               "_filter_properties",
+                                                               NULL);
+    char *param_name = mlt_properties_get(param, "identifier");
+    char *param_type = mlt_properties_get(param, "t");
+    if (!filter_properties || !param_name || !param_type)
+        return;
+
+    if (strcmp(param_type, kOfxParamTypeInteger) == 0
+        || strcmp(param_type, kOfxParamTypeBoolean) == 0) {
+        int value = 0;
+        if (propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, &value)
+            == kOfxStatOK)
+            mlt_properties_set_int(filter_properties, param_name, value);
+    } else if (strcmp(param_type, kOfxParamTypeChoice) == 0
+               || strcmp(param_type, kOfxParamTypeString) == 0
+               || strcmp(param_type, kOfxParamTypeStrChoice) == 0) {
+        char *value = NULL;
+        if (propGetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, &value)
+                == kOfxStatOK
+            && value) {
+            mlt_properties_set(filter_properties, param_name, value);
+        }
+    } else if (strcmp(param_type, kOfxParamTypeDouble) == 0) {
+        double value = 0.0;
+        if (propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, &value)
+            == kOfxStatOK) {
+            mlt_properties_set_double(filter_properties, param_name, value);
+        }
+    } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
+        double x = 0.0;
+        double y = 0.0;
+        if (propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, &x)
+                == kOfxStatOK
+            && propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, &y)
+                   == kOfxStatOK) {
+            char value[90] = "";
+            snprintf(value, sizeof(value), "%.4f %.4f", x, y);
+            mlt_properties_set(filter_properties, param_name, value);
+        }
+    } else if (strcmp(param_type, kOfxParamTypeRGBA) == 0) {
+        double red = 0.0;
+        double green = 0.0;
+        double blue = 0.0;
+        double alpha = 1.0;
+        if (propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, &red)
+                == kOfxStatOK
+            && propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, &green)
+                   == kOfxStatOK
+            && propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, &blue)
+                   == kOfxStatOK
+            && propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, &alpha)
+                   == kOfxStatOK) {
+            mlt_color value = {mltofx_double_to_color_component(red),
+                               mltofx_double_to_color_component(green),
+                               mltofx_double_to_color_component(blue),
+                               mltofx_double_to_color_component(alpha)};
+            mlt_properties_set_color(filter_properties, param_name, value);
+        }
+    } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
+        double red = 0.0;
+        double green = 0.0;
+        double blue = 0.0;
+        if (propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, &red)
+                == kOfxStatOK
+            && propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, &green)
+                   == kOfxStatOK
+            && propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, &blue)
+                   == kOfxStatOK) {
+            mlt_color value = {mltofx_double_to_color_component(red),
+                               mltofx_double_to_color_component(green),
+                               mltofx_double_to_color_component(blue),
+                               255};
+            mlt_properties_set_color(filter_properties, param_name, value);
+        }
+    }
+}
+
 static OfxStatus paramSetValueImpl(OfxParamHandle paramHandle, va_list ap)
 {
     mlt_properties param = (mlt_properties) paramHandle;
@@ -1043,6 +1133,8 @@ static OfxStatus paramSetValueImpl(OfxParamHandle paramHandle, va_list ap)
         char *value = va_arg(ap, char *);
         propSetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
     }
+
+    mltofx_sync_filter_property_from_param(param, param_props);
 
     return kOfxStatOK;
 }
