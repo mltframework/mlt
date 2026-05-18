@@ -1920,6 +1920,35 @@ void mltofx_destroy_instance(OfxPlugin *plugin, mlt_properties image_effect)
     mltofx_log_status_code(status_code, kOfxActionDestroyInstance);
 }
 
+void mltofx_set_render_scale(mlt_properties image_effect, double scale_x, double scale_y)
+{
+    if (!image_effect)
+        return;
+    if (scale_x <= 0.0)
+        scale_x = 1.0;
+    if (scale_y <= 0.0)
+        scale_y = 1.0;
+    mlt_properties_set_double(image_effect, "_render_scale_x", scale_x);
+    mlt_properties_set_double(image_effect, "_render_scale_y", scale_y);
+}
+
+static void mltofx_get_render_scale(mlt_properties image_effect, double *scale_x, double *scale_y)
+{
+    if (scale_x)
+        *scale_x = 1.0;
+    if (scale_y)
+        *scale_y = 1.0;
+    if (!image_effect)
+        return;
+
+    double x = mlt_properties_get_double(image_effect, "_render_scale_x");
+    double y = mlt_properties_get_double(image_effect, "_render_scale_y");
+    if (x > 0.0 && scale_x)
+        *scale_x = x;
+    if (y > 0.0 && scale_y)
+        *scale_y = y;
+}
+
 void mltofx_set_source_clip_data(OfxPlugin *plugin,
                                  mlt_properties image_effect,
                                  uint8_t *image,
@@ -1931,6 +1960,9 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
 {
     mlt_properties clip;
     mlt_properties clip_prop;
+    double render_scale_x = 1.0;
+    double render_scale_y = 1.0;
+    mltofx_get_render_scale(image_effect, &render_scale_x, &render_scale_y);
 
     clipGetHandle((OfxImageEffectHandle) image_effect,
                   "Source",
@@ -2045,8 +2077,14 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
     propSetString((OfxPropertySetHandle) clip_prop, kOfxImagePropUniqueIdentifier, 0, tstr);
     free(tstr);
 
-    propSetDouble((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropRenderScale, 1, 1.0);
+    propSetDouble((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropRenderScale,
+                  0,
+                  render_scale_x);
+    propSetDouble((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropRenderScale,
+                  1,
+                  render_scale_y);
 
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImageClipPropConnected, 0, 1);
 }
@@ -2062,6 +2100,9 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
 {
     mlt_properties clip;
     mlt_properties clip_prop;
+    double render_scale_x = 1.0;
+    double render_scale_y = 1.0;
+    mltofx_get_render_scale(image_effect, &render_scale_x, &render_scale_y);
 
     clipGetHandle((OfxImageEffectHandle) image_effect,
                   "Output",
@@ -2162,8 +2203,14 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
     propSetString((OfxPropertySetHandle) clip_prop, kOfxImagePropUniqueIdentifier, 0, tstr);
     free(tstr);
 
-    propSetDouble((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropRenderScale, 1, 1.0);
+    propSetDouble((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropRenderScale,
+                  0,
+                  render_scale_x);
+    propSetDouble((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropRenderScale,
+                  1,
+                  render_scale_y);
 
     propSetDouble((OfxPropertySetHandle) clip_prop,
                   kOfxImagePropPixelAspectRatio,
@@ -2719,6 +2766,9 @@ void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_eff
 
     mlt_properties output_clip = NULL;
     mlt_properties output_clip_props = NULL;
+    double render_scale_x = 1.0;
+    double render_scale_y = 1.0;
+    mltofx_get_render_scale(image_effect, &render_scale_x, &render_scale_y);
     clipGetHandle((OfxImageEffectHandle) image_effect,
                   "Output",
                   (OfxImageClipHandle *) &output_clip,
@@ -2771,8 +2821,14 @@ void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_eff
 
     propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxPropTime, 0, ofx_time);
 
-    propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxImageEffectPropRenderScale, 1, 1.0);
+    propSetDouble((OfxPropertySetHandle) get_rod_in_args,
+                  kOfxImageEffectPropRenderScale,
+                  0,
+                  render_scale_x);
+    propSetDouble((OfxPropertySetHandle) get_rod_in_args,
+                  kOfxImageEffectPropRenderScale,
+                  1,
+                  render_scale_y);
 
     propSetDouble((OfxPropertySetHandle) get_rod_out_args,
                   kOfxImageEffectPropRegionOfDefinition,
@@ -2852,11 +2908,20 @@ void mltofx_get_regions_of_interest(
     mlt_properties get_roi_in_args = mlt_properties_get_properties(image_effect, "get_roi_in_args");
     mlt_properties get_roi_out_args = mlt_properties_get_properties(image_effect,
                                                                     "get_roi_out_args");
+    double render_scale_x = 1.0;
+    double render_scale_y = 1.0;
+    mltofx_get_render_scale(image_effect, &render_scale_x, &render_scale_y);
 
     propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxPropTime, 0, ofx_time);
     propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxPropTime, 1, ofx_time);
-    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxImageEffectPropRenderScale, 1, 1.0);
+    propSetDouble((OfxPropertySetHandle) get_roi_in_args,
+                  kOfxImageEffectPropRenderScale,
+                  0,
+                  render_scale_x);
+    propSetDouble((OfxPropertySetHandle) get_roi_in_args,
+                  kOfxImageEffectPropRenderScale,
+                  1,
+                  render_scale_y);
 
     propSetDouble((OfxPropertySetHandle) get_roi_in_args,
                   kOfxImageEffectPropRegionOfInterest,
@@ -2886,6 +2951,9 @@ void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect
 {
     mlt_properties begin_sequence_props = mlt_properties_get_properties(image_effect,
                                                                         "begin_sequence_props");
+    double render_scale_x = 1.0;
+    double render_scale_y = 1.0;
+    mltofx_get_render_scale(image_effect, &render_scale_x, &render_scale_y);
     propSetDouble((OfxPropertySetHandle) begin_sequence_props,
                   kOfxImageEffectPropFrameRange,
                   0,
@@ -2901,11 +2969,11 @@ void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect
     propSetDouble((OfxPropertySetHandle) begin_sequence_props,
                   kOfxImageEffectPropRenderScale,
                   0,
-                  1.0);
+                  render_scale_x);
     propSetDouble((OfxPropertySetHandle) begin_sequence_props,
                   kOfxImageEffectPropRenderScale,
                   1,
-                  1.0);
+                  render_scale_y);
 
     propSetInt((OfxPropertySetHandle) begin_sequence_props,
                kOfxImageEffectPropSequentialRenderStatus,
@@ -2930,6 +2998,9 @@ void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect, 
 {
     mlt_properties end_sequence_props = mlt_properties_get_properties(image_effect,
                                                                       "end_sequence_props");
+    double render_scale_x = 1.0;
+    double render_scale_y = 1.0;
+    mltofx_get_render_scale(image_effect, &render_scale_x, &render_scale_y);
     propSetDouble((OfxPropertySetHandle) end_sequence_props,
                   kOfxImageEffectPropFrameRange,
                   0,
@@ -2944,8 +3015,14 @@ void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect, 
 
     propSetInt((OfxPropertySetHandle) end_sequence_props, kOfxPropIsInteractive, 0, 0);
 
-    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropRenderScale, 1, 1.0);
+    propSetDouble((OfxPropertySetHandle) end_sequence_props,
+                  kOfxImageEffectPropRenderScale,
+                  0,
+                  render_scale_x);
+    propSetDouble((OfxPropertySetHandle) end_sequence_props,
+                  kOfxImageEffectPropRenderScale,
+                  1,
+                  render_scale_y);
 
     propSetInt((OfxPropertySetHandle) end_sequence_props,
                kOfxImageEffectPropSequentialRenderStatus,
@@ -2970,6 +3047,9 @@ void mltofx_action_render(
     OfxPlugin *plugin, mlt_properties image_effect, double ofx_time, int width, int height)
 {
     mlt_properties render_in_args = mlt_properties_get_properties(image_effect, "render_in_args");
+    double render_scale_x = 1.0;
+    double render_scale_y = 1.0;
+    mltofx_get_render_scale(image_effect, &render_scale_x, &render_scale_y);
     propSetDouble((OfxPropertySetHandle) render_in_args, kOfxPropTime, 0, ofx_time);
 
     propSetString((OfxPropertySetHandle) render_in_args,
@@ -2982,8 +3062,14 @@ void mltofx_action_render(
     propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderWindow, 2, width);
     propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderWindow, 3, height);
 
-    propSetDouble((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderScale, 1, 1.0);
+    propSetDouble((OfxPropertySetHandle) render_in_args,
+                  kOfxImageEffectPropRenderScale,
+                  0,
+                  render_scale_x);
+    propSetDouble((OfxPropertySetHandle) render_in_args,
+                  kOfxImageEffectPropRenderScale,
+                  1,
+                  render_scale_y);
 
     propSetInt((OfxPropertySetHandle) render_in_args,
                kOfxImageEffectPropSequentialRenderStatus,

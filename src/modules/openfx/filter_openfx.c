@@ -231,6 +231,11 @@ static int filter_get_image(mlt_frame frame,
     if (pixel_aspect_ratio <= 0.0)
         pixel_aspect_ratio = 1.0;
 
+    mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+    double render_scale_x = mlt_profile_scale_width(profile, *width);
+    double render_scale_y = mlt_profile_scale_height(profile, *height);
+    mltofx_set_render_scale(image_effect, render_scale_x, render_scale_y);
+
     mlt_position position = mlt_filter_get_position(filter, frame);
     mlt_position length = mlt_filter_get_length2(filter, frame);
     double ofx_time = (double) position;
