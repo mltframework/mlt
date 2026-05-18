@@ -89,6 +89,8 @@ void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_ty
 
 void mltofx_set_render_scale(mlt_properties image_effect, double scale_x, double scale_y);
 
+int mltofx_allows_frame_threading(mlt_properties image_effect);
+
 void mltofx_get_clip_preferences(OfxPlugin *plugin, mlt_properties image_effect);
 
 void mltofx_get_region_of_definition(OfxPlugin *plugin,

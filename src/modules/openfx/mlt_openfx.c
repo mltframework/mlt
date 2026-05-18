@@ -1338,7 +1338,7 @@ static OfxStatus multiThread(OfxThreadFunctionV1 func, unsigned int nThreads, vo
     if (ofx_get_multi_thread_depth())
         return kOfxStatErrExists;
 #endif
-    mlt_log_verbose(NULL, "[openfx] multiThread: func=%p nThreads=%u\n", func, nThreads);
+    mlt_log_debug(NULL, "[openfx] multiThread: func=%p nThreads=%u\n", func, nThreads);
     maxThreads = (unsigned int) mlt_slices_count_normal();
     if (maxThreads < 1)
         maxThreads = 1;
@@ -1947,6 +1947,26 @@ static void mltofx_get_render_scale(mlt_properties image_effect, double *scale_x
         *scale_x = x;
     if (y > 0.0 && scale_y)
         *scale_y = y;
+}
+
+int mltofx_allows_frame_threading(mlt_properties image_effect)
+{
+    mlt_properties props = mlt_properties_get_properties(image_effect, "props");
+    if (!props)
+        return 0;
+
+    char *thread_safety = NULL;
+    if (propGetString((OfxPropertySetHandle) props,
+                      kOfxImageEffectPluginRenderThreadSafety,
+                      0,
+                      &thread_safety)
+            != kOfxStatOK
+        || !thread_safety) {
+        // OFX default is instance-safe when not provided.
+        return 1;
+    }
+
+    return strcmp(thread_safety, kOfxImageEffectRenderUnsafe) != 0;
 }
 
 void mltofx_set_source_clip_data(OfxPlugin *plugin,

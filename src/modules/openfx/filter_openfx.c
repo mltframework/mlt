@@ -113,6 +113,71 @@ static void natron_compat_apply_size(mlt_properties image_effect_params,
                            state->height);
 }
 
+static void reset_image_effect_action_props(mlt_properties image_effect, const char *name)
+{
+    mlt_properties old_props = mlt_properties_get_properties(image_effect, name);
+    mlt_properties_set_properties(image_effect, name, mlt_properties_new());
+    if (old_props)
+        mlt_properties_close(old_props);
+}
+
+static void init_image_effect_action_props(mlt_properties image_effect)
+{
+    reset_image_effect_action_props(image_effect, "begin_sequence_props");
+    reset_image_effect_action_props(image_effect, "end_sequence_props");
+    reset_image_effect_action_props(image_effect, "get_rod_in_args");
+    reset_image_effect_action_props(image_effect, "get_rod_out_args");
+    reset_image_effect_action_props(image_effect, "get_roi_in_args");
+    reset_image_effect_action_props(image_effect, "get_roi_out_args");
+    reset_image_effect_action_props(image_effect, "get_clippref_args");
+    reset_image_effect_action_props(image_effect, "render_in_args");
+}
+
+static mlt_properties create_image_effect_instance(OfxPlugin *plugin,
+                                                   mlt_properties filter_properties,
+                                                   int sync_param_backlink)
+{
+    mlt_properties params = mlt_properties_new();
+    if (!params)
+        return NULL;
+
+    mlt_properties image_effect = mltofx_fetch_params(plugin, params, NULL);
+    if (!image_effect) {
+        mlt_properties_close(params);
+        return NULL;
+    }
+
+    if (sync_param_backlink) {
+        mlt_properties image_effect_params = mlt_properties_get_properties(image_effect, "params");
+        int param_count = mlt_properties_count(image_effect_params);
+        for (int i = 0; i < param_count; ++i) {
+            char *param_name = mlt_properties_get_name(image_effect_params, i);
+            mlt_properties param = mlt_properties_get_properties(image_effect_params, param_name);
+            if (!param)
+                continue;
+            mlt_properties param_props = mlt_properties_get_properties(param, "p");
+            if (!param_props)
+                continue;
+            mlt_properties_set_data(param_props,
+                                    "_filter_properties",
+                                    filter_properties,
+                                    0,
+                                    NULL,
+                                    NULL);
+        }
+    }
+
+    mltofx_create_instance(plugin, image_effect);
+    init_image_effect_action_props(image_effect);
+    mlt_properties_set_data(image_effect,
+                            "_runtime_params",
+                            params,
+                            0,
+                            (mlt_destructor) mlt_properties_close,
+                            NULL);
+    return image_effect;
+}
+
 static mlt_image_format select_image_format(mlt_image_format incoming,
                                             mltofx_depths_mask plugin_support_depths,
                                             int plugin_handles_16bit,
@@ -203,9 +268,18 @@ static int filter_get_image(mlt_frame frame,
     mlt_filter filter = (mlt_filter) mlt_frame_pop_service(frame);
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
     OfxPlugin *plugin = mlt_properties_get_data(properties, "ofx_plugin", NULL);
-    mlt_properties image_effect = mlt_properties_get_properties(properties, OFX_IMAGE_EFFECT);
+    mlt_properties base_image_effect = mlt_properties_get_properties(properties, OFX_IMAGE_EFFECT);
+    int allow_frame_threading = mlt_properties_get_int(properties, "_allow_frame_threading");
+    mlt_properties image_effect = base_image_effect;
+    if (allow_frame_threading) {
+        image_effect = create_image_effect_instance(plugin, properties, 0);
+        if (!image_effect)
+            image_effect = base_image_effect;
+    }
+
     mlt_properties params = mlt_properties_get_properties(image_effect, "mltofx_params");
     mlt_properties image_effect_params = mlt_properties_get_properties(image_effect, "params");
+    int lock_service = (image_effect == base_image_effect);
 
     mlt_image_format requested_format = *format;
     mltofx_depths_mask plugin_support_depths = mltofx_plugin_supported_depths(image_effect);
@@ -298,7 +372,8 @@ static int filter_get_image(mlt_frame frame,
                           : use_float ? (uint8_t *) float_out
                                       : *image;
 
-    mlt_service_lock(MLT_FILTER_SERVICE(filter));
+    if (lock_service)
+        mlt_service_lock(MLT_FILTER_SERVICE(filter));
 
     update_plugin_params(properties, image_effect_params, params, position, length);
 
@@ -350,7 +425,13 @@ static int filter_get_image(mlt_frame frame,
     mltofx_action_render(plugin, image_effect, ofx_time, *width, *height);
     mltofx_end_sequence_render(plugin, image_effect, ofx_time);
 
-    mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+    if (lock_service)
+        mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+
+    if (image_effect != base_image_effect) {
+        mltofx_destroy_instance(plugin, image_effect);
+        mlt_properties_close(image_effect);
+    }
 
     // Convert output back to rgba64 in-place — outside the lock, per-frame only.
     if (use_half) {
@@ -424,44 +505,24 @@ mlt_filter filter_openfx_init(mlt_profile profile, mlt_service_type type, const 
         mlt_filter_close(filter);
         return NULL;
     }
-    mlt_properties params = mlt_properties_new();
-    mlt_properties image_effect = mltofx_fetch_params(pt, params, NULL);
-
-    mlt_properties image_effect_params = mlt_properties_get_properties(image_effect, "params");
-    int param_count = mlt_properties_count(image_effect_params);
-    for (int i = 0; i < param_count; ++i) {
-        char *param_name = mlt_properties_get_name(image_effect_params, i);
-        mlt_properties param = mlt_properties_get_properties(image_effect_params, param_name);
-        if (!param)
-            continue;
-        mlt_properties param_props = mlt_properties_get_properties(param, "p");
-        if (!param_props)
-            continue;
-        mlt_properties_set_data(param_props, "_filter_properties", properties, 0, NULL, NULL);
+    mlt_properties image_effect = create_image_effect_instance(pt, properties, 1);
+    if (!image_effect) {
+        mlt_log_error(filter, "Failed to create OpenFX image effect instance: %s\n", id);
+        mlt_filter_close(filter);
+        return NULL;
     }
 
-    mltofx_create_instance(pt, image_effect);
-
-    mlt_properties_set_properties(image_effect, "begin_sequence_props", mlt_properties_new());
-    mlt_properties_close(mlt_properties_get_properties(image_effect, "get_rod_in_args"));
-    mlt_properties_set_properties(image_effect, "end_sequence_props", mlt_properties_new());
-    mlt_properties_close(mlt_properties_get_properties(image_effect, "get_rod_out_args"));
-    mlt_properties_set_properties(image_effect, "get_rod_in_args", mlt_properties_new());
-    mlt_properties_close(mlt_properties_get_properties(image_effect, "get_roi_in_args"));
-    mlt_properties_set_properties(image_effect, "get_rod_out_args", mlt_properties_new());
-    mlt_properties_close(mlt_properties_get_properties(image_effect, "get_roi_out_args"));
-    mlt_properties_set_properties(image_effect, "get_roi_in_args", mlt_properties_new());
-    mlt_properties_close(mlt_properties_get_properties(image_effect, "get_roi_in_args"));
-    mlt_properties_set_properties(image_effect, "get_roi_out_args", mlt_properties_new());
-    mlt_properties_close(mlt_properties_get_properties(image_effect, "get_roi_out_args"));
-    mlt_properties_set_properties(image_effect, "get_clippref_args", mlt_properties_new());
-    mlt_properties_close(mlt_properties_get_properties(image_effect, "get_clippref_args"));
-    mlt_properties_set_properties(image_effect, "render_in_args", mlt_properties_new());
-    mlt_properties_close(mlt_properties_get_properties(image_effect, "render_in_args"));
+    mlt_properties_set_int(properties,
+                           "_allow_frame_threading",
+                           mltofx_allows_frame_threading(image_effect));
+    mlt_log_info(filter,
+                 "OpenFX threading mode for %s: %s\n",
+                 id,
+                 mlt_properties_get_int(properties, "_allow_frame_threading") ? "frame-threaded"
+                                                                              : "serialized");
     mlt_properties_set_data(properties, "ofx_plugin", pt, 0, NULL, NULL);
     mlt_properties_set_properties(properties, OFX_IMAGE_EFFECT, image_effect);
     mlt_properties_close(image_effect);
-    mlt_properties_close(params);
     filter->process = filter_process;
     filter->close = filter_close;
     return filter;
