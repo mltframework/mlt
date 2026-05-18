@@ -951,23 +951,19 @@ static OfxStatus paramSetValueImpl(OfxParamHandle paramHandle, va_list ap)
         double value = va_arg(ap, double);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
     } else if (strcmp(param_type, kOfxParamTypeRGBA) == 0) {
-        mlt_color value = va_arg(ap, mlt_color);
-
-        double red = (double) value.r / 255.0;
-        double green = (double) value.g / 255.0;
-        double blue = (double) value.b / 255.0;
-        double alpha = (double) value.a / 255.0;
+        double red = va_arg(ap, double);
+        double green = va_arg(ap, double);
+        double blue = va_arg(ap, double);
+        double alpha = va_arg(ap, double);
 
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, alpha);
     } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
-        mlt_color value = va_arg(ap, mlt_color);
-
-        double red = (double) value.r / 255.0;
-        double green = (double) value.g / 255.0;
-        double blue = (double) value.b / 255.0;
+        double red = va_arg(ap, double);
+        double green = va_arg(ap, double);
+        double blue = va_arg(ap, double);
 
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
