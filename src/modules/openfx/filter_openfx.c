@@ -221,8 +221,10 @@ static int filter_get_image(mlt_frame frame,
                                 pixel_aspect_ratio,
                                 ofx_depth);
 
-    // OFX pre-render action order: GetClipPreferences → GetRegionsOfInterest → BeginSequenceRender
+    // OFX pre-render action order:
+    // GetClipPreferences -> GetRegionOfDefinition -> GetRegionsOfInterest -> BeginSequenceRender
     mltofx_get_clip_preferences(plugin, image_effect);
+    mltofx_get_region_of_definition(plugin, image_effect, ofx_time);
     mltofx_get_regions_of_interest(plugin, image_effect, ofx_time, (double) *width, (double) *height);
     mltofx_begin_sequence_render(plugin, image_effect, ofx_time);
 
