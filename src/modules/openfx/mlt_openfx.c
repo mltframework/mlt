@@ -211,19 +211,12 @@ static OfxStatus clipGetImage(OfxImageClipHandle clip,
                               const OfxRectD *region,
                               OfxPropertySetHandle *imageHandle)
 {
+    (void) time;
+    (void) region;
     if (!clip)
         return kOfxStatErrBadHandle;
     *imageHandle = (OfxPropertySetHandle) mlt_properties_get_properties((mlt_properties) clip,
                                                                         "props");
-    if (region != NULL) {
-        OfxRectI rect = {0, 0, 0, 0};
-        propGetIntN((OfxPropertySetHandle) *imageHandle, kOfxImagePropBounds, 4, &rect.x1);
-        OfxRectD *region2 = (OfxRectD *) region;
-        region2->x1 = (double) rect.x1;
-        region2->x2 = (double) rect.x2;
-        region2->y1 = (double) rect.y1;
-        region2->y2 = (double) rect.y2;
-    }
     return kOfxStatOK;
 }
 
