@@ -876,8 +876,8 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
                 return kOfxStatErrUnknown;
         }
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
-        double *Y = va_arg(ap, double *);
         double *X = va_arg(ap, double *);
+        double *Y = va_arg(ap, double *);
 
         OfxStatus status
             = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
@@ -886,6 +886,52 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
         if (status != kOfxStatOK) {
             status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
             status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
+            if (status != kOfxStatOK)
+                return kOfxStatErrUnknown;
+        }
+    } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
+        int *X = va_arg(ap, int *);
+        int *Y = va_arg(ap, int *);
+
+        OfxStatus status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
+        status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
+
+        if (status != kOfxStatOK) {
+            status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
+            status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
+            if (status != kOfxStatOK)
+                return kOfxStatErrUnknown;
+        }
+    } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
+        double *X = va_arg(ap, double *);
+        double *Y = va_arg(ap, double *);
+        double *Z = va_arg(ap, double *);
+
+        OfxStatus status
+            = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
+        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
+        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, Z);
+
+        if (status != kOfxStatOK) {
+            status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
+            status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
+            status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, Z);
+            if (status != kOfxStatOK)
+                return kOfxStatErrUnknown;
+        }
+    } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
+        int *X = va_arg(ap, int *);
+        int *Y = va_arg(ap, int *);
+        int *Z = va_arg(ap, int *);
+
+        OfxStatus status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
+        status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
+        status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, Z);
+
+        if (status != kOfxStatOK) {
+            status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
+            status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
+            status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, Z);
             if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
         }
