@@ -969,9 +969,10 @@ static OfxStatus paramSetValueImpl(OfxParamHandle paramHandle, va_list ap)
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
-        mlt_rect value = va_arg(ap, mlt_rect);
-        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value.x);
-        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
+        double x = va_arg(ap, double);
+        double y = va_arg(ap, double);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, x);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, y);
     } else if (strcmp(param_type, kOfxParamTypeString) == 0
                || strcmp(param_type, kOfxParamTypeStrChoice) == 0) {
         char *value = va_arg(ap, char *);
