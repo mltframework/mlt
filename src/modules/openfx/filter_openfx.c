@@ -19,6 +19,7 @@
 
 #include "mlt_openfx.h"
 
+#include <ctype.h>
 #include <framework/mlt.h>
 #include <ofxImageEffect.h>
 #include <string.h>
@@ -28,6 +29,89 @@ extern mlt_properties mltofx_context;
 extern mlt_properties mltofx_dl;
 
 static const char OFX_IMAGE_EFFECT[] = "_ofx_image_effect";
+static const char NATRON_FORMAT_CHOICE_PARAM[] = "NatronParamFormatChoice";
+static const char NATRON_FORMAT_SIZE_PARAM[] = "NatronParamFormatSize";
+
+typedef struct
+{
+    int saw_choice;
+    int width;
+    int height;
+} natron_format_compat_state;
+
+static int parse_choice_dimensions(const char *choice, int *out_w, int *out_h)
+{
+    if (!choice || !out_w || !out_h)
+        return 0;
+
+    for (const char *p = choice; *p; ++p) {
+        if (!isdigit((unsigned char) *p))
+            continue;
+
+        // Only start at the beginning of a numeric token, not the middle of one.
+        if (p > choice && isdigit((unsigned char) p[-1]))
+            continue;
+
+        const char *q = p;
+        int w = 0;
+        while (isdigit((unsigned char) *q)) {
+            w = w * 10 + (*q - '0');
+            ++q;
+        }
+
+        if (*q != 'x' && *q != 'X')
+            continue;
+        ++q;
+        if (!isdigit((unsigned char) *q))
+            continue;
+
+        int h = 0;
+        while (isdigit((unsigned char) *q)) {
+            h = h * 10 + (*q - '0');
+            ++q;
+        }
+
+        // Height token must also end cleanly (space/end/punctuation), not in the middle of digits.
+        if (isdigit((unsigned char) *q))
+            continue;
+
+        if (w > 0 && h > 0) {
+            *out_w = w;
+            *out_h = h;
+            return 1;
+        }
+    }
+
+    return 0;
+}
+
+static void natron_compat_track_choice(natron_format_compat_state *state,
+                                       const char *param_name,
+                                       const char *value)
+{
+    if (!state || !param_name || !value)
+        return;
+    if (strcmp(param_name, NATRON_FORMAT_CHOICE_PARAM) != 0)
+        return;
+
+    state->saw_choice = 1;
+    parse_choice_dimensions(value, &state->width, &state->height);
+}
+
+static void natron_compat_apply_size(mlt_properties image_effect_params,
+                                     const natron_format_compat_state *state)
+{
+    if (!image_effect_params || !state)
+        return;
+    if (!state->saw_choice || state->width <= 0 || state->height <= 0)
+        return;
+
+    mltofx_param_set_value(image_effect_params,
+                           (char *) NATRON_FORMAT_SIZE_PARAM,
+                           mltofx_prop_int2d,
+                           state->width,
+                           state->height);
+}
 
 static mlt_image_format select_image_format(mlt_image_format incoming,
                                             mltofx_depths_mask plugin_support_depths,
@@ -60,6 +144,8 @@ static void update_plugin_params(mlt_properties properties,
                                  mlt_position position,
                                  mlt_position length)
 {
+    natron_format_compat_state natron_compat = {0};
+
     int params_count = mlt_properties_count(params);
     for (int i = 0; i < params_count; ++i) {
         char *param_key = mlt_properties_get_name(params, i);
@@ -93,14 +179,18 @@ static void update_plugin_params(mlt_properties properties,
             mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_int, value);
         } else if (strcmp(type, "string") == 0) {
             char *value = mlt_properties_anim_get(properties, param_name, position, length);
-            if (value)
+            if (value) {
+                natron_compat_track_choice(&natron_compat, param_name, value);
                 mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_string, value);
+            }
         } else if (strcmp(type, "color") == 0) {
             mlt_color value
                 = mlt_properties_anim_get_color(properties, param_name, position, length);
             mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_color, value);
         }
     }
+
+    natron_compat_apply_size(image_effect_params, &natron_compat);
 }
 
 static int filter_get_image(mlt_frame frame,
