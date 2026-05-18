@@ -843,23 +843,31 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
 
         OfxStatus status
             = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, alpha);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, alpha);
 
         if (status != kOfxStatOK) {
             status
                 = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, red);
-            status = propGetDouble((OfxPropertySetHandle) param_props,
-                                   "OfxParamPropDefault",
-                                   1,
-                                   green);
-            status
-                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, blue);
-            status = propGetDouble((OfxPropertySetHandle) param_props,
-                                   "OfxParamPropDefault",
-                                   3,
-                                   alpha);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       1,
+                                       green);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       2,
+                                       blue);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       3,
+                                       alpha);
             if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
         }
@@ -870,18 +878,24 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
 
         OfxStatus status
             = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
 
         if (status != kOfxStatOK) {
             status
                 = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, red);
-            status = propGetDouble((OfxPropertySetHandle) param_props,
-                                   "OfxParamPropDefault",
-                                   1,
-                                   green);
-            status
-                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, blue);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       1,
+                                       green);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       2,
+                                       blue);
             if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
         }
@@ -891,11 +905,16 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
 
         OfxStatus status
             = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
 
         if (status != kOfxStatOK) {
             status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
-            status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       1,
+                                       Y);
             if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
         }
@@ -904,11 +923,13 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
         int *Y = va_arg(ap, int *);
 
         OfxStatus status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
-        status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
+        if (status == kOfxStatOK)
+            status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
 
         if (status != kOfxStatOK) {
             status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
-            status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
+            if (status == kOfxStatOK)
+                status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
             if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
         }
@@ -919,13 +940,23 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
 
         OfxStatus status
             = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, Z);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, Z);
 
         if (status != kOfxStatOK) {
             status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
-            status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
-            status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, Z);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       1,
+                                       Y);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       2,
+                                       Z);
             if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
         }
@@ -935,13 +966,17 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
         int *Z = va_arg(ap, int *);
 
         OfxStatus status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
-        status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
-        status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, Z);
+        if (status == kOfxStatOK)
+            status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
+        if (status == kOfxStatOK)
+            status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, Z);
 
         if (status != kOfxStatOK) {
             status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
-            status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
-            status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, Z);
+            if (status == kOfxStatOK)
+                status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
+            if (status == kOfxStatOK)
+                status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, Z);
             if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
         }
@@ -2208,8 +2243,8 @@ static void mltofx_get_render_scale(mlt_properties image_effect, double *scale_x
 
 int mltofx_allows_frame_threading(mlt_properties image_effect)
 {
-     if (!image_effect)
-         return 0;
+    if (!image_effect)
+        return 0;
 
     mlt_properties props = mlt_properties_get_properties(image_effect, "props");
     if (!props)
