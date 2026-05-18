@@ -308,7 +308,6 @@ static int filter_get_image(mlt_frame frame,
     mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
     double render_scale_x = mlt_profile_scale_width(profile, *width);
     double render_scale_y = mlt_profile_scale_height(profile, *height);
-    mltofx_set_render_scale(image_effect, render_scale_x, render_scale_y);
 
     mlt_position position = mlt_filter_get_position(filter, frame);
     mlt_position length = mlt_filter_get_length2(filter, frame);
@@ -374,6 +373,9 @@ static int filter_get_image(mlt_frame frame,
 
     if (lock_service)
         mlt_service_lock(MLT_FILTER_SERVICE(filter));
+
+    // In serialized mode, image_effect is shared across frames; update scale under lock.
+    mltofx_set_render_scale(image_effect, render_scale_x, render_scale_y);
 
     update_plugin_params(properties, image_effect_params, params, position, length);
 
