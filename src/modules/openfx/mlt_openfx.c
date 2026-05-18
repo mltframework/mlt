@@ -1952,7 +1952,6 @@ static void mltofx_prime_clip_preferences(mlt_properties image_effect, mlt_prope
 
     if (output_clip_props) {
         int int_value = 0;
-        double dbl_value = 0.0;
 
         propSetString((OfxPropertySetHandle) out_args,
                       kOfxImageEffectPropPreMultiplication,
