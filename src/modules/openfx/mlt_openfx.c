@@ -142,6 +142,10 @@ static OfxStatus propGetIntN(OfxPropertySetHandle properties,
                              const char *property,
                              int count,
                              int *value);
+static OfxStatus propSetString(OfxPropertySetHandle properties,
+                               const char *property,
+                               int index,
+                               const char *value);
 
 static OfxStatus getPropertySet(OfxImageEffectHandle imageEffect, OfxPropertySetHandle *propHandle)
 {
@@ -178,6 +182,11 @@ static OfxStatus clipDefine(OfxImageEffectHandle imageEffect,
     mlt_properties_set_properties(clip, "props", clip_props);
     mlt_properties_close(clip_props);
     *propertySet = (OfxPropertySetHandle) clip_props;
+
+    propSetString((OfxPropertySetHandle) clip_props,
+                  kOfxImageEffectPropPreMultiplication,
+                  0,
+                  kOfxImageUnPreMultiplied);
 
     return kOfxStatOK;
 }
@@ -1796,6 +1805,181 @@ static void mltofx_log_status_code(OfxStatus code, char *msg)
     mlt_log_debug(NULL, "\n");
 }
 
+static void mltofx_make_clip_pref_key(char *key,
+                                      size_t key_size,
+                                      const char *prefix,
+                                      const char *clip_name)
+{
+    snprintf(key, key_size, "%s%s", prefix, clip_name);
+}
+
+static void mltofx_prime_clip_preferences(mlt_properties image_effect, mlt_properties out_args)
+{
+    if (!image_effect || !out_args)
+        return;
+
+    mlt_properties clips = mlt_properties_get_properties(image_effect, "clips");
+    int clips_count = clips ? mlt_properties_count(clips) : 0;
+
+    for (int i = 0; i < clips_count; ++i) {
+        char *clip_name = mlt_properties_get_name(clips, i);
+        if (!clip_name)
+            continue;
+
+        mlt_properties clip = NULL;
+        mlt_properties clip_props = NULL;
+        clipGetHandle((OfxImageEffectHandle) image_effect,
+                      clip_name,
+                      (OfxImageClipHandle *) &clip,
+                      (OfxPropertySetHandle *) &clip_props);
+        if (!clip_props)
+            continue;
+
+        char key[256] = {'\0'};
+        char *str_value = NULL;
+        double dbl_value = 0.0;
+
+        mltofx_make_clip_pref_key(key, sizeof(key), "OfxImageClipPropComponents_", clip_name);
+        if (propGetString((OfxPropertySetHandle) clip_props,
+                          kOfxImageEffectPropComponents,
+                          0,
+                          &str_value)
+                == kOfxStatOK
+            && str_value) {
+            propSetString((OfxPropertySetHandle) out_args, key, 0, str_value);
+        }
+
+        mltofx_make_clip_pref_key(key, sizeof(key), "OfxImageClipPropDepth_", clip_name);
+        if (propGetString((OfxPropertySetHandle) clip_props,
+                          kOfxImageEffectPropPixelDepth,
+                          0,
+                          &str_value)
+                == kOfxStatOK
+            && str_value) {
+            propSetString((OfxPropertySetHandle) out_args, key, 0, str_value);
+        }
+
+        mltofx_make_clip_pref_key(key, sizeof(key), "OfxImageClipPropPAR_", clip_name);
+        if (propGetDouble((OfxPropertySetHandle) clip_props,
+                          kOfxImagePropPixelAspectRatio,
+                          0,
+                          &dbl_value)
+            == kOfxStatOK) {
+            propSetDouble((OfxPropertySetHandle) out_args, key, 0, dbl_value);
+        }
+    }
+
+    mlt_properties output_clip = NULL;
+    mlt_properties output_clip_props = NULL;
+    clipGetHandle((OfxImageEffectHandle) image_effect,
+                  "Output",
+                  (OfxImageClipHandle *) &output_clip,
+                  (OfxPropertySetHandle *) &output_clip_props);
+
+    if (output_clip_props) {
+        int int_value = 0;
+        double dbl_value = 0.0;
+
+        propSetString((OfxPropertySetHandle) out_args,
+                      kOfxImageEffectPropPreMultiplication,
+                      0,
+                      kOfxImageUnPreMultiplied);
+
+        char *str_value = NULL;
+        if (propGetString((OfxPropertySetHandle) output_clip_props,
+                          kOfxImageClipPropFieldOrder,
+                          0,
+                          &str_value)
+                == kOfxStatOK
+            && str_value) {
+            propSetString((OfxPropertySetHandle) out_args,
+                          kOfxImageClipPropFieldOrder,
+                          0,
+                          str_value);
+        }
+        if (propGetInt((OfxPropertySetHandle) output_clip_props,
+                       kOfxImageClipPropContinuousSamples,
+                       0,
+                       &int_value)
+            == kOfxStatOK) {
+            propSetInt((OfxPropertySetHandle) out_args,
+                       kOfxImageClipPropContinuousSamples,
+                       0,
+                       int_value);
+        } else {
+            propSetInt((OfxPropertySetHandle) out_args, kOfxImageClipPropContinuousSamples, 0, 0);
+        }
+    }
+
+    mlt_properties effect_props = mlt_properties_get_properties(image_effect, "props");
+    if (effect_props) {
+        int frame_varying = 0;
+        if (propGetInt((OfxPropertySetHandle) effect_props,
+                       kOfxImageEffectFrameVarying,
+                       0,
+                       &frame_varying)
+            == kOfxStatOK) {
+            propSetInt((OfxPropertySetHandle) out_args,
+                       kOfxImageEffectFrameVarying,
+                       0,
+                       frame_varying);
+        } else {
+            propSetInt((OfxPropertySetHandle) out_args, kOfxImageEffectFrameVarying, 0, 0);
+        }
+    }
+}
+
+static void mltofx_apply_clip_preferences(mlt_properties image_effect, mlt_properties pref_args)
+{
+    if (!image_effect || !pref_args)
+        return;
+
+    mlt_properties output_clip = NULL;
+    mlt_properties output_clip_props = NULL;
+    clipGetHandle((OfxImageEffectHandle) image_effect,
+                  "Output",
+                  (OfxImageClipHandle *) &output_clip,
+                  (OfxPropertySetHandle *) &output_clip_props);
+
+    if (output_clip_props) {
+        int int_value = 0;
+        propSetString((OfxPropertySetHandle) output_clip_props,
+                      kOfxImageEffectPropPreMultiplication,
+                      0,
+                      kOfxImageUnPreMultiplied);
+        if (propGetInt((OfxPropertySetHandle) pref_args,
+                       kOfxImageClipPropContinuousSamples,
+                       0,
+                       &int_value)
+            == kOfxStatOK) {
+            propSetInt((OfxPropertySetHandle) output_clip_props,
+                       kOfxImageClipPropContinuousSamples,
+                       0,
+                       int_value);
+        }
+    }
+
+    mlt_properties effect_props = mlt_properties_get_properties(image_effect, "props");
+    if (effect_props) {
+        int int_value = 0;
+        if (propGetInt((OfxPropertySetHandle) pref_args, kOfxImageEffectFrameVarying, 0, &int_value)
+            == kOfxStatOK) {
+            propSetInt((OfxPropertySetHandle) effect_props,
+                       kOfxImageEffectFrameVarying,
+                       0,
+                       int_value);
+        }
+    }
+}
+
+static void mltofx_apply_cached_clip_preferences(mlt_properties image_effect)
+{
+    if (!image_effect)
+        return;
+    mlt_properties pref_args = mlt_properties_get_properties(image_effect, "get_clippref_args");
+    mltofx_apply_clip_preferences(image_effect, pref_args);
+}
+
 const void *MltOfxfetchSuite(OfxPropertySetHandle host, const char *suiteName, int suiteVersion)
 {
     mlt_log_debug(NULL, "[openfx] fetchSuite: `%s` v%d\n", suiteName, suiteVersion);
@@ -2107,6 +2291,9 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
                   render_scale_y);
 
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImageClipPropConnected, 0, 1);
+
+    // Preserve plugin-selected clip preferences across clip data refreshes.
+    mltofx_apply_cached_clip_preferences(image_effect);
 }
 
 void mltofx_set_output_clip_data(OfxPlugin *plugin,
@@ -2236,6 +2423,9 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
                   kOfxImagePropPixelAspectRatio,
                   0,
                   pixel_aspect_ratio);
+
+    // Preserve plugin-selected clip preferences across clip data refreshes.
+    mltofx_apply_cached_clip_preferences(image_effect);
 }
 
 int mltofx_detect_plugin(OfxPlugin *plugin)
@@ -2771,11 +2961,17 @@ void mltofx_get_clip_preferences(OfxPlugin *plugin, mlt_properties image_effect)
 {
     mlt_properties get_clippref_args = mlt_properties_get_properties(image_effect,
                                                                      "get_clippref_args");
+
+    mltofx_prime_clip_preferences(image_effect, get_clippref_args);
+
     OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionGetClipPreferences,
                                               (OfxImageEffectHandle) image_effect,
                                               NULL,
                                               (OfxPropertySetHandle) get_clippref_args);
     mltofx_log_status_code(status_code, kOfxImageEffectActionGetClipPreferences);
+
+    if (status_code == kOfxStatOK || status_code == kOfxStatReplyDefault)
+        mltofx_apply_clip_preferences(image_effect, get_clippref_args);
 }
 
 void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_effect, double ofx_time)
