@@ -2208,6 +2208,9 @@ static void mltofx_get_render_scale(mlt_properties image_effect, double *scale_x
 
 int mltofx_allows_frame_threading(mlt_properties image_effect)
 {
+     if (!image_effect)
+         return 0;
+
     mlt_properties props = mlt_properties_get_properties(image_effect, "props");
     if (!props)
         return 0;
