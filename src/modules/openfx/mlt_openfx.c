@@ -1500,9 +1500,76 @@ static OfxMultiThreadSuiteV1 MltOfxMultiThreadSuiteV1 = {multiThread,
                                                          mutexUnLock,
                                                          mutexTryLock};
 
+static void mltofx_log_message(const char *kind,
+                               const char *messageType,
+                               const char *messageId,
+                               const char *format,
+                               va_list ap)
+{
+    char formatted[1024] = "";
+    const char *type = messageType ? messageType : "OfxMessageUnknown";
+    const char *id = (messageId && messageId[0]) ? messageId : NULL;
+
+    if (format && format[0]) {
+        vsnprintf(formatted, sizeof(formatted), format, ap);
+    }
+
+    if (strcmp(type, "OfxMessageFatal") == 0) {
+        mlt_log_fatal(NULL,
+                      "[openfx] %s type=%s%s%s%s%s\n",
+                      kind,
+                      type,
+                      id ? " id=" : "",
+                      id ? id : "",
+                      formatted[0] ? " msg=" : "",
+                      formatted);
+    } else if (strcmp(type, "OfxMessageError") == 0) {
+        mlt_log_error(NULL,
+                      "[openfx] %s type=%s%s%s%s%s\n",
+                      kind,
+                      type,
+                      id ? " id=" : "",
+                      id ? id : "",
+                      formatted[0] ? " msg=" : "",
+                      formatted);
+    } else if (strcmp(type, "OfxMessageWarning") == 0) {
+        mlt_log_warning(NULL,
+                        "[openfx] %s type=%s%s%s%s%s\n",
+                        kind,
+                        type,
+                        id ? " id=" : "",
+                        id ? id : "",
+                        formatted[0] ? " msg=" : "",
+                        formatted);
+    } else if (strcmp(type, "OfxMessageLog") == 0) {
+        mlt_log_verbose(NULL,
+                        "[openfx] %s type=%s%s%s%s%s\n",
+                        kind,
+                        type,
+                        id ? " id=" : "",
+                        id ? id : "",
+                        formatted[0] ? " msg=" : "",
+                        formatted);
+    } else {
+        mlt_log_info(NULL,
+                     "[openfx] %s type=%s%s%s%s%s\n",
+                     kind,
+                     type,
+                     id ? " id=" : "",
+                     id ? id : "",
+                     formatted[0] ? " msg=" : "",
+                     formatted);
+    }
+}
+
 static OfxStatus message(
     void *handle, const char *messageType, const char *messageId, const char *format, ...)
 {
+    (void) handle;
+    va_list ap;
+    va_start(ap, format);
+    mltofx_log_message("message", messageType, messageId, format, ap);
+    va_end(ap);
     return kOfxStatOK;
 }
 
@@ -1511,11 +1578,18 @@ static OfxMessageSuiteV1 MltOfxMessageSuiteV1 = {message};
 static OfxStatus setPersistentMessage(
     void *handle, const char *messageType, const char *messageId, const char *format, ...)
 {
+    (void) handle;
+    va_list ap;
+    va_start(ap, format);
+    mltofx_log_message("persistent", messageType, messageId, format, ap);
+    va_end(ap);
     return kOfxStatOK;
 }
 
 static OfxStatus clearPersistentMessage(void *handle)
 {
+    (void) handle;
+    mlt_log_debug(NULL, "[openfx] persistent message cleared\n");
     return kOfxStatOK;
 }
 
