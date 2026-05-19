@@ -2858,11 +2858,29 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
             char *p_name = mlt_properties_get_name(dim1, jt);
             if (strcmp(p_name, kOfxParamPropDefault) == 0) {
                 if (strcmp(param_type, kOfxParamTypeInteger) == 0
-                    || strcmp(param_type, kOfxParamTypeChoice) == 0
                     || strcmp(param_type, kOfxParamTypeBoolean) == 0) {
                     int default_value = 0;
                     propGetInt((OfxPropertySetHandle) ppp, p_name, 0, &default_value);
                     mlt_properties_set_int(p, "default", default_value);
+                } else if (strcmp(param_type, kOfxParamTypeChoice) == 0) {
+                    int default_value = 0;
+                    int choice_count = 0;
+                    char *choice_str = NULL;
+
+                    propGetInt((OfxPropertySetHandle) ppp, p_name, 0, &default_value);
+                    propGetDimension((OfxPropertySetHandle) ppp,
+                                     kOfxParamPropChoiceOption,
+                                     &choice_count);
+
+                    if (default_value >= 0 && default_value < choice_count
+                        && propGetString((OfxPropertySetHandle) ppp,
+                                         kOfxParamPropChoiceOption,
+                                         default_value,
+                                         &choice_str)
+                               == kOfxStatOK
+                        && choice_str) {
+                        mlt_properties_set(p, "default", choice_str);
+                    }
                 } else if (strcmp(param_type, kOfxParamTypeDouble) == 0) {
                     double default_value = 0.0;
                     propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &default_value);
