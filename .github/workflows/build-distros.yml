@@ -35,35 +35,65 @@ jobs:
               sed -i 's/^Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
               DEBIAN_FRONTEND=noninteractive apt-get -qq update
               DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
-              DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev librnnoise-dev
+              DEBIAN_FRONTEND=noninteractive apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev
+              git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
+              cd /tmp/rnnoise
+              ./autogen.sh
+              ./configure --prefix=/usr/local --enable-shared --disable-static
+              make -j"$(nproc)"
+              make install
           - name: ubuntu-24.04
             image: ubuntu:24.04
             setup_script: |
               sed -i 's/^Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
               DEBIAN_FRONTEND=noninteractive apt-get -qq update
               DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
-              DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev librnnoise-dev
+              DEBIAN_FRONTEND=noninteractive apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev
+              git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
+              cd /tmp/rnnoise
+              ./autogen.sh
+              ./configure --prefix=/usr/local --enable-shared --disable-static
+              make -j"$(nproc)"
+              make install
           - name: ubuntu-22.04
             image: ubuntu:22.04
             setup_script: |
               sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
               DEBIAN_FRONTEND=noninteractive apt-get -qq update
               DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
-              DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev librnnoise-dev
+              DEBIAN_FRONTEND=noninteractive apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
+              git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
+              cd /tmp/rnnoise
+              ./autogen.sh
+              ./configure --prefix=/usr/local --enable-shared --disable-static
+              make -j"$(nproc)"
+              make install
           - name: debian-unstable
             image: debian:unstable
             setup_script: |
               echo 'deb-src http://deb.debian.org/debian unstable main' >> /etc/apt/sources.list
               apt-get -qq update
               apt-get -yqq build-dep mlt
-              apt-get -yqq install librnnoise-dev
+              apt-get -yqq install autoconf automake git libtool pkg-config wget
+              git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
+              cd /tmp/rnnoise
+              ./autogen.sh
+              ./configure --prefix=/usr/local --enable-shared --disable-static
+              make -j"$(nproc)"
+              make install
           - name: debian-testing
             image: debian:testing
             setup_script: |
               echo 'deb-src http://deb.debian.org/debian testing main' >> /etc/apt/sources.list
               apt-get -qq update
               apt-get -yqq build-dep mlt
-              apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev librnnoise-dev
+              apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev
+              git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
+              cd /tmp/rnnoise
+              ./autogen.sh
+              ./configure --prefix=/usr/local --enable-shared --disable-static
+              make -j"$(nproc)"
+              make install
           - name: debian-stable
             image: debian:stable
             setup_script: |
@@ -71,7 +101,13 @@ jobs:
               echo 'deb http://deb.debian.org/debian bookworm-backports main' >> /etc/apt/sources.list
               apt-get -qq update
               apt-get -yqq build-dep mlt
-              apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev librnnoise-dev
+              apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev
+              git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
+              cd /tmp/rnnoise
+              ./autogen.sh
+              ./configure --prefix=/usr/local --enable-shared --disable-static
+              make -j"$(nproc)"
+              make install
           - name: fedora-44
             image: fedora:44
             setup_script: |

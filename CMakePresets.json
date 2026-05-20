@@ -32,6 +32,7 @@
                 "MOD_RESAMPLE": "ON",
                 "MOD_RTAUDIO": "ON",
                 "MOD_RUBBERBAND": "ON",
+                "MOD_RNNOISE": "OFF",
                 "MOD_SDL2": "ON",
                 "MOD_SPATIALAUDIO": "OFF",
                 "MOD_VIDSTAB": "OFF",
