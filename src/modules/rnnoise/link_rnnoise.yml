@@ -1,0 +1,34 @@
+schema_version: 7.2
+type: link
+identifier: rnnoise
+title: Noise Reduction (RNNoise)
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+url: https://github.com/xiph/rnnoise
+tags:
+  - Audio
+description: >
+  Reduce background noise in speech tracks using the RNNoise recurrent neural
+  network library.
+notes: >
+  Operates at 48 kHz; audio is resampled automatically if needed.
+
+  Unlike filter_rnnoise, this link does not add a delay to the audio.
+audio_formats:
+  - float
+parameters:
+  - identifier: mix
+    title: Mix
+    type: float
+    description: >
+      The wet/dry blend of the noise-reduced signal.
+      0 means no noise reduction (dry), 1 means fully noise-reduced (wet).
+    minimum: 0
+    maximum: 1
+    default: 1
+    scale: 100
+    unit: '%'
+    mutable: yes
+    animation: yes

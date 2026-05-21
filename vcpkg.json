@@ -24,6 +24,10 @@
     "pthreads",
     "qtbase",
     "qtsvg",
+    {
+      "name": "rnnoise",
+      "platform": "!windows"
+    },
     "rtaudio",
     "rubberband",
     "sdl2",
