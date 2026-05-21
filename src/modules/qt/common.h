@@ -21,6 +21,9 @@
 
 #include <framework/mlt.h>
 
+// The step size used for MLT mipmapping to ensure stable and high quality downscaling
+static constexpr double MLT_QT_MIPMAP_STEP = 0.85;
+
 class QImage;
 
 bool createQApplicationIfNeeded(mlt_service service);
@@ -34,5 +37,7 @@ int create_image(mlt_frame frame,
                  int *width,
                  int *height,
                  int writable);
+void adjust_mlt_mipmap_size(double scaleTarget, int *b_width, int *b_height);
+void normalize_mlt_source_size(double b_ar, double consumer_ar, int *b_width, int b_height);
 
 #endif // COMMON_H

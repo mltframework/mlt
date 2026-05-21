@@ -1,8 +1,8 @@
-schema_version: 0.3
+schema_version: 7.2
 type: filter
 identifier: dynamic_loudness
 title: Dynamic Loudness
-version: 1
+version: 2
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -15,7 +15,8 @@ notes: >
   Then, it adjusts the gain on the output based on the difference between the 
   measured loudness and the target loudness in order to achieve the desired 
   loudness.
-  
+audio_formats:
+  - f32le
 parameters:
   - identifier: target_loudness
     title: Target Program Loudness

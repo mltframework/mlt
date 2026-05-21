@@ -31,8 +31,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <sys/time.h>
 #include <time.h>
+
+#ifndef _MSC_VER
+#include <sys/time.h>
+#endif
 
 #include "framework/mlt_log.h"
 #include "lock_free_fifo.h"

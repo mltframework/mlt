@@ -71,12 +71,9 @@ static const char *getArchStr()
 #endif
 #define OFX_DIRSEP "\\"
 
-#if defined(__MINGW32__) || defined(__MINGW64__)
-#include <dirent.h>
-#endif
-
 #include "shlobj.h"
 #include "tchar.h"
+#include <dirent.h>
 #endif
 
 extern mlt_filter filter_openfx_init(mlt_profile profile,
@@ -107,6 +104,44 @@ static void plugin_mgr_destroy(mlt_properties p)
     mlt_properties_close((mlt_properties) MltOfxHost.host);
 }
 
+static void add_metadata_image_formats(mlt_properties metadata, mlt_properties image_effect)
+{
+    if (!metadata || !image_effect)
+        return;
+
+    mlt_properties image_formats = mlt_properties_new();
+    if (!image_formats)
+        return;
+
+    int format_index = 0;
+    char key[16] = {'\0'};
+
+    mltofx_components_mask components = mltofx_plugin_supported_components(image_effect);
+    mltofx_depths_mask depths = mltofx_plugin_supported_depths(image_effect);
+
+    if ((components & mltofx_components_rgb) && (depths & mltofx_depth_byte)) {
+        snprintf(key, sizeof(key), "%d", format_index++);
+        mlt_properties_set(image_formats, key, "rgb");
+    }
+
+    if ((components & mltofx_components_rgba) && (depths & mltofx_depth_byte)) {
+        snprintf(key, sizeof(key), "%d", format_index++);
+        mlt_properties_set(image_formats, key, "rgba");
+    }
+
+    if (depths & (mltofx_depth_short | mltofx_depth_half | mltofx_depth_float)) {
+        snprintf(key, sizeof(key), "%d", format_index++);
+        mlt_properties_set(image_formats, key, "rgba64");
+    }
+
+    mlt_properties_set_data(metadata,
+                            "image_formats",
+                            image_formats,
+                            0,
+                            (mlt_destructor) mlt_properties_close,
+                            NULL);
+}
+
 static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
 {
     char file[PATH_MAX];
@@ -132,14 +167,14 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
 
     // parameters
     mlt_properties params = mlt_properties_new();
+    mlt_properties image_effect = mltofx_fetch_params(pt, params, result);
+    add_metadata_image_formats(result, image_effect);
     mlt_properties_set_data(result,
                             "parameters",
                             params,
                             0,
                             (mlt_destructor) mlt_properties_close,
                             NULL);
-
-    mlt_properties image_effect = mltofx_fetch_params(pt, params, result);
     mlt_properties_close(image_effect);
 
     // Fall back to the plugin identifier if the plugin did not provide a label.
@@ -281,9 +316,13 @@ MLT_REPOSITORY
     char *openfx_path = getenv("OFX_PLUGIN_PATH");
     if (openfx_path) {
         char *path_copy = strdup(openfx_path);
-        char *saveptr;
         for (char *strptr = path_copy;; strptr = NULL) {
+#ifdef _WIN32
+            char *dir = strtok(strptr, MLT_DIRLIST_DELIMITER);
+#else
+            char *saveptr;
             char *dir = strtok_r(strptr, MLT_DIRLIST_DELIMITER, &saveptr);
+#endif
             if (dir == NULL)
                 break;
             scan_ofx_dir(repository, dir, &dli, 0);

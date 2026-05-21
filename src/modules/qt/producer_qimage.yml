@@ -1,8 +1,8 @@
-schema_version: 0.3
+schema_version: 7.2
 type: producer
 identifier: qimage
 title: Qt QImage
-version: 2
+version: 3
 creator: Charles Yates
 license: GPLv2
 language: en
@@ -15,6 +15,9 @@ notes: >
     whatever the consumer requests. Therefore, it will lose its aspect ratio if
     so requested, and it is up to the consumer to request a proper width and
     height that maintains the image aspect.
+image_formats:
+  - rgb
+  - rgba
 parameters:
   - identifier: resource
     title: File

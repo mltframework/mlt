@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: lumaliftgaingamma
 title: LumaLiftGainGamma
-version: 1
+version: 2
 copyright: Janne Liljeblad
 creator: Janne Liljeblad
 license: GPL
@@ -12,7 +12,8 @@ tags:
 description: >
   Filter can be used to apply lift, gain and gamma correction to
   luma values of image.
-
+image_formats:
+  - rgb
 parameters:
   - identifier: lift
     title: Lift

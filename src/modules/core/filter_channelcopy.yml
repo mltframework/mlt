@@ -1,8 +1,8 @@
-schema_version: 0.2
+schema_version: 7.2
 type: filter
 identifier: channelcopy
 title: Copy Channels
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -10,6 +10,13 @@ language: en
 tags:
   - Audio
 description: Copy one audio channel to another.
+audio_formats:
+  - f32le
+  - float
+  - s16
+  - s32
+  - s32le
+  - u8
 parameters:
   - identifier: to
     title: To

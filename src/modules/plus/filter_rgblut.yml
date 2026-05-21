@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.2
 type: filter
 identifier: rgblut
 title: RGBLUT
-version: 1
+version: 2
 copyright: Janne Liljeblad
 creator: Janne Liljeblad
 license: LGPLv2.1
@@ -14,7 +14,8 @@ description:
   range 0 - 255 to look-up tables that are then used to modify R, G, B values. 
   
   This creates a generic string interface for color correction.
-
+image_formats:
+  - rgb
 parameters:
   - identifier: R_table
     title: Red channel look-up table

@@ -1,8 +1,8 @@
-schema_version: 0.3
+schema_version: 7.2
 type: filter
 identifier: jackrack
 title: JACK Rack XML (*DEPRECATED*)
-version: 1
+version: 2
 copyright: Copyright (C) 2004-2018 Meltytech, LLC
 license: GPLv2
 language: en
@@ -27,7 +27,8 @@ bugs:
     Please make sure they are configured the same.
   - Does not automatically reconfigure to the number of channels requested by consumer.
   - Some effects have a temporal side-effect that may not work well.
-
+audio_formats:
+  - float
 parameters:
   - identifier: src
     title: JACK Rack file

@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: movit.resize
 title: Image Padding (GLSL)
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Steinar H. Gunderson
 license: GPLv2
@@ -17,3 +17,5 @@ notes: >
   requested after an upstream filter first scales the image to maximise
   usage of the image area. This filter is automatically invoked by the loader
   as part of image normalization.
+image_formats:
+  - glsl

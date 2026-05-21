@@ -1,8 +1,8 @@
-schema_version: 0.2
+schema_version: 7.2
 type: transition
 identifier: movit.luma_mix
 title: Wipe (GLSL)
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Steinar H. Gunderson
 license: GPLv2
@@ -10,7 +10,8 @@ language: en
 tags:
   - Video
 description: A generic dissolve and wipe transition processor.
-
+image_formats:
+  - glsl
 parameters:
   - identifier: resource
     argument: yes

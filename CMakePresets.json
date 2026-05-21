@@ -12,9 +12,9 @@
                 "SWIG_PYTHON": "OFF",
                 "MOD_AVFORMAT": "ON",
                 "MOD_DECKLINK": "OFF",
-                "MOD_FREI0R": "OFF",
+                "MOD_FREI0R": "ON",
                 "MOD_GDK": "ON",
-                "MOD_JACKRACK": "OFF",
+                "MOD_JACKRACK": "ON",
                 "USE_VST2": "OFF",
                 "USE_LV2": "OFF",
                 "MOD_KDENLIVE": "ON",
@@ -22,16 +22,17 @@
                 "MOD_NORMALIZE": "ON",
                 "MOD_OLDFILM": "ON",
                 "MOD_OPENCV": "ON",
-                "MOD_OPENFX": "OFF",
+                "MOD_OPENFX": "ON",
                 "MOD_MOVIT": "OFF",
                 "MOD_PLUS": "ON",
-                "MOD_PLUSGPL": "OFF",
+                "MOD_PLUSGPL": "ON",
                 "MOD_QT6": "ON",
                 "MOD_SOX": "OFF",
                 "MOD_GLAXNIMATE_QT6": "ON",
-                "MOD_RESAMPLE": "OFF",
-                "MOD_RTAUDIO": "OFF",
+                "MOD_RESAMPLE": "ON",
+                "MOD_RTAUDIO": "ON",
                 "MOD_RUBBERBAND": "ON",
+                "MOD_RNNOISE": "OFF",
                 "MOD_SDL2": "ON",
                 "MOD_SPATIALAUDIO": "OFF",
                 "MOD_VIDSTAB": "OFF",
@@ -50,7 +51,7 @@
             "hidden": true,
             "generator": "Ninja",
             "environment": {
-                "QT_VERSION": "6.8.3",
+                "QT_VERSION": "6.10.3",
                 "PATH": "$env{HOME}/Qt/$env{QT_VERSION}/macos/bin:$env{HOME}/opt/bin:/usr/local/bin:/opt/local/bin:$penv{PATH}",
                 "PKG_CONFIG_PATH": "$env{HOME}/.local/lib/pkgconfig:$env{HOME}/.local/lib64/pkgconfig:$env{HOME}/opt/lib/pkgconfig:$env{HOME}/lib/pkgconfig:/usr/local/lib/pkgconfig:/opt/local/lib/pkgconfig:/usr/lib/pkgconfig:/usr/lib64/pkgconfig:$penv{PKG_CONFIG_PATH}"
             },
@@ -89,6 +90,9 @@
                 "lhs": "${hostSystemName}",
                 "rhs": "Darwin"
             },
+            "environment": {
+                "QT_VERSION": "6.8.3"
+            },
             "cacheVariables": {
                 "BUILD_TESTING": "OFF",
                 "MOD_GDK": "OFF"
@@ -100,8 +104,8 @@
             "binaryDir": "${sourceDir}/build/${presetName}",
             "cacheVariables": {
                 "BUILD_TESTING": "OFF",
-                "CMAKE_INSTALL_PREFIX": "${sourceDir}/install/${presetName}",
-                "CMAKE_BUILD_TYPE": "Debug",
+                "CMAKE_INSTALL_PREFIX": "c:/Projects/Shotcut",
+                "CMAKE_BUILD_TYPE": "RelWithDebInfo",
                 "CMAKE_PREFIX_PATH": "C:/Qt/$env{QT_VERSION}/mingw_64;C:/msys64/mingw64;C:/msys64/clangarm64",
                 "MOD_GLAXNIMATE_QT6": "ON",
                 "MOD_MOVIT": "OFF"
@@ -109,7 +113,7 @@
             "environment": {
                 "PKG_CONFIG_PATH": "C:/Projects/Shotcut/lib/pkgconfig;C:/msys64/mingw64/lib/pkgconfig;C:/msys64/clangarm64/lib/pkgconfig;$penv{PKG_CONFIG_PATH}",
                 "Path": "C:/msys64/usr/local/bin;C:/msys64/mingw64/bin;C:/msys64/clangarm64/bin;$penv{Path}",
-                "QT_VERSION": "6.8.3"
+                "QT_VERSION": "6.10.3"
             },
             "generator": "Ninja"
         }

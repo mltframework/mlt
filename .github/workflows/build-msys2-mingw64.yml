@@ -75,6 +75,13 @@ jobs:
       - name: Build C/C++ with CMake
         shell: msys2 {0}
         run: |
+          git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
+          pushd /tmp/rnnoise
+          ./autogen.sh
+          ./configure --prefix=/mingw64 --enable-shared --disable-static
+          make -j"$(nproc)"
+          make install
+          popd
           cmake -D CMAKE_BUILD_TYPE=Debug -D MOD_MOVIT=OFF -D SWIG_PYTHON=ON -S . -B build -G Ninja
           cmake --build build
           cmake --install build

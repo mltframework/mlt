@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.2
 type: filter
 identifier: loudness
 title: Loudness
-version: 1
+version: 2
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -14,7 +14,8 @@ notes: >
   the result in the "results" property. The second pass applies the results to
   the audio in order to achieve the desired loudness over the range of the 
   filter.
-  
+audio_formats:
+  - f32le
 parameters:
   - identifier: results
     title: Analysis Results

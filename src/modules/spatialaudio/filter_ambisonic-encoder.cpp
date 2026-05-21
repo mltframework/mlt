@@ -1,6 +1,6 @@
 /*
  * filter_ambisonic-encoder.cpp -- position mono and stero sound in ambisonic space
- * Copyright (C) 2024 Meltytech, LLC
+ * Copyright (C) 2024-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,8 @@
 #include <framework/mlt.h>
 #include <spatialaudio/Ambisonics.h>
 
+using namespace spaudio;
+
 // static const auto MAX_CHANNELS = 6;
 static const auto AMBISONICS_ORDER = 1;
 static const auto AMBISONICS_1_CHANNELS = 4;
@@ -33,7 +35,7 @@ class SpatialAudioEncoder
 {
 private:
     mlt_filter m_filter;
-    CAmbisonicEncoder encoder;
+    AmbisonicEncoder encoder;
 
 public:
     SpatialAudioEncoder()
@@ -69,7 +71,8 @@ public:
         // First time setup
         if (!encoder.GetOrder()) {
             mlt_log_verbose(MLT_FILTER_SERVICE(filter()), "configuring spatial audio encoder\n");
-            error = !encoder.Configure(AMBISONICS_ORDER, true, 0);
+            int sampleRate = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "audio_frequency");
+            error = !encoder.Configure(AMBISONICS_ORDER, true, sampleRate, 0.f);
             if (error) {
                 mlt_log_error(MLT_FILTER_SERVICE(filter()),
                               "failed to configure spatial audio encoder\n");
@@ -78,16 +81,16 @@ public:
 
         // Processing
         if (!error) {
-            CBFormat bformat;
-            PolarPoint polar;
+            BFormat bformat;
+            PolarPosition<float> polar;
             mlt_position position = mlt_filter_get_position(filter(), frame);
             mlt_position length = mlt_filter_get_length2(filter(), frame);
 
             bformat.Configure(AMBISONICS_ORDER, true, samples);
-            polar.fAzimuth = -DegreesToRadians(getDouble("azimuth", position, length));
-            polar.fElevation = DegreesToRadians(getDouble("elevation", position, length));
-            polar.fDistance = getDouble("distance", position, length);
-            encoder.SetPosition(polar, 1.f);
+            polar.azimuth = -DegreesToRadians(getDouble("azimuth", position, length));
+            polar.elevation = DegreesToRadians(getDouble("elevation", position, length));
+            polar.distance = getDouble("distance", position, length);
+            encoder.SetPosition(polar);
             encoder.Refresh();
             encoder.Process(buffer, samples, &bformat);
             for (int i = 0; i < AMBISONICS_1_CHANNELS; ++i)

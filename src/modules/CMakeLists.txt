@@ -76,6 +76,10 @@ if(MOD_RUBBERBAND)
   add_subdirectory(rubberband)
 endif()
 
+if(MOD_RNNOISE)
+  add_subdirectory(rnnoise)
+endif()
+
 if(MOD_SDL1)
   add_subdirectory(sdl)
 endif()

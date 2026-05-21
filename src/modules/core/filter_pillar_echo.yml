@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: pillar_echo
 title: Pillar Echo
-version: 2
+version: 3
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -13,6 +13,9 @@ description: >
   
   The area of interest is scaled to fill the image, then blurred. Then the
   original image is replaced back on top.
+image_formats:
+  - rgba
+  - rgba64
 parameters:
   - identifier: rect
     title: Rectangle

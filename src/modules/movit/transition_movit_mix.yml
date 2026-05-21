@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: transition
 identifier: movit.mix
 title: Dissolve (GLSL)
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Steinar H. Gunderson
 license: GPLv2
@@ -10,7 +10,8 @@ language: en
 tags:
   - Video
 description: A simple video cross-fade or mixing effect.
-
+image_formats:
+  - glsl
 parameters:
   - identifier: mix
     argument: yes

@@ -1,8 +1,8 @@
-schema_version: 0.3
+schema_version: 7.2
 type: filter
 identifier: qtblend_mode
 title: Set Qt Blend Mode
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -10,6 +10,9 @@ language: en
 tags:
   - Video
 description: Change the blend mode used by the qtblend transition.
+image_formats:
+  - rgba
+  - rgba64
 parameters:
   - identifier: mode
     argument: yes

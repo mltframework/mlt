@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: audiowaveform
 title: Audio Waveform Filter
-version: 2
+version: 3
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -10,7 +10,9 @@ tags:
   - Video
 description: >
   An audio visualization filter that draws an audio waveform on the image.
-
+image_formats:
+  - rgba
+  - rgba64
 parameters:
   - identifier: bgcolor
     title: Background Color

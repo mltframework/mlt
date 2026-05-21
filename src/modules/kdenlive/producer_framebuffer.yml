@@ -1,11 +1,20 @@
-schema_version: 0.1
+schema_version: 7.2
 type: producer
 identifier: framebuffer
 title: Speed
-version: 1
+version: 2
 copyright: Jean-Baptiste Mardelle
 creator: Jean-Baptiste Mardelle
 license: LGPLv2.1
 language: en
 tags:
   - Video
+image_formats:
+  - rgb
+  - rgba
+  - yuv422
+  - yuv420p
+  - yuv422p16
+  - yuv420p10
+  - yuv444p10
+  - rgba64

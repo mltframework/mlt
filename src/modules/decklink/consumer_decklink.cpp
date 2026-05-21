@@ -1,6 +1,6 @@
 /*
  * consumer_decklink.cpp -- output through Blackmagic Design DeckLink
- * Copyright (C) 2010-2025 Meltytech, LLC
+ * Copyright (C) 2010-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,7 @@
 #define __STDC_FORMAT_MACROS /* see inttypes.h */
 #include "common.h"
 #include "mltdecklink_export.h"
+#include <algorithm>
 #include <framework/mlt.h>
 #include <limits.h>
 #include <pthread.h>
@@ -51,6 +52,18 @@ static const unsigned PREROLL_MINIMUM = 3;
 enum { OP_NONE = 0, OP_OPEN, OP_START, OP_STOP, OP_EXIT };
 enum { EOTF_SDR = 0, EOTF_HDR = 1, EOTF_PQ = 2, EOTF_HLG = 3 }; ///< CEA 861.3
 
+static double clamp_hdr_metadata(mlt_properties properties,
+                                 const char *name,
+                                 double defaultValue,
+                                 double minimum,
+                                 double maximum)
+{
+    double value = defaultValue;
+    if (mlt_properties_get(properties, name))
+        value = mlt_properties_get_double(properties, name);
+    return std::clamp(value, minimum, maximum);
+}
+
 class DeckLinkConsumer : public IDeckLinkVideoOutputCallback, public IDeckLinkAudioOutputCallback
 {
 private:
@@ -77,6 +90,7 @@ private:
     mlt_deque m_aqueue;
     pthread_mutex_t m_aqueue_lock;
     mlt_deque m_frames;
+    pthread_mutex_t m_frames_lock;
 
     pthread_mutex_t m_op_lock;
     pthread_mutex_t m_op_arg_mutex;
@@ -153,6 +167,7 @@ public:
         pthread_mutex_init(&m_op_lock, &mta);
         pthread_mutex_init(&m_op_arg_mutex, &mta);
         pthread_mutex_init(&m_aqueue_lock, &mta);
+        pthread_mutex_init(&m_frames_lock, &mta);
         pthread_mutexattr_destroy(&mta);
         pthread_cond_init(&m_op_arg_cond, nullptr);
         pthread_create(&m_op_thread, nullptr, op_main, this);
@@ -178,6 +193,7 @@ public:
         mlt_log_debug(getConsumer(), "%s: finished op thread\n", __FUNCTION__);
 
         pthread_mutex_destroy(&m_aqueue_lock);
+        pthread_mutex_destroy(&m_frames_lock);
         pthread_mutex_destroy(&m_op_lock);
         pthread_mutex_destroy(&m_op_arg_mutex);
         pthread_cond_destroy(&m_op_arg_cond);
@@ -239,6 +255,8 @@ public:
         if (!m_running)
             return;
 
+        bool flushAudio = false;
+
         pthread_mutex_lock(&m_aqueue_lock);
         // When playing rewind or fast forward then we need to keep one
         // frame in the queue to prevent playback stalling.
@@ -246,8 +264,12 @@ public:
         while (mlt_deque_count(m_aqueue) > n)
             mlt_frame_close(mlt_frame(mlt_deque_pop_back(m_aqueue)));
         m_purge = true;
-        m_deckLinkOutput->FlushBufferedAudioSamples();
+        flushAudio = m_isAudio && m_deckLinkOutput;
         pthread_mutex_unlock(&m_aqueue_lock);
+
+        // The DeckLink SDK may re-enter RenderAudioSamples while flushing.
+        if (flushAudio)
+            m_deckLinkOutput->FlushBufferedAudioSamples();
     }
 
 protected:
@@ -494,7 +516,9 @@ protected:
                 return false;
             }
 
+            pthread_mutex_lock(&m_frames_lock);
             mlt_deque_push_back(m_frames, frame);
+            pthread_mutex_unlock(&m_frames_lock);
         }
 
         pthread_mutex_lock(&m_refresh_mutex);
@@ -533,9 +557,11 @@ protected:
         pthread_mutex_unlock(&m_aqueue_lock);
 
         m_buffer = nullptr;
+        pthread_mutex_lock(&m_frames_lock);
         while (IDeckLinkMutableVideoFrame *frame
                = (IDeckLinkMutableVideoFrame *) mlt_deque_pop_back(m_frames))
             SAFE_RELEASE(frame);
+        pthread_mutex_unlock(&m_frames_lock);
 
         mlt_consumer_stopped(getConsumer());
 
@@ -570,8 +596,11 @@ protected:
         mlt_properties consumer_properties = MLT_CONSUMER_PROPERTIES(getConsumer());
         int stride = m_width * (m_isKeyer ? 4 : 2);
         int height = m_height;
-        IDeckLinkMutableVideoFrame *decklinkFrame = static_cast<IDeckLinkMutableVideoFrame *>(
-            mlt_deque_pop_front(m_frames));
+        IDeckLinkMutableVideoFrame *decklinkFrame = nullptr;
+
+        pthread_mutex_lock(&m_frames_lock);
+        decklinkFrame = static_cast<IDeckLinkMutableVideoFrame *>(mlt_deque_pop_front(m_frames));
+        pthread_mutex_unlock(&m_frames_lock);
 
         mlt_log_debug(getConsumer(), "%s: entering\n", __FUNCTION__);
 
@@ -704,43 +733,70 @@ protected:
                     frameMeta->SetInt(bmdDeckLinkFrameMetadataHDRElectroOpticalTransferFunc,
                                       EOTF_PQ);
                     // CEA/SMPTE HDR metadata
-                    // TODO: document and provide defaults for these
+                    const double hdrRedX
+                        = clamp_hdr_metadata(consumer_properties, "hdr_red_x", 0.7080, 0.0, 1.0);
+                    const double hdrRedY
+                        = clamp_hdr_metadata(consumer_properties, "hdr_red_y", 0.2920, 0.0, 1.0);
+                    const double hdrGreenX
+                        = clamp_hdr_metadata(consumer_properties, "hdr_green_x", 0.1700, 0.0, 1.0);
+                    const double hdrGreenY
+                        = clamp_hdr_metadata(consumer_properties, "hdr_green_y", 0.7970, 0.0, 1.0);
+                    const double hdrBlueX
+                        = clamp_hdr_metadata(consumer_properties, "hdr_blue_x", 0.1310, 0.0, 1.0);
+                    const double hdrBlueY
+                        = clamp_hdr_metadata(consumer_properties, "hdr_blue_y", 0.0460, 0.0, 1.0);
+                    const double hdrWhiteX
+                        = clamp_hdr_metadata(consumer_properties, "hdr_white_x", 0.3127, 0.0, 1.0);
+                    const double hdrWhiteY
+                        = clamp_hdr_metadata(consumer_properties, "hdr_white_y", 0.3290, 0.0, 1.0);
+                    const double hdrMaxLuminance = clamp_hdr_metadata(consumer_properties,
+                                                                      "hdr_max_luminance",
+                                                                      1000.0,
+                                                                      1.0,
+                                                                      65535.0);
+                    const double hdrMinLuminance = clamp_hdr_metadata(consumer_properties,
+                                                                      "hdr_min_luminance",
+                                                                      0.01,
+                                                                      0.0001,
+                                                                      6.5535);
+                    const double hdrMaxCll = clamp_hdr_metadata(consumer_properties,
+                                                                "hdr_max_cll",
+                                                                1000.0,
+                                                                1.0,
+                                                                65535.0);
+                    const double hdrMaxFall = clamp_hdr_metadata(consumer_properties,
+                                                                 "hdr_max_fall",
+                                                                 400.0,
+                                                                 1.0,
+                                                                 65535.0);
                     decklinkFrame->SetFlags(decklinkFrame->GetFlags() | bmdFrameContainsHDRMetadata);
-                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesRedX,
-                                        mlt_properties_get_double(consumer_properties, "hdr_red_x"));
-                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesRedY,
-                                        mlt_properties_get_double(consumer_properties, "hdr_red_y"));
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesRedX, hdrRedX);
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesRedY, hdrRedY);
                     frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesGreenX,
-                                        mlt_properties_get_double(consumer_properties,
-                                                                  "hdr_green_x"));
+                                        hdrGreenX);
                     frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesGreenY,
-                                        mlt_properties_get_double(consumer_properties,
-                                                                  "hdr.green_y"));
-                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesBlueX,
-                                        mlt_properties_get_double(consumer_properties,
-                                                                  "hdr_blue_x"));
-                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesBlueY,
-                                        mlt_properties_get_double(consumer_properties,
-                                                                  "hdr_blue_y"));
-                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRWhitePointX,
-                                        mlt_properties_get_double(consumer_properties,
-                                                                  "hdr_white_x"));
-                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRWhitePointY,
-                                        mlt_properties_get_double(consumer_properties,
-                                                                  "hdr_white_y"));
+                                        hdrGreenY);
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesBlueX, hdrBlueX);
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRDisplayPrimariesBlueY, hdrBlueY);
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRWhitePointX, hdrWhiteX);
+                    frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRWhitePointY, hdrWhiteY);
                     frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRMaxDisplayMasteringLuminance,
-                                        mlt_properties_get_double(consumer_properties,
-                                                                  "hdr_max_luminance"));
+                                        hdrMaxLuminance);
                     frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRMinDisplayMasteringLuminance,
-                                        mlt_properties_get_double(consumer_properties,
-                                                                  "hdr_min_luminance"));
+                                        hdrMinLuminance);
                     frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRMaximumContentLightLevel,
-                                        mlt_properties_get_double(consumer_properties,
-                                                                  "hdr_max_cll"));
+                                        hdrMaxCll);
                     frameMeta->SetFloat(bmdDeckLinkFrameMetadataHDRMaximumFrameAverageLightLevel,
-                                        mlt_properties_get_double(consumer_properties,
-                                                                  "hdr_max_fall"));
+                                        hdrMaxFall);
+                } else {
+                    // Frames are reused from a pool, so explicitly clear any stale HDR transfer
+                    // and static metadata flag left behind by prior PQ/HLG output.
+                    frameMeta->SetInt(bmdDeckLinkFrameMetadataHDRElectroOpticalTransferFunc,
+                                      EOTF_SDR);
+                    decklinkFrame->SetFlags(decklinkFrame->GetFlags()
+                                            & ~bmdFrameContainsHDRMetadata);
                 }
+                frameMeta->Release();
             } else {
                 mlt_log_debug(getConsumer(),
                               "Unable to get IDeckLinkVideoFrameMutableMetadataExtensions\n");
@@ -965,7 +1021,9 @@ protected:
     {
         mlt_log_debug(getConsumer(), "%s: ENTERING\n", __FUNCTION__);
 
+        pthread_mutex_lock(&m_frames_lock);
         mlt_deque_push_back(m_frames, completedFrame);
+        pthread_mutex_unlock(&m_frames_lock);
 
         //  change priority of video callback thread
         reprio(1);

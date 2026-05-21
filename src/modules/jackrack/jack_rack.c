@@ -24,9 +24,12 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
 #include <string.h>
 #include <ctype.h>
+
+#ifndef _MSC_VER
+#include <strings.h>
+#endif
 
 #include <ladspa.h>
 #include <libxml/parser.h>
