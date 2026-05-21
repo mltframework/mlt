@@ -147,6 +147,7 @@ static void ensure_color_properties(mlt_filter self, mlt_frame frame)
         case mlt_image_rgba64:
         case mlt_image_movit:
         case mlt_image_opengl_texture:
+        case mlt_image_private:
             full_range = 1;
             break;
         case mlt_image_yuv422:
@@ -182,7 +183,8 @@ static int filter_get_image(mlt_frame frame,
     mlt_properties filter_properties = MLT_FILTER_PROPERTIES(self);
     mlt_image_format requested_format = *format;
     int ret = mlt_frame_get_image(frame, image, format, width, height, writable);
-    if (ret || requested_format == mlt_image_movit || requested_format == mlt_image_none)
+    if (ret || requested_format == mlt_image_movit || requested_format == mlt_image_private
+        || requested_format == mlt_image_none)
         return ret;
 
     const char *out_trc_str = mlt_properties_get(filter_properties, "force_trc");

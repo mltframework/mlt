@@ -38,7 +38,7 @@ jobs:
               sed -i 's/^Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
               DEBIAN_FRONTEND=noninteractive apt-get -qq update
               DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
-              DEBIAN_FRONTEND=noninteractive apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev
+              DEBIAN_FRONTEND=noninteractive apt-get -yqq install autoconf automake git libtool pkg-config wget cmake libplacebo-dev qt6-base-dev libqt6svg6-dev
               git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
               cd /tmp/rnnoise
               ./autogen.sh
@@ -51,7 +51,7 @@ jobs:
               sed -i 's/^Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
               DEBIAN_FRONTEND=noninteractive apt-get -qq update
               DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
-              DEBIAN_FRONTEND=noninteractive apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev
+              DEBIAN_FRONTEND=noninteractive apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libplacebo-dev libqt6svg6-dev
               git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
               cd /tmp/rnnoise
               ./autogen.sh
@@ -64,7 +64,7 @@ jobs:
               sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
               DEBIAN_FRONTEND=noninteractive apt-get -qq update
               DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
-              DEBIAN_FRONTEND=noninteractive apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
+              DEBIAN_FRONTEND=noninteractive apt-get -yqq install autoconf automake git libtool pkg-config wget cmake libplacebo-dev qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
               git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
               cd /tmp/rnnoise
               ./autogen.sh
@@ -77,7 +77,7 @@ jobs:
               echo 'deb-src http://deb.debian.org/debian unstable main' >> /etc/apt/sources.list
               apt-get -qq update
               apt-get -yqq build-dep mlt
-              apt-get -yqq install autoconf automake git libtool pkg-config wget
+              apt-get -yqq install autoconf automake git libtool pkg-config wget libplacebo-dev
               git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
               cd /tmp/rnnoise
               ./autogen.sh
@@ -90,7 +90,7 @@ jobs:
               echo 'deb-src http://deb.debian.org/debian testing main' >> /etc/apt/sources.list
               apt-get -qq update
               apt-get -yqq build-dep mlt
-              apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev
+              apt-get -yqq install autoconf automake git libtool pkg-config wget cmake libplacebo-dev qt6-base-dev libqt6svg6-dev
               git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
               cd /tmp/rnnoise
               ./autogen.sh
@@ -104,7 +104,7 @@ jobs:
               echo 'deb http://deb.debian.org/debian bookworm-backports main' >> /etc/apt/sources.list
               apt-get -qq update
               apt-get -yqq build-dep mlt
-              apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev
+              apt-get -yqq install autoconf automake git libtool pkg-config wget cmake libplacebo-dev qt6-base-dev libqt6svg6-dev
               git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
               cd /tmp/rnnoise
               ./autogen.sh
@@ -123,7 +123,7 @@ jobs:
                 libtheora-devel libvorbis-devel libvdpau-devel \
                 libsoup-devel liboil-devel python-devel alsa-lib \
                 pulseaudio-libs-devel gcc-c++ cmake ffmpeg-free-devel \
-                movit-devel rubberband-devel vid.stab-devel rnnoise-devel
+                libplacebo-devel movit-devel rubberband-devel vid.stab-devel rnnoise-devel
           - name: fedora-38
             image: fedora:38
             setup_script: |
@@ -136,7 +136,7 @@ jobs:
                 libtheora-devel libvorbis-devel libvdpau-devel \
                 libsoup-devel liboil-devel python-devel alsa-lib \
                 pulseaudio-libs-devel gcc-c++ cmake ffmpeg-free-devel \
-                movit-devel rubberband-devel vid.stab-devel rnnoise-devel
+                libplacebo-devel movit-devel rubberband-devel vid.stab-devel rnnoise-devel
 
     container:
       image: ${{ matrix.image }}

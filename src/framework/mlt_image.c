@@ -188,7 +188,8 @@ int mlt_image_calculate_size(mlt_image self)
         return self->width * self->height * 3 / 2;
     case mlt_image_movit:
     case mlt_image_opengl_texture:
-        return 4;
+    case mlt_image_private:
+        return sizeof(void *);
     case mlt_image_yuv422p16:
         return self->width * self->height * 4;
     case mlt_image_yuv420p10:
@@ -228,6 +229,8 @@ const char *mlt_image_format_name(mlt_image_format format)
         return "glsl";
     case mlt_image_opengl_texture:
         return "opengl_texture";
+    case mlt_image_private:
+        return "private";
     case mlt_image_yuv422p16:
         return "yuv422p16";
     case mlt_image_yuv420p10:
@@ -489,6 +492,7 @@ mlt_colorspace mlt_image_default_colorspace(mlt_image_format format, int height)
     case mlt_image_rgba64:
     case mlt_image_movit:
     case mlt_image_opengl_texture:
+    case mlt_image_private:
         colorspace = mlt_colorspace_rgb;
         break;
     case mlt_image_yuv422:
@@ -605,6 +609,7 @@ void mlt_image_fill_black(mlt_image self)
     case mlt_image_none:
     case mlt_image_movit:
     case mlt_image_opengl_texture:
+    case mlt_image_private:
         return;
     case mlt_image_rgb:
     case mlt_image_rgba:
@@ -693,6 +698,7 @@ void mlt_image_fill_checkerboard(mlt_image self, double sample_aspect_ratio)
     case mlt_image_none:
     case mlt_image_movit:
     case mlt_image_opengl_texture:
+    case mlt_image_private:
         return;
     case mlt_image_rgb:
     case mlt_image_rgba: {
@@ -798,6 +804,7 @@ void mlt_image_fill_white(mlt_image self, int full_range)
     case mlt_image_none:
     case mlt_image_movit:
     case mlt_image_opengl_texture:
+    case mlt_image_private:
         return;
     case mlt_image_rgb:
     case mlt_image_rgba:
@@ -952,9 +959,10 @@ int mlt_image_format_size(mlt_image_format format, int width, int height, int *b
         return width * height * 3 / 2;
     case mlt_image_movit:
     case mlt_image_opengl_texture:
+    case mlt_image_private:
         if (bpp)
             *bpp = 0;
-        return 4;
+        return sizeof(void *);
     case mlt_image_yuv422p16:
         if (bpp)
             *bpp = 4;
