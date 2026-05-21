@@ -15,10 +15,7 @@ description: >
 notes: >
   Operates at 48 kHz; audio is resampled automatically if needed.
 
-  RNNoise itself introduces two 480-sample frames of latency, or about 20 ms
-  at 48 kHz, and both the filter and the link are subject to that delay. This
-  link processes audio in 480-sample frames at 48 kHz as required by RNNoise,
-  and correctly buffers samples across MLT frames.
+  Unlike filter_rnnoise, this link does not add a delay to the audio.
 audio_formats:
   - float
 parameters:
