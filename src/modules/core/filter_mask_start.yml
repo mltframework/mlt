@@ -1,8 +1,8 @@
-schema_version: 0.3
+schema_version: 7.2
 type: filter
 identifier: mask_start
 title: Setup a filter mask
-version: 4
+version: 5
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -16,7 +16,11 @@ description: >
   the mask_apply filter uses a transition to composite the current frame's
   image over the snapshot. The typical use case is to add filters in the
   following sequence: mask_start, zero or more filters, mask_apply.
-
+image_formats:
+  - yuv422
+  - rgb
+  - rgba
+  - rgba64
 parameters:
   - identifier: filter
     title: Filter

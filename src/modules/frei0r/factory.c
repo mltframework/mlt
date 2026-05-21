@@ -99,6 +99,46 @@ static void check_thread_safe(mlt_properties properties, const char *name)
     mlt_properties_close(not_thread_safe);
 }
 
+static void add_metadata_formats(mlt_properties metadata,
+                                 mlt_service_type type,
+                                 const char *service_name)
+{
+    const char *plugin_name = service_name;
+
+    if (!metadata)
+        return;
+
+    if (type != mlt_service_producer_type && type != mlt_service_filter_type
+        && type != mlt_service_transition_type) {
+        return;
+    }
+
+    mlt_properties image_formats = mlt_properties_new();
+    if (!image_formats)
+        return;
+
+    mlt_properties_set(image_formats, "0", "rgba");
+
+    if (plugin_name && !strncmp(plugin_name, "frei0r.", 7))
+        plugin_name += 7;
+
+    if (type == mlt_service_filter_type) {
+        mlt_properties alpha_only = mlt_properties_get_data(mlt_global_properties(),
+                                                            "frei0r.alpha_only",
+                                                            NULL);
+        if (alpha_only && plugin_name && mlt_properties_exists(alpha_only, plugin_name)) {
+            mlt_properties_set(image_formats, "1", "rgba64");
+        }
+    }
+
+    mlt_properties_set_data(metadata,
+                            "image_formats",
+                            image_formats,
+                            0,
+                            (mlt_destructor) mlt_properties_close,
+                            NULL);
+}
+
 static mlt_properties fill_param_info(mlt_service_type type, const char *service_name, char *name)
 {
     char file[PATH_MAX];
@@ -164,7 +204,7 @@ static mlt_properties fill_param_info(mlt_service_type type, const char *service
     }
     plginfo(&info);
     snprintf(string, sizeof(string), "%d", info.minor_version);
-    mlt_properties_set(metadata, "schema_version", "7.0");
+    mlt_properties_set(metadata, "schema_version", "7.2");
     mlt_properties_set(metadata, "title", info.name);
     mlt_properties_set_double(metadata,
                               "version",
@@ -190,6 +230,7 @@ static mlt_properties fill_param_info(mlt_service_type type, const char *service
     mlt_properties tags = mlt_properties_new();
     mlt_properties_set_data(metadata, "tags", tags, 0, (mlt_destructor) mlt_properties_close, NULL);
     mlt_properties_set(tags, "0", "Video");
+    add_metadata_formats(metadata, type, service_name);
 
     mlt_properties parameter = mlt_properties_new();
     mlt_properties_set_data(metadata,

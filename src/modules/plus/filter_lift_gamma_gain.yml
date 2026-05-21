@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: lift_gamma_gain
 title: Lift, Gamma, and Gain
-version: 2
+version: 3
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -22,7 +22,10 @@ notes: >
   rest of the curve relatively little. Thus, we actually convert to gamma 2.2
   before lift, and then back again afterwards. (Gain and gamma are,
   up to constants, commutative with the de-gamma operation.)
-
+image_formats:
+  - rgb
+  - rgba
+  - rgba64
 parameters:
   - identifier: lift_r
     title: Lift Red

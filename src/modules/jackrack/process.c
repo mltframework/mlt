@@ -30,9 +30,12 @@
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/time.h>
 #include <time.h>
 #include <ctype.h>
+
+#ifndef _MSC_VER
+#include <sys/time.h>
+#endif
 
 #include "process.h"
 #include "lock_free_fifo.h"

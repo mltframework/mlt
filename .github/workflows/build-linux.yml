@@ -46,7 +46,14 @@ jobs:
           sudo sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
           sudo apt-get -qq update
           sudo apt-get -yqq build-dep mlt
-          sudo apt-get -yqq install qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
+          sudo apt-get -yqq install autoconf automake git libtool pkg-config wget qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
+          git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
+          pushd /tmp/rnnoise
+          ./autogen.sh
+          ./configure --prefix=/usr/local --enable-shared --disable-static
+          make -j"$(nproc)"
+          sudo make install
+          popd
           sudo apt-get -yqq install cmake ninja-build kwalify
           cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_TESTING=ON -D SWIG_PYTHON=ON -S . -B build -G Ninja
           cmake --build build

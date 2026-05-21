@@ -1,14 +1,15 @@
-schema_version: 0.3
+schema_version: 7.2
 type: filter
 identifier: threshold
 title: Threshold
-version: 2
+version: 3
 creator: Charles Yates
 license: LGPLv2.1
 language: en
 tags:
   - Video
-
+image_formats:
+  - yuv422
 parameters:
   - identifier: midpoint
     title: Threshold

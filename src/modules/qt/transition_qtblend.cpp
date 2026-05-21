@@ -88,6 +88,10 @@ static int get_image(mlt_frame a_frame,
         b_width = *width;
         b_height = *height;
     }
+    // Special case - aspect_ratio = 0
+    if (mlt_frame_get_aspect_ratio(b_frame) == 0) {
+        mlt_frame_set_aspect_ratio(b_frame, consumer_ar);
+    }
     double b_ar = mlt_frame_get_aspect_ratio(b_frame);
     double b_dar = b_ar * b_width / b_height;
     double geometry_dar = consumer_ar * normalized_width / normalized_height;
@@ -163,8 +167,33 @@ static int get_image(mlt_frame a_frame,
         b_width = *width;
     }*/
 
-    if (mlt_frame_get_aspect_ratio(b_frame) == 0) {
-        mlt_frame_set_aspect_ratio(b_frame, consumer_ar);
+    // Normalize source dimensions to consumer PAR to handle anamorphic sources
+    normalize_mlt_source_size(b_ar, consumer_ar, &b_width, b_height);
+
+    // Fix for bug #1228 and optimization.
+    // Adjust requested dimension so MLT (libswscale) does the preliminary downscaling.
+    // Using a step defined by MLT_QT_MIPMAP_STEP provides a tight bound to target resolution
+    // (maximizing quality and preventing QPainter aliasing) while keeping the requested
+    // dimensions stable across small animation increments.
+    if (rect.w > 0 && rect.h > 0 && b_width > 0 && b_height > 0) {
+        double scaleTarget;
+        if (distort) {
+            scaleTarget = qMax(rect.w / b_width, rect.h / b_height);
+        } else {
+            double resize_dar = rect.w * consumer_ar / rect.h;
+            if (b_dar >= resize_dar) {
+                scaleTarget = rect.w / b_width;
+                if (b_dar < geometry_dar) {
+                    scaleTarget *= transformScale;
+                }
+            } else {
+                scaleTarget = rect.h / b_height;
+                if (b_dar > geometry_dar) {
+                    scaleTarget *= transformScale;
+                }
+            }
+        }
+        adjust_mlt_mipmap_size(scaleTarget, &b_width, &b_height);
     }
 
     if (mlt_properties_get(transition_properties, "rotation")) {
@@ -244,9 +273,6 @@ static int get_image(mlt_frame a_frame,
     if (*format != mlt_image_rgba64)
         *format = mlt_image_rgba;
 
-    bool scaled = false;
-    QImage scaledSource;
-
     // We don't do subpixel smoothing for nearest neighbour interpolation
     // so people can use that to upscale pixel art and keep the hard edges.
     char *interps = mlt_properties_get(properties, "consumer.rescale");
@@ -258,21 +284,12 @@ static int get_image(mlt_frame a_frame,
 
     if (distort) {
         if (b_width != 0 && b_height != 0) {
-            if (rect.w < b_width || rect.h < b_height) {
-                scaled = true;
-                scaledSource = topImg.scaled(qRound(rect.w),
-                                             qRound(rect.h),
-                                             Qt::IgnoreAspectRatio,
-                                             hqPainting ? Qt::SmoothTransformation
-                                                        : Qt::FastTransformation);
-            } else {
-                transform.scale(rect.w / b_width, rect.h / b_height);
-            }
+            transform.scale(rect.w / b_width, rect.h / b_height);
         }
     } else if (rect.w > 0 && rect.h > 0) {
         double resize_dar = rect.w * consumer_ar / rect.h;
         double scale;
-        if (b_dar > resize_dar) {
+        if (b_dar >= resize_dar) {
             scale = rect.w / b_width;
             if (b_dar < geometry_dar) {
                 scale *= transformScale;
@@ -283,27 +300,10 @@ static int get_image(mlt_frame a_frame,
                 scale *= transformScale;
             }
         }
-        if (scale < 1.) {
-            // Use higher quality QImage scaling
-            scaled = true;
-            const QSize finalSize(qRound(topImg.width() * scale), qRound(topImg.height() * scale));
-            // Center image in rect
-            transform.translate((rect.w - finalSize.width()) / 2.0,
-                                (rect.h - finalSize.height()) / 2.0);
-            // Scale
-            scaledSource = topImg.scaled(finalSize,
-                                         Qt::IgnoreAspectRatio,
-                                         hqPainting ? Qt::SmoothTransformation
-                                                    : Qt::FastTransformation);
-        } else {
-            // Center image in rect
-            transform.translate((rect.w - (b_width * scale)) / 2.0,
-                                (rect.h - (b_height * scale)) / 2.0);
-            if (scale > 1.) {
-                // Use QPainter scaling
-                transform.scale(scale, scale);
-            }
-        }
+        // Center image in rect
+        transform.translate((rect.w - (b_width * scale)) / 2.0, (rect.h - (b_height * scale)) / 2.0);
+        // Use QPainter scaling for everything
+        transform.scale(scale, scale);
     }
 
     // Get bottom frame
@@ -331,11 +331,7 @@ static int get_image(mlt_frame a_frame,
     painter.setOpacity(opacity);
 
     // Composite top frame
-    if (scaled) {
-        painter.drawImage(0, 0, scaledSource);
-    } else {
-        painter.drawImage(0, 0, topImg);
-    }
+    painter.drawImage(0, 0, topImg);
 
     // finish Qt drawing
     painter.end();

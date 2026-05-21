@@ -1,8 +1,8 @@
-schema_version: 0.3
+schema_version: 7.2
 type: transition
 identifier: luma
 title: Wipe
-version: 2
+version: 3
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -21,6 +21,10 @@ description: >
   "consumer_progressive" or the transition property "progressive" is set to 1.
 bugs:
   - Assumes lower field first output.
+image_formats:
+  - rgba
+  - rgba64
+  - yuv422
 parameters:
   - identifier: resource
     title: Luma map file

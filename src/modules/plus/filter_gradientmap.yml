@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.2
 type: filter
 identifier: gradientmap
 title: Gradient Map
-version: 2
+version: 3
 copyright: Martin Rodriguez Reboredo
 creator: Martin Rodriguez Reboredo
 license: LGPLv2.1
@@ -11,7 +11,9 @@ tags:
   - Video
 description:
   Maps the colors of an image to a gradient according to their intensity.
-
+image_formats:
+  - rgba
+  - rgba64
 parameters:
   - identifier: stop.*
     title: Color Stop

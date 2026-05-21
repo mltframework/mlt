@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: producer
 identifier: qtext
 title: Qt Titler
-version: 4
+version: 5
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -20,7 +20,8 @@ notes: >
   whatever the consumer requests. Therefore, it will lose its aspect ratio if 
   so requested, and it is up to the consumer to request a proper width and 
   height that maintains the image aspect.
-
+image_formats:
+  - rgba
 parameters:
   - identifier: resource
     title: File

@@ -1,15 +1,16 @@
-schema_version: 0.3
+schema_version: 7.2
 type: filter
 identifier: loudness_meter
 title: Loudness Meter
-version: 1
+version: 2
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
 tags:
   - Audio
 description: Measure audio loudness as recommended by EBU R128.
-
+audio_formats:
+  - f32le
 parameters:
   - identifier: calc_program
     title: Calculate Program Loudness

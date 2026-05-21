@@ -1,8 +1,8 @@
-schema_version: 0.3
+schema_version: 7.2
 type: producer
 identifier: colour
 title: Color
-version: 2
+version: 3
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -10,6 +10,12 @@ language: en
 tags:
   - Video
 description: A simple color generator.
+image_formats:
+  - rgb
+  - rgba
+  - rgba64
+  - yuv420p
+  - yuv422
 parameters:
   - identifier: resource
     argument: yes

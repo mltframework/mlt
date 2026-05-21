@@ -1,9 +1,9 @@
-schema_version: 7.0
+schema_version: 7.2
 type: consumer
 identifier: decklink
 title: Blackmagic Design DeckLink Output
-version: 3
-copyright: Copyright (C) 2010-2025 Meltytech, LLC
+version: 4
+copyright: Copyright (C) 2010-2026 Meltytech, LLC
 license: LGPL
 language: en
 creator: Dan Dennedy
@@ -15,10 +15,20 @@ description: >
   HDMI cards.
 notes: >
   Please ensure that you use a MLT profile that is compatible with a broadcast
-  standard which the card you are using supports.
+  standard which the card you are using supports. HDR output metadata follows
+  the consumer's color transfer characteristic. When color_trc is set to
+  arib-std-b67, the DeckLink output advertises HLG. When color_trc is set to
+  smpte2084, the DeckLink output advertises PQ and the HDR static metadata
+  properties documented below are applied. Any other transfer clears HDR
+  metadata and advertises SDR.
 bugs:
   - Only internal keying is supported at this time.
   - Only 8-bit Y'CbCr or RGBA (key) is supported at this time.
+audio_formats:
+  - s16
+image_formats:
+  - rgba
+  - yuv422
 parameters:
   - identifier: resource
     argument: yes
@@ -103,11 +113,138 @@ parameters:
     default: 0
     widget: checkbox
 
+  - identifier: colorspace
+    title: Colorspace
+    type: integer
+    description: >
+      Set the output colorspace metadata. BT.2020 maps to DeckLink Rec.2020,
+      BT.601 maps to DeckLink Rec.601, and all other values default to Rec.709.
+    values:
+      - 240 # SMPTE 240M
+      - 601 # ITU-R BT.601
+      - 709 # ITU-R BT.709
+      - 2020 # ITU-R BT.2020 non-constant luminance
+
+  - identifier: color_trc
+    title: Transfer characteristic
+    type: string
+    description: >
+      Set the output transfer characteristic metadata. Use arib-std-b67 for
+      HLG or smpte2084 for PQ HDR10-style signaling. Any other value is treated
+      as SDR and clears the DeckLink HDR metadata flag.
+    values:
+      - bt709
+      - smpte170m
+      - smpte240m
+      - bt470bg
+      - arib-std-b67
+      - smpte2084
+
+  - identifier: hdr_red_x
+    title: HDR primary red X
+    type: float
+    description: PQ-only static HDR metadata. Red display primary chromaticity X.
+    minimum: 0
+    maximum: 1
+    default: 0.708
+
+  - identifier: hdr_red_y
+    title: HDR primary red Y
+    type: float
+    description: PQ-only static HDR metadata. Red display primary chromaticity Y.
+    minimum: 0
+    maximum: 1
+    default: 0.292
+
+  - identifier: hdr_green_x
+    title: HDR primary green X
+    type: float
+    description: PQ-only static HDR metadata. Green display primary chromaticity X.
+    minimum: 0
+    maximum: 1
+    default: 0.170
+
+  - identifier: hdr_green_y
+    title: HDR primary green Y
+    type: float
+    description: PQ-only static HDR metadata. Green display primary chromaticity Y.
+    minimum: 0
+    maximum: 1
+    default: 0.797
+
+  - identifier: hdr_blue_x
+    title: HDR primary blue X
+    type: float
+    description: PQ-only static HDR metadata. Blue display primary chromaticity X.
+    minimum: 0
+    maximum: 1
+    default: 0.131
+
+  - identifier: hdr_blue_y
+    title: HDR primary blue Y
+    type: float
+    description: PQ-only static HDR metadata. Blue display primary chromaticity Y.
+    minimum: 0
+    maximum: 1
+    default: 0.046
+
+  - identifier: hdr_white_x
+    title: HDR white point X
+    type: float
+    description: PQ-only static HDR metadata. Display white point chromaticity X.
+    minimum: 0
+    maximum: 1
+    default: 0.3127
+
+  - identifier: hdr_white_y
+    title: HDR white point Y
+    type: float
+    description: PQ-only static HDR metadata. Display white point chromaticity Y.
+    minimum: 0
+    maximum: 1
+    default: 0.329
+
+  - identifier: hdr_max_luminance
+    title: HDR mastering max luminance
+    type: float
+    description: PQ-only static HDR metadata. Maximum mastering display luminance.
+    minimum: 1
+    maximum: 65535
+    default: 1000
+    unit: cd/m2
+
+  - identifier: hdr_min_luminance
+    title: HDR mastering min luminance
+    type: float
+    description: PQ-only static HDR metadata. Minimum mastering display luminance.
+    minimum: 0.0001
+    maximum: 6.5535
+    default: 0.01
+    unit: cd/m2
+
+  - identifier: hdr_max_cll
+    title: HDR MaxCLL
+    type: float
+    description: PQ-only static HDR metadata. Maximum Content Light Level.
+    minimum: 1
+    maximum: 65535
+    default: 1000
+    unit: cd/m2
+
+  - identifier: hdr_max_fall
+    title: HDR MaxFALL
+    type: float
+    description: PQ-only static HDR metadata. Maximum Frame-Average Light Level.
+    minimum: 1
+    maximum: 65535
+    default: 400
+    unit: cd/m2
+
   - identifier: terminate_on_pause
     title: Stop automatically
     type: boolean
     description: >
       Whether to stop playback at the end of the producer or when playback
       is paused.
-    default: 0
+    default: no
     widget: checkbox

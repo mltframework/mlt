@@ -70,6 +70,7 @@ install(FILES
   link_swresample.yml
   producer_avformat.yml
   producer_avformat-novalidate.yml
+  filter_info.yml
   resolution_scale.yml
   blacklist.txt
   yuv_only.txt

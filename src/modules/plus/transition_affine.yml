@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: transition
 identifier: affine
 title: Transform
-version: 8
+version: 9
 copyright: Meltytech, LLC
 creator: Charles Yates
 contributor:
@@ -11,6 +11,9 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+image_formats:
+  - rgba
+  - rgba64
 parameters:
   - identifier: distort
     title: Ignore aspect ratio

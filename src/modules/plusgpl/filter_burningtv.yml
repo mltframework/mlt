@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: burningtv
 title: BurningTV
-version: 1
+version: 2
 copyright: FUKUCHI Kentaro, Stephane Fillod
 creator: FUKUCHI Kentaro, Stephane Fillod
 contributor:
@@ -11,7 +11,8 @@ license: GPLv2
 language: en
 tags:
   - Video
-
+image_formats:
+  - rgba
 parameters:
   - identifier: foreground
     title: Foreground

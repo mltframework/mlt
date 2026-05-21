@@ -1,10 +1,10 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: opencv.tracker
 title: OpenCV Motion Tracker
 copyright: Jean-Baptiste Mardelle
 creator: Jean-Baptiste Mardelle <jb@kdenlive.org>
-version: 2
+version: 3
 license: LGPLv2.1
 language: en
 tags:
@@ -21,6 +21,8 @@ notes: >
   To analyse clip, you can use with melt, use 'melt ... -consumer xml:output.mlt all=1 real_time=-1'.
   Analysis data is stored in a "results" property. For the second pass, you can use output.mlt as the input.
 
+image_formats:
+  - rgb
 parameters:
   - identifier: rect
     title: Target Rect

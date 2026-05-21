@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: producer
 identifier: avformat-novalidate
 title: Non-validating FFmpeg Reader
-version: 3
+version: 4
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -18,3 +18,19 @@ notes: >
   validation also determines the length property, you should set that yourself
   on this producer after having learned it from the normal avformat producer.
   See the documentation for the normal avformat producer for more information.
+audio_formats:
+  - s16
+  - s32
+  - s32le
+  - float
+  - f32le
+  - u8
+image_formats:
+  - rgb
+  - rgba
+  - rgba64
+  - yuv420p
+  - yuv420p10
+  - yuv422
+  - yuv422p16
+  - yuv444p10

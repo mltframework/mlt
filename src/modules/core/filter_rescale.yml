@@ -1,8 +1,8 @@
-schema_version: 0.1
+schema_version: 7.2
 type: filter
 identifier: rescale
 title: Rescale
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Dan Dennedy <dan@dennedy.org>
 license: LGPLv2.1
@@ -24,3 +24,11 @@ bugs:
   - > 
     It only implements a nearest neighbour scaling - it is used as the base 
     class for the gtkrescale and swscale filters.
+image_formats:
+  - rgb
+  - rgba
+  - rgba64
+  - yuv420p
+  - yuv420p10
+  - yuv422
+  - yuv444p10

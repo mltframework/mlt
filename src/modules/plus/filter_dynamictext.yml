@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: dynamictext
 title: Dynamic text
-version: 4
+version: 5
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -12,7 +12,8 @@ description: Overlay dynamic text onto the video
 notes: >
   The dynamic text filter will search for keywords in the text to be overlaid
   and will replace those keywords on a frame-by-frame basis.
-  
+image_formats:
+  - rgba
 parameters:
   - identifier: argument
     argument: yes

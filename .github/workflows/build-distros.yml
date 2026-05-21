@@ -13,12 +13,13 @@ on:
         type: choice
         options:
           - all
+          - ubuntu-26.04
           - ubuntu-24.04
           - ubuntu-22.04
           - debian-unstable
           - debian-testing
           - debian-stable
-          - fedora-42
+          - fedora-44
           - fedora-38
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -31,33 +32,71 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          - name: ubuntu-26.04
+            image: ubuntu:26.04
+            setup_script: |
+              sed -i 's/^Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
+              DEBIAN_FRONTEND=noninteractive apt-get -qq update
+              DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
+              DEBIAN_FRONTEND=noninteractive apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev
+              git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
+              cd /tmp/rnnoise
+              ./autogen.sh
+              ./configure --prefix=/usr/local --enable-shared --disable-static
+              make -j"$(nproc)"
+              make install
           - name: ubuntu-24.04
             image: ubuntu:24.04
             setup_script: |
               sed -i 's/^Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
               DEBIAN_FRONTEND=noninteractive apt-get -qq update
               DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
-              DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev
+              DEBIAN_FRONTEND=noninteractive apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev
+              git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
+              cd /tmp/rnnoise
+              ./autogen.sh
+              ./configure --prefix=/usr/local --enable-shared --disable-static
+              make -j"$(nproc)"
+              make install
           - name: ubuntu-22.04
             image: ubuntu:22.04
             setup_script: |
               sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
               DEBIAN_FRONTEND=noninteractive apt-get -qq update
               DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
-              DEBIAN_FRONTEND=noninteractive apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
+              DEBIAN_FRONTEND=noninteractive apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
+              git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
+              cd /tmp/rnnoise
+              ./autogen.sh
+              ./configure --prefix=/usr/local --enable-shared --disable-static
+              make -j"$(nproc)"
+              make install
           - name: debian-unstable
             image: debian:unstable
             setup_script: |
               echo 'deb-src http://deb.debian.org/debian unstable main' >> /etc/apt/sources.list
               apt-get -qq update
               apt-get -yqq build-dep mlt
+              apt-get -yqq install autoconf automake git libtool pkg-config wget
+              git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
+              cd /tmp/rnnoise
+              ./autogen.sh
+              ./configure --prefix=/usr/local --enable-shared --disable-static
+              make -j"$(nproc)"
+              make install
           - name: debian-testing
             image: debian:testing
             setup_script: |
               echo 'deb-src http://deb.debian.org/debian testing main' >> /etc/apt/sources.list
               apt-get -qq update
               apt-get -yqq build-dep mlt
-              apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev
+              apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev
+              git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
+              cd /tmp/rnnoise
+              ./autogen.sh
+              ./configure --prefix=/usr/local --enable-shared --disable-static
+              make -j"$(nproc)"
+              make install
           - name: debian-stable
             image: debian:stable
             setup_script: |
@@ -65,9 +104,15 @@ jobs:
               echo 'deb http://deb.debian.org/debian bookworm-backports main' >> /etc/apt/sources.list
               apt-get -qq update
               apt-get -yqq build-dep mlt
-              apt-get -yqq install cmake qt6-base-dev libqt6svg6-dev
-          - name: fedora-42
-            image: fedora:42
+              apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev
+              git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
+              cd /tmp/rnnoise
+              ./autogen.sh
+              ./configure --prefix=/usr/local --enable-shared --disable-static
+              make -j"$(nproc)"
+              make install
+          - name: fedora-44
+            image: fedora:44
             setup_script: |
               dnf --assumeyes group install development-tools
               dnf --assumeyes install \
@@ -78,7 +123,7 @@ jobs:
                 libtheora-devel libvorbis-devel libvdpau-devel \
                 libsoup-devel liboil-devel python-devel alsa-lib \
                 pulseaudio-libs-devel gcc-c++ cmake ffmpeg-free-devel \
-                movit-devel rubberband-devel vid.stab-devel
+                movit-devel rubberband-devel vid.stab-devel rnnoise-devel
           - name: fedora-38
             image: fedora:38
             setup_script: |
@@ -91,7 +136,7 @@ jobs:
                 libtheora-devel libvorbis-devel libvdpau-devel \
                 libsoup-devel liboil-devel python-devel alsa-lib \
                 pulseaudio-libs-devel gcc-c++ cmake ffmpeg-free-devel \
-                movit-devel rubberband-devel vid.stab-devel
+                movit-devel rubberband-devel vid.stab-devel rnnoise-devel
 
     container:
       image: ${{ matrix.image }}

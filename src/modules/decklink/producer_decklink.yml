@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: producer
 identifier: decklink
 title: Blackmagic Design DeckLink Capture
-version: 3
+version: 4
 copyright: Copyright (C) 2011-2025 Meltytech, LLC
 license: LGPL
 language: en
@@ -24,6 +24,11 @@ bugs:
   - Transport controls such as seeking has no affect.
   - External deck control is not implemented.
   - Only 8-bit Y'CbCr is supported at this time.
+audio_formats:
+  - s16
+image_formats:
+  - yuv422
+  - yuv422p16
 parameters:
   - identifier: resource
     argument: yes

@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: movit.convert
 title: Image Converter (GLSL)
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Steinar H. Gunderson
 license: GPLv2
@@ -15,3 +15,8 @@ description: Converts the colorspace and pixel format.
 notes: >
   This is not intended to be created directly. Rather, the loader producer
   loads it if it is available to register an image conversion callback on frames.
+image_formats:
+  - rgba
+  - rgba64
+  - yuv420p10
+  - yuv444p10

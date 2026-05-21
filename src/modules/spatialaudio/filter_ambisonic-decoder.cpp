@@ -1,6 +1,6 @@
 /*
  * filter_ambisonic-decoder.cpp -- decode ambisonic audio to speaker channels
- * Copyright (C) 2024 Meltytech, LLC
+ * Copyright (C) 2024-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,8 @@
 #include <framework/mlt.h>
 #include <spatialaudio/Ambisonics.h>
 
+using namespace spaudio;
+
 static const auto MAX_CHANNELS = 6;
 static const auto AMBISONICS_BLOCK_SIZE = 1024;
 static const auto AMBISONICS_ORDER = 1;
@@ -34,11 +36,11 @@ class SpatialAudio
 {
 private:
     mlt_filter m_filter;
-    CAmbisonicBinauralizer binauralizer;
+    AmbisonicBinauralizer binauralizer;
     unsigned tailLength;
-    CAmbisonicDecoder decoder;
-    CAmbisonicProcessor processor;
-    CAmbisonicZoomer zoomer;
+    AmbisonicDecoder decoder;
+    AmbisonicProcessor processor;
+    AmbisonicZoomer zoomer;
     float *speakers[MAX_CHANNELS];
 
 public:
@@ -72,17 +74,13 @@ public:
     {
         bool error = false;
         bool binaural = channels >= 2 && mlt_properties_get_int(properties(), "binaural");
+        int sampleRate = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "audio_frequency");
 
         // First time setup
         if (binaural && !binauralizer.GetChannelCount()) {
             mlt_log_verbose(MLT_FILTER_SERVICE(filter()),
                             "configuring spatial audio binauralizer\n");
-            error = !binauralizer.Configure(AMBISONICS_ORDER,
-                                            true,
-                                            mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame),
-                                                                   "audio_frequency"),
-                                            samples,
-                                            tailLength);
+            error = !binauralizer.Configure(AMBISONICS_ORDER, true, sampleRate, samples, tailLength);
             if (!error) {
                 binauralizer.Reset();
             } else {
@@ -96,10 +94,12 @@ public:
             error = !decoder.Configure(AMBISONICS_ORDER,
                                        true,
                                        AMBISONICS_BLOCK_SIZE,
-                                       channels == 6   ? kAmblib_51
-                                       : channels == 2 ? kAmblib_Stereo
-                                       : channels == 4 ? kAmblib_Quad
-                                                       : kAmblib_CustomSpeakerSetUp,
+                                       sampleRate,
+                                       channels == 6   ? Amblib_SpeakerSetUps::kAmblib_51
+                                       : channels == 2 ? Amblib_SpeakerSetUps::kAmblib_Stereo
+                                       : channels == 4
+                                           ? Amblib_SpeakerSetUps::kAmblib_Quad
+                                           : Amblib_SpeakerSetUps::kAmblib_CustomSpeakerSetUp,
                                        channels);
             if (!error) {
                 mlt_log_verbose(MLT_FILTER_SERVICE(filter()),
@@ -108,7 +108,10 @@ public:
                 if (!error) {
                     mlt_log_verbose(MLT_FILTER_SERVICE(filter()),
                                     "configuring spatial audio zoomer\n");
-                    error = !zoomer.Configure(AMBISONICS_ORDER, true, AMBISONICS_BLOCK_SIZE, 0);
+                    error = !zoomer.Configure(AMBISONICS_ORDER,
+                                              true,
+                                              AMBISONICS_BLOCK_SIZE,
+                                              sampleRate);
                     if (error) {
                         mlt_log_error(MLT_FILTER_SERVICE(filter()),
                                       "failed to configure spatial audio zoomer\n");
@@ -125,7 +128,7 @@ public:
 
         // Processing
         if (!error) {
-            CBFormat bformat;
+            BFormat bformat;
             bformat.Configure(AMBISONICS_ORDER, true, samples);
             for (unsigned i = 0; i < AMBISONICS_1_CHANNELS; ++i)
                 bformat.InsertStream(&buffer[samples * i], i, samples);
@@ -133,9 +136,10 @@ public:
             if (!binaural) {
                 mlt_position position = mlt_filter_get_position(filter(), frame);
                 mlt_position length = mlt_filter_get_length2(filter(), frame);
-                processor.SetOrientation({-DegreesToRadians(getDouble("yaw", position, length)),
-                                          DegreesToRadians(getDouble("pitch", position, length)),
-                                          DegreesToRadians(getDouble("roll", position, length))});
+                processor.SetOrientation(
+                    Orientation(-DegreesToRadians(getDouble("yaw", position, length)),
+                                DegreesToRadians(getDouble("pitch", position, length)),
+                                DegreesToRadians(getDouble("roll", position, length))));
                 processor.Refresh();
                 processor.Process(&bformat, samples);
                 zoomer.SetZoom(getDouble("zoom", position, length));

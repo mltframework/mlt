@@ -18,12 +18,17 @@
  */
 
 #include "mlt_openfx.h"
+#include <framework/mlt_slices.h>
 
+#include <errno.h>
 #include <float.h>
 #include <math.h>
+#include <pthread.h>
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #ifdef _OPENMP
 #include <omp.h>
@@ -75,10 +80,11 @@ uint16_t *mltofx_rgba64_to_half(const uint16_t *src, int n_pixels)
     uint16_t *dst = malloc((size_t) count * sizeof(uint16_t));
     if (!dst)
         return NULL;
+    int i;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < count; ++i)
+    for (i = 0; i < count; ++i)
         dst[i] = f32_to_f16((float) src[i] * (1.0f / 65535.0f));
     return dst;
 }
@@ -86,10 +92,11 @@ uint16_t *mltofx_rgba64_to_half(const uint16_t *src, int n_pixels)
 void mltofx_half_to_rgba64(const uint16_t *src, uint16_t *dst, int n_pixels)
 {
     int count = n_pixels * 4;
+    int i;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < count; ++i) {
+    for (i = 0; i < count; ++i) {
         float v = f16_to_f32(src[i]);
         // This clamping using >= and <= handles NaN and +/-inf
         v = (v >= 0.0f) ? (v <= 1.0f ? v : 1.0f) : 0.0f;
@@ -103,10 +110,11 @@ float *mltofx_rgba64_to_float(const uint16_t *src, int n_pixels)
     float *dst = malloc((size_t) count * sizeof(float));
     if (!dst)
         return NULL;
+    int i;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < count; ++i)
+    for (i = 0; i < count; ++i)
         dst[i] = (float) src[i] * (1.0f / 65535.0f);
     return dst;
 }
@@ -114,10 +122,11 @@ float *mltofx_rgba64_to_float(const uint16_t *src, int n_pixels)
 void mltofx_float_to_rgba64(const float *src, uint16_t *dst, int n_pixels)
 {
     int count = n_pixels * 4;
+    int i;
 #ifdef _OPENMP
 #pragma omp parallel for schedule(static)
 #endif
-    for (int i = 0; i < count; ++i) {
+    for (i = 0; i < count; ++i) {
         float v = src[i];
         // This clamping using >= and <= handles NaN and +/-inf
         v = (v >= 0.0f) ? (v <= 1.0f ? v : 1.0f) : 0.0f;
@@ -133,6 +142,10 @@ static OfxStatus propGetIntN(OfxPropertySetHandle properties,
                              const char *property,
                              int count,
                              int *value);
+static OfxStatus propSetString(OfxPropertySetHandle properties,
+                               const char *property,
+                               int index,
+                               const char *value);
 
 static OfxStatus getPropertySet(OfxImageEffectHandle imageEffect, OfxPropertySetHandle *propHandle)
 {
@@ -170,6 +183,11 @@ static OfxStatus clipDefine(OfxImageEffectHandle imageEffect,
     mlt_properties_close(clip_props);
     *propertySet = (OfxPropertySetHandle) clip_props;
 
+    propSetString((OfxPropertySetHandle) clip_props,
+                  kOfxImageEffectPropPreMultiplication,
+                  0,
+                  kOfxImageUnPreMultiplied);
+
     return kOfxStatOK;
 }
 
@@ -202,19 +220,12 @@ static OfxStatus clipGetImage(OfxImageClipHandle clip,
                               const OfxRectD *region,
                               OfxPropertySetHandle *imageHandle)
 {
+    (void) time;
+    (void) region;
     if (!clip)
         return kOfxStatErrBadHandle;
     *imageHandle = (OfxPropertySetHandle) mlt_properties_get_properties((mlt_properties) clip,
                                                                         "props");
-    if (region != NULL) {
-        OfxRectI rect = {0, 0, 0, 0};
-        propGetIntN((OfxPropertySetHandle) *imageHandle, kOfxImagePropBounds, 4, &rect.x1);
-        OfxRectD *region2 = (OfxRectD *) region;
-        region2->x1 = (double) rect.x1;
-        region2->x2 = (double) rect.x2;
-        region2->y1 = (double) rect.y1;
-        region2->y2 = (double) rect.y2;
-    }
     return kOfxStatOK;
 }
 
@@ -687,6 +698,7 @@ static OfxStatus paramDefine(OfxParamSetHandle paramSet,
         || strcmp(kOfxParamTypePushButton, paramType) == 0) {
         mlt_properties pt = mlt_properties_new();
         mlt_properties_set_string(pt, "t", paramType);
+        mlt_properties_set_string(pt, "identifier", name);
 
         mlt_properties param_props = mlt_properties_new();
         mlt_properties_set_properties(pt, "p", param_props);
@@ -831,23 +843,31 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
 
         OfxStatus status
             = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, alpha);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, alpha);
 
         if (status != kOfxStatOK) {
             status
                 = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, red);
-            status = propGetDouble((OfxPropertySetHandle) param_props,
-                                   "OfxParamPropDefault",
-                                   1,
-                                   green);
-            status
-                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, blue);
-            status = propGetDouble((OfxPropertySetHandle) param_props,
-                                   "OfxParamPropDefault",
-                                   3,
-                                   alpha);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       1,
+                                       green);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       2,
+                                       blue);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       3,
+                                       alpha);
             if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
         }
@@ -858,32 +878,105 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
 
         OfxStatus status
             = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
 
         if (status != kOfxStatOK) {
             status
                 = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, red);
-            status = propGetDouble((OfxPropertySetHandle) param_props,
-                                   "OfxParamPropDefault",
-                                   1,
-                                   green);
-            status
-                = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, blue);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       1,
+                                       green);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       2,
+                                       blue);
             if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
         }
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
-        double *Y = va_arg(ap, double *);
         double *X = va_arg(ap, double *);
+        double *Y = va_arg(ap, double *);
 
         OfxStatus status
             = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
-        status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
 
         if (status != kOfxStatOK) {
             status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
-            status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       1,
+                                       Y);
+            if (status != kOfxStatOK)
+                return kOfxStatErrUnknown;
+        }
+    } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
+        int *X = va_arg(ap, int *);
+        int *Y = va_arg(ap, int *);
+
+        OfxStatus status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
+        if (status == kOfxStatOK)
+            status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
+
+        if (status != kOfxStatOK) {
+            status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
+            if (status == kOfxStatOK)
+                status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
+            if (status != kOfxStatOK)
+                return kOfxStatErrUnknown;
+        }
+    } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
+        double *X = va_arg(ap, double *);
+        double *Y = va_arg(ap, double *);
+        double *Z = va_arg(ap, double *);
+
+        OfxStatus status
+            = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
+        if (status == kOfxStatOK)
+            status = propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, Z);
+
+        if (status != kOfxStatOK) {
+            status = propGetDouble((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       1,
+                                       Y);
+            if (status == kOfxStatOK)
+                status = propGetDouble((OfxPropertySetHandle) param_props,
+                                       "OfxParamPropDefault",
+                                       2,
+                                       Z);
+            if (status != kOfxStatOK)
+                return kOfxStatErrUnknown;
+        }
+    } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
+        int *X = va_arg(ap, int *);
+        int *Y = va_arg(ap, int *);
+        int *Z = va_arg(ap, int *);
+
+        OfxStatus status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, X);
+        if (status == kOfxStatOK)
+            status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, Y);
+        if (status == kOfxStatOK)
+            status = propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, Z);
+
+        if (status != kOfxStatOK) {
+            status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
+            if (status == kOfxStatOK)
+                status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
+            if (status == kOfxStatOK)
+                status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, Z);
             if (status != kOfxStatOK)
                 return kOfxStatErrUnknown;
         }
@@ -924,6 +1017,95 @@ static OfxStatus paramGetIntegral(OfxParamHandle paramHandle, OfxTime time1, Ofx
     return kOfxStatErrUnsupported;
 }
 
+static uint8_t mltofx_double_to_color_component(double value)
+{
+    if (!(value >= 0.0))
+        value = 0.0;
+    else if (value > 1.0)
+        value = 1.0;
+    return (uint8_t) lrint(value * 255.0);
+}
+
+static void mltofx_sync_filter_property_from_param(mlt_properties param, mlt_properties param_props)
+{
+    mlt_properties filter_properties = mlt_properties_get_data(param_props,
+                                                               "_filter_properties",
+                                                               NULL);
+    char *param_name = mlt_properties_get(param, "identifier");
+    char *param_type = mlt_properties_get(param, "t");
+    if (!filter_properties || !param_name || !param_type)
+        return;
+
+    if (strcmp(param_type, kOfxParamTypeInteger) == 0
+        || strcmp(param_type, kOfxParamTypeBoolean) == 0) {
+        int value = 0;
+        if (propGetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, &value)
+            == kOfxStatOK)
+            mlt_properties_set_int(filter_properties, param_name, value);
+    } else if (strcmp(param_type, kOfxParamTypeChoice) == 0
+               || strcmp(param_type, kOfxParamTypeString) == 0
+               || strcmp(param_type, kOfxParamTypeStrChoice) == 0) {
+        char *value = NULL;
+        if (propGetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, &value)
+                == kOfxStatOK
+            && value) {
+            mlt_properties_set(filter_properties, param_name, value);
+        }
+    } else if (strcmp(param_type, kOfxParamTypeDouble) == 0) {
+        double value = 0.0;
+        if (propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, &value)
+            == kOfxStatOK) {
+            mlt_properties_set_double(filter_properties, param_name, value);
+        }
+    } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
+        double x = 0.0;
+        double y = 0.0;
+        if (propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, &x)
+                == kOfxStatOK
+            && propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, &y)
+                   == kOfxStatOK) {
+            char value[90] = "";
+            snprintf(value, sizeof(value), "%.4f %.4f", x, y);
+            mlt_properties_set(filter_properties, param_name, value);
+        }
+    } else if (strcmp(param_type, kOfxParamTypeRGBA) == 0) {
+        double red = 0.0;
+        double green = 0.0;
+        double blue = 0.0;
+        double alpha = 1.0;
+        if (propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, &red)
+                == kOfxStatOK
+            && propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, &green)
+                   == kOfxStatOK
+            && propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, &blue)
+                   == kOfxStatOK
+            && propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, &alpha)
+                   == kOfxStatOK) {
+            mlt_color value = {mltofx_double_to_color_component(red),
+                               mltofx_double_to_color_component(green),
+                               mltofx_double_to_color_component(blue),
+                               mltofx_double_to_color_component(alpha)};
+            mlt_properties_set_color(filter_properties, param_name, value);
+        }
+    } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
+        double red = 0.0;
+        double green = 0.0;
+        double blue = 0.0;
+        if (propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, &red)
+                == kOfxStatOK
+            && propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, &green)
+                   == kOfxStatOK
+            && propGetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, &blue)
+                   == kOfxStatOK) {
+            mlt_color value = {mltofx_double_to_color_component(red),
+                               mltofx_double_to_color_component(green),
+                               mltofx_double_to_color_component(blue),
+                               255};
+            mlt_properties_set_color(filter_properties, param_name, value);
+        }
+    }
+}
+
 static OfxStatus paramSetValueImpl(OfxParamHandle paramHandle, va_list ap)
 {
     mlt_properties param = (mlt_properties) paramHandle;
@@ -949,36 +1131,54 @@ static OfxStatus paramSetValueImpl(OfxParamHandle paramHandle, va_list ap)
         double value = va_arg(ap, double);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
     } else if (strcmp(param_type, kOfxParamTypeRGBA) == 0) {
-        mlt_color value = va_arg(ap, mlt_color);
-
-        double red = (double) value.r / 255.0;
-        double green = (double) value.g / 255.0;
-        double blue = (double) value.b / 255.0;
-        double alpha = (double) value.a / 255.0;
+        double red = va_arg(ap, double);
+        double green = va_arg(ap, double);
+        double blue = va_arg(ap, double);
+        double alpha = va_arg(ap, double);
 
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 3, alpha);
     } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
-        mlt_color value = va_arg(ap, mlt_color);
-
-        double red = (double) value.r / 255.0;
-        double green = (double) value.g / 255.0;
-        double blue = (double) value.b / 255.0;
+        double red = va_arg(ap, double);
+        double green = va_arg(ap, double);
+        double blue = va_arg(ap, double);
 
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, red);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, green);
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, blue);
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
-        mlt_rect value = va_arg(ap, mlt_rect);
-        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value.x);
-        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
+        double x = va_arg(ap, double);
+        double y = va_arg(ap, double);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, x);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, y);
+    } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
+        int x = va_arg(ap, int);
+        int y = va_arg(ap, int);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, x);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, y);
+    } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
+        double x = va_arg(ap, double);
+        double y = va_arg(ap, double);
+        double z = va_arg(ap, double);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, x);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, y);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, z);
+    } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
+        int x = va_arg(ap, int);
+        int y = va_arg(ap, int);
+        int z = va_arg(ap, int);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, x);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, y);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, z);
     } else if (strcmp(param_type, kOfxParamTypeString) == 0
                || strcmp(param_type, kOfxParamTypeStrChoice) == 0) {
         char *value = va_arg(ap, char *);
         propSetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
     }
+
+    mltofx_sync_filter_property_from_param(param, param_props);
 
     return kOfxStatOK;
 }
@@ -1090,11 +1290,126 @@ static OfxStatus memoryFree(void *allocatedData)
 
 static OfxMemorySuiteV1 MltOfxMemorySuiteV1 = {memoryAlloc, memoryFree};
 
+// --- Thread-local storage for OFX threading context ---
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+static _Thread_local unsigned int ofx_thread_index = 0;
+static _Thread_local int ofx_thread_spawned = 0;
+static _Thread_local unsigned int ofx_multi_thread_depth = 0;
+#else
+static pthread_key_t ofx_thread_index_key;
+static pthread_key_t ofx_thread_spawned_key;
+static pthread_key_t ofx_multi_thread_depth_key;
+static pthread_once_t ofx_thread_keys_once = PTHREAD_ONCE_INIT;
+static void ofx_make_thread_keys(void)
+{
+    pthread_key_create(&ofx_thread_index_key, NULL);
+    pthread_key_create(&ofx_thread_spawned_key, NULL);
+    pthread_key_create(&ofx_multi_thread_depth_key, NULL);
+}
+static void ofx_set_thread_index(unsigned int idx)
+{
+    pthread_once(&ofx_thread_keys_once, ofx_make_thread_keys);
+    pthread_setspecific(ofx_thread_index_key, (void *) (uintptr_t) idx);
+}
+static void ofx_set_thread_spawned(int val)
+{
+    pthread_once(&ofx_thread_keys_once, ofx_make_thread_keys);
+    pthread_setspecific(ofx_thread_spawned_key, (void *) (uintptr_t) val);
+}
+static unsigned int ofx_get_thread_index(void)
+{
+    pthread_once(&ofx_thread_keys_once, ofx_make_thread_keys);
+    return (unsigned int) (uintptr_t) pthread_getspecific(ofx_thread_index_key);
+}
+static int ofx_get_thread_spawned(void)
+{
+    pthread_once(&ofx_thread_keys_once, ofx_make_thread_keys);
+    return (int) (uintptr_t) pthread_getspecific(ofx_thread_spawned_key);
+}
+static void ofx_set_multi_thread_depth(unsigned int depth)
+{
+    pthread_once(&ofx_thread_keys_once, ofx_make_thread_keys);
+    pthread_setspecific(ofx_multi_thread_depth_key, (void *) (uintptr_t) depth);
+}
+static unsigned int ofx_get_multi_thread_depth(void)
+{
+    pthread_once(&ofx_thread_keys_once, ofx_make_thread_keys);
+    return (unsigned int) (uintptr_t) pthread_getspecific(ofx_multi_thread_depth_key);
+}
+#endif
+
+typedef struct
+{
+    OfxThreadFunctionV1 *func;
+    unsigned int nThreads;
+    void *customArg;
+} OfxSlicesJob;
+
+static int ofx_slices_proc(int id, int idx, int jobs, void *cookie)
+{
+    (void) id; // unused
+    OfxSlicesJob *job = (OfxSlicesJob *) cookie;
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    ofx_thread_index = idx;
+    ofx_thread_spawned = 1;
+    ofx_multi_thread_depth++;
+#else
+    ofx_set_thread_index(idx);
+    ofx_set_thread_spawned(1);
+    ofx_set_multi_thread_depth(ofx_get_multi_thread_depth() + 1);
+#endif
+    job->func(idx, jobs, job->customArg);
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    ofx_multi_thread_depth--;
+    ofx_thread_spawned = 0;
+#else
+    ofx_set_multi_thread_depth(ofx_get_multi_thread_depth() - 1);
+    ofx_set_thread_spawned(0);
+#endif
+    return 0;
+}
+
 static OfxStatus multiThread(OfxThreadFunctionV1 func, unsigned int nThreads, void *customArg)
 {
+    unsigned int maxThreads;
+
     if (!func)
         return kOfxStatFailed;
-    func(0, 1, customArg);
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    if (ofx_multi_thread_depth)
+        return kOfxStatErrExists;
+#else
+    if (ofx_get_multi_thread_depth())
+        return kOfxStatErrExists;
+#endif
+    mlt_log_debug(NULL, "[openfx] multiThread: func=%p nThreads=%u\n", func, nThreads);
+    maxThreads = (unsigned int) mlt_slices_count_normal();
+    if (maxThreads < 1)
+        maxThreads = 1;
+    if (nThreads == 0 || nThreads > maxThreads)
+        nThreads = maxThreads;
+    if (nThreads == 1) {
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+        ofx_thread_index = 0;
+        ofx_thread_spawned = 1;
+        ofx_multi_thread_depth++;
+#else
+        ofx_set_thread_index(0);
+        ofx_set_thread_spawned(1);
+        ofx_set_multi_thread_depth(ofx_get_multi_thread_depth() + 1);
+#endif
+        func(0, 1, customArg);
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+        ofx_multi_thread_depth--;
+        ofx_thread_spawned = 0;
+#else
+        ofx_set_multi_thread_depth(ofx_get_multi_thread_depth() - 1);
+        ofx_set_thread_spawned(0);
+#endif
+        return kOfxStatOK;
+    }
+    OfxSlicesJob job = {func, nThreads, customArg};
+    mlt_slices_run_normal(nThreads, ofx_slices_proc, &job);
     return kOfxStatOK;
 }
 
@@ -1102,7 +1417,8 @@ static OfxStatus multiThreadNumCPUs(unsigned int *nCPUs)
 {
     if (!nCPUs)
         return kOfxStatFailed;
-    *nCPUs = 1;
+    int count = mlt_slices_count_normal();
+    *nCPUs = count > 0 ? (unsigned int) count : 1;
     return kOfxStatOK;
 }
 
@@ -1110,21 +1426,58 @@ static OfxStatus multiThreadIndex(unsigned int *threadIndex)
 {
     if (!threadIndex)
         return kOfxStatFailed;
-    *threadIndex = 0;
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    *threadIndex = ofx_thread_spawned ? ofx_thread_index : 0;
+#else
+    *threadIndex = ofx_get_thread_spawned() ? ofx_get_thread_index() : 0;
+#endif
     return kOfxStatOK;
 }
 
 int multiThreadIsSpawnedThread(void)
 {
-    return false;
+#if defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+    return ofx_thread_spawned;
+#else
+    return ofx_get_thread_spawned();
+#endif
 }
+
+typedef struct
+{
+    pthread_mutex_t mtx;
+} OfxMutexImpl;
 
 static OfxStatus mutexCreate(OfxMutexHandle *mutex, int lockCount)
 {
     if (!mutex)
         return kOfxStatFailed;
-    // do nothing single threaded
-    *mutex = 0;
+    if (lockCount < 0)
+        return kOfxStatErrValue;
+    OfxMutexImpl *m = (OfxMutexImpl *) malloc(sizeof(OfxMutexImpl));
+    if (!m)
+        return kOfxStatErrMemory;
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    int err = pthread_mutex_init(&m->mtx, &attr);
+    pthread_mutexattr_destroy(&attr);
+    if (err != 0) {
+        free(m);
+        return kOfxStatErrMemory;
+    }
+    *mutex = (OfxMutexHandle) m;
+    for (int i = 0; i < lockCount; ++i) {
+        err = pthread_mutex_lock(&m->mtx);
+        if (err != 0) {
+            while (i-- > 0)
+                pthread_mutex_unlock(&m->mtx);
+            pthread_mutex_destroy(&m->mtx);
+            free(m);
+            *mutex = NULL;
+            return kOfxStatFailed;
+        }
+    }
     return kOfxStatOK;
 }
 
@@ -1132,7 +1485,11 @@ static OfxStatus mutexDestroy(const OfxMutexHandle mutex)
 {
     if (!mutex)
         return kOfxStatErrBadHandle;
-    // do nothing single threaded
+    OfxMutexImpl *m = (OfxMutexImpl *) mutex;
+    int err = pthread_mutex_destroy(&m->mtx);
+    if (err)
+        return kOfxStatErrBadHandle;
+    free(m);
     return kOfxStatOK;
 }
 
@@ -1140,24 +1497,32 @@ static OfxStatus mutexLock(const OfxMutexHandle mutex)
 {
     if (!mutex)
         return kOfxStatErrBadHandle;
-    // do nothing single threaded
-    return kOfxStatOK;
+    OfxMutexImpl *m = (OfxMutexImpl *) mutex;
+    int err = pthread_mutex_lock(&m->mtx);
+    return err == 0 ? kOfxStatOK : kOfxStatErrBadHandle;
 }
 
 static OfxStatus mutexUnLock(const OfxMutexHandle mutex)
 {
     if (!mutex)
         return kOfxStatErrBadHandle;
-    // do nothing single threaded
-    return kOfxStatOK;
+    OfxMutexImpl *m = (OfxMutexImpl *) mutex;
+    int err = pthread_mutex_unlock(&m->mtx);
+    return err == 0 ? kOfxStatOK : kOfxStatErrBadHandle;
 }
 
 static OfxStatus mutexTryLock(const OfxMutexHandle mutex)
 {
     if (!mutex)
         return kOfxStatErrBadHandle;
-    // do nothing single threaded
-    return kOfxStatOK;
+    OfxMutexImpl *m = (OfxMutexImpl *) mutex;
+    int err = pthread_mutex_trylock(&m->mtx);
+    if (err == 0)
+        return kOfxStatOK;
+    else if (err == EBUSY)
+        return kOfxStatFailed;
+    else
+        return kOfxStatErrBadHandle;
 }
 
 static OfxMultiThreadSuiteV1 MltOfxMultiThreadSuiteV1 = {multiThread,
@@ -1170,9 +1535,76 @@ static OfxMultiThreadSuiteV1 MltOfxMultiThreadSuiteV1 = {multiThread,
                                                          mutexUnLock,
                                                          mutexTryLock};
 
+static void mltofx_log_message(const char *kind,
+                               const char *messageType,
+                               const char *messageId,
+                               const char *format,
+                               va_list ap)
+{
+    char formatted[1024] = "";
+    const char *type = messageType ? messageType : "OfxMessageUnknown";
+    const char *id = (messageId && messageId[0]) ? messageId : NULL;
+
+    if (format && format[0]) {
+        vsnprintf(formatted, sizeof(formatted), format, ap);
+    }
+
+    if (strcmp(type, "OfxMessageFatal") == 0) {
+        mlt_log_fatal(NULL,
+                      "[openfx] %s type=%s%s%s%s%s\n",
+                      kind,
+                      type,
+                      id ? " id=" : "",
+                      id ? id : "",
+                      formatted[0] ? " msg=" : "",
+                      formatted);
+    } else if (strcmp(type, "OfxMessageError") == 0) {
+        mlt_log_error(NULL,
+                      "[openfx] %s type=%s%s%s%s%s\n",
+                      kind,
+                      type,
+                      id ? " id=" : "",
+                      id ? id : "",
+                      formatted[0] ? " msg=" : "",
+                      formatted);
+    } else if (strcmp(type, "OfxMessageWarning") == 0) {
+        mlt_log_warning(NULL,
+                        "[openfx] %s type=%s%s%s%s%s\n",
+                        kind,
+                        type,
+                        id ? " id=" : "",
+                        id ? id : "",
+                        formatted[0] ? " msg=" : "",
+                        formatted);
+    } else if (strcmp(type, "OfxMessageLog") == 0) {
+        mlt_log_verbose(NULL,
+                        "[openfx] %s type=%s%s%s%s%s\n",
+                        kind,
+                        type,
+                        id ? " id=" : "",
+                        id ? id : "",
+                        formatted[0] ? " msg=" : "",
+                        formatted);
+    } else {
+        mlt_log_info(NULL,
+                     "[openfx] %s type=%s%s%s%s%s\n",
+                     kind,
+                     type,
+                     id ? " id=" : "",
+                     id ? id : "",
+                     formatted[0] ? " msg=" : "",
+                     formatted);
+    }
+}
+
 static OfxStatus message(
     void *handle, const char *messageType, const char *messageId, const char *format, ...)
 {
+    (void) handle;
+    va_list ap;
+    va_start(ap, format);
+    mltofx_log_message("message", messageType, messageId, format, ap);
+    va_end(ap);
     return kOfxStatOK;
 }
 
@@ -1181,11 +1613,18 @@ static OfxMessageSuiteV1 MltOfxMessageSuiteV1 = {message};
 static OfxStatus setPersistentMessage(
     void *handle, const char *messageType, const char *messageId, const char *format, ...)
 {
+    (void) handle;
+    va_list ap;
+    va_start(ap, format);
+    mltofx_log_message("persistent", messageType, messageId, format, ap);
+    va_end(ap);
     return kOfxStatOK;
 }
 
 static OfxStatus clearPersistentMessage(void *handle)
 {
+    (void) handle;
+    mlt_log_debug(NULL, "[openfx] persistent message cleared\n");
     return kOfxStatOK;
 }
 
@@ -1475,6 +1914,180 @@ static void mltofx_log_status_code(OfxStatus code, char *msg)
     mlt_log_debug(NULL, "\n");
 }
 
+static void mltofx_make_clip_pref_key(char *key,
+                                      size_t key_size,
+                                      const char *prefix,
+                                      const char *clip_name)
+{
+    snprintf(key, key_size, "%s%s", prefix, clip_name);
+}
+
+static void mltofx_prime_clip_preferences(mlt_properties image_effect, mlt_properties out_args)
+{
+    if (!image_effect || !out_args)
+        return;
+
+    mlt_properties clips = mlt_properties_get_properties(image_effect, "clips");
+    int clips_count = clips ? mlt_properties_count(clips) : 0;
+
+    for (int i = 0; i < clips_count; ++i) {
+        char *clip_name = mlt_properties_get_name(clips, i);
+        if (!clip_name)
+            continue;
+
+        mlt_properties clip = NULL;
+        mlt_properties clip_props = NULL;
+        clipGetHandle((OfxImageEffectHandle) image_effect,
+                      clip_name,
+                      (OfxImageClipHandle *) &clip,
+                      (OfxPropertySetHandle *) &clip_props);
+        if (!clip_props)
+            continue;
+
+        char key[256] = {'\0'};
+        char *str_value = NULL;
+        double dbl_value = 0.0;
+
+        mltofx_make_clip_pref_key(key, sizeof(key), "OfxImageClipPropComponents_", clip_name);
+        if (propGetString((OfxPropertySetHandle) clip_props,
+                          kOfxImageEffectPropComponents,
+                          0,
+                          &str_value)
+                == kOfxStatOK
+            && str_value) {
+            propSetString((OfxPropertySetHandle) out_args, key, 0, str_value);
+        }
+
+        mltofx_make_clip_pref_key(key, sizeof(key), "OfxImageClipPropDepth_", clip_name);
+        if (propGetString((OfxPropertySetHandle) clip_props,
+                          kOfxImageEffectPropPixelDepth,
+                          0,
+                          &str_value)
+                == kOfxStatOK
+            && str_value) {
+            propSetString((OfxPropertySetHandle) out_args, key, 0, str_value);
+        }
+
+        mltofx_make_clip_pref_key(key, sizeof(key), "OfxImageClipPropPAR_", clip_name);
+        if (propGetDouble((OfxPropertySetHandle) clip_props,
+                          kOfxImagePropPixelAspectRatio,
+                          0,
+                          &dbl_value)
+            == kOfxStatOK) {
+            propSetDouble((OfxPropertySetHandle) out_args, key, 0, dbl_value);
+        }
+    }
+
+    mlt_properties output_clip = NULL;
+    mlt_properties output_clip_props = NULL;
+    clipGetHandle((OfxImageEffectHandle) image_effect,
+                  "Output",
+                  (OfxImageClipHandle *) &output_clip,
+                  (OfxPropertySetHandle *) &output_clip_props);
+
+    if (output_clip_props) {
+        int int_value = 0;
+
+        propSetString((OfxPropertySetHandle) out_args,
+                      kOfxImageEffectPropPreMultiplication,
+                      0,
+                      kOfxImageUnPreMultiplied);
+
+        char *str_value = NULL;
+        if (propGetString((OfxPropertySetHandle) output_clip_props,
+                          kOfxImageClipPropFieldOrder,
+                          0,
+                          &str_value)
+                == kOfxStatOK
+            && str_value) {
+            propSetString((OfxPropertySetHandle) out_args,
+                          kOfxImageClipPropFieldOrder,
+                          0,
+                          str_value);
+        }
+        if (propGetInt((OfxPropertySetHandle) output_clip_props,
+                       kOfxImageClipPropContinuousSamples,
+                       0,
+                       &int_value)
+            == kOfxStatOK) {
+            propSetInt((OfxPropertySetHandle) out_args,
+                       kOfxImageClipPropContinuousSamples,
+                       0,
+                       int_value);
+        } else {
+            propSetInt((OfxPropertySetHandle) out_args, kOfxImageClipPropContinuousSamples, 0, 0);
+        }
+    }
+
+    mlt_properties effect_props = mlt_properties_get_properties(image_effect, "props");
+    if (effect_props) {
+        int frame_varying = 0;
+        if (propGetInt((OfxPropertySetHandle) effect_props,
+                       kOfxImageEffectFrameVarying,
+                       0,
+                       &frame_varying)
+            == kOfxStatOK) {
+            propSetInt((OfxPropertySetHandle) out_args,
+                       kOfxImageEffectFrameVarying,
+                       0,
+                       frame_varying);
+        } else {
+            propSetInt((OfxPropertySetHandle) out_args, kOfxImageEffectFrameVarying, 0, 0);
+        }
+    }
+}
+
+static void mltofx_apply_clip_preferences(mlt_properties image_effect, mlt_properties pref_args)
+{
+    if (!image_effect || !pref_args)
+        return;
+
+    mlt_properties output_clip = NULL;
+    mlt_properties output_clip_props = NULL;
+    clipGetHandle((OfxImageEffectHandle) image_effect,
+                  "Output",
+                  (OfxImageClipHandle *) &output_clip,
+                  (OfxPropertySetHandle *) &output_clip_props);
+
+    if (output_clip_props) {
+        int int_value = 0;
+        propSetString((OfxPropertySetHandle) output_clip_props,
+                      kOfxImageEffectPropPreMultiplication,
+                      0,
+                      kOfxImageUnPreMultiplied);
+        if (propGetInt((OfxPropertySetHandle) pref_args,
+                       kOfxImageClipPropContinuousSamples,
+                       0,
+                       &int_value)
+            == kOfxStatOK) {
+            propSetInt((OfxPropertySetHandle) output_clip_props,
+                       kOfxImageClipPropContinuousSamples,
+                       0,
+                       int_value);
+        }
+    }
+
+    mlt_properties effect_props = mlt_properties_get_properties(image_effect, "props");
+    if (effect_props) {
+        int int_value = 0;
+        if (propGetInt((OfxPropertySetHandle) pref_args, kOfxImageEffectFrameVarying, 0, &int_value)
+            == kOfxStatOK) {
+            propSetInt((OfxPropertySetHandle) effect_props,
+                       kOfxImageEffectFrameVarying,
+                       0,
+                       int_value);
+        }
+    }
+}
+
+static void mltofx_apply_cached_clip_preferences(mlt_properties image_effect)
+{
+    if (!image_effect)
+        return;
+    mlt_properties pref_args = mlt_properties_get_properties(image_effect, "get_clippref_args");
+    mltofx_apply_clip_preferences(image_effect, pref_args);
+}
+
 const void *MltOfxfetchSuite(OfxPropertySetHandle host, const char *suiteName, int suiteVersion)
 {
     mlt_log_debug(NULL, "[openfx] fetchSuite: `%s` v%d\n", suiteName, suiteVersion);
@@ -1599,6 +2212,58 @@ void mltofx_destroy_instance(OfxPlugin *plugin, mlt_properties image_effect)
     mltofx_log_status_code(status_code, kOfxActionDestroyInstance);
 }
 
+void mltofx_set_render_scale(mlt_properties image_effect, double scale_x, double scale_y)
+{
+    if (!image_effect)
+        return;
+    if (scale_x <= 0.0)
+        scale_x = 1.0;
+    if (scale_y <= 0.0)
+        scale_y = 1.0;
+    mlt_properties_set_double(image_effect, "_render_scale_x", scale_x);
+    mlt_properties_set_double(image_effect, "_render_scale_y", scale_y);
+}
+
+static void mltofx_get_render_scale(mlt_properties image_effect, double *scale_x, double *scale_y)
+{
+    if (scale_x)
+        *scale_x = 1.0;
+    if (scale_y)
+        *scale_y = 1.0;
+    if (!image_effect)
+        return;
+
+    double x = mlt_properties_get_double(image_effect, "_render_scale_x");
+    double y = mlt_properties_get_double(image_effect, "_render_scale_y");
+    if (x > 0.0 && scale_x)
+        *scale_x = x;
+    if (y > 0.0 && scale_y)
+        *scale_y = y;
+}
+
+int mltofx_allows_frame_threading(mlt_properties image_effect)
+{
+    if (!image_effect)
+        return 0;
+
+    mlt_properties props = mlt_properties_get_properties(image_effect, "props");
+    if (!props)
+        return 0;
+
+    char *thread_safety = NULL;
+    if (propGetString((OfxPropertySetHandle) props,
+                      kOfxImageEffectPluginRenderThreadSafety,
+                      0,
+                      &thread_safety)
+            != kOfxStatOK
+        || !thread_safety) {
+        // OFX default is instance-safe when not provided.
+        return 1;
+    }
+
+    return strcmp(thread_safety, kOfxImageEffectRenderUnsafe) != 0;
+}
+
 void mltofx_set_source_clip_data(OfxPlugin *plugin,
                                  mlt_properties image_effect,
                                  uint8_t *image,
@@ -1610,6 +2275,9 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
 {
     mlt_properties clip;
     mlt_properties clip_prop;
+    double render_scale_x = 1.0;
+    double render_scale_y = 1.0;
+    mltofx_get_render_scale(image_effect, &render_scale_x, &render_scale_y);
 
     clipGetHandle((OfxImageEffectHandle) image_effect,
                   "Source",
@@ -1724,10 +2392,19 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
     propSetString((OfxPropertySetHandle) clip_prop, kOfxImagePropUniqueIdentifier, 0, tstr);
     free(tstr);
 
-    propSetDouble((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropRenderScale, 1, 1.0);
+    propSetDouble((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropRenderScale,
+                  0,
+                  render_scale_x);
+    propSetDouble((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropRenderScale,
+                  1,
+                  render_scale_y);
 
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImageClipPropConnected, 0, 1);
+
+    // Preserve plugin-selected clip preferences across clip data refreshes.
+    mltofx_apply_cached_clip_preferences(image_effect);
 }
 
 void mltofx_set_output_clip_data(OfxPlugin *plugin,
@@ -1741,6 +2418,9 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
 {
     mlt_properties clip;
     mlt_properties clip_prop;
+    double render_scale_x = 1.0;
+    double render_scale_y = 1.0;
+    mltofx_get_render_scale(image_effect, &render_scale_x, &render_scale_y);
 
     clipGetHandle((OfxImageEffectHandle) image_effect,
                   "Output",
@@ -1841,13 +2521,22 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
     propSetString((OfxPropertySetHandle) clip_prop, kOfxImagePropUniqueIdentifier, 0, tstr);
     free(tstr);
 
-    propSetDouble((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropRenderScale, 1, 1.0);
+    propSetDouble((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropRenderScale,
+                  0,
+                  render_scale_x);
+    propSetDouble((OfxPropertySetHandle) clip_prop,
+                  kOfxImageEffectPropRenderScale,
+                  1,
+                  render_scale_y);
 
     propSetDouble((OfxPropertySetHandle) clip_prop,
                   kOfxImagePropPixelAspectRatio,
                   0,
                   pixel_aspect_ratio);
+
+    // Preserve plugin-selected clip preferences across clip data refreshes.
+    mltofx_apply_cached_clip_preferences(image_effect);
 }
 
 int mltofx_detect_plugin(OfxPlugin *plugin)
@@ -1956,10 +2645,8 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
 
 static int param_type_is_supported(const char *type)
 {
-    return strcmp(type, kOfxParamTypeInteger2D) && strcmp(type, kOfxParamTypeDouble3D)
-           && strcmp(type, kOfxParamTypeInteger3D) && strcmp(type, kOfxParamTypeCustom)
-           && strcmp(type, kOfxParamTypeBytes) && strcmp(type, kOfxParamTypePage)
-           && strcmp(type, kOfxParamTypePushButton);
+    return strcmp(type, kOfxParamTypeCustom) && strcmp(type, kOfxParamTypeBytes)
+           && strcmp(type, kOfxParamTypePage) && strcmp(type, kOfxParamTypePushButton);
 }
 
 void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properties mlt_metadata)
@@ -2150,6 +2837,9 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
             } else if (strcmp(coordinate_system, kOfxParamCoordinatesNormalised) == 0) {
                 mlt_properties_set(p, "normalized_coordinates", "yes");
             }
+        } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
+            // can be rendered as 2 integer number input fields
+            mlt_properties_set(p, "type", "integer");
         }
 
         if (strcmp(param_type, kOfxParamTypeGroup) != 0) {
@@ -2168,11 +2858,29 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
             char *p_name = mlt_properties_get_name(dim1, jt);
             if (strcmp(p_name, kOfxParamPropDefault) == 0) {
                 if (strcmp(param_type, kOfxParamTypeInteger) == 0
-                    || strcmp(param_type, kOfxParamTypeChoice) == 0
                     || strcmp(param_type, kOfxParamTypeBoolean) == 0) {
                     int default_value = 0;
                     propGetInt((OfxPropertySetHandle) ppp, p_name, 0, &default_value);
                     mlt_properties_set_int(p, "default", default_value);
+                } else if (strcmp(param_type, kOfxParamTypeChoice) == 0) {
+                    int default_value = 0;
+                    int choice_count = 0;
+                    char *choice_str = NULL;
+
+                    propGetInt((OfxPropertySetHandle) ppp, p_name, 0, &default_value);
+                    propGetDimension((OfxPropertySetHandle) ppp,
+                                     kOfxParamPropChoiceOption,
+                                     &choice_count);
+
+                    if (default_value >= 0 && default_value < choice_count
+                        && propGetString((OfxPropertySetHandle) ppp,
+                                         kOfxParamPropChoiceOption,
+                                         default_value,
+                                         &choice_str)
+                               == kOfxStatOK
+                        && choice_str) {
+                        mlt_properties_set(p, "default", choice_str);
+                    }
                 } else if (strcmp(param_type, kOfxParamTypeDouble) == 0) {
                     double default_value = 0.0;
                     propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &default_value);
@@ -2364,6 +3072,13 @@ void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_ty
         propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
     } break;
 
+    case mltofx_prop_int2d: {
+        int x = va_arg(ap, int);
+        int y = va_arg(ap, int);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, x);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, y);
+    } break;
+
     default:
         break;
     }
@@ -2375,29 +3090,159 @@ void mltofx_get_clip_preferences(OfxPlugin *plugin, mlt_properties image_effect)
 {
     mlt_properties get_clippref_args = mlt_properties_get_properties(image_effect,
                                                                      "get_clippref_args");
+
+    mltofx_prime_clip_preferences(image_effect, get_clippref_args);
+
     OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionGetClipPreferences,
                                               (OfxImageEffectHandle) image_effect,
                                               NULL,
                                               (OfxPropertySetHandle) get_clippref_args);
     mltofx_log_status_code(status_code, kOfxImageEffectActionGetClipPreferences);
+
+    if (status_code == kOfxStatOK || status_code == kOfxStatReplyDefault)
+        mltofx_apply_clip_preferences(image_effect, get_clippref_args);
 }
 
 void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_effect, double ofx_time)
 {
     mlt_properties get_rod_in_args = mlt_properties_get_properties(image_effect, "get_rod_in_args");
+    mlt_properties get_rod_out_args = mlt_properties_get_properties(image_effect,
+                                                                    "get_rod_out_args");
+
+    mlt_properties output_clip = NULL;
+    mlt_properties output_clip_props = NULL;
+    double render_scale_x = 1.0;
+    double render_scale_y = 1.0;
+    mltofx_get_render_scale(image_effect, &render_scale_x, &render_scale_y);
+    clipGetHandle((OfxImageEffectHandle) image_effect,
+                  "Output",
+                  (OfxImageClipHandle *) &output_clip,
+                  (OfxPropertySetHandle *) &output_clip_props);
+
+    int default_x1 = 0;
+    int default_y1 = 0;
+    int default_x2 = 0;
+    int default_y2 = 0;
+    if (output_clip_props) {
+        // Use current output RoD as default outArgs as required by OFX.
+        if (propGetInt((OfxPropertySetHandle) output_clip_props,
+                       kOfxImagePropRegionOfDefinition,
+                       0,
+                       &default_x1)
+                != kOfxStatOK
+            || propGetInt((OfxPropertySetHandle) output_clip_props,
+                          kOfxImagePropRegionOfDefinition,
+                          1,
+                          &default_y1)
+                   != kOfxStatOK
+            || propGetInt((OfxPropertySetHandle) output_clip_props,
+                          kOfxImagePropRegionOfDefinition,
+                          2,
+                          &default_x2)
+                   != kOfxStatOK
+            || propGetInt((OfxPropertySetHandle) output_clip_props,
+                          kOfxImagePropRegionOfDefinition,
+                          3,
+                          &default_y2)
+                   != kOfxStatOK) {
+            propGetInt((OfxPropertySetHandle) output_clip_props,
+                       kOfxImagePropBounds,
+                       0,
+                       &default_x1);
+            propGetInt((OfxPropertySetHandle) output_clip_props,
+                       kOfxImagePropBounds,
+                       1,
+                       &default_y1);
+            propGetInt((OfxPropertySetHandle) output_clip_props,
+                       kOfxImagePropBounds,
+                       2,
+                       &default_x2);
+            propGetInt((OfxPropertySetHandle) output_clip_props,
+                       kOfxImagePropBounds,
+                       3,
+                       &default_y2);
+        }
+    }
 
     propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxPropTime, 0, ofx_time);
 
-    propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) get_rod_in_args, kOfxImageEffectPropRenderScale, 1, 1.0);
+    propSetDouble((OfxPropertySetHandle) get_rod_in_args,
+                  kOfxImageEffectPropRenderScale,
+                  0,
+                  render_scale_x);
+    propSetDouble((OfxPropertySetHandle) get_rod_in_args,
+                  kOfxImageEffectPropRenderScale,
+                  1,
+                  render_scale_y);
 
-    mlt_properties get_rod_out_args = mlt_properties_get_properties(image_effect,
-                                                                    "get_rod_out_args");
+    propSetDouble((OfxPropertySetHandle) get_rod_out_args,
+                  kOfxImageEffectPropRegionOfDefinition,
+                  0,
+                  (double) default_x1);
+    propSetDouble((OfxPropertySetHandle) get_rod_out_args,
+                  kOfxImageEffectPropRegionOfDefinition,
+                  1,
+                  (double) default_y1);
+    propSetDouble((OfxPropertySetHandle) get_rod_out_args,
+                  kOfxImageEffectPropRegionOfDefinition,
+                  2,
+                  (double) default_x2);
+    propSetDouble((OfxPropertySetHandle) get_rod_out_args,
+                  kOfxImageEffectPropRegionOfDefinition,
+                  3,
+                  (double) default_y2);
 
     OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionGetRegionOfDefinition,
                                               (OfxImageEffectHandle) image_effect,
                                               (OfxPropertySetHandle) get_rod_in_args,
                                               (OfxPropertySetHandle) get_rod_out_args);
+
+    if (output_clip_props && (status_code == kOfxStatOK || status_code == kOfxStatReplyDefault)) {
+        double rod_x1 = (double) default_x1;
+        double rod_y1 = (double) default_y1;
+        double rod_x2 = (double) default_x2;
+        double rod_y2 = (double) default_y2;
+        propGetDouble((OfxPropertySetHandle) get_rod_out_args,
+                      kOfxImageEffectPropRegionOfDefinition,
+                      0,
+                      &rod_x1);
+        propGetDouble((OfxPropertySetHandle) get_rod_out_args,
+                      kOfxImageEffectPropRegionOfDefinition,
+                      1,
+                      &rod_y1);
+        propGetDouble((OfxPropertySetHandle) get_rod_out_args,
+                      kOfxImageEffectPropRegionOfDefinition,
+                      2,
+                      &rod_x2);
+        propGetDouble((OfxPropertySetHandle) get_rod_out_args,
+                      kOfxImageEffectPropRegionOfDefinition,
+                      3,
+                      &rod_y2);
+
+        int out_x1 = (int) floor(rod_x1);
+        int out_y1 = (int) floor(rod_y1);
+        int out_x2 = (int) ceil(rod_x2);
+        int out_y2 = (int) ceil(rod_y2);
+
+        if (out_x2 >= out_x1 && out_y2 >= out_y1) {
+            propSetInt((OfxPropertySetHandle) output_clip_props,
+                       kOfxImagePropRegionOfDefinition,
+                       0,
+                       out_x1);
+            propSetInt((OfxPropertySetHandle) output_clip_props,
+                       kOfxImagePropRegionOfDefinition,
+                       1,
+                       out_y1);
+            propSetInt((OfxPropertySetHandle) output_clip_props,
+                       kOfxImagePropRegionOfDefinition,
+                       2,
+                       out_x2);
+            propSetInt((OfxPropertySetHandle) output_clip_props,
+                       kOfxImagePropRegionOfDefinition,
+                       3,
+                       out_y2);
+        }
+    }
 
     mltofx_log_status_code(status_code, kOfxImageEffectActionGetRegionOfDefinition);
 }
@@ -2408,11 +3253,20 @@ void mltofx_get_regions_of_interest(
     mlt_properties get_roi_in_args = mlt_properties_get_properties(image_effect, "get_roi_in_args");
     mlt_properties get_roi_out_args = mlt_properties_get_properties(image_effect,
                                                                     "get_roi_out_args");
+    double render_scale_x = 1.0;
+    double render_scale_y = 1.0;
+    mltofx_get_render_scale(image_effect, &render_scale_x, &render_scale_y);
 
     propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxPropTime, 0, ofx_time);
     propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxPropTime, 1, ofx_time);
-    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) get_roi_in_args, kOfxImageEffectPropRenderScale, 1, 1.0);
+    propSetDouble((OfxPropertySetHandle) get_roi_in_args,
+                  kOfxImageEffectPropRenderScale,
+                  0,
+                  render_scale_x);
+    propSetDouble((OfxPropertySetHandle) get_roi_in_args,
+                  kOfxImageEffectPropRenderScale,
+                  1,
+                  render_scale_y);
 
     propSetDouble((OfxPropertySetHandle) get_roi_in_args,
                   kOfxImageEffectPropRegionOfInterest,
@@ -2442,6 +3296,9 @@ void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect
 {
     mlt_properties begin_sequence_props = mlt_properties_get_properties(image_effect,
                                                                         "begin_sequence_props");
+    double render_scale_x = 1.0;
+    double render_scale_y = 1.0;
+    mltofx_get_render_scale(image_effect, &render_scale_x, &render_scale_y);
     propSetDouble((OfxPropertySetHandle) begin_sequence_props,
                   kOfxImageEffectPropFrameRange,
                   0,
@@ -2457,11 +3314,11 @@ void mltofx_begin_sequence_render(OfxPlugin *plugin, mlt_properties image_effect
     propSetDouble((OfxPropertySetHandle) begin_sequence_props,
                   kOfxImageEffectPropRenderScale,
                   0,
-                  1.0);
+                  render_scale_x);
     propSetDouble((OfxPropertySetHandle) begin_sequence_props,
                   kOfxImageEffectPropRenderScale,
                   1,
-                  1.0);
+                  render_scale_y);
 
     propSetInt((OfxPropertySetHandle) begin_sequence_props,
                kOfxImageEffectPropSequentialRenderStatus,
@@ -2486,6 +3343,9 @@ void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect, 
 {
     mlt_properties end_sequence_props = mlt_properties_get_properties(image_effect,
                                                                       "end_sequence_props");
+    double render_scale_x = 1.0;
+    double render_scale_y = 1.0;
+    mltofx_get_render_scale(image_effect, &render_scale_x, &render_scale_y);
     propSetDouble((OfxPropertySetHandle) end_sequence_props,
                   kOfxImageEffectPropFrameRange,
                   0,
@@ -2500,8 +3360,14 @@ void mltofx_end_sequence_render(OfxPlugin *plugin, mlt_properties image_effect, 
 
     propSetInt((OfxPropertySetHandle) end_sequence_props, kOfxPropIsInteractive, 0, 0);
 
-    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) end_sequence_props, kOfxImageEffectPropRenderScale, 1, 1.0);
+    propSetDouble((OfxPropertySetHandle) end_sequence_props,
+                  kOfxImageEffectPropRenderScale,
+                  0,
+                  render_scale_x);
+    propSetDouble((OfxPropertySetHandle) end_sequence_props,
+                  kOfxImageEffectPropRenderScale,
+                  1,
+                  render_scale_y);
 
     propSetInt((OfxPropertySetHandle) end_sequence_props,
                kOfxImageEffectPropSequentialRenderStatus,
@@ -2526,6 +3392,9 @@ void mltofx_action_render(
     OfxPlugin *plugin, mlt_properties image_effect, double ofx_time, int width, int height)
 {
     mlt_properties render_in_args = mlt_properties_get_properties(image_effect, "render_in_args");
+    double render_scale_x = 1.0;
+    double render_scale_y = 1.0;
+    mltofx_get_render_scale(image_effect, &render_scale_x, &render_scale_y);
     propSetDouble((OfxPropertySetHandle) render_in_args, kOfxPropTime, 0, ofx_time);
 
     propSetString((OfxPropertySetHandle) render_in_args,
@@ -2538,8 +3407,14 @@ void mltofx_action_render(
     propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderWindow, 2, width);
     propSetInt((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderWindow, 3, height);
 
-    propSetDouble((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderScale, 0, 1.0);
-    propSetDouble((OfxPropertySetHandle) render_in_args, kOfxImageEffectPropRenderScale, 1, 1.0);
+    propSetDouble((OfxPropertySetHandle) render_in_args,
+                  kOfxImageEffectPropRenderScale,
+                  0,
+                  render_scale_x);
+    propSetDouble((OfxPropertySetHandle) render_in_args,
+                  kOfxImageEffectPropRenderScale,
+                  1,
+                  render_scale_y);
 
     propSetInt((OfxPropertySetHandle) render_in_args,
                kOfxImageEffectPropSequentialRenderStatus,

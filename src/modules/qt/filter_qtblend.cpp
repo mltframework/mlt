@@ -156,6 +156,30 @@ static int filter_get_image(mlt_frame frame,
             rect.h *= scaley;
         }
     }
+
+    // Normalize source dimensions to consumer PAR to handle anamorphic sources
+    normalize_mlt_source_size(b_ar, consumer_ar, &b_width, b_height);
+
+    // Fix for bug #1228 and optimization.
+    // Adjust requested dimension so MLT (libswscale) does the preliminary downscaling.
+    // Using a step defined by MLT_QT_MIPMAP_STEP provides a tight bound to target resolution
+    // (maximizing quality and preventing QPainter aliasing) while keeping the requested
+    // dimensions stable across small animation increments.
+    if (rect.w > 0 && rect.h > 0 && b_width > 0 && b_height > 0) {
+        double scaleTarget;
+        if (distort) {
+            scaleTarget = qMax(rect.w / b_width, rect.h / b_height);
+        } else {
+            double resize_dar = rect.w * consumer_ar / rect.h;
+            if (b_dar >= resize_dar) {
+                scaleTarget = rect.w / b_width;
+            } else {
+                scaleTarget = rect.h / b_height;
+            }
+        }
+        adjust_mlt_mipmap_size(scaleTarget, &b_width, &b_height);
+    }
+
     transform.translate(rect.x, rect.y);
     opacity = rect.o;
     hasAlpha = rect.o < 1 || rect.x != 0 || rect.y != 0 || rect.w != *width || rect.h != *height
@@ -220,20 +244,9 @@ static int filter_get_image(mlt_frame frame,
     bool hqPainting = interps && strcmp(interps, "nearest") && strcmp(interps, "neighbor");
 
     // resize to rect
-    bool scaled = false;
-    QImage scaledSource;
     if (distort) {
         if (rect.w != b_width || rect.h != b_height) {
-            if (rect.w < b_width || rect.h < b_height) {
-                scaled = true;
-                scaledSource = sourceImage.scaled(qRound(rect.w),
-                                                  qRound(rect.h),
-                                                  Qt::IgnoreAspectRatio,
-                                                  hqPainting ? Qt::SmoothTransformation
-                                                             : Qt::FastTransformation);
-            } else {
-                transform.scale(rect.w / b_width, rect.h / b_height);
-            }
+            transform.scale(rect.w / b_width, rect.h / b_height);
         }
     } else {
         double scale;
@@ -241,30 +254,12 @@ static int filter_get_image(mlt_frame frame,
         if (b_dar >= resize_dar) {
             scale = rect.w / b_width;
         } else {
-            scale = rect.h / b_height * b_ar;
+            scale = rect.h / b_height;
         }
-        if (scale < 1.) {
-            // Use higher quality QImage scaling
-            scaled = true;
-            const QSize finalSize(qRound(sourceImage.width() * scale),
-                                  qRound(sourceImage.height() * scale));
-            // Center image in rect
-            transform.translate((rect.w - finalSize.width()) / 2.0,
-                                (rect.h - finalSize.height()) / 2.0);
-            // Scale
-            scaledSource = sourceImage.scaled(finalSize,
-                                              Qt::IgnoreAspectRatio,
-                                              hqPainting ? Qt::SmoothTransformation
-                                                         : Qt::FastTransformation);
-        } else {
-            // Center image in rect
-            transform.translate((rect.w - (b_width * scale)) / 2.0,
-                                (rect.h - (b_height * scale)) / 2.0);
-            if (scale > 1.) {
-                // Use QPainter scaling
-                transform.scale(scale, scale);
-            }
-        }
+        // Center image in rect
+        transform.translate((rect.w - (b_width * scale)) / 2.0, (rect.h - (b_height * scale)) / 2.0);
+        // Use QPainter scaling for everything
+        transform.scale(scale, scale);
     }
 
     uint8_t *dest_image = NULL;
@@ -281,11 +276,7 @@ static int filter_get_image(mlt_frame frame,
     painter.setOpacity(opacity);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform, hqPainting);
     // Composite top frame
-    if (scaled) {
-        painter.drawImage(0, 0, scaledSource);
-    } else {
-        painter.drawImage(0, 0, sourceImage);
-    }
+    painter.drawImage(0, 0, sourceImage);
     // finish Qt drawing
     painter.end();
 

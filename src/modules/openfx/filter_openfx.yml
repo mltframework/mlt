@@ -1,8 +1,8 @@
-schema_version: 7.1
+schema_version: 7.2
 type: filter
 identifier: openfx
 title: OpenFX
-version: 1
+version: 2
 license: GPLv2
 language: en
 url: https://openeffects.org/

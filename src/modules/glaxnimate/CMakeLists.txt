@@ -26,6 +26,10 @@ function(mlt_add_glaxnimate_module ARG_TARGET)
 
 
     set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+    set(QT_MAJOR_VERSION ${ARG_QT_VERSION})
+    set(QT_VERSION_MAJOR ${ARG_QT_VERSION})
+
     add_subdirectory(glaxnimate/src/core/)
 
     add_library(${ARG_TARGET} MODULE producer_glaxnimate.cpp)

@@ -1,0 +1,2180 @@
+# FFmpeg filter supported MLT formats
+# Filters without known formats are placeholders encoded as "" (not empty maps).
+# Filters marked as 'metadata only' process metadata only, passing data unchanged.
+# Filters marked as 'format agnostic' accept all formats dynamically with no static restrictions.
+# Filters marked as 'hardware only' accept only hardware/GPU formats not directly supported by MLT.
+
+aap:
+  audio_formats:
+    - f32le
+abench: ""  # metadata only
+acompressor:
+  audio_formats:
+    - f32le
+acontrast:
+  audio_formats:
+    - f32le
+acopy: ""  # metadata only
+acrossfade:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+acrossover:
+  audio_formats:
+    - f32le
+acrusher:
+  audio_formats:
+    - f32le
+acue: ""  # metadata only
+addroi: ""  # metadata only
+adeclick:
+  audio_formats:
+    - f32le
+adeclip:
+  audio_formats:
+    - f32le
+adecorrelate:
+  audio_formats:
+    - f32le
+adelay:
+  audio_formats:
+    - u8
+    - s16
+    - s32le
+    - f32le
+adenorm:
+  audio_formats:
+    - f32le
+aderivative:
+  audio_formats:
+    - s16
+    - f32le
+    - s32le
+adrc:
+  audio_formats:
+    - f32le
+adynamicequalizer:
+  audio_formats:
+    - f32le
+adynamicsmooth:
+  audio_formats:
+    - f32le
+aecho:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+aemphasis:
+  audio_formats:
+    - f32le
+aeval:
+  audio_formats:
+    - f32le
+aexciter:
+  audio_formats:
+    - f32le
+afade:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+afftdn:
+  audio_formats:
+    - f32le
+afftfilt:
+  audio_formats:
+    - f32le
+afir:
+  audio_formats:
+    - f32le
+aformat: ""  # metadata only
+afreqshift:
+  audio_formats:
+    - f32le
+afwtdn:
+  audio_formats:
+    - f32le
+agate:
+  audio_formats:
+    - f32le
+aiir:
+  image_formats:
+    - rgb
+aintegral:
+  audio_formats:
+    - s16
+    - f32le
+    - s32le
+ainterleave: ""  # format agnostic
+alatency: ""  # format agnostic
+alimiter:
+  audio_formats:
+    - f32le
+allpass:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+aloop: ""  # format agnostic
+alphaextract:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - rgb
+    - rgba
+    - rgba64
+alphamerge:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - rgba
+    - rgb
+amerge:
+  audio_formats:
+    - u8
+    - s16
+    - s32le
+    - f32le
+ametadata: ""  # format agnostic
+amix:
+  audio_formats:
+    - f32le
+amplify:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgba
+amultiply:
+  audio_formats:
+    - f32le
+anequalizer:
+  audio_formats:
+    - f32le
+  image_formats:
+    - rgba
+anlmdn:
+  audio_formats:
+    - f32le
+anlmf:
+  audio_formats:
+    - f32le
+anlms:
+  audio_formats:
+    - f32le
+anull: ""  # metadata only
+apad: ""  # format agnostic
+aperms: ""  # format agnostic
+aphaser:
+  audio_formats:
+    - f32le
+    - s32le
+    - s16
+aphaseshift:
+  audio_formats:
+    - f32le
+apsnr: ""  # metadata only
+apsyclip:
+  audio_formats:
+    - f32le
+apulsator:
+  audio_formats:
+    - f32le
+arealtime: ""  # metadata only
+aresample: ""  # format agnostic
+areverse: ""  # format agnostic
+arls:
+  audio_formats:
+    - f32le
+arnndn:
+  audio_formats:
+    - f32le
+asdr: ""  # metadata only
+asegment: ""  # format agnostic
+aselect:
+  image_formats:
+    - rgb
+    - rgba
+    - yuv420p
+    - yuv422
+    - yuv420p10
+asendcmd: ""  # metadata only
+asetnsamples: ""  # format agnostic
+asetpts: ""  # metadata only
+asetrate: ""  # metadata only
+asettb: ""  # metadata only
+ashowinfo: ""  # metadata only
+asidedata: ""  # format agnostic
+asisdr: ""  # metadata only
+asoftclip:
+  audio_formats:
+    - f32le
+aspectralstats:
+  audio_formats:
+    - f32le
+asplit: ""  # format agnostic
+asr: ""  # metadata only
+ass: ""  # format agnostic
+astats:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+astreamselect: ""  # format agnostic
+asubboost:
+  audio_formats:
+    - f32le
+asubcut:
+  audio_formats:
+    - f32le
+asupercut:
+  audio_formats:
+    - f32le
+asuperpass:
+  audio_formats:
+    - f32le
+asuperstop:
+  audio_formats:
+    - f32le
+atadenoise:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgba
+atempo:
+  audio_formats:
+    - u8
+    - s16
+    - s32le
+    - f32le
+atilt:
+  audio_formats:
+    - f32le
+atrim: ""  # metadata only
+avgblur:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+avgblur_opencl: ""  # hardware only
+avgblur_vulkan: ""  # hardware only
+axcorrelate:
+  audio_formats:
+    - f32le
+azmq: ""  # format agnostic
+backgroundkey:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+    - yuv422p16
+    - rgba
+    - rgba64
+bandpass:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+bandreject:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+bass:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+bbox:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+bench: ""  # metadata only
+bilateral:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+bilateral_cuda:
+  image_formats:
+    - yuv420p
+    - yuv420p10
+    - yuv444p10
+biquad:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+bitplanenoise:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv422p16
+    - yuv420p10
+    - rgb
+    - rgba64
+blackdetect:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv422p16
+    - yuv420p10
+    - rgb
+    - rgba64
+blackdetect_vulkan: ""  # hardware only
+blackframe: ""  # metadata only
+blend:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - rgb
+    - rgba
+    - yuv420p10
+    - yuv422p16
+    - rgba64
+blend_vulkan: ""  # hardware only
+blockdetect: ""  # metadata only
+blurdetect: ""  # metadata only
+bm3d:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgba
+boxblur: ""  # format agnostic
+boxblur_opencl: ""  # hardware only
+bs2b:
+  audio_formats:
+    - u8
+    - s16
+    - s32le
+    - f32le
+bwdif:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+bwdif_cuda: ""  # hardware only
+bwdif_vulkan: ""  # hardware only
+cas:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgba
+ccrepack: ""  # format agnostic
+channelmap: ""  # format agnostic
+channelsplit: ""  # format agnostic
+chorus:
+  audio_formats:
+    - f32le
+chromaber_vulkan: ""  # hardware only
+chromahold:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+    - yuv422p16
+chromakey:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+    - yuv422p16
+chromakey_cuda:
+  image_formats:
+    - yuv420p
+    - yuv420p10
+chromanr:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+    - yuv422p16
+chromashift:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba
+    - rgba64
+ciescope:
+  image_formats:
+    - rgb
+    - rgba
+    - rgba64
+codecview:
+  image_formats:
+    - yuv420p
+colorbalance:
+  image_formats:
+    - rgb
+    - rgba
+    - rgba64
+colorchannelmixer:
+  image_formats:
+    - rgb
+    - rgba
+    - rgba64
+colorcontrast:
+  image_formats:
+    - rgb
+    - rgba
+    - rgba64
+colorcorrect:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+    - yuv422p16
+colordetect: ""  # format agnostic
+colorhold:
+  image_formats:
+    - rgba
+    - rgba64
+colorize:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+colorkey:
+  image_formats:
+    - rgba
+    - rgba64
+colorkey_opencl: ""  # hardware only
+colorlevels:
+  image_formats:
+    - rgb
+    - rgba
+    - rgba64
+colormap:
+  image_formats:
+    - rgba64
+colormatrix:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+colorspace:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+    - yuv422p16
+colorspace_cuda:
+  image_formats:
+    - yuv420p10
+    - yuv420p
+    - yuv444p10
+colortemperature:
+  image_formats:
+    - rgb
+    - rgba
+    - rgba64
+compand:
+  audio_formats:
+    - f32le
+compensationdelay:
+  audio_formats:
+    - f32le
+convolution:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+convolution_opencl: ""  # hardware only
+convolve:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+copy: ""  # metadata only
+coreimage: ""  # hardware only
+corr:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv420p
+    - yuv444p10
+    - yuv422
+    - rgba
+cover_rect:
+  image_formats:
+    - yuv420p
+crop: ""  # format agnostic
+cropdetect:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - rgb
+    - yuv420p10
+    - yuv422p16
+    - rgba
+crossfeed:
+  audio_formats:
+    - f32le
+crystalizer:
+  audio_formats:
+    - f32le
+cue: ""  # metadata only
+curves:
+  image_formats:
+    - rgb
+    - rgba
+    - rgba64
+datascope: ""  # format agnostic
+dblur:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+dcshift:
+  audio_formats:
+    - s32le
+dctdnoiz:
+  image_formats:
+    - rgb
+deband:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv420p10
+    - yuv422p16
+    - rgba
+deblock:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+decimate:
+  image_formats:
+    - yuv420p10
+    - yuv420p
+    - yuv444p10
+    - yuv422
+    - rgb
+    - rgba64
+deconvolve:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+dedot:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+deesser:
+  audio_formats:
+    - f32le
+deflate:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+deflicker:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+deinterlace_qsv: ""  # hardware only
+deinterlace_vaapi: ""  # format agnostic
+dejudder: ""  # format agnostic
+delogo:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - rgb
+denoise_vaapi: ""  # format agnostic
+derain:
+  image_formats:
+    - rgb
+deshake:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+deshake_opencl: ""  # hardware only
+despill:
+  image_formats:
+    - rgba
+detelecine: ""  # format agnostic
+dialoguenhance:
+  audio_formats:
+    - f32le
+dilation:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+dilation_opencl: ""  # hardware only
+displace:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - rgb
+    - rgba
+dnn_classify:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+dnn_detect:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+dnn_processing:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+doubleweave: ""  # format agnostic
+drawbox:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - rgb
+    - rgba
+drawbox_vaapi: ""  # format agnostic
+drawgraph:
+  image_formats:
+    - rgba
+drawgrid:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - rgb
+    - rgba
+drawtext: ""  # format agnostic
+drmeter: ""  # metadata only
+dynaudnorm:
+  audio_formats:
+    - f32le
+earwax:
+  audio_formats:
+    - s16
+ebur128:
+  audio_formats:
+    - f32le
+  image_formats:
+    - rgb
+edgedetect:
+  image_formats:
+    - rgb
+    - yuv420p
+    - yuv422
+    - yuv444p10
+elbg:
+  image_formats:
+    - rgba
+    - rgb
+entropy:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv422p16
+    - yuv420p10
+    - rgb
+    - rgba64
+epx:
+  image_formats:
+    - rgba
+eq:
+  image_formats:
+    - rgb
+    - yuv444p10
+    - yuv420p
+    - yuv422
+equalizer:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+erosion:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+erosion_opencl: ""  # hardware only
+estdif:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - rgb
+    - rgba
+    - rgba64
+    - yuv420p10
+    - yuv422p16
+exposure:
+  image_formats:
+    - rgba64
+extractplanes:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - rgb
+    - rgba
+    - rgba64
+extrastereo:
+  audio_formats:
+    - f32le
+fade:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - rgb
+    - rgba
+    - yuv420p10
+    - yuv422p16
+feedback: ""  # format agnostic
+fftdnoiz:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgba
+fftfilt:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+field: ""  # format agnostic
+fieldhint: ""  # format agnostic
+fieldmatch:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv420p10
+    - yuv422p16
+fieldorder: ""  # format agnostic
+fillborders:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+find_rect: ""  # metadata only
+firequalizer:
+  audio_formats:
+    - f32le
+flanger:
+  audio_formats:
+    - f32le
+flip_vulkan: ""  # hardware only
+floodfill:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - rgba
+format: ""  # metadata only
+fps: ""  # metadata only
+framepack:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgba
+framerate:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+framestep: ""  # format agnostic
+freezedetect: ""  # metadata only
+freezeframes: ""  # format agnostic
+frei0r:
+  image_formats:
+    - rgba
+fspp:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - rgb
+fsync: ""  # metadata only
+gblur:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+gblur_vulkan: ""  # hardware only
+geq:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - rgb
+    - yuv422p16
+    - yuv420p10
+    - rgba64
+    - rgba
+gradfun:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - rgb
+    - yuv422
+graphmonitor:
+  image_formats:
+    - rgba
+grayworld:
+  image_formats:
+    - rgba64
+greyedge:
+  image_formats:
+    - rgb
+guided:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+haas:
+  audio_formats:
+    - f32le
+haldclut:
+  image_formats:
+    - rgb
+    - rgba
+    - rgba64
+hdcd:
+  audio_formats:
+    - s16
+    - s32le
+headphone:
+  audio_formats:
+    - f32le
+hflip: ""  # format agnostic
+hflip_vulkan: ""  # hardware only
+highpass:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+highshelf:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+histeq:
+  image_formats:
+    - rgba
+    - rgb
+histogram:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+    - yuv422p16
+    - rgba
+    - rgb
+    - rgba64
+hqdn3d:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+    - yuv422p16
+hqx: ""  # hardware only
+hstack: ""  # format agnostic
+hstack_qsv: ""  # hardware only
+hstack_vaapi: ""  # hardware only
+hsvhold:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+    - yuv422p16
+hsvkey:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+    - yuv422p16
+hue:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv422p16
+    - yuv420p10
+huesaturation:
+  image_formats:
+    - rgb
+    - rgba
+    - rgba64
+hwdownload: ""  # format agnostic
+hwmap: ""  # format agnostic
+hwupload: ""  # format agnostic
+hwupload_cuda:
+  image_formats:
+    - yuv420p10
+    - yuv420p
+    - yuv444p10
+hysteresis:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+iccdetect: ""  # metadata only
+iccgen: ""  # metadata only
+identity:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv420p
+    - yuv444p10
+    - yuv422
+    - rgba
+idet: ""  # metadata only
+il: ""  # format agnostic
+inflate:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+interlace:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+    - yuv422p16
+    - rgb
+interlace_vulkan: ""  # hardware only
+interleave: ""  # format agnostic
+join: ""  # format agnostic
+kerndeint:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - rgba
+    - rgb
+kirsch:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+ladspa:
+  audio_formats:
+    - f32le
+lagfun:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+latency: ""  # format agnostic
+lcevc:
+  image_formats:
+    - yuv420p
+    - yuv420p10
+    - rgb
+    - rgba64
+lenscorrection:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgba
+lensfun:
+  image_formats:
+    - rgb
+libplacebo: ""  # format agnostic
+libvmaf:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv422p16
+    - yuv420p10
+libvmaf_cuda:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv422p16
+    - yuv420p10
+limitdiff:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+limiter:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+loop: ""  # format agnostic
+loudnorm:
+  audio_formats:
+    - f32le
+lowpass:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+lowshelf:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+lumakey:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv422p16
+    - yuv420p10
+lut:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv422p16
+    - yuv420p10
+    - rgba
+    - rgb
+    - rgba64
+lut1d:
+  image_formats:
+    - rgb
+    - rgba
+    - rgba64
+lut2:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - rgb
+    - rgba
+    - rgba64
+    - yuv420p10
+    - yuv422p16
+lut3d:
+  image_formats:
+    - rgb
+    - rgba
+    - rgba64
+lutrgb:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv422p16
+    - yuv420p10
+    - rgba
+    - rgb
+    - rgba64
+lutyuv:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv422p16
+    - yuv420p10
+    - rgba
+    - rgb
+    - rgba64
+lv2:
+  audio_formats:
+    - f32le
+maskedclamp:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+maskedmax:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+maskedmerge:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+maskedmin:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+maskedthreshold:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+maskfun:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+mcdeint:
+  image_formats:
+    - yuv420p
+    - yuv444p10
+mcompand:
+  audio_formats:
+    - f32le
+median:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - rgb
+    - rgba
+    - rgba64
+    - yuv420p10
+    - yuv422p16
+mergeplanes: ""  # format agnostic
+mestimate: ""  # metadata only
+metadata: ""  # format agnostic
+midequalizer:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - rgb
+    - rgba
+    - rgba64
+    - yuv420p10
+    - yuv422p16
+minterpolate:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - rgb
+mix: ""  # format agnostic
+monochrome:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+morpho:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - rgb
+    - rgba
+    - rgba64
+    - yuv420p10
+    - yuv422p16
+mpdecimate:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - rgb
+msad:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv420p
+    - yuv444p10
+    - yuv422
+    - rgba
+multiply:
+  image_formats:
+    - rgba64
+negate:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv422p16
+    - yuv420p10
+    - rgba
+    - rgb
+    - rgba64
+nlmeans:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - rgb
+nlmeans_opencl:
+  image_formats:
+    - yuv420p
+    - yuv444p10
+    - rgb
+nlmeans_vulkan: ""  # hardware only
+nnedi:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - rgba
+    - yuv420p10
+    - yuv422p16
+noformat: ""  # metadata only
+noise: ""  # format agnostic
+normalize:
+  image_formats:
+    - rgb
+    - rgba
+    - rgba64
+null: ""  # metadata only
+ocr: ""  # metadata only
+ocv:
+  image_formats:
+    - rgb
+    - rgba
+oscilloscope: ""  # format agnostic
+overlay:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+    - yuv422p16
+    - rgba
+    - rgb
+overlay_cuda:
+  image_formats:
+    - yuv420p10
+    - yuv420p
+overlay_opencl: ""  # hardware only
+overlay_qsv:
+  image_formats:
+    - yuv420p
+    - yuv420p10
+    - yuv422
+overlay_vaapi: ""  # hardware only
+overlay_vulkan: ""  # hardware only
+owdenoise:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv420p10
+    - yuv422p16
+pad: ""  # format agnostic
+pad_cuda:
+  image_formats:
+    - yuv420p
+    - yuv444p10
+    - yuv420p10
+pad_opencl: ""  # hardware only
+pad_vaapi: ""  # format agnostic
+palettegen: ""  # hardware only
+paletteuse:
+  image_formats:
+    - rgba
+pan: ""  # format agnostic
+perms: ""  # format agnostic
+perspective:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - rgb
+    - rgba
+phase:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgba
+photosensitivity:
+  image_formats:
+    - rgb
+pixdesctest: ""  # format agnostic
+pixelize:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgba
+pixscope: ""  # format agnostic
+pp7:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - rgb
+premultiply:
+  image_formats:
+    - yuv444p10
+    - rgb
+    - rgba64
+    - rgba
+prewitt:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+prewitt_opencl: ""  # hardware only
+procamp_vaapi: ""  # format agnostic
+program_opencl: ""  # hardware only
+pseudocolor:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - rgba
+    - yuv422p16
+    - yuv420p10
+psnr:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv420p
+    - yuv444p10
+    - yuv422
+    - rgba
+pullup:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - rgb
+qp: ""  # format agnostic
+qrencode: ""  # format agnostic
+quirc:
+  image_formats:
+    - rgb
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+random: ""  # format agnostic
+readeia608:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+readvitc: ""  # metadata only
+realtime: ""  # metadata only
+remap:
+  image_formats:
+    - yuv444p10
+    - rgb
+    - rgba
+    - rgba64
+remap_opencl: ""  # hardware only
+removegrain:
+  image_formats:
+    - rgb
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - rgba
+removelogo:
+  image_formats:
+    - yuv420p
+repeatfields:
+  image_formats:
+    - rgb
+    - yuv444p10
+    - yuv420p
+    - yuv422
+replaygain: ""  # metadata only
+reverse: ""  # format agnostic
+rgbashift:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba
+    - rgba64
+roberts:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+roberts_opencl: ""  # hardware only
+rotate:
+  image_formats:
+    - rgb
+    - rgba
+    - yuv444p10
+    - yuv420p
+    - yuv420p10
+rubberband:
+  audio_formats:
+    - f32le
+sab:
+  image_formats:
+    - yuv420p
+    - yuv444p10
+    - yuv422
+scale: ""  # format agnostic
+scale2ref: ""  # format agnostic
+scale2ref_npp:
+  image_formats:
+    - yuv420p
+    - yuv420p10
+    - yuv444p10
+scale_cuda:
+  image_formats:
+    - yuv420p
+    - yuv420p10
+    - yuv444p10
+scale_d3d11: ""  # hardware only
+scale_npp:
+  image_formats:
+    - yuv420p
+    - yuv420p10
+    - yuv444p10
+scale_qsv: ""  # hardware only
+scale_vaapi: ""  # format agnostic
+scale_vt: ""  # hardware only
+scale_vulkan: ""  # hardware only
+scdet: ""  # metadata only
+scdet_vulkan: ""  # hardware only
+scharr:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+scroll:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+segment: ""  # format agnostic
+select:
+  image_formats:
+    - rgb
+    - rgba
+    - yuv420p
+    - yuv422
+    - yuv420p10
+selectivecolor:
+  image_formats:
+    - rgb
+    - rgba
+    - rgba64
+sendcmd: ""  # metadata only
+separatefields: ""  # format agnostic
+setdar: ""  # metadata only
+setfield: ""  # metadata only
+setparams: ""  # metadata only
+setpts: ""  # metadata only
+setrange: ""  # metadata only
+setsar: ""  # metadata only
+settb: ""  # metadata only
+sharpen_npp:
+  image_formats:
+    - yuv420p
+    - yuv444p10
+sharpness_vaapi: ""  # format agnostic
+shear:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgba
+showinfo: ""  # metadata only
+showpalette:
+  image_formats:
+    - rgba
+shuffleframes: ""  # format agnostic
+shufflepixels:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - rgba
+shuffleplanes: ""  # format agnostic
+sidechaincompress:
+  audio_formats:
+    - f32le
+sidechaingate:
+  audio_formats:
+    - f32le
+sidedata: ""  # format agnostic
+signalstats:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv422p16
+    - yuv420p10
+signature:
+  image_formats:
+    - rgb
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+silencedetect: ""  # metadata only
+silenceremove:
+  audio_formats:
+    - f32le
+siti: ""  # metadata only
+smartblur:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - rgb
+sobel:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+sobel_opencl: ""  # hardware only
+sofalizer:
+  audio_formats:
+    - f32le
+speechnorm:
+  audio_formats:
+    - f32le
+split: ""  # format agnostic
+spp:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - yuv422p16
+    - yuv420p10
+    - rgb
+    - rgba64
+sr:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - rgb
+sr_amf:
+  image_formats:
+    - yuv420p10
+    - rgba
+    - rgba64
+ssim:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv420p
+    - yuv422
+    - yuv444p10
+ssim360:
+  image_formats:
+    - rgb
+    - yuv420p
+    - yuv422
+    - yuv444p10
+stereo3d:
+  image_formats:
+    - rgb
+    - rgba64
+    - rgba
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+stereotools:
+  audio_formats:
+    - f32le
+stereowiden:
+  audio_formats:
+    - f32le
+streamselect: ""  # format agnostic
+subtitles: ""  # format agnostic
+super2xsai:
+  image_formats:
+    - rgba
+    - rgb
+superequalizer:
+  audio_formats:
+    - f32le
+surround:
+  audio_formats:
+    - f32le
+swaprect: ""  # format agnostic
+swapuv: ""  # format agnostic
+tblend:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - rgb
+    - rgba
+    - yuv420p10
+    - yuv422p16
+    - rgba64
+telecine: ""  # format agnostic
+thistogram:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+    - yuv422p16
+    - rgba
+    - rgb
+    - rgba64
+threshold:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+thumbnail:
+  image_formats:
+    - rgb
+    - rgba
+thumbnail_cuda:
+  image_formats:
+    - yuv420p10
+    - yuv420p
+    - yuv444p10
+tile: ""  # format agnostic
+tiltandshift:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+tiltshelf:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+tinterlace:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv420p10
+    - yuv422p16
+    - rgb
+tlut2:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - rgb
+    - rgba
+    - rgba64
+    - yuv420p10
+    - yuv422p16
+tmedian:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgba
+tmidequalizer:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - rgb
+    - rgba
+    - rgba64
+    - yuv420p10
+    - yuv422p16
+tmix: ""  # format agnostic
+tonemap:
+  image_formats:
+    - rgba64
+tonemap_opencl: ""  # hardware only
+tonemap_vaapi: ""  # format agnostic
+tpad: ""  # format agnostic
+transpose: ""  # format agnostic
+transpose_npp:
+  image_formats:
+    - yuv420p
+    - yuv444p10
+transpose_opencl: ""  # hardware only
+transpose_vaapi: ""  # format agnostic
+transpose_vt: ""  # hardware only
+transpose_vulkan: ""  # hardware only
+treble:
+  audio_formats:
+    - s16
+    - s32le
+    - f32le
+tremolo:
+  audio_formats:
+    - f32le
+trim: ""  # metadata only
+unpremultiply:
+  image_formats:
+    - yuv444p10
+    - rgb
+    - rgba64
+    - rgba
+unsharp:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - yuv422p16
+    - yuv420p10
+unsharp_opencl: ""  # hardware only
+untile: ""  # format agnostic
+uspp:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - rgb
+v360:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv422p16
+    - yuv420p
+    - yuv420p10
+    - rgb
+    - rgba64
+    - rgba
+vaguedenoiser:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgba
+varblur:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+vectorscope:
+  image_formats:
+    - yuv444p10
+    - rgba
+    - rgb
+    - rgba64
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+vflip: ""  # format agnostic
+vflip_vulkan: ""  # hardware only
+vfrdet: ""  # metadata only
+vibrance:
+  image_formats:
+    - rgb
+    - rgba
+    - rgba64
+vibrato:
+  audio_formats:
+    - f32le
+vidstabdetect: ""  # metadata only
+vidstabtransform: ""  # format agnostic
+vif:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv420p
+    - yuv422
+    - yuv444p10
+vignette:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - rgb
+virtualbass:
+  audio_formats:
+    - f32le
+vmafmotion: ""  # metadata only
+volume:
+  audio_formats:
+    - u8
+    - s16
+    - s32le
+    - f32le
+volumedetect: ""  # metadata only
+vpp_amf:
+  image_formats:
+    - yuv420p10
+    - rgb
+    - rgba
+    - yuv420p
+    - yuv422
+vpp_qsv: ""  # hardware only
+vstack: ""  # format agnostic
+vstack_qsv: ""  # hardware only
+vstack_vaapi: ""  # hardware only
+w3fdif:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - rgb
+    - rgba
+    - rgba64
+    - yuv420p10
+    - yuv422p16
+waveform:
+  image_formats:
+    - rgb
+    - rgba
+    - rgba64
+    - yuv422
+    - yuv420p
+    - yuv444p10
+    - yuv422p16
+    - yuv420p10
+weave: ""  # format agnostic
+whisper: ""  # metadata only
+xbr: ""  # hardware only
+xcorrelate:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+xfade:
+  image_formats:
+    - yuv444p10
+    - rgb
+    - rgba
+    - rgba64
+xfade_opencl: ""  # hardware only
+xfade_vulkan: ""  # hardware only
+xmedian:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgba
+xpsnr:
+  image_formats:
+    - rgb
+    - rgba64
+    - yuv420p
+    - yuv444p10
+    - yuv422
+    - rgba
+xstack: ""  # format agnostic
+xstack_qsv: ""  # hardware only
+xstack_vaapi: ""  # hardware only
+yadif:
+  image_formats:
+    - yuv420p
+    - yuv422
+    - yuv444p10
+    - rgb
+    - rgba64
+    - yuv420p10
+    - yuv422p16
+    - rgba
+yadif_cuda: ""  # hardware only
+yadif_videotoolbox: ""  # hardware only
+yaepblur:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba
+zmq: ""  # format agnostic
+zoompan:
+  image_formats:
+    - yuv444p10
+    - yuv422
+    - yuv420p
+    - rgb
+    - rgba
+zscale:
+  image_formats:
+    - yuv444p10
+    - yuv420p
+    - yuv422
+    - yuv420p10
+    - yuv422p16
+    - rgb
+    - rgba64
+    - rgba

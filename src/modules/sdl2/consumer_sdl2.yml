@@ -1,8 +1,8 @@
-schema_version: 0.3
+schema_version: 7.2
 type: consumer
 identifier: sdl2
 title: SDL2
-version: 1
+version: 2
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -12,6 +12,10 @@ tags:
   - Video
 description: >
   Simple DirectMedia Layer audio and video output module
+audio_formats:
+  - s16
+image_formats:
+  - yuv422
 parameters:
   - identifier: resolution
     title: Resolution
