@@ -124,6 +124,18 @@ static int rnnoise_get_audio(mlt_frame frame,
     const int rnn_frame = rnnoise_get_frame_size(); // always 480
     mlt_position frame_pos = mlt_frame_get_position(frame);
 
+    if (ch > MAX_CHANNELS) {
+        mlt_log_warning(MLT_FILTER_SERVICE(filter),
+                        "RNNoise filter supports up to %d channels, got %d; bypassing\n",
+                        MAX_CHANNELS,
+                        ch);
+        pdata->expected_frame = frame_pos + 1;
+        pdata->n_channels = ch;
+        pdata->frequency = *frequency;
+        mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+        return 0;
+    }
+
     // Detect format change or seek discontinuity -> full reset
     if (pdata->n_channels != ch || pdata->frequency != *frequency
         || pdata->expected_frame != frame_pos) {
@@ -146,10 +158,7 @@ static int rnnoise_get_audio(mlt_frame frame,
     }
 
     double mix = mlt_properties_get_double(filter_props, "mix");
-    if (mix < 0.0)
-        mix = 0.0;
-    if (mix > 1.0)
-        mix = 1.0;
+    mix = CLAMP(mix, 0.0, 1.0);
 
     // ------------------------------------------------------------------
     // Algorithm: input-carry + output-carry
@@ -264,6 +273,7 @@ static int rnnoise_get_audio(mlt_frame frame,
         //      [0 .. in_carry_count)     → pdata->in_carry[c]
         //      [in_carry_count .. total) → in_ch
         int in_virtual = -pad; // starts in the silence region on first frame
+        int missing_state_logged = 0;
 
         for (int k = 0; k < n_chunks; k++) {
             // Build one rnn_frame-sample input
@@ -280,7 +290,17 @@ static int rnnoise_get_audio(mlt_frame frame,
                 }
                 frame_in[s] = val;
             }
-            rnnoise_process_frame(pdata->states[c], frame_out, frame_in);
+            if (pdata->states[c]) {
+                rnnoise_process_frame(pdata->states[c], frame_out, frame_in);
+            } else {
+                if (!missing_state_logged) {
+                    mlt_log_error(MLT_FILTER_SERVICE(filter),
+                                  "Missing RNNoise state for channel %d; bypassing denoise\n",
+                                  c);
+                    missing_state_logged = 1;
+                }
+                memcpy(frame_out, frame_in, sizeof(frame_out));
+            }
 
             // Distribute output to out_ch or out_carry
             for (int s = 0; s < rnn_frame; s++) {
@@ -326,11 +346,15 @@ static int rnnoise_get_audio(mlt_frame frame,
         for (int s = 0; s < new_in_carry; s++)
             pdata->in_carry[c][s] = in_ch[in_carry_src + s];
 
+        if (out_pos < n_samples) {
+            memset(out_ch + out_pos, 0, (size_t) (n_samples - out_pos) * sizeof(float));
+        }
+
         if (c == 0) {
             if (out_pos != n_samples)
                 mlt_log_warning(MLT_FILTER_SERVICE(filter),
                                 "frame=%d ch=%d output not fully filled: "
-                                "out_pos=%d n_samples=%d (gap=%d)\n",
+                                "out_pos=%d n_samples=%d (gap=%d), zero-filled\n",
                                 (int) frame_pos,
                                 c,
                                 out_pos,
@@ -339,6 +363,9 @@ static int rnnoise_get_audio(mlt_frame frame,
             new_in_carry_count = new_in_carry;
             new_out_carry_count = carry_pos;
         }
+
+        // Keep ring position bounded to prevent long-run integer overflow.
+        pdata->dry_ring_pos %= ring_size;
     }
 
     pdata->in_carry_count = new_in_carry_count;

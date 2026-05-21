@@ -174,6 +174,21 @@ static int link_get_audio(mlt_frame frame,
         return error;
     }
 
+    if (cur_audio.channels > MAX_CHANNELS) {
+        mlt_log_warning(MLT_LINK_SERVICE(self),
+                        "RNNoise link supports up to %d channels, got %d; bypassing\n",
+                        MAX_CHANNELS,
+                        cur_audio.channels);
+        *buffer = cur_audio.data;
+        *frequency = cur_audio.frequency;
+        *format = cur_audio.format;
+        *channels = cur_audio.channels;
+        *samples = cur_audio.samples;
+        pdata->expected_frame = frame_pos + 1;
+        mlt_service_unlock(MLT_LINK_SERVICE(self));
+        return 0;
+    }
+
     // Ensure correct number of RNNoise states
     ensure_states(self, cur_audio.channels);
     *channels = cur_audio.channels;
@@ -200,6 +215,7 @@ static int link_get_audio(mlt_frame frame,
     }
 
     float mix = mlt_properties_get_double(MLT_LINK_PROPERTIES(self), "mix");
+    mix = CLAMP(mix, 0.0f, 1.0f);
 
     // We fill out from out_carry, then generate more by feeding RNNoise chunks.
     int out_delivered = 0;
@@ -358,7 +374,14 @@ static int link_get_audio(mlt_frame frame,
             for (int s = 0; s < rnn_frame; s++)
                 rnn_in[s] = pdata->in_carry[c][s] * 32768.0f;
 
-            rnnoise_process_frame(pdata->states[c], rnn_out, rnn_in);
+            if (pdata->states[c]) {
+                rnnoise_process_frame(pdata->states[c], rnn_out, rnn_in);
+            } else {
+                mlt_log_error(MLT_LINK_SERVICE(self),
+                              "Missing RNNoise state for channel %d; bypassing denoise\n",
+                              c);
+                memcpy(rnn_out, rnn_in, sizeof(rnn_out));
+            }
 
             // Scale back and apply wet/dry mix with aligned dry signal.
             // Startup RNNoise delay is compensated by dropping first two output chunks.
