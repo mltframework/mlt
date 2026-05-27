@@ -247,9 +247,16 @@ static OfxStatus clipGetRegionOfDefinition(OfxImageClipHandle clip, OfxTime time
     propGetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 1, &y1);
     propGetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 2, &x2);
     propGetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRegionOfDefinition, 3, &y2);
-    bounds->x1 = (double) x1;
+    // OFX spec requires canonical coordinates: x scaled by PAR, y in pixels.
+    double par = 1.0;
+    mlt_properties par_props = mlt_properties_get_properties(clip_prop, "0");
+    if (par_props && mlt_properties_exists(par_props, kOfxImagePropPixelAspectRatio))
+        par = mlt_properties_get_double(par_props, kOfxImagePropPixelAspectRatio);
+    if (par <= 0.0)
+        par = 1.0;
+    bounds->x1 = (double) x1 * par;
     bounds->y1 = (double) y1;
-    bounds->x2 = (double) x2;
+    bounds->x2 = (double) x2 * par;
     bounds->y2 = (double) y2;
 
     if (bounds->x2 < bounds->x1 || bounds->y2 < bounds->y1) {
@@ -2241,6 +2248,51 @@ static void mltofx_get_render_scale(mlt_properties image_effect, double *scale_x
         *scale_y = y;
 }
 
+void mltofx_set_project_properties(mlt_properties image_effect,
+                                   int width,
+                                   int height,
+                                   double pixel_aspect_ratio,
+                                   double fps,
+                                   double duration)
+{
+    if (!image_effect)
+        return;
+    if (pixel_aspect_ratio <= 0.0)
+        pixel_aspect_ratio = 1.0;
+    // OFX canonical coordinates: x scaled by PAR, y in pixels.
+    double canonical_width = (double) width * pixel_aspect_ratio;
+    double canonical_height = (double) height;
+    propSetDouble((OfxPropertySetHandle) image_effect,
+                  kOfxImageEffectPropProjectExtent,
+                  0,
+                  canonical_width);
+    propSetDouble((OfxPropertySetHandle) image_effect,
+                  kOfxImageEffectPropProjectExtent,
+                  1,
+                  canonical_height);
+    propSetDouble((OfxPropertySetHandle) image_effect,
+                  kOfxImageEffectPropProjectSize,
+                  0,
+                  canonical_width);
+    propSetDouble((OfxPropertySetHandle) image_effect,
+                  kOfxImageEffectPropProjectSize,
+                  1,
+                  canonical_height);
+    propSetDouble((OfxPropertySetHandle) image_effect, kOfxImageEffectPropProjectOffset, 0, 0.0);
+    propSetDouble((OfxPropertySetHandle) image_effect, kOfxImageEffectPropProjectOffset, 1, 0.0);
+    propSetDouble((OfxPropertySetHandle) image_effect,
+                  kOfxImageEffectPropProjectPixelAspectRatio,
+                  0,
+                  pixel_aspect_ratio);
+    if (fps > 0.0)
+        propSetDouble((OfxPropertySetHandle) image_effect, kOfxImageEffectPropFrameRate, 0, fps);
+    if (duration > 0.0)
+        propSetDouble((OfxPropertySetHandle) image_effect,
+                      kOfxImageEffectInstancePropEffectDuration,
+                      0,
+                      duration);
+}
+
 int mltofx_allows_frame_threading(mlt_properties image_effect)
 {
     if (!image_effect)
@@ -2271,7 +2323,8 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
                                  int height,
                                  mlt_image_format format,
                                  double pixel_aspect_ratio,
-                                 const char *ofx_depth)
+                                 const char *ofx_depth,
+                                 int top_left_origin)
 {
     mlt_properties clip;
     mlt_properties clip_prop;
@@ -2313,7 +2366,7 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
 
     int row_bytes = width * depth_byte_size;
     uint8_t *image_origin = image;
-    if (row_bytes > 0 && height > 0) {
+    if (!top_left_origin && row_bytes > 0 && height > 0) {
         // OFX CPU images are addressed from lower-left. Point data at the
         // first byte of the last scanline and use negative row bytes.
         image_origin = image + ((size_t) (height - 1) * (size_t) row_bytes);
@@ -2423,7 +2476,8 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
                                  int height,
                                  mlt_image_format format,
                                  double pixel_aspect_ratio,
-                                 const char *ofx_depth)
+                                 const char *ofx_depth,
+                                 int top_left_origin)
 {
     mlt_properties clip;
     mlt_properties clip_prop;
@@ -2457,7 +2511,7 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
 
     int row_bytes = width * depth_byte_size;
     uint8_t *image_origin = image;
-    if (row_bytes > 0 && height > 0) {
+    if (!top_left_origin && row_bytes > 0 && height > 0) {
         // OFX CPU images are addressed from lower-left. Point data at the
         // first byte of the last scanline and use negative row bytes.
         image_origin = image + ((size_t) (height - 1) * (size_t) row_bytes);
@@ -3137,6 +3191,16 @@ void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_eff
                   (OfxImageClipHandle *) &output_clip,
                   (OfxPropertySetHandle *) &output_clip_props);
 
+    // Read PAR for pixel<->canonical conversion; x_canonical = x_pixel * par.
+    double rod_par = 1.0;
+    if (output_clip_props)
+        propGetDouble((OfxPropertySetHandle) output_clip_props,
+                      kOfxImagePropPixelAspectRatio,
+                      0,
+                      &rod_par);
+    if (rod_par <= 0.0)
+        rod_par = 1.0;
+
     int default_x1 = 0;
     int default_y1 = 0;
     int default_x2 = 0;
@@ -3193,10 +3257,11 @@ void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_eff
                   1,
                   render_scale_y);
 
+    // Seed outArgs with canonical defaults (x * PAR).
     propSetDouble((OfxPropertySetHandle) get_rod_out_args,
                   kOfxImageEffectPropRegionOfDefinition,
                   0,
-                  (double) default_x1);
+                  (double) default_x1 * rod_par);
     propSetDouble((OfxPropertySetHandle) get_rod_out_args,
                   kOfxImageEffectPropRegionOfDefinition,
                   1,
@@ -3204,7 +3269,7 @@ void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_eff
     propSetDouble((OfxPropertySetHandle) get_rod_out_args,
                   kOfxImageEffectPropRegionOfDefinition,
                   2,
-                  (double) default_x2);
+                  (double) default_x2 * rod_par);
     propSetDouble((OfxPropertySetHandle) get_rod_out_args,
                   kOfxImageEffectPropRegionOfDefinition,
                   3,
@@ -3237,9 +3302,10 @@ void mltofx_get_region_of_definition(OfxPlugin *plugin, mlt_properties image_eff
                       3,
                       &rod_y2);
 
-        int out_x1 = (int) floor(rod_x1);
+        // Convert canonical ROD back to pixel coordinates for storage.
+        int out_x1 = (int) floor(rod_x1 / rod_par);
         int out_y1 = (int) floor(rod_y1);
-        int out_x2 = (int) ceil(rod_x2);
+        int out_x2 = (int) ceil(rod_x2 / rod_par);
         int out_y2 = (int) ceil(rod_y2);
 
         if (out_x2 >= out_x1 && out_y2 >= out_y1) {
@@ -3286,6 +3352,17 @@ void mltofx_get_regions_of_interest(
                   1,
                   render_scale_y);
 
+    // ROI must be in canonical coordinates; read from project extent set earlier.
+    double canonical_width = width;
+    double canonical_height = height;
+    propGetDouble((OfxPropertySetHandle) image_effect,
+                  kOfxImageEffectPropProjectExtent,
+                  0,
+                  &canonical_width);
+    propGetDouble((OfxPropertySetHandle) image_effect,
+                  kOfxImageEffectPropProjectExtent,
+                  1,
+                  &canonical_height);
     propSetDouble((OfxPropertySetHandle) get_roi_in_args,
                   kOfxImageEffectPropRegionOfInterest,
                   0,
@@ -3297,11 +3374,11 @@ void mltofx_get_regions_of_interest(
     propSetDouble((OfxPropertySetHandle) get_roi_in_args,
                   kOfxImageEffectPropRegionOfInterest,
                   2,
-                  width);
+                  canonical_width);
     propSetDouble((OfxPropertySetHandle) get_roi_in_args,
                   kOfxImageEffectPropRegionOfInterest,
                   3,
-                  height);
+                  canonical_height);
 
     OfxStatus status_code = plugin->mainEntry(kOfxImageEffectActionGetRegionsOfInterest,
                                               (OfxImageEffectHandle) image_effect,

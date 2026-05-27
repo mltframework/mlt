@@ -270,6 +270,7 @@ static int filter_get_image(mlt_frame frame,
     OfxPlugin *plugin = mlt_properties_get_data(properties, "ofx_plugin", NULL);
     mlt_properties base_image_effect = mlt_properties_get_properties(properties, OFX_IMAGE_EFFECT);
     int allow_frame_threading = mlt_properties_get_int(properties, "_allow_frame_threading");
+    int top_left_origin = mlt_properties_get_int(properties, "mlt_origin");
     mlt_properties image_effect = base_image_effect;
     if (allow_frame_threading) {
         image_effect = create_image_effect_instance(plugin, properties, 0);
@@ -376,6 +377,12 @@ static int filter_get_image(mlt_frame frame,
 
     // In serialized mode, image_effect is shared across frames; update scale under lock.
     mltofx_set_render_scale(image_effect, render_scale_x, render_scale_y);
+    mltofx_set_project_properties(image_effect,
+                                  *width,
+                                  *height,
+                                  pixel_aspect_ratio,
+                                  mlt_profile_fps(profile),
+                                  (double) length);
 
     update_plugin_params(properties, image_effect_params, params, position, length);
 
@@ -389,7 +396,8 @@ static int filter_get_image(mlt_frame frame,
                                 *height,
                                 *format,
                                 pixel_aspect_ratio,
-                                ofx_depth);
+                                ofx_depth,
+                                top_left_origin);
     mltofx_set_output_clip_data(plugin,
                                 image_effect,
                                 prime_buf,
@@ -397,7 +405,8 @@ static int filter_get_image(mlt_frame frame,
                                 *height,
                                 *format,
                                 pixel_aspect_ratio,
-                                ofx_depth);
+                                ofx_depth,
+                                top_left_origin);
 
     // OFX pre-render action order:
     // GetClipPreferences -> GetRegionOfDefinition -> GetRegionsOfInterest -> BeginSequenceRender
@@ -414,7 +423,8 @@ static int filter_get_image(mlt_frame frame,
                                 *height,
                                 *format,
                                 pixel_aspect_ratio,
-                                ofx_depth);
+                                ofx_depth,
+                                top_left_origin);
     mltofx_set_output_clip_data(plugin,
                                 image_effect,
                                 render_dst,
@@ -422,7 +432,8 @@ static int filter_get_image(mlt_frame frame,
                                 *height,
                                 *format,
                                 pixel_aspect_ratio,
-                                ofx_depth);
+                                ofx_depth,
+                                top_left_origin);
 
     mltofx_action_render(plugin, image_effect, ofx_time, *width, *height);
     mltofx_end_sequence_render(plugin, image_effect, ofx_time);
