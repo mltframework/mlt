@@ -50,6 +50,10 @@ if(MOD_AVFORMAT)
   add_qt_test(TEST_NAME mod_avformat)
 endif()
 
+if(MOD_VORBIS)
+  add_qt_test(TEST_NAME vorbis)
+endif()
+
 if(MOD_QT6)
   add_qt_test(
     TEST_NAME mod_qt_gps
