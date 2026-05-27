@@ -2311,7 +2311,16 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
                                                   : (format == mlt_image_rgb ? "rgb" : "Unknown")),
                   depth_format);
 
-    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRowBytes, 0, width * depth_byte_size);
+    int row_bytes = width * depth_byte_size;
+    uint8_t *image_origin = image;
+    if (row_bytes > 0 && height > 0) {
+        // OFX CPU images are addressed from lower-left. Point data at the
+        // first byte of the last scanline and use negative row bytes.
+        image_origin = image + ((size_t) (height - 1) * (size_t) row_bytes);
+        row_bytes = -row_bytes;
+    }
+
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRowBytes, 0, row_bytes);
     propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropPixelDepth, 0, depth_format);
     propSetString((OfxPropertySetHandle) clip_prop,
                   kOfxImageClipPropUnmappedPixelDepth,
@@ -2321,7 +2330,7 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
                   kOfxImageEffectPropComponents,
                   0,
                   prop_component);
-    propSetPointer((OfxPropertySetHandle) clip_prop, kOfxImagePropData, 0, (void *) image);
+    propSetPointer((OfxPropertySetHandle) clip_prop, kOfxImagePropData, 0, (void *) image_origin);
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropBounds, 0, 0);
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropBounds, 1, 0);
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropBounds, 2, width);
@@ -2446,7 +2455,16 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
         prop_component = kOfxImageComponentRGB;
     }
 
-    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRowBytes, 0, width * depth_byte_size);
+    int row_bytes = width * depth_byte_size;
+    uint8_t *image_origin = image;
+    if (row_bytes > 0 && height > 0) {
+        // OFX CPU images are addressed from lower-left. Point data at the
+        // first byte of the last scanline and use negative row bytes.
+        image_origin = image + ((size_t) (height - 1) * (size_t) row_bytes);
+        row_bytes = -row_bytes;
+    }
+
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropRowBytes, 0, row_bytes);
     propSetString((OfxPropertySetHandle) clip_prop, kOfxImageEffectPropPixelDepth, 0, depth_format);
     propSetString((OfxPropertySetHandle) clip_prop,
                   kOfxImageClipPropUnmappedPixelDepth,
@@ -2456,7 +2474,7 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
                   kOfxImageEffectPropComponents,
                   0,
                   prop_component);
-    propSetPointer((OfxPropertySetHandle) clip_prop, kOfxImagePropData, 0, (void *) image);
+    propSetPointer((OfxPropertySetHandle) clip_prop, kOfxImagePropData, 0, (void *) image_origin);
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropBounds, 0, 0);
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropBounds, 1, 0);
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImagePropBounds, 2, width);
