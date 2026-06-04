@@ -2105,6 +2105,53 @@ static void mltofx_apply_cached_clip_preferences(mlt_properties image_effect)
     mltofx_apply_clip_preferences(image_effect, pref_args);
 }
 
+static void mltofx_set_mask_clip_disconnected(mlt_properties image_effect)
+{
+    if (!image_effect)
+        return;
+
+    mlt_properties mask_clip = NULL;
+    mlt_properties mask_clip_props = NULL;
+    clipGetHandle((OfxImageEffectHandle) image_effect,
+                  "Mask",
+                  (OfxImageClipHandle *) &mask_clip,
+                  (OfxPropertySetHandle *) &mask_clip_props);
+    if (!mask_clip_props)
+        return;
+
+    propSetInt((OfxPropertySetHandle) mask_clip_props, kOfxImageClipPropConnected, 0, 0);
+    propSetString((OfxPropertySetHandle) mask_clip_props,
+                  kOfxImageEffectPropComponents,
+                  0,
+                  kOfxImageComponentNone);
+    propSetString((OfxPropertySetHandle) mask_clip_props,
+                  kOfxImageClipPropUnmappedComponents,
+                  0,
+                  kOfxImageComponentNone);
+    propSetString((OfxPropertySetHandle) mask_clip_props,
+                  kOfxImageEffectPropPixelDepth,
+                  0,
+                  kOfxBitDepthByte);
+    propSetString((OfxPropertySetHandle) mask_clip_props,
+                  kOfxImageClipPropUnmappedPixelDepth,
+                  0,
+                  kOfxBitDepthByte);
+    propSetDouble((OfxPropertySetHandle) mask_clip_props, kOfxImagePropPixelAspectRatio, 0, 1.0);
+    propSetInt((OfxPropertySetHandle) mask_clip_props, kOfxImagePropBounds, 0, 0);
+    propSetInt((OfxPropertySetHandle) mask_clip_props, kOfxImagePropBounds, 1, 0);
+    propSetInt((OfxPropertySetHandle) mask_clip_props, kOfxImagePropBounds, 2, 0);
+    propSetInt((OfxPropertySetHandle) mask_clip_props, kOfxImagePropBounds, 3, 0);
+    propSetInt((OfxPropertySetHandle) mask_clip_props, kOfxImagePropRegionOfDefinition, 0, 0);
+    propSetInt((OfxPropertySetHandle) mask_clip_props, kOfxImagePropRegionOfDefinition, 1, 0);
+    propSetInt((OfxPropertySetHandle) mask_clip_props, kOfxImagePropRegionOfDefinition, 2, 0);
+    propSetInt((OfxPropertySetHandle) mask_clip_props, kOfxImagePropRegionOfDefinition, 3, 0);
+    propSetInt((OfxPropertySetHandle) mask_clip_props, kOfxImageEffectPropRenderQualityDraft, 0, 0);
+    propSetInt((OfxPropertySetHandle) mask_clip_props,
+               "uk.co.thefoundry.OfxImageEffectPropView",
+               0,
+               0);
+}
+
 const void *MltOfxfetchSuite(OfxPropertySetHandle host, const char *suiteName, int suiteVersion)
 {
     mlt_log_debug(NULL, "[openfx] fetchSuite: `%s` v%d\n", suiteName, suiteVersion);
@@ -2476,6 +2523,8 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
 
     propSetInt((OfxPropertySetHandle) clip_prop, kOfxImageClipPropConnected, 0, 1);
 
+    mltofx_set_mask_clip_disconnected(image_effect);
+
     // Preserve plugin-selected clip preferences across clip data refreshes.
     mltofx_apply_cached_clip_preferences(image_effect);
 }
@@ -2617,6 +2666,10 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
                   kOfxImagePropPixelAspectRatio,
                   0,
                   pixel_aspect_ratio);
+
+    propSetInt((OfxPropertySetHandle) clip_prop, kOfxImageClipPropConnected, 0, 1);
+
+    mltofx_set_mask_clip_disconnected(image_effect);
 
     // Preserve plugin-selected clip preferences across clip data refreshes.
     mltofx_apply_cached_clip_preferences(image_effect);
@@ -2783,6 +2836,8 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
 
         propSetString((OfxPropertySetHandle) clip_props, kOfxImagePropField, 0, kOfxImageFieldNone);
     }
+
+    mltofx_set_mask_clip_disconnected(image_effect);
 
     clip = NULL, clip_props = NULL;
     clipGetHandle((OfxImageEffectHandle) image_effect,
