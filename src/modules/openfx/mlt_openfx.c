@@ -790,7 +790,7 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
         if (status != kOfxStatOK) {
             status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, value);
             if (status != kOfxStatOK)
-                return kOfxStatErrUnknown;
+                *value = 0;
         }
     } else if (strcmp(param_type, kOfxParamTypeChoice) == 0) {
         // MltOfxParamValue stores the string label; convert to integer index for the OFX plugin.
@@ -820,12 +820,12 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
                                     0,
                                     value);
                 if (status != kOfxStatOK)
-                    return kOfxStatErrUnknown;
+                    *value = 0;
             }
         } else {
             status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, value);
             if (status != kOfxStatOK)
-                return kOfxStatErrUnknown;
+                *value = 0;
         }
     } else if (strcmp(param_type, kOfxParamTypeDouble) == 0) {
         double *value = va_arg(ap, double *);
@@ -837,7 +837,7 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
                                    0,
                                    value);
             if (status != kOfxStatOK)
-                return kOfxStatErrUnknown;
+                *value = 0.0;
         }
     } else if (strcmp(param_type, kOfxParamTypeString) == 0
                || strcmp(param_type, kOfxParamTypeStrChoice) == 0) {
@@ -850,7 +850,7 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
                                    0,
                                    value);
             if (status != kOfxStatOK)
-                return kOfxStatErrUnknown;
+                *value = "";
         }
     } else if (strcmp(param_type, kOfxParamTypeRGBA) == 0) {
         double *red = va_arg(ap, double *);
@@ -885,8 +885,12 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
                                        "OfxParamPropDefault",
                                        3,
                                        alpha);
-            if (status != kOfxStatOK)
-                return kOfxStatErrUnknown;
+            if (status != kOfxStatOK) {
+                *red = 0.0;
+                *green = 0.0;
+                *blue = 0.0;
+                *alpha = 1.0;
+            }
         }
     } else if (strcmp(param_type, kOfxParamTypeRGB) == 0) {
         double *red = va_arg(ap, double *);
@@ -913,8 +917,11 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
                                        "OfxParamPropDefault",
                                        2,
                                        blue);
-            if (status != kOfxStatOK)
-                return kOfxStatErrUnknown;
+            if (status != kOfxStatOK) {
+                *red = 0.0;
+                *green = 0.0;
+                *blue = 0.0;
+            }
         }
     } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
         double *X = va_arg(ap, double *);
@@ -932,8 +939,10 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
                                        "OfxParamPropDefault",
                                        1,
                                        Y);
-            if (status != kOfxStatOK)
-                return kOfxStatErrUnknown;
+            if (status != kOfxStatOK) {
+                *X = 0.0;
+                *Y = 0.0;
+            }
         }
     } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
         int *X = va_arg(ap, int *);
@@ -947,8 +956,10 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
             status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 0, X);
             if (status == kOfxStatOK)
                 status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
-            if (status != kOfxStatOK)
-                return kOfxStatErrUnknown;
+            if (status != kOfxStatOK) {
+                *X = 0;
+                *Y = 0;
+            }
         }
     } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
         double *X = va_arg(ap, double *);
@@ -974,8 +985,11 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
                                        "OfxParamPropDefault",
                                        2,
                                        Z);
-            if (status != kOfxStatOK)
-                return kOfxStatErrUnknown;
+            if (status != kOfxStatOK) {
+                *X = 0.0;
+                *Y = 0.0;
+                *Z = 0.0;
+            }
         }
     } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
         int *X = va_arg(ap, int *);
@@ -994,8 +1008,11 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
                 status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 1, Y);
             if (status == kOfxStatOK)
                 status = propGetInt((OfxPropertySetHandle) param_props, "OfxParamPropDefault", 2, Z);
-            if (status != kOfxStatOK)
-                return kOfxStatErrUnknown;
+            if (status != kOfxStatOK) {
+                *X = 0;
+                *Y = 0;
+                *Z = 0;
+            }
         }
     }
 
