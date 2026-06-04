@@ -776,6 +776,92 @@ static OfxStatus paramGetPropertySet(OfxParamHandle param, OfxPropertySetHandle 
     return kOfxStatOK;
 }
 
+static void mltofx_initialize_param_value_from_default(mlt_properties param)
+{
+    if (!param)
+        return;
+
+    char *param_type = mlt_properties_get(param, "t");
+    mlt_properties param_props = mlt_properties_get_properties(param, "p");
+    if (!param_type || !param_props)
+        return;
+
+    if (strcmp(param_type, kOfxParamTypeInteger) == 0
+        || strcmp(param_type, kOfxParamTypeBoolean) == 0
+        || strcmp(param_type, kOfxParamTypeInteger2D) == 0
+        || strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
+        int count = 1;
+        if (strcmp(param_type, kOfxParamTypeInteger2D) == 0)
+            count = 2;
+        else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0)
+            count = 3;
+        for (int i = 0; i < count; ++i) {
+            int value = 0;
+            if (propGetInt((OfxPropertySetHandle) param_props, kOfxParamPropDefault, i, &value)
+                == kOfxStatOK) {
+                propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", i, value);
+            }
+        }
+    } else if (strcmp(param_type, kOfxParamTypeDouble) == 0
+               || strcmp(param_type, kOfxParamTypeDouble2D) == 0
+               || strcmp(param_type, kOfxParamTypeDouble3D) == 0
+               || strcmp(param_type, kOfxParamTypeRGB) == 0
+               || strcmp(param_type, kOfxParamTypeRGBA) == 0) {
+        int count = 1;
+        if (strcmp(param_type, kOfxParamTypeDouble2D) == 0)
+            count = 2;
+        else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0
+                 || strcmp(param_type, kOfxParamTypeRGB) == 0)
+            count = 3;
+        else if (strcmp(param_type, kOfxParamTypeRGBA) == 0)
+            count = 4;
+        for (int i = 0; i < count; ++i) {
+            double value = 0.0;
+            if (propGetDouble((OfxPropertySetHandle) param_props, kOfxParamPropDefault, i, &value)
+                == kOfxStatOK) {
+                propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", i, value);
+            }
+        }
+    } else if (strcmp(param_type, kOfxParamTypeString) == 0
+               || strcmp(param_type, kOfxParamTypeStrChoice) == 0) {
+        char *value = NULL;
+        if (propGetString((OfxPropertySetHandle) param_props, kOfxParamPropDefault, 0, &value)
+                == kOfxStatOK
+            && value) {
+            propSetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value);
+        }
+    } else if (strcmp(param_type, kOfxParamTypeChoice) == 0) {
+        int default_index = 0;
+        if (propGetInt((OfxPropertySetHandle) param_props, kOfxParamPropDefault, 0, &default_index)
+            == kOfxStatOK) {
+            char *label = NULL;
+            if (propGetString((OfxPropertySetHandle) param_props,
+                              kOfxParamPropChoiceOption,
+                              default_index,
+                              &label)
+                    == kOfxStatOK
+                && label) {
+                propSetString((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, label);
+            }
+        }
+    }
+}
+
+static void mltofx_initialize_param_values(mlt_properties iparams)
+{
+    if (!iparams)
+        return;
+
+    int count = mlt_properties_count(iparams);
+    for (int i = 1; i < count; ++i) {
+        char *name = mlt_properties_get_name(iparams, i);
+        if (!name)
+            continue;
+        mlt_properties param = mlt_properties_get_properties(iparams, name);
+        mltofx_initialize_param_value_from_default(param);
+    }
+}
+
 static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
 {
     mlt_properties param = (mlt_properties) paramHandle;
@@ -3173,6 +3259,10 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
             }
         }
     }
+
+    // Seed runtime param values from OFX defaults so plugins read stable values
+    // even when the user has not overridden a parameter.
+    mltofx_initialize_param_values(iparams);
 
     mlt_properties_close(clips);
     mlt_properties_close(iparams);
