@@ -338,6 +338,7 @@ static int filter_get_image(mlt_frame frame,
             free(half_out);
             return 1;
         }
+        memcpy(half_out, half_src, (size_t) n * 4 * sizeof(uint16_t));
     } else if (use_float) {
         // float_out is also used as prime_buf so it must be allocated before the lock.
         int n = *width * *height;
@@ -349,6 +350,7 @@ static int filter_get_image(mlt_frame frame,
             free(float_src);
             return 1;
         }
+        memcpy(float_out, float_src, (size_t) n * 4 * sizeof(float));
     } else {
         // Short/byte path: keep a read-only source copy separate from the output buffer.
         struct mlt_image_s src_img;
