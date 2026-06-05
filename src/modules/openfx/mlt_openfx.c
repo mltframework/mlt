@@ -35,6 +35,7 @@
 #endif
 
 /* OpenFX Header files https://github.com/AcademySoftwareFoundation/openfx/tree/main/include */
+#include <nuke/fnPublicOfxExtensions.h>
 #include <ofxDrawSuite.h>
 #include <ofxGPURender.h>
 #include <ofxImageEffect.h>
@@ -3094,6 +3095,22 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
             mlt_properties_set(p, "type", "integer");
         }
 
+        int layout_hint = 0;
+        if (propGetInt((OfxPropertySetHandle) ppp, kOfxParamPropLayoutHint, 0, &layout_hint)
+            == kOfxStatOK) {
+            switch (layout_hint) {
+            case kOfxParamPropLayoutHintNoNewLine:
+                mlt_properties_set(p, "layout-hint", "no_new_line");
+                break;
+            case kOfxParamPropLayoutHintDivider:
+                mlt_properties_set(p, "layout-hint", "divider");
+                break;
+            default:
+                // Add new layout-hint cases here as they are supported.
+                break;
+            }
+        }
+
         if (strcmp(param_type, kOfxParamTypeGroup) != 0) {
             int animation = 1;
             propGetInt((OfxPropertySetHandle) ppp, kOfxParamPropAnimates, 0, &animation);
@@ -3262,6 +3279,7 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                 propGetString((OfxPropertySetHandle) ppp, p_name, 0, &str_value);
                 if (strcmp(str_value, kOfxParamStringIsLabel) == 0) {
                     mlt_properties_set(p, "readonly", "yes");
+                    mlt_properties_set_int(p, "hide-label", 1);
                 }
             } else if (strcmp(p_name, kOfxParamPropParent) == 0) {
                 char *str_value = "";
