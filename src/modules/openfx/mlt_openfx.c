@@ -74,14 +74,24 @@ static inline float f16_to_f32(uint16_t h)
     return f;
 }
 
-static int mltofx_source_prefers_top_left_origin(const OfxPlugin *plugin, const char *depth_format)
+static int mltofx_source_prefers_top_left_origin(const OfxPlugin *plugin,
+                                                 const char *depth_format,
+                                                 int is_source)
 {
     if (!plugin || !plugin->pluginIdentifier || !depth_format)
         return 0;
 
     // GMIC's byte-depth path expects top-left memory addressing for Source.
-    return !strncmp(plugin->pluginIdentifier, "eu.gmic.", 8)
-           && !strcmp(depth_format, kOfxBitDepthByte);
+    if (is_source && !strncmp(plugin->pluginIdentifier, "eu.gmic.", 8)
+        && !strcmp(depth_format, kOfxBitDepthByte)) {
+        return 1;
+    }
+
+    // NTSC-rs crashes without top-left addressing for Source, but only in the 16-bit path.
+    if (!strncmp(plugin->pluginIdentifier, "wtf.vala:NtscRs", 15)) {
+        return strcmp(depth_format, kOfxBitDepthByte);
+    }
+    return 0;
 }
 
 uint16_t *mltofx_rgba64_to_half(const uint16_t *src, int n_pixels)
@@ -2526,7 +2536,7 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
 
     int row_bytes = width * depth_byte_size;
     uint8_t *image_origin = image;
-    int top_left_compat = mltofx_source_prefers_top_left_origin(plugin, depth_format);
+    int top_left_compat = mltofx_source_prefers_top_left_origin(plugin, depth_format, 1);
     if (!top_left_compat && !top_left_origin && row_bytes > 0 && height > 0) {
         // OFX CPU images are addressed from lower-left. Point data at the
         // first byte of the last scanline and use negative row bytes.
@@ -2674,7 +2684,8 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
 
     int row_bytes = width * depth_byte_size;
     uint8_t *image_origin = image;
-    if (!top_left_origin && row_bytes > 0 && height > 0) {
+    int top_left_compat = mltofx_source_prefers_top_left_origin(plugin, depth_format, 0);
+    if (!top_left_compat && !top_left_origin && row_bytes > 0 && height > 0) {
         // OFX CPU images are addressed from lower-left. Point data at the
         // first byte of the last scanline and use negative row bytes.
         image_origin = image + ((size_t) (height - 1) * (size_t) row_bytes);
