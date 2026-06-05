@@ -2234,11 +2234,11 @@ static void mltofx_set_mask_clip_disconnected(mlt_properties image_effect)
     propSetString((OfxPropertySetHandle) mask_clip_props,
                   kOfxImageEffectPropPixelDepth,
                   0,
-                  kOfxBitDepthByte);
+                  kOfxBitDepthNone);
     propSetString((OfxPropertySetHandle) mask_clip_props,
                   kOfxImageClipPropUnmappedPixelDepth,
                   0,
-                  kOfxBitDepthByte);
+                  kOfxBitDepthNone);
     propSetDouble((OfxPropertySetHandle) mask_clip_props, kOfxImagePropPixelAspectRatio, 0, 1.0);
     propSetInt((OfxPropertySetHandle) mask_clip_props, kOfxImagePropBounds, 0, 0);
     propSetInt((OfxPropertySetHandle) mask_clip_props, kOfxImagePropBounds, 1, 0);
