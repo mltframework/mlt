@@ -120,8 +120,9 @@ mlt_property mlt_property_init()
 
 static void clear_property(mlt_property self)
 {
-    // Special case data handling
-    if (self->types & mlt_prop_data && self->destructor != NULL)
+    // Special case data handling (destructor may be set even without mlt_prop_data,
+    // e.g. for the unquoted-string cache used by mlt_property_anim_get_string).
+    if (self->destructor != NULL)
         self->destructor(self->data);
 
     // Special case string handling
@@ -1565,7 +1566,30 @@ char *mlt_property_anim_get_string(
         pthread_mutex_unlock(&self->mutex);
     } else {
         pthread_mutex_unlock(&self->mutex);
-        result = mlt_property_get_string_l(self, locale);
+        const char *raw = mlt_property_get_string_l(self, locale);
+        if (raw && raw[0] == '"') {
+            size_t len = strlen(raw);
+            if (len >= 2 && raw[len - 1] == '"') {
+                // The string is wrapped in double-quotes to prevent it from
+                // being interpreted as animation keyframes. Strip the quotes
+                // and cache the result in the data field so prop_string (with
+                // its quotes) is never modified and is_anim() stays correct.
+                char *unquoted = malloc(len - 1);
+                memcpy(unquoted, raw + 1, len - 2);
+                unquoted[len - 2] = '\0';
+                pthread_mutex_lock(&self->mutex);
+                if (self->destructor)
+                    self->destructor(self->data);
+                self->data = unquoted;
+                self->destructor = free;
+                result = (char *) self->data;
+                pthread_mutex_unlock(&self->mutex);
+            } else {
+                result = (char *) raw;
+            }
+        } else {
+            result = (char *) raw;
+        }
     }
     return result;
 }
