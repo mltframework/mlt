@@ -1565,7 +1565,6 @@ char *mlt_property_anim_get_string(
         mlt_property_close(item.property);
         pthread_mutex_unlock(&self->mutex);
     } else {
-        pthread_mutex_unlock(&self->mutex);
         const char *raw = mlt_property_get_string_l(self, locale);
         if (raw && raw[0] == '"') {
             size_t len = strlen(raw);
@@ -1577,19 +1576,18 @@ char *mlt_property_anim_get_string(
                 char *unquoted = malloc(len - 1);
                 memcpy(unquoted, raw + 1, len - 2);
                 unquoted[len - 2] = '\0';
-                pthread_mutex_lock(&self->mutex);
                 if (self->destructor)
                     self->destructor(self->data);
                 self->data = unquoted;
                 self->destructor = free;
                 result = (char *) self->data;
-                pthread_mutex_unlock(&self->mutex);
             } else {
                 result = (char *) raw;
             }
         } else {
             result = (char *) raw;
         }
+        pthread_mutex_unlock(&self->mutex);
     }
     return result;
 }
