@@ -357,6 +357,20 @@ private Q_SLOTS:
         QCOMPARE(p.anim_get("foo", 60), "60; 100=0");
     }
 
+    void UrlWithEqualSignIsNotAnimation()
+    {
+        Properties p;
+        // A URL containing '=' in query parameters must not be treated as animation.
+        const char *url = "https://example.com/video?token=abc123&quality=high";
+        p.set("foo", url);
+        QVERIFY(!p.get_animation("foo"));
+        QCOMPARE(p.get("foo"), url);
+        QCOMPARE(p.anim_get("foo", 0), url);
+        // Verify the property is not animated.
+        p.anim_get("foo", 0);
+        QVERIFY(!p.get_animation("foo"));
+    }
+
     void ShiftFramesPositive()
     {
         Properties p;
