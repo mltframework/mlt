@@ -46,9 +46,6 @@ endif()
 
 if(WIN32)
   target_compile_definitions(mltavformat PRIVATE AVDATADIR="share/ffmpeg/")
-  if(MINGW)
-    target_link_libraries(mltavformat PRIVATE ${MLT_PTHREAD_LIBS})
-  endif()
 endif()
 
 if(CPU_MMX)
