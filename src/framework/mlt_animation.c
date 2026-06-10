@@ -26,6 +26,7 @@
 #include "mlt_properties.h"
 #include "mlt_tokeniser.h"
 
+#include <ctype.h>
 #include <float.h>
 #include <math.h>
 #include <stdio.h>
@@ -285,6 +286,29 @@ int mlt_animation_parse(
         // If no data in keyframe, drop it (trailing semicolon)
         if (!value || !strcmp(value, ""))
             continue;
+
+        // If the value does not start with a frame, time, or timecode, abort
+        const char *begin = value;
+        const char *end = value + strlen(value) - 1;
+        while (begin < end && isspace((unsigned char) *begin))
+            ++begin;
+        int digit_found = 0;
+        int equal_found = 0;
+        for (const char *p = begin; p <= end; ++p) {
+            if (isdigit(p[0])) {
+                digit_found = 1;
+                continue;
+            }
+            if (p[0] == ':' || p[0] == '.' || p[0] == ',' || p[0] == '-' || p[0] == '+')
+                continue;
+            if (p[0] == '=' || p[1] == '=')
+                equal_found = 1;
+            // Any other character is unexpected and invalid
+            break;
+        }
+        if (!digit_found || !equal_found)
+            // Unexpected characters found in the time field
+            break;
 
         // Reset item
         item.frame = item.is_key = 0;

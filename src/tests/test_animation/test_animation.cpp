@@ -351,7 +351,8 @@ private Q_SLOTS:
         // Quotes are removed when using the anim getter.
         QCOMPARE(p.anim_get("foo", 0), "50=100; 60=60; 100=0");
         // Anim strings may contain delimiters and equal signs if quoted.
-        p.set("foo", "50=100; 60=\"60; 100=0\";\"hello=world\"");
+        p.set("foo", "50=100; 60=\"60; 100=0\";0=\"hello=world\"");
+        QVERIFY(p.is_anim("foo"));
         QCOMPARE(p.anim_get("foo", 0), "hello=world");
         QCOMPARE(p.anim_get("foo", 50), "100");
         QCOMPARE(p.anim_get("foo", 60), "60; 100=0");
@@ -363,12 +364,28 @@ private Q_SLOTS:
         // A URL containing '=' in query parameters must not be treated as animation.
         const char *url = "https://example.com/video?token=abc123&quality=high";
         p.set("foo", url);
-        QVERIFY(!p.get_animation("foo"));
+        QVERIFY(!p.is_anim("foo"));
         QCOMPARE(p.get("foo"), url);
         QCOMPARE(p.anim_get("foo", 0), url);
         // Verify the property is not animated.
         p.anim_get("foo", 0);
         QVERIFY(!p.get_animation("foo"));
+    }
+
+    void ParseUntilJunk()
+    {
+        Properties p;
+        // "foo=bar" is junk and parsing will stop after it
+        const char *str = "50=100;foo=bar;60=120";
+        p.set("foo", str);
+        QVERIFY(p.is_anim("foo"));
+        QCOMPARE(p.get("foo"), str);
+        QCOMPARE(p.anim_get("foo", 50), "100");
+        QCOMPARE(p.anim_get("foo", 60), "100"); // NOT 120
+        // Verify the property is animated and only has one key.
+        Animation a = p.get_animation("foo");
+        QVERIFY(a.is_valid());
+        QCOMPARE(a.key_count(), 1);
     }
 
     void ShiftFramesPositive()
