@@ -11,7 +11,7 @@ if(SDL2_FOUND AND NOT ANDROID)
     target_compile_definitions(melt PRIVATE HAVE_SDL2)
     if(MINGW)
         target_compile_definitions(melt PRIVATE main=SDL_main)
-        target_link_libraries(melt PRIVATE mingw32 SDL2main SDL2)
+        target_link_libraries(melt PRIVATE mingw32 SDL2::SDL2main)
     endif()
 endif()
 
