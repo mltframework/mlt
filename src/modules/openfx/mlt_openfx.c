@@ -731,6 +731,8 @@ static OfxStatus paramDefine(OfxParamSetHandle paramSet,
         mlt_properties param_props = mlt_properties_new();
         mlt_properties_set_properties(pt, "p", param_props);
         mlt_properties_close(param_props);
+        // Back-reference to the paramSet so paramGetValueImpl can navigate to image_effect.
+        mlt_properties_set_data(pt, "_ps", params, 0, NULL, NULL);
         mlt_properties_set_properties(params, name, pt);
         mlt_properties_close(pt);
 
@@ -1039,6 +1041,53 @@ static OfxStatus paramGetValueImpl(OfxParamHandle paramHandle, va_list ap)
             if (status != kOfxStatOK) {
                 *X = 0.0;
                 *Y = 0.0;
+            } else {
+                // If the default was declared in normalised coordinates, convert to canonical.
+                // kOfxParamPropDefaultCoordinateSystem may be set on the effect descriptor
+                // (via getPropertySet) rather than on the individual param descriptor.
+                mlt_properties paramset = mlt_properties_get_data(param, "_ps", NULL);
+                mlt_properties plugin_props = paramset
+                                                  ? mlt_properties_get_properties(paramset,
+                                                                                  "plugin_props")
+                                                  : NULL;
+                mlt_properties ie = plugin_props
+                                        ? (mlt_properties) mlt_properties_get_data(plugin_props,
+                                                                                   "_ie",
+                                                                                   NULL)
+                                        : NULL;
+                char *coord_sys = kOfxParamCoordinatesCanonical;
+                OfxStatus cs_on_param = propGetString((OfxPropertySetHandle) param_props,
+                                                      kOfxParamPropDefaultCoordinateSystem,
+                                                      0,
+                                                      &coord_sys);
+                if (cs_on_param != kOfxStatOK) {
+                    coord_sys = kOfxParamCoordinatesCanonical;
+                    if (ie) {
+                        mlt_properties effect_props = mlt_properties_get_properties(ie, "props");
+                        if (effect_props)
+                            propGetString((OfxPropertySetHandle) effect_props,
+                                          kOfxParamPropDefaultCoordinateSystem,
+                                          0,
+                                          &coord_sys);
+                    }
+                }
+                if (strcmp(coord_sys, kOfxParamCoordinatesNormalised) == 0) {
+                    if (ie) {
+                        double ext_w = 0.0, ext_h = 0.0;
+                        propGetDouble((OfxPropertySetHandle) ie,
+                                      kOfxImageEffectPropProjectExtent,
+                                      0,
+                                      &ext_w);
+                        propGetDouble((OfxPropertySetHandle) ie,
+                                      kOfxImageEffectPropProjectExtent,
+                                      1,
+                                      &ext_h);
+                        if (ext_w > 0.0)
+                            *X *= ext_w;
+                        if (ext_h > 0.0)
+                            *Y *= ext_h;
+                    }
+                }
             }
         }
     } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
@@ -2370,6 +2419,14 @@ void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
     propSetInt(host_properties, kOfxParamHostPropPageRowColumnCount, 0, 0);
     propSetInt(host_properties, kOfxParamHostPropPageRowColumnCount, 1, 0);
     propSetInt(host_properties, kOfxParamHostPropSupportsParametricAnimation, 0, 0);
+    // Declare support for normalised default coordinate systems on Double2D/Double params.
+    // When present, plugins call setDefaultCoordinateSystem(eCoordinatesNormalised) on param
+    // descriptors whose defaults are expressed in normalized [0,1] coordinates, which our
+    // metadata loop then reads as normalized_coordinates="yes".
+    propSetString(host_properties,
+                  kOfxParamPropDefaultCoordinateSystem,
+                  0,
+                  kOfxParamCoordinatesNormalised);
 }
 
 void mltofx_create_instance(OfxPlugin *plugin, mlt_properties image_effect)
@@ -2912,6 +2969,9 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
     mlt_properties_set_properties(image_effect, "params", iparams);
     mlt_properties_set_properties(iparams, "plugin_props", props);
     mlt_properties_set_properties(image_effect, "mltofx_params", params);
+    // Back-reference to image_effect stored on plugin_props so paramGetValueImpl
+    // can access project extent without disturbing the param iteration loop.
+    mlt_properties_set_data(props, "_ie", image_effect, 0, NULL, NULL);
 
     propSetString((OfxPropertySetHandle) props,
                   kOfxImageEffectPropContext,
@@ -3067,18 +3127,19 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                    || strcmp(param_type, kOfxParamTypeRGB) == 0) {
             mlt_properties_set(p, "type", "color");
             mlt_properties_set(p, "widget", "color");
-        } else if (strcmp(param_type, kOfxParamTypeDouble2D)
-                   == 0) { // can be rendered as 2 double number input fields
-            mlt_properties_set(p, "type", "float");
+        } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
+            mlt_properties_set(p, "type", "rect");
 
             char *type = kOfxParamDoubleTypeXY;
             char *coordinate_system = kOfxParamCoordinatesCanonical;
             propGetString((OfxPropertySetHandle) ppp, kOfxParamPropDoubleType, 0, &type);
-            propGetString((OfxPropertySetHandle) ppp,
-                          kOfxParamPropDefaultCoordinateSystem,
-                          0,
-                          &coordinate_system);
-
+            OfxStatus status = propGetString((OfxPropertySetHandle) ppp,
+                                             kOfxParamPropDefaultCoordinateSystem,
+                                             0,
+                                             &coordinate_system);
+            if (status != kOfxStatOK) {
+                coordinate_system = kOfxParamCoordinatesCanonical;
+            }
             if (strcmp(type, kOfxParamDoubleTypeXYAbsolute) == 0) {
                 mlt_properties_set(p, "widget", "point");
             } else if (strcmp(type, kOfxParamDoubleTypeXY) == 0) {
@@ -3091,8 +3152,11 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                 mlt_properties_set(p, "normalized_coordinates", "yes");
             }
         } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
-            // can be rendered as 2 integer number input fields
-            mlt_properties_set(p, "type", "integer");
+            mlt_properties_set(p, "type", "rect");
+        } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
+            mlt_properties_set(p, "type", "rect");
+        } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
+            mlt_properties_set(p, "type", "rect");
         }
 
         int layout_hint = 0;
@@ -3155,26 +3219,50 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                     propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &default_value);
                     mlt_properties_set_double(p, "default", default_value);
                 } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
-                    double default_value1 = 0.0, default_value2 = 0.0;
+                    double x = 0.0, y = 0.0;
 
-                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &default_value1);
-                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 1, &default_value2);
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &x);
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 1, &y);
 
-                    // for some reason with DBL_MIN DBL_MAX it segfault
-                    if (!isnormal(default_value1) || default_value1 <= FLT_MIN
-                        || default_value1 >= FLT_MAX)
-                        default_value1 = 0.0;
-                    if (!isnormal(default_value2) || default_value2 <= FLT_MIN
-                        || default_value2 >= FLT_MAX)
-                        default_value2 = 0.0;
+                    // Validate and sanitize values
+                    if (!isnormal(x) || x <= FLT_MIN || x >= FLT_MAX)
+                        x = 0.0;
+                    if (!isnormal(y) || y <= FLT_MIN || y >= FLT_MAX)
+                        y = 0.0;
 
-                    char default_value[90] = "";
-                    snprintf(default_value,
-                             sizeof(default_value),
-                             "%.4f %.4f",
-                             default_value1,
-                             default_value2);
-                    mlt_properties_set(p, "default", default_value);
+                    mlt_rect r = {x, y, 0, 0, 1};
+                    mlt_properties_set_rect(p, "default", r);
+
+                } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
+                    int ix = 0, iy = 0;
+                    propGetInt((OfxPropertySetHandle) ppp, p_name, 0, &ix);
+                    propGetInt((OfxPropertySetHandle) ppp, p_name, 1, &iy);
+                    mlt_rect r = {ix, iy, 0, 0, 1};
+                    mlt_properties_set_rect(p, "default", r);
+
+                } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
+                    double x3 = 0.0, y3 = 0.0, z3 = 0.0;
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &x3);
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 1, &y3);
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 2, &z3);
+                    if (!isnormal(x3) || x3 <= FLT_MIN || x3 >= FLT_MAX)
+                        x3 = 0.0;
+                    if (!isnormal(y3) || y3 <= FLT_MIN || y3 >= FLT_MAX)
+                        y3 = 0.0;
+                    if (!isnormal(z3) || z3 <= FLT_MIN || z3 >= FLT_MAX)
+                        z3 = 0.0;
+                    // rect.w holds the third dimension
+                    mlt_rect r = {x3, y3, z3, 0, 1};
+                    mlt_properties_set_rect(p, "default", r);
+
+                } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
+                    int ix = 0, iy = 0, iz = 0;
+                    propGetInt((OfxPropertySetHandle) ppp, p_name, 0, &ix);
+                    propGetInt((OfxPropertySetHandle) ppp, p_name, 1, &iy);
+                    propGetInt((OfxPropertySetHandle) ppp, p_name, 2, &iz);
+                    // rect.w holds the third dimension
+                    mlt_rect r = {ix, iy, iz, 0, 1};
+                    mlt_properties_set_rect(p, "default", r);
 
                 } else if (strcmp(param_type, kOfxParamTypeString) == 0) {
                     char *default_value = "";
@@ -3251,6 +3339,16 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                     double minimum_value = 0.0;
                     propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &minimum_value);
                     mlt_properties_set_double(p, "minimum", minimum_value);
+                } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
+                    min_set = 1;
+                    double minimum_value = 0.0;
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &minimum_value);
+                    mlt_properties_set_double(p, "minimum", minimum_value);
+                } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
+                    min_set = 1;
+                    int minimum_value = 0;
+                    propGetInt((OfxPropertySetHandle) ppp, p_name, 0, &minimum_value);
+                    mlt_properties_set_int(p, "minimum", minimum_value);
                 } else if (strcmp(param_type, kOfxParamTypeString) == 0) {
                     char *minimum_value = "";
                     propGetString((OfxPropertySetHandle) ppp, p_name, 0, &minimum_value);
@@ -3269,6 +3367,16 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                     double maximum_value = 0.0;
                     propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &maximum_value);
                     mlt_properties_set_double(p, "maximum", maximum_value);
+                } else if (strcmp(param_type, kOfxParamTypeDouble2D) == 0) {
+                    max_set = 1;
+                    double maximum_value = 0.0;
+                    propGetDouble((OfxPropertySetHandle) ppp, p_name, 0, &maximum_value);
+                    mlt_properties_set_double(p, "maximum", maximum_value);
+                } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
+                    max_set = 1;
+                    int maximum_value = 0;
+                    propGetInt((OfxPropertySetHandle) ppp, p_name, 0, &maximum_value);
+                    mlt_properties_set_int(p, "maximum", maximum_value);
                 } else if (strcmp(param_type, kOfxParamTypeString) == 0) {
                     char *maximum_value = "";
                     propGetString((OfxPropertySetHandle) ppp, p_name, 0, &maximum_value);
@@ -3351,6 +3459,22 @@ void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_ty
         int y = va_arg(ap, int);
         propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, x);
         propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, y);
+    } break;
+
+    case mltofx_prop_double3d: {
+        mlt_rect value = va_arg(ap, mlt_rect);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, value.x);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, value.y);
+        propSetDouble((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, value.w);
+    } break;
+
+    case mltofx_prop_int3d: {
+        int x = va_arg(ap, int);
+        int y = va_arg(ap, int);
+        int z = va_arg(ap, int);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 0, x);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 1, y);
+        propSetInt((OfxPropertySetHandle) param_props, "MltOfxParamValue", 2, z);
     } break;
 
     default:
