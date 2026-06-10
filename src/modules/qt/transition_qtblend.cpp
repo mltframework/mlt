@@ -1,7 +1,7 @@
 /*
  * transition_qtblend.cpp -- Qt composite transition
  * Copyright (c) 2016-2025 Jean-Baptiste Mardelle <jb@kdenlive.org>
- * Copyright (c) 2025 Meltytech, LLC
+ * Copyright (c) 2025-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -246,10 +246,11 @@ static int get_image(mlt_frame a_frame,
                                      "progressive,distort,colorspace,full_range,force_full_luma,"
                                      "top_field_first,color_trc");
             // Prepare output image
-            if (b_frame->convert_image && (b_width != request_width || b_height != request_height)) {
+            if (mlt_frame_has_convert_image(b_frame)
+                && (b_width != request_width || b_height != request_height)) {
                 mlt_properties_set_int(b_properties, "convert_image_width", request_width);
                 mlt_properties_set_int(b_properties, "convert_image_height", request_height);
-                b_frame->convert_image(b_frame, &b_image, format, *format);
+                mlt_frame_convert_image(b_frame, &b_image, format, *format);
                 *width = request_width;
                 *height = request_height;
             } else {
@@ -266,8 +267,8 @@ static int get_image(mlt_frame a_frame,
         error = mlt_frame_get_image(b_frame, &b_image, format, &b_width, &b_height, 0);
     }
 
-    if (b_frame->convert_image && !format_is_rgba(*format)) {
-        b_frame->convert_image(b_frame, &b_image, format, mlt_image_rgba);
+    if (mlt_frame_has_convert_image(b_frame) && !format_is_rgba(*format)) {
+        mlt_frame_convert_image(b_frame, &b_image, format, mlt_image_rgba);
     }
     if (*format != mlt_image_rgba64)
         *format = mlt_image_rgba;
