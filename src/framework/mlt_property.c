@@ -29,6 +29,7 @@
 #include "mlt_animation.h"
 #include "mlt_properties.h"
 
+#include <ctype.h>
 #include <float.h>
 #include <locale.h>
 #include <math.h>
@@ -119,8 +120,9 @@ mlt_property mlt_property_init()
 
 static void clear_property(mlt_property self)
 {
-    // Special case data handling
-    if (self->types & mlt_prop_data && self->destructor != NULL)
+    // Special case data handling (destructor may be set even without mlt_prop_data,
+    // e.g. for the unquoted-string cache used by mlt_property_anim_get_string).
+    if (self->destructor != NULL)
         self->destructor(self->data);
 
     // Special case string handling
@@ -1563,8 +1565,29 @@ char *mlt_property_anim_get_string(
         mlt_property_close(item.property);
         pthread_mutex_unlock(&self->mutex);
     } else {
+        const char *raw = mlt_property_get_string_l(self, locale);
+        if (raw && raw[0] == '"') {
+            size_t len = strlen(raw);
+            if (len >= 2 && raw[len - 1] == '"') {
+                // The string is wrapped in double-quotes to prevent it from
+                // being interpreted as animation keyframes. Strip the quotes
+                // and cache the result in the data field so prop_string (with
+                // its quotes) is never modified and is_anim() stays correct.
+                char *unquoted = malloc(len - 1);
+                memcpy(unquoted, raw + 1, len - 2);
+                unquoted[len - 2] = '\0';
+                if (self->destructor)
+                    self->destructor(self->data);
+                self->data = unquoted;
+                self->destructor = free;
+                result = (char *) self->data;
+            } else {
+                result = (char *) raw;
+            }
+        } else {
+            result = (char *) raw;
+        }
         pthread_mutex_unlock(&self->mutex);
-        result = mlt_property_get_string_l(self, locale);
     }
     return result;
 }
@@ -2106,10 +2129,69 @@ mlt_properties mlt_property_get_properties(mlt_property self)
     return properties;
 }
 
+static int is_keyframe_type_marker(char c)
+{
+    switch (c) {
+    case '|':
+    case '!':
+    case '~':
+    case '$':
+    case '-':
+        return 1;
+    default:
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'D');
+    }
+}
+
+static int is_keyframe_token(const char *begin, const char *end)
+{
+    while (begin < end && isspace((unsigned char) *begin))
+        ++begin;
+    while (end > begin && isspace((unsigned char) end[-1]))
+        --end;
+    if (begin >= end)
+        return 0;
+
+    if (end - begin > 1 && is_keyframe_type_marker(end[-1]))
+        --end;
+
+    int has_digit = 0;
+    int trailing_unit_seen = 0;
+    for (const char *p = begin; p < end; ++p) {
+        unsigned char c = (unsigned char) *p;
+        if (isdigit(c)) {
+            has_digit = 1;
+            continue;
+        }
+        if (c == ':' || c == '.' || c == ',' || c == '-' || c == '+')
+            continue;
+        if (isalpha(c) && p == end - 1 && !trailing_unit_seen && has_digit) {
+            trailing_unit_seen = 1;
+            continue;
+        }
+        return 0;
+    }
+    return has_digit;
+}
+
 /** Check if a property is animated.
  *
  * This is not a thread-safe function because it is used internally by
  * mlt_property_s under a lock. However, external callers should protect it.
+ *
+ * A property counts as animated when it already has an animation object or
+ * when its serialized string contains at least one unquoted keyframe item of
+ * the form key=value, where key looks like a frame or time token. This also
+ * accepts the optional single-character keyframe-type marker that serialized
+ * animations place immediately before '='.
+ *
+ * This intentionally does not treat every '=' as animation syntax. Plain
+ * strings may legitimately contain '=' or ';' characters, and those continue
+ * to work as ordinary string values. Quoted string payloads inside animation
+ * strings also continue to work: text between double quotes is ignored while
+ * scanning for separators, matching the documented requirement to quote string
+ * values that contain animation delimiters.
+ *
  * \public \memberof mlt_property_s
  * \param self a property
  * \return true if the property is animated
@@ -2117,7 +2199,24 @@ mlt_properties mlt_property_get_properties(mlt_property self)
 
 int mlt_property_is_anim(mlt_property self)
 {
-    return self->animation || (self->prop_string && strchr(self->prop_string, '='));
+    if (self->animation)
+        return 1;
+    if (!self->prop_string)
+        return 0;
+
+    const char *token_start = self->prop_string;
+    int in_quotes = 0;
+    for (const char *p = self->prop_string; *p; ++p) {
+        if (*p == '"' && (p == self->prop_string || p[-1] != '\\')) {
+            in_quotes = !in_quotes;
+            continue;
+        }
+        if (!in_quotes && *p == '=')
+            return is_keyframe_token(token_start, p);
+        if (!in_quotes && *p == ';')
+            token_start = p + 1;
+    }
+    return 0;
 }
 
 /** Check if a property is a color.
