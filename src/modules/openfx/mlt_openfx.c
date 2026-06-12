@@ -3230,15 +3230,17 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                     if (!isnormal(y) || y <= FLT_MIN || y >= FLT_MAX)
                         y = 0.0;
 
-                    mlt_rect r = {x, y, 0, 0, 1};
-                    mlt_properties_set_rect(p, "default", r);
+                    char rect_str[100];
+                    snprintf(rect_str, sizeof(rect_str), "%g %g", x, y);
+                    mlt_properties_set(p, "default", rect_str);
 
                 } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
                     int ix = 0, iy = 0;
                     propGetInt((OfxPropertySetHandle) ppp, p_name, 0, &ix);
                     propGetInt((OfxPropertySetHandle) ppp, p_name, 1, &iy);
-                    mlt_rect r = {ix, iy, 0, 0, 1};
-                    mlt_properties_set_rect(p, "default", r);
+                    char rect_str[100];
+                    snprintf(rect_str, sizeof(rect_str), "%d %d", ix, iy);
+                    mlt_properties_set(p, "default", rect_str);
 
                 } else if (strcmp(param_type, kOfxParamTypeDouble3D) == 0) {
                     double x3 = 0.0, y3 = 0.0, z3 = 0.0;
@@ -3252,8 +3254,9 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                     if (!isnormal(z3) || z3 <= FLT_MIN || z3 >= FLT_MAX)
                         z3 = 0.0;
                     // rect.w holds the third dimension
-                    mlt_rect r = {x3, y3, z3, 0, 1};
-                    mlt_properties_set_rect(p, "default", r);
+                    char rect_str[100];
+                    snprintf(rect_str, sizeof(rect_str), "%g %g %g", x3, y3, z3);
+                    mlt_properties_set(p, "default", rect_str);
 
                 } else if (strcmp(param_type, kOfxParamTypeInteger3D) == 0) {
                     int ix = 0, iy = 0, iz = 0;
@@ -3261,8 +3264,9 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
                     propGetInt((OfxPropertySetHandle) ppp, p_name, 1, &iy);
                     propGetInt((OfxPropertySetHandle) ppp, p_name, 2, &iz);
                     // rect.w holds the third dimension
-                    mlt_rect r = {ix, iy, iz, 0, 1};
-                    mlt_properties_set_rect(p, "default", r);
+                    char rect_str[100];
+                    snprintf(rect_str, sizeof(rect_str), "%d %d %d", ix, iy, iz);
+                    mlt_properties_set(p, "default", rect_str);
 
                 } else if (strcmp(param_type, kOfxParamTypeString) == 0) {
                     char *default_value = "";
