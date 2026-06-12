@@ -120,7 +120,7 @@ mlt_property mlt_property_init()
 static void clear_property(mlt_property self)
 {
     // Special case data handling
-    if (self->types & mlt_prop_data && self->destructor != NULL)
+    if (self->data && self->destructor)
         self->destructor(self->data);
 
     // Special case string handling
@@ -753,6 +753,9 @@ char *mlt_property_get_string_tf(mlt_property self, mlt_time_format time_format)
         } else if (self->types & mlt_prop_data && self->data && self->serialiser) {
             self->types |= mlt_prop_string;
             self->prop_string = self->serialiser(self->data, self->length);
+        } else if (self->types & mlt_prop_rect && self->data && self->serialiser) {
+            self->types |= mlt_prop_string;
+            self->prop_string = self->serialiser(self->data, self->length);
         }
     }
     pthread_mutex_unlock(&self->mutex);
@@ -852,6 +855,9 @@ char *mlt_property_get_string_l_tf(mlt_property self,
         } else if (self->types & mlt_prop_data && self->data && self->serialiser) {
             self->types |= mlt_prop_string;
             self->prop_string = self->serialiser(self->data, self->length);
+        } else if (self->types & mlt_prop_rect && self->data && self->serialiser) {
+            self->types |= mlt_prop_string;
+            self->prop_string = self->serialiser(self->data, self->length);
         }
 #if !defined(_WIN32)
         // Restore the current locale
@@ -904,7 +910,9 @@ void *mlt_property_get_data(mlt_property self, int *length)
 
     // Return the data (note: there is no conversion here)
     pthread_mutex_lock(&self->mutex);
-    void *result = self->data;
+    void *result = NULL;
+    if (self->types & mlt_prop_data)
+        result = self->data;
     pthread_mutex_unlock(&self->mutex);
     return result;
 }
@@ -951,7 +959,7 @@ void mlt_property_pass(mlt_property self, mlt_property that)
             self->prop_string = strdup(that->prop_string);
     } else if (that->types & mlt_prop_rect) {
         clear_property(self);
-        self->types = mlt_prop_rect | mlt_prop_data;
+        self->types = mlt_prop_rect;
         self->length = that->length;
         self->data = calloc(1, self->length);
         memcpy(self->data, that->data, self->length);
@@ -1889,7 +1897,7 @@ int mlt_property_set_rect(mlt_property self, mlt_rect value)
 {
     pthread_mutex_lock(&self->mutex);
     clear_property(self);
-    self->types = mlt_prop_rect | mlt_prop_data;
+    self->types = mlt_prop_rect;
     self->length = sizeof(value);
     self->data = calloc(1, self->length);
     memcpy(self->data, &value, self->length);
