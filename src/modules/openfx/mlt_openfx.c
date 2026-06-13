@@ -2419,14 +2419,6 @@ void mltofx_init_host_properties(OfxPropertySetHandle host_properties)
     propSetInt(host_properties, kOfxParamHostPropPageRowColumnCount, 0, 0);
     propSetInt(host_properties, kOfxParamHostPropPageRowColumnCount, 1, 0);
     propSetInt(host_properties, kOfxParamHostPropSupportsParametricAnimation, 0, 0);
-    // Declare support for normalised default coordinate systems on Double2D/Double params.
-    // When present, plugins call setDefaultCoordinateSystem(eCoordinatesNormalised) on param
-    // descriptors whose defaults are expressed in normalized [0,1] coordinates, which our
-    // metadata loop then reads as normalized_coordinates="yes".
-    propSetString(host_properties,
-                  kOfxParamPropDefaultCoordinateSystem,
-                  0,
-                  kOfxParamCoordinatesNormalised);
 }
 
 void mltofx_create_instance(OfxPlugin *plugin, mlt_properties image_effect)
@@ -3131,25 +3123,31 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
             mlt_properties_set(p, "type", "rect");
 
             char *type = kOfxParamDoubleTypeXY;
-            char *coordinate_system = kOfxParamCoordinatesCanonical;
             propGetString((OfxPropertySetHandle) ppp, kOfxParamPropDoubleType, 0, &type);
+            if (strcmp(type, kOfxParamDoubleTypeXYAbsolute) == 0) {
+                mlt_properties_set(p, "widget", "point");
+                mlt_properties_set(p, "normalized_coordinates", "no");
+            } else if (strcmp(type, kOfxParamDoubleTypeXY) == 0) {
+                mlt_properties_set(p, "widget", "size");
+                mlt_properties_set(p, "normalized_coordinates", "no");
+            }
+
+            char *default_coords = "";
             OfxStatus status = propGetString((OfxPropertySetHandle) ppp,
                                              kOfxParamPropDefaultCoordinateSystem,
                                              0,
-                                             &coordinate_system);
-            if (status != kOfxStatOK) {
-                coordinate_system = kOfxParamCoordinatesCanonical;
-            }
-            if (strcmp(type, kOfxParamDoubleTypeXYAbsolute) == 0) {
-                mlt_properties_set(p, "widget", "point");
-            } else if (strcmp(type, kOfxParamDoubleTypeXY) == 0) {
-                mlt_properties_set(p, "widget", "size");
-            }
-
-            if (strcmp(coordinate_system, kOfxParamCoordinatesCanonical) == 0) {
-                mlt_properties_set(p, "normalized_coordinates", "no");
-            } else if (strcmp(coordinate_system, kOfxParamCoordinatesNormalised) == 0) {
-                mlt_properties_set(p, "normalized_coordinates", "yes");
+                                             &default_coords);
+            if (status == kOfxStatOK) {
+                if (!strcmp(default_coords, kOfxParamCoordinatesCanonical)) {
+                    mlt_properties_set(p, "normalized_default", "no");
+                } else if (!strcmp(default_coords, kOfxParamCoordinatesNormalised)) {
+                    mlt_properties_set(p, "normalized_default", "yes");
+                }
+            } else if (plugin && plugin->pluginIdentifier
+                       && !strcmp("net.sf.openfx.CropPlugin", plugin->pluginIdentifier)) {
+                // Workaround for the crop plugin which does not report
+                // default coordinates, but uses normalized.
+                mlt_properties_set(p, "normalized_default", "yes");
             }
         } else if (strcmp(param_type, kOfxParamTypeInteger2D) == 0) {
             mlt_properties_set(p, "type", "rect");

@@ -184,4 +184,6 @@ mapping:
           "normalized_coordinates": # For types that represent coordinates, whether values are normalized to 0..1
             type: bool
             default: no
-
+          "normalized_default": # Whether the default value is normalized to 0..1
+            type: bool
+            default: no
