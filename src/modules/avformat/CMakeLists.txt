@@ -51,7 +51,7 @@ if(WIN32)
   endif()
 endif()
 
-if(AVDEVICE_FOUND)
+if(USE_AVDEVICE AND AVDEVICE_FOUND)
   target_compile_definitions(mltavformat PRIVATE USE_AVDEVICE)
 endif()
 
