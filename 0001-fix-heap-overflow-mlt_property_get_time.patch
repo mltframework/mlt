@@ -1,0 +1,171 @@
+--- a/src/framework/mlt_property.c
++++ b/src/framework/mlt_property.c
+@@ -48,6 +48,13 @@
+ #define NEED_LOCALE_SAVE_RESTORE 1
+ #endif
+ 
++/** Maximum size, in bytes, of a formatted SMPTE timecode or SMIL clock value
++ * string, including the terminating NUL. This is sized generously so that
++ * it cannot be exceeded even for pathological/attacker-supplied frame counts
++ * or frame rates (see time_smpte_from_frames() and time_clock_from_frames()).
++ */
++#define MLT_TIME_STRING_MAX 64
++
+ /** Bit pattern used internally to indicated representations available.
+ */
+ 
+@@ -972,7 +979,7 @@
+  * \private \memberof mlt_property_s
+  * \param frames a frame count
+  * \param fps frames per second
+- * \param[out] s the string to write into - must have enough space to hold largest time string
++ * \param[out] s the string to write into - must be at least MLT_TIME_STRING_MAX bytes
+  * \param drop whether to use drop-frame timecode for applicable frame rates
+  */
+ 
+@@ -1007,36 +1014,61 @@
+     } else if (fps != lrint(fps)) {
+         frame_sep = ';';
+     }
+-    hours = frames / (fps * 3600);
+-    frames -= floor(hours * 3600 * fps);
+ 
+-    mins = frames / (fps * 60);
++    // Guard against a degenerate or absurdly small fps (e.g. supplied by an
++    // untrusted profile/property) producing an hours/mins value so large that
++    // it would overflow the output buffer or an int. %02d is a *minimum*
++    // field width, not a maximum, so very large hour counts would otherwise
++    // print far more digits than the buffer was sized for.
++    if (!(fps > 0.0))
++        fps = 1.0;
++
++    double hours_d = frames / (fps * 3600);
++    if (hours_d > 999999.0)
++        hours_d = 999999.0;
++    else if (hours_d < -999999.0)
++        hours_d = -999999.0;
++    hours = (int) hours_d;
++    frames -= floor((double) hours * 3600 * fps);
++
++    double mins_d = frames / (fps * 60);
++    if (mins_d > 99.0)
++        mins_d = 99.0;
++    else if (mins_d < -99.0)
++        mins_d = -99.0;
++    mins = (int) mins_d;
+     if (mins == 60) { // floating point error
+         ++hours;
+-        frames = save_frames - floor(hours * 3600 * fps);
++        frames = save_frames - floor((double) hours * 3600 * fps);
+         mins = 0;
+     }
+     save_frames = frames;
+-    frames -= floor(mins * 60 * fps);
++    frames -= floor((double) mins * 60 * fps);
+ 
+-    secs = frames / fps;
++    double secs_d = frames / fps;
++    if (secs_d > 99.0)
++        secs_d = 99.0;
++    else if (secs_d < -99.0)
++        secs_d = -99.0;
++    secs = (int) secs_d;
+     if (secs == 60) { // floating point error
+         ++mins;
+-        frames = save_frames - floor(mins * 60 * fps);
++        frames = save_frames - floor((double) mins * 60 * fps);
+         secs = 0;
+     }
+     frames -= ceil(secs * fps);
+ 
+-    sprintf(s,
+-            "%02d:%02d:%02d%c%0*d",
+-            hours,
+-            mins,
+-            secs,
+-            frame_sep,
+-            (fps > 999  ? 4
+-             : fps > 99 ? 3
+-                        : 2),
+-            frames);
++    snprintf(s,
++             MLT_TIME_STRING_MAX,
++             "%02d:%02d:%02d%c%0*d",
++             hours,
++             mins,
++             secs,
++             frame_sep,
++             (fps > 999  ? 4
++              : fps > 99 ? 3
++                         : 2),
++             frames);
+ }
+ 
+ /** Convert frame count to a SMIL clock value string.
+@@ -1044,7 +1076,7 @@
+  * \private \memberof mlt_property_s
+  * \param frames a frame count
+  * \param fps frames per second
+- * \param[out] s the string to write into - must have enough space to hold largest time string
++ * \param[out] s the string to write into - must be at least MLT_TIME_STRING_MAX bytes
+  */
+ 
+ static void time_clock_from_frames(int frames, double fps, char *s)
+@@ -1053,26 +1085,40 @@
+     double secs;
+     int save_frames = frames;
+ 
+-    hours = frames / (fps * 3600);
+-    frames -= floor(hours * 3600 * fps);
+-
+-    mins = frames / (fps * 60);
++    // See comment in time_smpte_from_frames() above.
++    if (!(fps > 0.0))
++        fps = 1.0;
++
++    double hours_d = frames / (fps * 3600);
++    if (hours_d > 999999.0)
++        hours_d = 999999.0;
++    else if (hours_d < -999999.0)
++        hours_d = -999999.0;
++    hours = (int) hours_d;
++    frames -= floor((double) hours * 3600 * fps);
++
++    double mins_d = frames / (fps * 60);
++    if (mins_d > 99.0)
++        mins_d = 99.0;
++    else if (mins_d < -99.0)
++        mins_d = -99.0;
++    mins = (int) mins_d;
+     if (mins == 60) { // floating point error
+         ++hours;
+-        frames = save_frames - floor(hours * 3600 * fps);
++        frames = save_frames - floor((double) hours * 3600 * fps);
+         mins = 0;
+     }
+     save_frames = frames;
+-    frames -= floor(mins * 60 * fps);
++    frames -= floor((double) mins * 60 * fps);
+ 
+     secs = frames / fps;
+     if (secs >= 60.0) { // floating point error
+         ++mins;
+-        frames = save_frames - floor(mins * 60 * fps);
++        frames = save_frames - floor((double) mins * 60 * fps);
+         secs = frames / fps;
+     }
+ 
+-    sprintf(s, "%02d:%02d:%06.3f", hours, mins, secs);
++    snprintf(s, MLT_TIME_STRING_MAX, "%02d:%02d:%06.3f", hours, mins, secs);
+ }
+ 
+ /** Get the property as a time string.
+@@ -1147,7 +1193,7 @@
+     }
+ 
+     self->types |= mlt_prop_string;
+-    self->prop_string = malloc(32);
++    self->prop_string = malloc(MLT_TIME_STRING_MAX);
+ 
+     if (format == mlt_time_clock)
+         time_clock_from_frames(frames, fps, self->prop_string);
