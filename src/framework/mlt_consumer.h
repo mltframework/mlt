@@ -3,7 +3,7 @@
  * \brief abstraction for all consumer services
  * \see mlt_consumer_s
  *
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -90,6 +90,10 @@
  * \properties \em color_trc the color transfer characteristic (gamma), default is unset, use mlt_color_trc string values
  * \properties \em mlt_color_trc the color transfer to use for internal processing, default is unset; use mlt_color_trc string values but only "linear" is implemented
  * \properties \em deinterlacer the deinterlace algorithm to pass to deinterlace filters, defaults to "yadif"
+ * \properties \em ante the shell command to run before rendering (DEPRECATED)
+ * \properties \em post the shell command to run after rendering (DEPRECATED)
+ * \envvar \em MLT_CONSUMER_ANTE_POST_ALLOWED If set to 1, allows the deprecated consumer properties
+ *   \p ante and \p post to run shell commands.
  */
 
 struct mlt_consumer_s

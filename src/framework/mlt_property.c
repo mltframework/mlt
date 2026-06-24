@@ -49,11 +49,9 @@
 #endif
 
 /** Maximum size, in bytes, of a formatted SMPTE timecode or SMIL clock value
- * string, including the terminating NUL. This is sized generously so that
- * it cannot be exceeded even for pathological/attacker-supplied frame counts
- * or frame rates (see time_smpte_from_frames() and time_clock_from_frames()).
+ * string, including the terminating NUL.
  */
-#define MLT_TIME_STRING_MAX 64
+#define MLT_TIME_STRING_MAX 32
 
 /** Bit pattern used internally to indicated representations available.
 */
@@ -1023,37 +1021,22 @@ static void time_smpte_from_frames(int frames, double fps, char *s, int drop)
     if (!(fps > 0.0))
         fps = 1.0;
 
-    double hours_d = frames / (fps * 3600);
-    if (hours_d > 999999.0)
-        hours_d = 999999.0;
-    else if (hours_d < -999999.0)
-        hours_d = -999999.0;
-    hours = (int) hours_d;
-    frames -= floor((double) hours * 3600 * fps);
+    hours = CLAMP(frames / (fps * 3600), 0, 999999);
+    frames -= floor(hours * 3600 * fps);
 
-    double mins_d = frames / (fps * 60);
-    if (mins_d > 99.0)
-        mins_d = 99.0;
-    else if (mins_d < -99.0)
-        mins_d = -99.0;
-    mins = (int) mins_d;
+    mins = CLAMP(frames / (fps * 60), 0, 60);
     if (mins == 60) { // floating point error
         ++hours;
-        frames = save_frames - floor((double) hours * 3600 * fps);
+        frames = save_frames - floor(hours * 3600 * fps);
         mins = 0;
     }
     save_frames = frames;
-    frames -= floor((double) mins * 60 * fps);
+    frames -= floor(mins * 60 * fps);
 
-    double secs_d = frames / fps;
-    if (secs_d > 99.0)
-        secs_d = 99.0;
-    else if (secs_d < -99.0)
-        secs_d = -99.0;
-    secs = (int) secs_d;
+    secs = CLAMP(frames / fps, 0, 60);
     if (secs == 60) { // floating point error
         ++mins;
-        frames = save_frames - floor((double) mins * 60 * fps);
+        frames = save_frames - floor(mins * 60 * fps);
         secs = 0;
     }
     frames -= ceil(secs * fps);
@@ -1089,32 +1072,22 @@ static void time_clock_from_frames(int frames, double fps, char *s)
     if (!(fps > 0.0))
         fps = 1.0;
 
-    double hours_d = frames / (fps * 3600);
-    if (hours_d > 999999.0)
-        hours_d = 999999.0;
-    else if (hours_d < -999999.0)
-        hours_d = -999999.0;
-    hours = (int) hours_d;
-    frames -= floor((double) hours * 3600 * fps);
+    hours = CLAMP(frames / (fps * 3600), 0, 999999);
+    frames -= floor(hours * 3600 * fps);
 
-    double mins_d = frames / (fps * 60);
-    if (mins_d > 99.0)
-        mins_d = 99.0;
-    else if (mins_d < -99.0)
-        mins_d = -99.0;
-    mins = (int) mins_d;
+    mins = CLAMP(frames / (fps * 60), 0, 60);
     if (mins == 60) { // floating point error
         ++hours;
-        frames = save_frames - floor((double) hours * 3600 * fps);
+        frames = save_frames - floor(hours * 3600 * fps);
         mins = 0;
     }
     save_frames = frames;
-    frames -= floor((double) mins * 60 * fps);
+    frames -= floor(mins * 60 * fps);
 
-    secs = frames / fps;
+    secs = CLAMP(frames / fps, 0, 60);
     if (secs >= 60.0) { // floating point error
         ++mins;
-        frames = save_frames - floor((double) mins * 60 * fps);
+        frames = save_frames - floor(mins * 60 * fps);
         secs = frames / fps;
     }
 
