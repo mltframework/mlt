@@ -47,6 +47,29 @@
  */
 MLT_EXPORT pthread_mutex_t mlt_sdl_mutex = PTHREAD_MUTEX_INITIALIZER;
 
+/** Determine whether the "ante" and "post" consumer properties are permitted
+ * to be executed via system().
+ *
+ * SECURITY: The "ante" and "post" properties can run arbitrary shell
+ * commands. These properties can be set merely by loading an MLT XML
+ * document (e.g. a <consumer> element's attributes), which means that
+ * opening an untrusted .mlt file could otherwise result in arbitrary
+ * command execution with no explicit action by the user beyond rendering
+ * or previewing the file. To prevent this, execution of these commands is
+ * disabled by default. An application that intentionally relies on this
+ * feature (e.g. its own trusted, locally authored profiles/scripts) can
+ * opt in by setting the environment variable MLT_CONSUMER_ANTE_POST_ALLOWED
+ * to "1" (or any non-empty value other than "0").
+ *
+ * \return 1 if execution of ante/post commands is permitted, 0 otherwise
+ */
+
+static int ante_post_commands_allowed()
+{
+    const char *e = getenv("MLT_CONSUMER_ANTE_POST_ALLOWED");
+    return e && e[0] && strcmp(e, "0") != 0;
+}
+
 /** mlt_frame_s::is_processing can not be made atomic, so protect it with a mutex.
  */
 MLT_EXPORT pthread_mutex_t mlt_frame_processing_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -542,12 +565,21 @@ int mlt_consumer_start(mlt_consumer self)
     mlt_properties_set_int(properties, "drop_count", 0);
 
     // Check and run an ante command
-    if (mlt_properties_get(properties, "ante"))
-        if (system(mlt_properties_get(properties, "ante")) == -1)
+    if (mlt_properties_get(properties, "ante")) {
+        if (!ante_post_commands_allowed()) {
+            mlt_log(MLT_CONSUMER_SERVICE(self),
+                    MLT_LOG_WARNING,
+                    "Ignoring \"ante\" command (%s) because execution of ante/post commands is "
+                    "disabled by default for security reasons. Set the environment variable "
+                    "MLT_CONSUMER_ANTE_POST_ALLOWED=1 to allow it.\n",
+                    mlt_properties_get(properties, "ante"));
+        } else if (system(mlt_properties_get(properties, "ante")) == -1) {
             mlt_log(MLT_CONSUMER_SERVICE(self),
                     MLT_LOG_ERROR,
                     "system(%s) failed!\n",
                     mlt_properties_get(properties, "ante"));
+        }
+    }
 
     // Set the real_time preference
     priv->real_time = mlt_properties_get_int(properties, "real_time");
@@ -1704,12 +1736,21 @@ int mlt_consumer_stop(mlt_consumer self)
     mlt_properties_set_data(properties, "test_card_producer", NULL, 0, NULL, NULL);
 
     // Check and run a post command
-    if (mlt_properties_get(properties, "post"))
-        if (system(mlt_properties_get(properties, "post")) == -1)
+    if (mlt_properties_get(properties, "post")) {
+        if (!ante_post_commands_allowed()) {
+            mlt_log(MLT_CONSUMER_SERVICE(self),
+                    MLT_LOG_WARNING,
+                    "Ignoring \"post\" command (%s) because execution of ante/post commands is "
+                    "disabled by default for security reasons. Set the environment variable "
+                    "MLT_CONSUMER_ANTE_POST_ALLOWED=1 to allow it.\n",
+                    mlt_properties_get(properties, "post"));
+        } else if (system(mlt_properties_get(properties, "post")) == -1) {
             mlt_log(MLT_CONSUMER_SERVICE(self),
                     MLT_LOG_ERROR,
                     "system(%s) failed!\n",
                     mlt_properties_get(properties, "post"));
+        }
+    }
 
     mlt_log(MLT_CONSUMER_SERVICE(self), MLT_LOG_DEBUG, "stopped\n");
 
