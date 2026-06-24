@@ -565,19 +565,15 @@ int mlt_consumer_start(mlt_consumer self)
     mlt_properties_set_int(properties, "drop_count", 0);
 
     // Check and run an ante command
-    if (mlt_properties_get(properties, "ante")) {
+    if (mlt_properties_exists(properties, "ante")) {
         if (!ante_post_commands_allowed()) {
             mlt_log_warning(
                 MLT_CONSUMER_SERVICE(self),
-                "Ignoring \"ante\" command (%s) because execution of ante/post commands is "
+                "Ignoring \"ante\" command because execution of ante/post commands is "
                 "disabled by default for security reasons. Set the environment variable "
-                "MLT_CONSUMER_ANTE_POST_ALLOWED=1 to allow it.\n",
-                mlt_properties_get(properties, "ante"));
+                "MLT_CONSUMER_ANTE_POST_ALLOWED=1 to allow it.\n");
         } else if (system(mlt_properties_get(properties, "ante")) == -1) {
-            mlt_log(MLT_CONSUMER_SERVICE(self),
-                    MLT_LOG_ERROR,
-                    "system(%s) failed!\n",
-                    mlt_properties_get(properties, "ante"));
+            mlt_log_error(MLT_CONSUMER_SERVICE(self), "ante: system() failed!\n");
         }
     }
 
@@ -1736,19 +1732,15 @@ int mlt_consumer_stop(mlt_consumer self)
     mlt_properties_set_data(properties, "test_card_producer", NULL, 0, NULL, NULL);
 
     // Check and run a post command
-    if (mlt_properties_get(properties, "post")) {
+    if (mlt_properties_exists(properties, "post")) {
         if (!ante_post_commands_allowed()) {
             mlt_log_warning(
                 MLT_CONSUMER_SERVICE(self),
-                "Ignoring \"post\" command (%s) because execution of ante/post commands is "
+                "Ignoring \"post\" command because execution of ante/post commands is "
                 "disabled by default for security reasons. Set the environment variable "
-                "MLT_CONSUMER_ANTE_POST_ALLOWED=1 to allow it.\n",
-                mlt_properties_get(properties, "post"));
+                "MLT_CONSUMER_ANTE_POST_ALLOWED=1 to allow it.\n");
         } else if (system(mlt_properties_get(properties, "post")) == -1) {
-            mlt_log(MLT_CONSUMER_SERVICE(self),
-                    MLT_LOG_ERROR,
-                    "system(%s) failed!\n",
-                    mlt_properties_get(properties, "post"));
+            mlt_log_error(MLT_CONSUMER_SERVICE(self), "post: system() failed!\n");
         }
     }
 

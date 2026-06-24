@@ -92,8 +92,8 @@
  * \properties \em deinterlacer the deinterlace algorithm to pass to deinterlace filters, defaults to "yadif"
  * \properties \em ante the shell command to run before rendering (DEPRECATED)
  * \properties \em post the shell command to run after rendering (DEPRECATED)
- * \envvar \em MLT_CONSUMER_ANTE_POST_ALLOWED If set to 1, allows the deprecated consumer properties
- *   \p ante and \p post to run shell commands.
+ * \envvar \em MLT_CONSUMER_ANTE_POST_ALLOWED If set to "1" (or any non-empty value other than "0"),
+ *   allows the deprecated consumer properties \p ante and \p post to run shell commands.
  */
 
 struct mlt_consumer_s
