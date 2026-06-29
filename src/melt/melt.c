@@ -43,9 +43,7 @@
 #endif
 
 #include "io.h"
-#include <limits.h>
 #include <assert.h>
-#include <stdlib.h>
 
 static mlt_producer melt = NULL;
 
