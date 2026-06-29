@@ -43,6 +43,9 @@
 #endif
 
 #include "io.h"
+#include <limits.h>
+#include <assert.h>
+#include <stdlib.h>
 
 static mlt_producer melt = NULL;
 
@@ -1065,8 +1068,8 @@ int main(int argc, char **argv)
                     fprintf(store, "%s\n", argv[i]);
 
                 i++;
-
-                while (argv[i] != NULL && argv[i][0] != '-') {
+//the fix i did is here :
+                while (i < argc && argv[i] != NULL && argv[i][0] != '-') {
                     if (store != NULL)
                         fprintf(store, "%s\n", argv[i]);
                     i += 1;
