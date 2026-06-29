@@ -1066,7 +1066,6 @@ int main(int argc, char **argv)
                     fprintf(store, "%s\n", argv[i]);
 
                 i++;
-//the fix i did is here :
                 while (i < argc && argv[i] != NULL && argv[i][0] != '-') {
                     if (store != NULL)
                         fprintf(store, "%s\n", argv[i]);
