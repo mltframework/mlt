@@ -19,8 +19,9 @@
  */
 
 #include <framework/mlt.h>
-#include <math.h>
+
 #include <rnnoise.h>
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -65,6 +66,9 @@ typedef struct
     // denoised output when mix is between 0 and 1.
     float dry_ring[MAX_CHANNELS][960];
     int dry_ring_pos;
+
+    // Use if requested sample rate is not 48kHz.
+    mlt_filter resample_filter;
 } private_data;
 
 static void reset_state(mlt_link self)
@@ -151,13 +155,14 @@ static int link_get_audio(mlt_frame frame,
     if (link_fps <= 0.0)
         link_fps = 25.0;
     mlt_position frame_pos = mlt_frame_get_position(frame);
+    int requested_samples = *samples;
+    int requested_frequency = *frequency;
 
     // Force 48kHz float for RNNoise
     *frequency = RNNOISE_RATE;
     *format = mlt_audio_float;
     *channels = *channels <= 0 ? 2 : *channels;
-    if (*samples <= 0)
-        *samples = mlt_audio_calculate_frame_samples(link_fps, RNNOISE_RATE, frame_pos);
+    *samples = mlt_audio_calculate_frame_samples(link_fps, RNNOISE_RATE, frame_pos);
 
     mlt_service_lock(MLT_LINK_SERVICE(self));
 
@@ -430,6 +435,33 @@ done:
 
     pdata->expected_frame = frame_pos + 1;
 
+    if (requested_frequency && requested_frequency != *frequency) {
+        if (!pdata->resample_filter) {
+            pdata->resample_filter = mlt_factory_filter(mlt_service_profile(MLT_LINK_SERVICE(self)),
+                                                        "resample",
+                                                        NULL);
+            if (!pdata->resample_filter) {
+                pdata->resample_filter = mlt_factory_filter(mlt_service_profile(
+                                                                MLT_LINK_SERVICE(self)),
+                                                            "swresample",
+                                                            NULL);
+            }
+        }
+        if (pdata->resample_filter) {
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "audio_frequency", *frequency);
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "audio_channels", *channels);
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "audio_samples", *samples);
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "audio_format", *format);
+            mlt_filter_process(pdata->resample_filter, frame);
+            // Final call to get_audio() to apply the resample filter
+            *frequency = requested_frequency;
+            *samples = requested_samples;
+            if (*samples <= 0)
+                *samples = mlt_audio_calculate_frame_samples(link_fps, *frequency, frame_pos);
+            error = mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
+        }
+    }
+
     mlt_service_unlock(MLT_LINK_SERVICE(self));
     return error;
 }
@@ -535,6 +567,7 @@ static void link_close(mlt_link self)
                 }
                 free(pdata->out_carry[c]);
             }
+            mlt_filter_close(pdata->resample_filter);
             free(pdata);
         }
         self->child = NULL;
