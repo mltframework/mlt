@@ -911,15 +911,15 @@ char *mlt_property_get_string_l(mlt_property self, mlt_locale_t locale)
 
 void *mlt_property_get_data(mlt_property self, int *length)
 {
-    // Assign length if not NULL
-    if (length != NULL)
-        *length = self->length;
-
     // Return the data (note: there is no conversion here)
     pthread_mutex_lock(&self->mutex);
     void *result = NULL;
-    if (self->types & mlt_prop_data)
+    if (self->types & mlt_prop_data) {
         result = self->data;
+        // Assign length if not NULL
+        if (length != NULL)
+            *length = self->length;
+    }
     pthread_mutex_unlock(&self->mutex);
     return result;
 }
