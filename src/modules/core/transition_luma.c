@@ -1,6 +1,6 @@
 /*
  * transition_luma.c -- a generic dissolve/wipe processor
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * Adapted from Kino Plugin Timfx, which is
  * Copyright (C) 2002 Timothy M. Shead <tshead@k-3d.com>
@@ -256,7 +256,7 @@ static int dissolve_slice_rgba64(int id, int index, int count, void *context)
             dst[0] = sample_mix_16(dst[0], src[0], mix_b);
             dst[1] = sample_mix_16(dst[1], src[1], mix_b);
             dst[2] = sample_mix_16(dst[2], src[2], mix_b);
-            dst[3] = 255 * mix2;
+            dst[3] = 65535 * mix2;
             dst += 4;
             src += 4;
         }
@@ -655,12 +655,12 @@ static int luma_composite_rgba64(mlt_frame a_frame,
                     mix_b = calculate_mix_16(value, p[3]);
                     if (invert) {
                         float mix2 = mix_b + mix_a;
-                        q[3] = 255 * mix2;
+                        q[3] = 65535 * mix2;
                         if (mix2 != 0.f)
                             mix_b /= mix2;
                     } else {
                         float mix2 = mix_b + mix_a;
-                        q[3] = 255 * mix2;
+                        q[3] = 65535 * mix2;
                         if (mix2 != 0.f)
                             mix_b /= mix2;
                     }

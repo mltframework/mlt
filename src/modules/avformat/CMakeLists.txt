@@ -51,6 +51,10 @@ if(WIN32)
   endif()
 endif()
 
+if(USE_AVDEVICE AND AVDEVICE_FOUND)
+  target_compile_definitions(mltavformat PRIVATE USE_AVDEVICE)
+endif()
+
 if(CPU_MMX)
   target_compile_definitions(mltavformat PRIVATE USE_MMX)
 endif()

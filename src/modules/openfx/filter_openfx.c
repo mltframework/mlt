@@ -223,19 +223,31 @@ static void update_plugin_params(mlt_properties properties,
         if (!mlt_properties_exists(properties, param_name))
             continue;
         char *type = mlt_properties_get(param, "type");
-        char *widget = mlt_properties_get(param, "widget");
         if (!type)
             continue;
-        if (widget && (strcmp(widget, "point") == 0 || strcmp(widget, "size") == 0)
-            && strcmp(type, "float") == 0) {
+        if (strcmp(type, "rect") == 0) {
             mlt_rect value = mlt_properties_anim_get_rect(properties, param_name, position, length);
-            mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_double2d, value);
-        } else if (widget && (strcmp(widget, "point") == 0 || strcmp(widget, "size") == 0)
-                   && strcmp(type, "integer") == 0) {
-            mlt_rect value = mlt_properties_anim_get_rect(properties, param_name, position, length);
-            int x = (int) value.x;
-            int y = (int) value.y;
-            mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_int2d, x, y);
+            // Look up the native OFX param type to select the correct setter
+            mlt_properties ofx_param = mlt_properties_get_properties(image_effect_params,
+                                                                     param_name);
+            const char *ofx_type = ofx_param ? mlt_properties_get(ofx_param, "t") : NULL;
+            if (ofx_type && strcmp(ofx_type, kOfxParamTypeInteger2D) == 0)
+                mltofx_param_set_value(image_effect_params,
+                                       param_name,
+                                       mltofx_prop_int2d,
+                                       (int) value.x,
+                                       (int) value.y);
+            else if (ofx_type && strcmp(ofx_type, kOfxParamTypeDouble3D) == 0)
+                mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_double3d, value);
+            else if (ofx_type && strcmp(ofx_type, kOfxParamTypeInteger3D) == 0)
+                mltofx_param_set_value(image_effect_params,
+                                       param_name,
+                                       mltofx_prop_int3d,
+                                       (int) value.x,
+                                       (int) value.y,
+                                       (int) value.w);
+            else
+                mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_double2d, value);
         } else if (strcmp(type, "float") == 0) {
             double value = mlt_properties_anim_get_double(properties, param_name, position, length);
             mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_double, value);
