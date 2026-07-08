@@ -252,15 +252,41 @@ static void scan_ofx_dir(mlt_repository repository, const char *dir, int *dli, i
                 if (!plugin_ptr)
                     break;
 
+                const char *plugin_id = plugin_ptr->pluginIdentifier;
+                if (!plugin_id || !plugin_id[0]) {
+                    mlt_log_warning(
+                        NULL,
+                        "[openfx] skipping plugin with missing identifier in bundle `%s` "
+                        "(index=%d)\n",
+                        name,
+                        i);
+                    continue;
+                }
+
+                int diagnostics = mltofx_discovery_diagnostics_enabled(plugin_id);
+                if (diagnostics) {
+                    mlt_log_info(NULL,
+                                 "[openfx] discovered plugin `%s` in bundle `%s` (index=%d)\n",
+                                 plugin_id ? plugin_id : "(null)",
+                                 name,
+                                 i);
+                }
+
                 int detected = mltofx_detect_plugin(plugin_ptr);
 
-                if (!detected)
+                if (!detected) {
+                    if (diagnostics) {
+                        mlt_log_info(NULL,
+                                     "[openfx] skipped plugin `%s`: detection rejected it\n",
+                                     plugin_id ? plugin_id : "(null)");
+                    }
                     continue;
+                }
 
                 char *s = NULL;
-                size_t pluginIdentifier_len = strlen(plugin_ptr->pluginIdentifier);
+                size_t pluginIdentifier_len = strlen(plugin_id);
                 s = malloc(pluginIdentifier_len + 8);
-                sprintf(s, "openfx.%s", plugin_ptr->pluginIdentifier);
+                sprintf(s, "openfx.%s", plugin_id);
 
                 // if colon `:` exists in plugin identifier
                 // change it to accent sign `^` because `:`
@@ -279,6 +305,12 @@ static void scan_ofx_dir(mlt_repository repository, const char *dir, int *dli, i
                 mlt_properties_set_int(p, "index", i);
                 MLT_REGISTER(mlt_service_filter_type, s, filter_openfx_init);
                 MLT_REGISTER_METADATA(mlt_service_filter_type, s, metadata, "filter_openfx.yml");
+                if (diagnostics) {
+                    mlt_log_info(NULL,
+                                 "[openfx] added plugin `%s` as filter `%s`\n",
+                                 plugin_id ? plugin_id : "(null)",
+                                 s);
+                }
                 free(s);
             }
         } else if (depth == 0 && name[0] != '.') {
