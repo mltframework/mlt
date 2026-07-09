@@ -19,7 +19,7 @@ on:
           - debian-testing
           - debian-stable
           - fedora-44
-          - fedora-38
+          - fedora-40
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
@@ -110,8 +110,8 @@ jobs:
                 libsoup-devel liboil-devel python-devel alsa-lib \
                 pulseaudio-libs-devel gcc-c++ cmake ffmpeg-free-devel \
                 libplacebo-devel movit-devel rubberband-devel vid.stab-devel rnnoise-devel
-          - name: fedora-38
-            image: fedora:38
+          - name: fedora-40
+            image: fedora:40
             setup_script: |
               yum --assumeyes groupinstall "Development Tools"
               yum --assumeyes install \
