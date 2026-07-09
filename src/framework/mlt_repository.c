@@ -230,52 +230,51 @@ void mlt_repository_register(mlt_repository self,
                              const char *service,
                              mlt_register_callback symbol)
 {
+    mlt_properties service_list = NULL;
+    const char *service_type_name = "unknown";
+
     // Add the entry point to the corresponding service list
     switch (service_type) {
     case mlt_service_consumer_type:
-        mlt_properties_set_data(self->consumers,
-                                service,
-                                new_service(symbol),
-                                0,
-                                (mlt_destructor) mlt_properties_close,
-                                NULL);
+        service_list = self->consumers;
+        service_type_name = "consumer";
         break;
     case mlt_service_filter_type:
-        mlt_properties_set_data(self->filters,
-                                service,
-                                new_service(symbol),
-                                0,
-                                (mlt_destructor) mlt_properties_close,
-                                NULL);
+        service_list = self->filters;
+        service_type_name = "filter";
         break;
     case mlt_service_link_type:
-        mlt_properties_set_data(self->links,
-                                service,
-                                new_service(symbol),
-                                0,
-                                (mlt_destructor) mlt_properties_close,
-                                NULL);
+        service_list = self->links;
+        service_type_name = "link";
         break;
     case mlt_service_producer_type:
-        mlt_properties_set_data(self->producers,
-                                service,
-                                new_service(symbol),
-                                0,
-                                (mlt_destructor) mlt_properties_close,
-                                NULL);
+        service_list = self->producers;
+        service_type_name = "producer";
         break;
     case mlt_service_transition_type:
-        mlt_properties_set_data(self->transitions,
-                                service,
-                                new_service(symbol),
-                                0,
-                                (mlt_destructor) mlt_properties_close,
-                                NULL);
+        service_list = self->transitions;
+        service_type_name = "transition";
         break;
     default:
         mlt_log_error(NULL, "%s: Unable to register \"%s\"\n", __FUNCTION__, service);
-        break;
+        return;
     }
+
+    if (mlt_properties_get_data(service_list, service, NULL)) {
+        mlt_log_error(NULL,
+                      "%s: Duplicate %s service registration for \"%s\" (overwriting previous "
+                      "registration)\n",
+                      __FUNCTION__,
+                      service_type_name,
+                      service);
+    }
+
+    mlt_properties_set_data(service_list,
+                            service,
+                            new_service(symbol),
+                            0,
+                            (mlt_destructor) mlt_properties_close,
+                            NULL);
 }
 
 /** Get the repository properties for particular service class.
