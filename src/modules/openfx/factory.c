@@ -169,6 +169,27 @@ static mlt_properties metadata(mlt_service_type type, const char *id, void *data
     mlt_properties params = mlt_properties_new();
     mlt_properties image_effect = mltofx_fetch_params(pt, params, result);
     add_metadata_image_formats(result, image_effect);
+
+    // Append the MLT-level mlt_origin parameter after all OFX plugin parameters.
+    {
+        char key[20];
+        snprintf(key, sizeof(key), "%d", mlt_properties_count(params));
+        mlt_properties p = mlt_properties_new();
+        mlt_properties_set_data(params, key, p, 0, (mlt_destructor) mlt_properties_close, NULL);
+        mlt_properties_set(p, "identifier", "mlt_origin");
+        mlt_properties_set(p, "title", "Top-Left Origin");
+        mlt_properties_set(p,
+                           "description",
+                           "Set to 1 to use MLT top-left image origin instead of the OFX "
+                           "bottom-left origin. Use for plugins that crash or produce incorrect "
+                           "output with negative row bytes.");
+        mlt_properties_set(p, "type", "boolean");
+        mlt_properties_set(p, "default", "0");
+        mlt_properties_set(p, "minimum", "0");
+        mlt_properties_set(p, "maximum", "1");
+        mlt_properties_set(p, "widget", "checkbox");
+    }
+
     mlt_properties_set_data(result,
                             "parameters",
                             params,

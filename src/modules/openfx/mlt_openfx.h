@@ -41,6 +41,8 @@ typedef enum {
     mltofx_prop_color = 32,
     mltofx_prop_double2d = 64,
     mltofx_prop_int2d = 128,
+    mltofx_prop_double3d = 256,
+    mltofx_prop_int3d = 512,
 } mltofx_property_type;
 
 typedef enum {
@@ -70,7 +72,8 @@ void mltofx_set_source_clip_data(OfxPlugin *plugin,
                                  int height,
                                  mlt_image_format format,
                                  double pixel_aspect_ratio,
-                                 const char *ofx_depth);
+                                 const char *ofx_depth,
+                                 int top_left_origin);
 
 void mltofx_set_output_clip_data(OfxPlugin *plugin,
                                  mlt_properties image_effect,
@@ -79,7 +82,8 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
                                  int height,
                                  mlt_image_format format,
                                  double pixel_aspect_ratio,
-                                 const char *ofx_depth);
+                                 const char *ofx_depth,
+                                 int top_left_origin);
 
 int mltofx_detect_plugin(OfxPlugin *plugin);
 
@@ -88,6 +92,13 @@ void *mltofx_fetch_params(OfxPlugin *plugin, mlt_properties params, mlt_properti
 void mltofx_param_set_value(mlt_properties params, char *key, mltofx_property_type type, ...);
 
 void mltofx_set_render_scale(mlt_properties image_effect, double scale_x, double scale_y);
+
+void mltofx_set_project_properties(mlt_properties image_effect,
+                                   int width,
+                                   int height,
+                                   double pixel_aspect_ratio,
+                                   double fps,
+                                   double duration);
 
 int mltofx_allows_frame_threading(mlt_properties image_effect);
 

@@ -115,16 +115,16 @@ macro(find_component _component _pkgconfig _library _header)
 
   find_path(${_component}_INCLUDE_DIRS ${_header}
     HINTS
-      ${PC_LIB${_component}_INCLUDEDIR}
-      ${PC_LIB${_component}_INCLUDE_DIRS}
+      ${PC_${_component}_INCLUDEDIR}
+      ${PC_${_component}_INCLUDE_DIRS}
     PATH_SUFFIXES
       ffmpeg
   )
 
   find_library(${_component}_LIBRARIES NAMES ${_library}
       HINTS
-      ${PC_LIB${_component}_LIBDIR}
-      ${PC_LIB${_component}_LIBRARY_DIRS}
+      ${PC_${_component}_LIBDIR}
+      ${PC_${_component}_LIBRARY_DIRS}
   )
 
   set(${_component}_DEFINITIONS  ${PC_${_component}_CFLAGS_OTHER} CACHE STRING "The ${_component} CFLAGS.")
@@ -194,7 +194,9 @@ foreach (_component ${FFmpeg_FIND_COMPONENTS})
     endif ()
     list(APPEND _FFmpeg_FOUND_LIBRARIES ${${_component}_LIBRARIES})
   endif ()
-  list(APPEND _FFmpeg_REQUIRED_VARS ${_component}_LIBRARIES ${_component}_INCLUDE_DIRS ${_component}_FOUND)
+  if (${FFMPEG_FIND_REQUIRED_${_component}})
+    list(APPEND _FFmpeg_REQUIRED_VARS ${_component}_LIBRARIES ${_component}_INCLUDE_DIRS ${_component}_FOUND)
+  endif()
 endforeach ()
 list(INSERT _FFmpeg_REQUIRED_VARS 0 _FFmpeg_FOUND_LIBRARIES)
 

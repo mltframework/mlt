@@ -18,6 +18,7 @@
  * 02110-1301 USA
  */
 
+#include <framework/mlt_factory.h>
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_log.h>
@@ -65,6 +66,9 @@ typedef struct
     // We delay the dry signal by the same amount so both are aligned.
     float dry_ring[MAX_CHANNELS][960];
     int dry_ring_pos;
+
+    // Use if requested sample rate is not 48kHz.
+    mlt_filter resample_filter;
 } private_data;
 
 static void reset_all(mlt_filter filter, private_data *pdata, int channels)
@@ -105,14 +109,30 @@ static int rnnoise_get_audio(mlt_frame frame,
     mlt_filter filter = mlt_frame_pop_audio(frame);
     mlt_properties filter_props = MLT_FILTER_PROPERTIES(filter);
     private_data *pdata = (private_data *) filter->child;
+    mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+    double fps = mlt_profile_fps(profile);
+    mlt_position frame_pos = mlt_frame_get_position(frame);
+    int requested_samples = *samples;
+    int requested_frequency = *frequency;
+
+    if (fps <= 0.0)
+        fps = 25.0;
 
     // RNNoise requires 48 kHz float input
     *frequency = RNNOISE_RATE;
     *format = mlt_audio_float;
+    *samples = mlt_audio_calculate_frame_samples(fps, RNNOISE_RATE, frame_pos);
 
     int error = mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
     if (error || *samples == 0)
         return error;
+
+    if (*frequency != RNNOISE_RATE) {
+        mlt_log_warning(MLT_FILTER_SERVICE(filter),
+                        "RNNoise filter requires 48 kHz input, got %d Hz; bypassing\n",
+                        *frequency);
+        return 0;
+    }
 
     if (*format != mlt_audio_float && frame->convert_audio != NULL)
         frame->convert_audio(frame, buffer, format, mlt_audio_float);
@@ -122,8 +142,6 @@ static int rnnoise_get_audio(mlt_frame frame,
     const int n_samples = *samples;
     const int ch = *channels;
     const int rnn_frame = rnnoise_get_frame_size(); // always 480
-    mlt_position frame_pos = mlt_frame_get_position(frame);
-
     if (ch > MAX_CHANNELS) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter),
                         "RNNoise filter supports up to %d channels, got %d; bypassing\n",
@@ -346,6 +364,64 @@ static int rnnoise_get_audio(mlt_frame frame,
         for (int s = 0; s < new_in_carry; s++)
             pdata->in_carry[c][s] = in_ch[in_carry_src + s];
 
+        // 4. If this frame is still short, process one extra RNNoise chunk.
+        // This avoids immediate output zero-fill by creating one more chunk and
+        // pushing any excess into out_carry for subsequent frames.
+        //
+        // Important: this extra chunk is only partially "real" input. It starts
+        // from the true leftover tail of this frame and then zero-pads the rest
+        // of the 480-sample RNNoise block. Therefore, some produced samples are
+        // synthesized continuation rather than fully observed source audio.
+        if (out_pos < n_samples) {
+            int extra_base = n_samples - new_in_carry;
+            int missing_state_logged_extra = 0;
+
+            for (int s = 0; s < rnn_frame; s++) {
+                int q = extra_base + s;
+                // q in [0, n_samples) reads real current-frame tail samples.
+                // q outside that range is zero padding used to complete the block.
+                float raw = (q >= 0 && q < n_samples) ? in_ch[q] : 0.0f;
+                frame_in[s] = raw * 32768.0f;
+            }
+
+            if (pdata->states[c]) {
+                rnnoise_process_frame(pdata->states[c], frame_out, frame_in);
+            } else {
+                if (!missing_state_logged_extra) {
+                    mlt_log_error(MLT_FILTER_SERVICE(filter),
+                                  "Missing RNNoise state for channel %d; bypassing denoise\n",
+                                  c);
+                    missing_state_logged_extra = 1;
+                }
+                memcpy(frame_out, frame_in, sizeof(frame_out));
+            }
+
+            for (int s = 0; s < rnn_frame; s++) {
+                int q = extra_base + s;
+                // Keep dry/wet latency alignment unchanged even for padded input;
+                // this preserves timing but can include synthesized content.
+                float raw = (q >= 0 && q < n_samples) ? in_ch[q] : 0.0f;
+                float denoised = frame_out[s] / 32768.0f;
+                int ring_idx = pdata->dry_ring_pos % ring_size;
+                float delayed_raw = pdata->dry_ring[c][ring_idx];
+                pdata->dry_ring[c][ring_idx] = raw;
+                pdata->dry_ring_pos++;
+                float mixed = delayed_raw * (1.0f - (float) mix) + denoised * (float) mix;
+
+                if (out_pos < n_samples) {
+                    out_ch[out_pos++] = mixed;
+                } else if (carry_pos < OUT_CARRY_CAPACITY) {
+                    out_carry_ch[carry_pos++] = mixed;
+                } else {
+                    mlt_log_warning(MLT_FILTER_SERVICE(filter),
+                                    "frame=%d ch=%d out_carry overflow at pos=%d (extra chunk)\n",
+                                    (int) frame_pos,
+                                    c,
+                                    carry_pos);
+                }
+            }
+        }
+
         if (out_pos < n_samples) {
             memset(out_ch + out_pos, 0, (size_t) (n_samples - out_pos) * sizeof(float));
         }
@@ -382,8 +458,36 @@ static int rnnoise_get_audio(mlt_frame frame,
     *buffer = out.data;
     *format = mlt_audio_float;
 
+    if (requested_frequency && requested_frequency != *frequency) {
+        if (!pdata->resample_filter) {
+            pdata->resample_filter = mlt_factory_filter(mlt_service_profile(
+                                                            MLT_FILTER_SERVICE(filter)),
+                                                        "resample",
+                                                        NULL);
+            if (!pdata->resample_filter) {
+                pdata->resample_filter = mlt_factory_filter(mlt_service_profile(
+                                                                MLT_FILTER_SERVICE(filter)),
+                                                            "swresample",
+                                                            NULL);
+            }
+        }
+        if (pdata->resample_filter) {
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "audio_frequency", *frequency);
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "audio_channels", *channels);
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "audio_samples", *samples);
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "audio_format", *format);
+            mlt_filter_process(pdata->resample_filter, frame);
+            // Final call to get_audio() to apply the resample filter
+            *frequency = requested_frequency;
+            *samples = requested_samples;
+            if (*samples <= 0)
+                *samples = mlt_audio_calculate_frame_samples(fps, *frequency, frame_pos);
+            error = mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
+        }
+    }
+
     mlt_service_unlock(MLT_FILTER_SERVICE(filter));
-    return 0;
+    return error;
 }
 
 static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
@@ -404,6 +508,7 @@ static void close_filter(mlt_filter filter)
             }
             free(pdata->out_carry[i]);
         }
+        mlt_filter_close(pdata->resample_filter);
         free(pdata);
         filter->child = NULL;
     }

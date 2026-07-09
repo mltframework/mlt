@@ -16,7 +16,6 @@ on:
           - ubuntu-26.04
           - ubuntu-24.04
           - ubuntu-22.04
-          - debian-unstable
           - debian-testing
           - debian-stable
           - fedora-44
@@ -65,19 +64,6 @@ jobs:
               DEBIAN_FRONTEND=noninteractive apt-get -qq update
               DEBIAN_FRONTEND=noninteractive apt-get -yqq build-dep mlt
               DEBIAN_FRONTEND=noninteractive apt-get -yqq install autoconf automake git libtool pkg-config wget cmake qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev
-              git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
-              cd /tmp/rnnoise
-              ./autogen.sh
-              ./configure --prefix=/usr/local --enable-shared --disable-static
-              make -j"$(nproc)"
-              make install
-          - name: debian-unstable
-            image: debian:unstable
-            setup_script: |
-              echo 'deb-src http://deb.debian.org/debian unstable main' >> /etc/apt/sources.list
-              apt-get -qq update
-              apt-get -yqq build-dep mlt
-              apt-get -yqq install autoconf automake git libtool pkg-config wget
               git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
               cd /tmp/rnnoise
               ./autogen.sh

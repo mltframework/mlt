@@ -29,6 +29,7 @@
 #include "mlt_animation.h"
 #include "mlt_properties.h"
 
+#include <ctype.h>
 #include <float.h>
 #include <locale.h>
 #include <math.h>
@@ -47,6 +48,11 @@
     && !defined(__OpenBSD__)
 #define NEED_LOCALE_SAVE_RESTORE 1
 #endif
+
+/** Maximum size, in bytes, of a formatted SMPTE timecode or SMIL clock value
+ * string, including the terminating NUL.
+ */
+#define MLT_TIME_STRING_MAX 32
 
 /** Bit pattern used internally to indicated representations available.
 */
@@ -119,8 +125,9 @@ mlt_property mlt_property_init()
 
 static void clear_property(mlt_property self)
 {
-    // Special case data handling
-    if (self->types & mlt_prop_data && self->destructor != NULL)
+    // Special case data handling (destructor may be set even without mlt_prop_data,
+    // e.g. for the unquoted-string cache used by mlt_property_anim_get_string).
+    if (self->data && self->destructor)
         self->destructor(self->data);
 
     // Special case string handling
@@ -753,6 +760,9 @@ char *mlt_property_get_string_tf(mlt_property self, mlt_time_format time_format)
         } else if (self->types & mlt_prop_data && self->data && self->serialiser) {
             self->types |= mlt_prop_string;
             self->prop_string = self->serialiser(self->data, self->length);
+        } else if (self->types & mlt_prop_rect && self->data && self->serialiser) {
+            self->types |= mlt_prop_string;
+            self->prop_string = self->serialiser(self->data, self->length);
         }
     }
     pthread_mutex_unlock(&self->mutex);
@@ -852,6 +862,9 @@ char *mlt_property_get_string_l_tf(mlt_property self,
         } else if (self->types & mlt_prop_data && self->data && self->serialiser) {
             self->types |= mlt_prop_string;
             self->prop_string = self->serialiser(self->data, self->length);
+        } else if (self->types & mlt_prop_rect && self->data && self->serialiser) {
+            self->types |= mlt_prop_string;
+            self->prop_string = self->serialiser(self->data, self->length);
         }
 #if !defined(_WIN32)
         // Restore the current locale
@@ -898,13 +911,15 @@ char *mlt_property_get_string_l(mlt_property self, mlt_locale_t locale)
 
 void *mlt_property_get_data(mlt_property self, int *length)
 {
-    // Assign length if not NULL
-    if (length != NULL)
-        *length = self->length;
-
     // Return the data (note: there is no conversion here)
     pthread_mutex_lock(&self->mutex);
-    void *result = self->data;
+    void *result = NULL;
+    if (self->types & mlt_prop_data) {
+        result = self->data;
+        // Assign length if not NULL
+        if (length != NULL)
+            *length = self->length;
+    }
     pthread_mutex_unlock(&self->mutex);
     return result;
 }
@@ -951,7 +966,7 @@ void mlt_property_pass(mlt_property self, mlt_property that)
             self->prop_string = strdup(that->prop_string);
     } else if (that->types & mlt_prop_rect) {
         clear_property(self);
-        self->types = mlt_prop_rect | mlt_prop_data;
+        self->types = mlt_prop_rect;
         self->length = that->length;
         self->data = calloc(1, self->length);
         memcpy(self->data, that->data, self->length);
@@ -972,7 +987,7 @@ void mlt_property_pass(mlt_property self, mlt_property that)
  * \private \memberof mlt_property_s
  * \param frames a frame count
  * \param fps frames per second
- * \param[out] s the string to write into - must have enough space to hold largest time string
+ * \param[out] s the string to write into - must be at least MLT_TIME_STRING_MAX bytes
  * \param drop whether to use drop-frame timecode for applicable frame rates
  */
 
@@ -1007,10 +1022,19 @@ static void time_smpte_from_frames(int frames, double fps, char *s, int drop)
     } else if (fps != lrint(fps)) {
         frame_sep = ';';
     }
-    hours = frames / (fps * 3600);
+
+    // Guard against a degenerate or absurdly small fps (e.g. supplied by an
+    // untrusted profile/property) producing an hours/mins value so large that
+    // it would overflow the output buffer or an int. %02d is a *minimum*
+    // field width, not a maximum, so very large hour counts would otherwise
+    // print far more digits than the buffer was sized for.
+    if (!(fps > 0.0))
+        fps = 1.0;
+
+    hours = CLAMP(frames / (fps * 3600), 0, 999999);
     frames -= floor(hours * 3600 * fps);
 
-    mins = frames / (fps * 60);
+    mins = CLAMP(frames / (fps * 60), 0, 60);
     if (mins == 60) { // floating point error
         ++hours;
         frames = save_frames - floor(hours * 3600 * fps);
@@ -1019,7 +1043,7 @@ static void time_smpte_from_frames(int frames, double fps, char *s, int drop)
     save_frames = frames;
     frames -= floor(mins * 60 * fps);
 
-    secs = frames / fps;
+    secs = CLAMP(frames / fps, 0, 60);
     if (secs == 60) { // floating point error
         ++mins;
         frames = save_frames - floor(mins * 60 * fps);
@@ -1027,16 +1051,17 @@ static void time_smpte_from_frames(int frames, double fps, char *s, int drop)
     }
     frames -= ceil(secs * fps);
 
-    sprintf(s,
-            "%02d:%02d:%02d%c%0*d",
-            hours,
-            mins,
-            secs,
-            frame_sep,
-            (fps > 999  ? 4
-             : fps > 99 ? 3
-                        : 2),
-            frames);
+    snprintf(s,
+             MLT_TIME_STRING_MAX,
+             "%02d:%02d:%02d%c%0*d",
+             hours,
+             mins,
+             secs,
+             frame_sep,
+             (fps > 999  ? 4
+              : fps > 99 ? 3
+                         : 2),
+             frames);
 }
 
 /** Convert frame count to a SMIL clock value string.
@@ -1044,7 +1069,7 @@ static void time_smpte_from_frames(int frames, double fps, char *s, int drop)
  * \private \memberof mlt_property_s
  * \param frames a frame count
  * \param fps frames per second
- * \param[out] s the string to write into - must have enough space to hold largest time string
+ * \param[out] s the string to write into - must be at least MLT_TIME_STRING_MAX bytes
  */
 
 static void time_clock_from_frames(int frames, double fps, char *s)
@@ -1053,10 +1078,14 @@ static void time_clock_from_frames(int frames, double fps, char *s)
     double secs;
     int save_frames = frames;
 
-    hours = frames / (fps * 3600);
+    // See comment in time_smpte_from_frames() above.
+    if (!(fps > 0.0))
+        fps = 1.0;
+
+    hours = CLAMP(frames / (fps * 3600), 0, 999999);
     frames -= floor(hours * 3600 * fps);
 
-    mins = frames / (fps * 60);
+    mins = CLAMP(frames / (fps * 60), 0, 60);
     if (mins == 60) { // floating point error
         ++hours;
         frames = save_frames - floor(hours * 3600 * fps);
@@ -1065,14 +1094,14 @@ static void time_clock_from_frames(int frames, double fps, char *s)
     save_frames = frames;
     frames -= floor(mins * 60 * fps);
 
-    secs = frames / fps;
+    secs = CLAMP(frames / fps, 0, 60);
     if (secs >= 60.0) { // floating point error
         ++mins;
         frames = save_frames - floor(mins * 60 * fps);
         secs = frames / fps;
     }
 
-    sprintf(s, "%02d:%02d:%06.3f", hours, mins, secs);
+    snprintf(s, MLT_TIME_STRING_MAX, "%02d:%02d:%06.3f", hours, mins, secs);
 }
 
 /** Get the property as a time string.
@@ -1147,7 +1176,7 @@ char *mlt_property_get_time(mlt_property self,
     }
 
     self->types |= mlt_prop_string;
-    self->prop_string = malloc(32);
+    self->prop_string = malloc(MLT_TIME_STRING_MAX);
 
     if (format == mlt_time_clock)
         time_clock_from_frames(frames, fps, self->prop_string);
@@ -1563,8 +1592,29 @@ char *mlt_property_anim_get_string(
         mlt_property_close(item.property);
         pthread_mutex_unlock(&self->mutex);
     } else {
+        const char *raw = mlt_property_get_string_l(self, locale);
+        if (raw && raw[0] == '"') {
+            size_t len = strlen(raw);
+            if (len >= 2 && raw[len - 1] == '"') {
+                // The string is wrapped in double-quotes to prevent it from
+                // being interpreted as animation keyframes. Strip the quotes
+                // and cache the result in the data field so prop_string (with
+                // its quotes) is never modified and is_anim() stays correct.
+                char *unquoted = malloc(len - 1);
+                memcpy(unquoted, raw + 1, len - 2);
+                unquoted[len - 2] = '\0';
+                if (self->destructor)
+                    self->destructor(self->data);
+                self->data = unquoted;
+                self->destructor = free;
+                result = (char *) self->data;
+            } else {
+                result = (char *) raw;
+            }
+        } else {
+            result = (char *) raw;
+        }
         pthread_mutex_unlock(&self->mutex);
-        result = mlt_property_get_string_l(self, locale);
     }
     return result;
 }
@@ -1889,7 +1939,7 @@ int mlt_property_set_rect(mlt_property self, mlt_rect value)
 {
     pthread_mutex_lock(&self->mutex);
     clear_property(self);
-    self->types = mlt_prop_rect | mlt_prop_data;
+    self->types = mlt_prop_rect;
     self->length = sizeof(value);
     self->data = calloc(1, self->length);
     memcpy(self->data, &value, self->length);
@@ -2106,10 +2156,69 @@ mlt_properties mlt_property_get_properties(mlt_property self)
     return properties;
 }
 
+static int is_keyframe_type_marker(char c)
+{
+    switch (c) {
+    case '|':
+    case '!':
+    case '~':
+    case '$':
+    case '-':
+        return 1;
+    default:
+        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'D');
+    }
+}
+
+static int is_keyframe_token(const char *begin, const char *end)
+{
+    while (begin < end && isspace((unsigned char) *begin))
+        ++begin;
+    while (end > begin && isspace((unsigned char) end[-1]))
+        --end;
+    if (begin >= end)
+        return 0;
+
+    if (end - begin > 1 && is_keyframe_type_marker(end[-1]))
+        --end;
+
+    int has_digit = 0;
+    int trailing_unit_seen = 0;
+    for (const char *p = begin; p < end; ++p) {
+        unsigned char c = (unsigned char) *p;
+        if (isdigit(c)) {
+            has_digit = 1;
+            continue;
+        }
+        if (c == ':' || c == '.' || c == ',' || c == '-' || c == '+')
+            continue;
+        if (isalpha(c) && p == end - 1 && !trailing_unit_seen && has_digit) {
+            trailing_unit_seen = 1;
+            continue;
+        }
+        return 0;
+    }
+    return has_digit;
+}
+
 /** Check if a property is animated.
  *
  * This is not a thread-safe function because it is used internally by
  * mlt_property_s under a lock. However, external callers should protect it.
+ *
+ * A property counts as animated when it already has an animation object or
+ * when its serialized string contains at least one unquoted keyframe item of
+ * the form key=value, where key looks like a frame or time token. This also
+ * accepts the optional single-character keyframe-type marker that serialized
+ * animations place immediately before '='.
+ *
+ * This intentionally does not treat every '=' as animation syntax. Plain
+ * strings may legitimately contain '=' or ';' characters, and those continue
+ * to work as ordinary string values. Quoted string payloads inside animation
+ * strings also continue to work: text between double quotes is ignored while
+ * scanning for separators, matching the documented requirement to quote string
+ * values that contain animation delimiters.
+ *
  * \public \memberof mlt_property_s
  * \param self a property
  * \return true if the property is animated
@@ -2117,7 +2226,24 @@ mlt_properties mlt_property_get_properties(mlt_property self)
 
 int mlt_property_is_anim(mlt_property self)
 {
-    return self->animation || (self->prop_string && strchr(self->prop_string, '='));
+    if (self->animation)
+        return 1;
+    if (!self->prop_string)
+        return 0;
+
+    const char *token_start = self->prop_string;
+    int in_quotes = 0;
+    for (const char *p = self->prop_string; *p; ++p) {
+        if (*p == '"' && (p == self->prop_string || p[-1] != '\\')) {
+            in_quotes = !in_quotes;
+            continue;
+        }
+        if (!in_quotes && *p == '=')
+            return is_keyframe_token(token_start, p);
+        if (!in_quotes && *p == ';')
+            token_start = p + 1;
+    }
+    return 0;
 }
 
 /** Check if a property is a color.

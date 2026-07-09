@@ -1,7 +1,7 @@
 MLT Release Notes
 -----------------
 
-Version 7.40.0
+Version 7.42.0
 
 Framework
   - Added list-based image-conversion callback dispatch on mlt_frame.
@@ -20,8 +20,64 @@ Framework
     longer have that function called. If you really need that (never heard of
     someone who does), clear the frame's "_convert_image_callbacks" property
     and use `mlt_frame_append_convert_image()` instead.
+
+Modules
   - Image converters (`movit.convert`, `avcolor_space`, `imageconvert`) are
     now attached data-driven via `loader.ini` key `image_convert`.
+
+
+Version 7.40.0
+
+Framework
+  - Some fixes for `win32_fopen()`.
+  - Security fixes for time formatting in `mlt_properties`.
+  - Security fix to disable deprecated `ante` & `post` properties in `mlc_consumer`.  
+  - Added more properties to `metaschema.yaml` (new version 7.2):
+    - `audio_formats`
+    - `video_formats`
+    - `layout-hint`
+    - `hide-label`
+    - `normalized_default`
+
+Modules
+  - Added `audio_formats` and `image_formats` properties to all service metadata.
+  - Many improvements to the `openfx` module:
+    - fixed potential overflows in `snprintf()` calls
+    - multi-threading: frame- and slice-based
+    - many compatibility fixes
+    - added support for 2D and 3D numeric parameters (uses `mlt_rect`)
+    - fixed preview scaling
+    - fixed the default for `choice` (`values` in `metaschema.yaml`) parameters
+    - fixed some effects rendering upside-down.
+  - Fixed a signed int overflow in `pgm` producer.
+  - Visual quality improvements for animations in the `qtblend` filter and transition.
+  - MSVC compatibility fixes for `kdenlivetitle` producer and `frei0r`, `plusgpl`, `jackrack`, `openfx`, `rtaudio`, & `resample` modules.
+  - Fixed choppy playback and deadlocks in the `decklink` consumer.
+  - Updated `spatialaudio` module to the libspatialaudio 0.4.0 API.
+  - Fixed libopus audio encoder warning about `frame_duration` in `avformat` consumer.
+  - Fixed crash in `avformat` consumer with unsupported `attached_pic` format.
+  - Added HDR10 SMPTE ST 2084 (PQ) properties to the `decklink` consumer:
+    - `hdr_red_x`
+    - `hdr_red_y`
+    - `hdr_green_x`
+    - `hdr_green_y`
+    - `hdr_blue_x`
+    - `hdr_blue_y`
+    - `hdr_white_x`
+    - `hdr_white_y`
+    - `hdr_max_luminance`
+    - `hdr_min_luminance`
+    - `hdr_max_cll`
+    - `hdr_max_fall`
+  - Added `rnnoise` module for background audio noise reduction (depends on librnnoise).
+  - Fixed plugin bundles for `vst2` filters on macOS.
+  - Fixed the frame position in the `consumer` producer.
+  - Hardened string formatting for metadata properties in the `vorbis` producer.
+  - Fixed `typewriter` in `qtext` filter lags when rate properties changed.
+  - Added the `.lot` file name extension for the `loader` producer to use `glaxnimate`.
+
+Other
+  - Skip Qt preflight for XML-only consumers in `melt`.
 
 
 Version 7.38.0
@@ -45,7 +101,7 @@ Modules
     - tile-, slice-, or frame-based multi-threading (only plugin internal threading)
     - multi-resolution
     - temporal clip access
-    - overlays &amp; dialogs
+    - overlays & dialogs
     - timeline queries (e.g. `getTime()`)
     - generator, transition, retimer
     - parametric curves
@@ -228,7 +284,7 @@ Modules
   - Added an `outline` video filter.
   - Fixed a deadlock on image with a `%` in the name in `qimage` producer.
   - Added scrubbing to the `decklink` consumer.
-  - Fixed `&amp;` not decoded to `&` in the `xml` producer.
+  - Fixed `&` not decoded to `&` in the `xml` producer.
   - Fixed converting BT.709 to BT.2020 in the `avformat` module.
   - Fixed building a `ladspa` module without JACK as dependency.
   - Deprecate a JACK Rack XML file in the `jackrack` and `ladspa` modules.

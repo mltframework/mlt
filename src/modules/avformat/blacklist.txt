@@ -1,3 +1,4 @@
+abench
 acopy
 acrossfade
 afifo
@@ -19,6 +20,7 @@ asettb
 astreamselect
 atempo
 atrim
+bench
 channelsplit
 codecview
 copy
