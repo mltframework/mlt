@@ -49,31 +49,6 @@ static void yuv422_to_yuv422p(uint8_t *yuv422, uint8_t *yuv422p, int width, int 
     }
 }
 
-static int convert_on_cpu(mlt_frame frame,
-                          uint8_t **image,
-                          mlt_image_format *format,
-                          mlt_image_format output_format)
-{
-    int error = 0;
-    mlt_filter cpu_csc = (mlt_filter) mlt_properties_get_data(MLT_FRAME_PROPERTIES(frame),
-                                                              "_movit cpu_convert",
-                                                              NULL);
-    if (cpu_csc) {
-        int (*save_fp)(mlt_frame self,
-                       uint8_t * *image,
-                       mlt_image_format * input,
-                       mlt_image_format output)
-            = frame->convert_image;
-        frame->convert_image = NULL;
-        mlt_filter_process(cpu_csc, frame);
-        error = frame->convert_image(frame, image, format, output_format);
-        frame->convert_image = save_fp;
-    } else {
-        error = 1;
-    }
-    return error;
-}
-
 static void delete_chain(EffectChain *chain)
 {
     delete chain;
@@ -495,7 +470,7 @@ static int movit_render(EffectChain *chain,
         error = glsl->render_frame_ycbcr(chain, frame, width, height, image);
         if (!error && output_format != mlt_image_yuv444p10) {
             *format = mlt_image_yuv444p10;
-            error = convert_on_cpu(frame, image, format, output_format);
+            error = 1; // incomplete, defer to another converter
         }
         break;
 
@@ -508,7 +483,7 @@ static int movit_render(EffectChain *chain,
         error = glsl->render_frame_rgba(chain, frame, width, height, image);
         if (!error && output_format != mlt_image_rgba) {
             *format = mlt_image_rgba;
-            error = convert_on_cpu(frame, image, format, output_format);
+            error = 1; // incomplete, defer to another converter
         }
         break;
     }
@@ -625,15 +600,15 @@ static int convert_image(mlt_frame frame,
                   mlt_image_format_name(output_format),
                   mlt_frame_get_position(frame));
 
-    // Use CPU if glsl not initialized or not supported.
+    // Check if OpenGL is not initialized or not supported.
     GlslManager *glsl = GlslManager::get_instance();
     if (!glsl || !glsl->get_int("glsl_supported"))
-        return convert_on_cpu(frame, image, format, output_format);
+        return 1;
 
-    // Do non-GL image conversions on a CPU-based image converter.
+    // We only support movit and OpenGL formats
     if (*format != mlt_image_movit && output_format != mlt_image_movit
         && output_format != mlt_image_opengl_texture)
-        return convert_on_cpu(frame, image, format, output_format);
+        return 1;
 
     int error = 0;
     int width = mlt_properties_get_int(properties, "width");
@@ -650,8 +625,14 @@ static int convert_image(mlt_frame frame,
     // sent into the chain.
     if (output_format == mlt_image_movit) {
         if (*format != mlt_image_rgba && *format != mlt_image_rgba64 && mlt_frame_get_alpha(frame)) {
-            if (!convert_on_cpu(frame, image, format, mlt_image_rgba)) {
-                *format = mlt_image_rgba;
+            mlt_log_debug(
+                NULL,
+                "filter movit.convert: frame has alpha but format is %s, converting to RGBA\n",
+                mlt_image_format_name(*format));
+            if (mlt_frame_next_convert_image(frame, image, format, mlt_image_rgba)) {
+                mlt_log_error(NULL, "filter movit.convert: failed to convert frame to RGBA\n");
+                GlslManager::get_instance()->unlock_service(frame);
+                return 1;
             }
         }
 
@@ -662,6 +643,7 @@ static int convert_image(mlt_frame frame,
 
         if (!input) {
             mlt_log_error(nullptr, "filter movit.convert: create_input failed\n");
+            GlslManager::get_instance()->unlock_service(frame);
             return 1;
         }
 
@@ -671,6 +653,7 @@ static int convert_image(mlt_frame frame,
         if (!img_copy) {
             mlt_log_error(nullptr, "filter movit.convert: make_input_copy failed\n");
             delete input;
+            GlslManager::get_instance()->unlock_service(frame);
             return 1;
         }
 
@@ -687,14 +670,14 @@ static int convert_image(mlt_frame frame,
         if (leaf_service == (mlt_service) -1) {
             // Something on the way requested conversion to mlt_glsl,
             // but never added an effect. Don't build a Movit chain;
-            // just do the conversion and we're done.
+            // yield the conversion.
             mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
             MltInput *input = GlslManager::get_input(producer, frame);
             *image = GlslManager::get_input_pixel_pointer(producer, frame);
             *format = input->get_format();
             delete input;
             GlslManager::get_instance()->unlock_service(frame);
-            return convert_on_cpu(frame, image, format, output_format);
+            return 1;
         }
 
         // Construct the chain unless we already have a good one.
@@ -741,6 +724,7 @@ static int convert_image(mlt_frame frame,
 
                 if (!input) {
                     delete chain;
+                    GlslManager::get_instance()->unlock_service(frame);
                     return 1;
                 }
 
@@ -764,6 +748,7 @@ static int convert_image(mlt_frame frame,
                 uint8_t *planar = make_input_copy(*format, *image, width, height);
 
                 if (!planar) {
+                    GlslManager::get_instance()->unlock_service(frame);
                     return 1;
                 }
 
@@ -779,8 +764,10 @@ static int convert_image(mlt_frame frame,
 
     GlslManager::get_instance()->unlock_service(frame);
 
-    mlt_properties_set_int(properties, "format", output_format);
-    *format = output_format;
+    if (!error) {
+        mlt_properties_set_int(properties, "format", output_format);
+        *format = output_format;
+    }
 
     return error;
 }
@@ -796,35 +783,9 @@ static mlt_frame process(mlt_filter filter, mlt_frame frame)
                                "colorspace",
                                mlt_service_profile(MLT_FILTER_SERVICE(filter))->colorspace);
 
-    frame->convert_image = convert_image;
-
-    mlt_filter cpu_csc = (mlt_filter) mlt_properties_get_data(MLT_FILTER_PROPERTIES(filter),
-                                                              "cpu_convert",
-                                                              NULL);
-    mlt_properties_inc_ref(MLT_FILTER_PROPERTIES(cpu_csc));
-    mlt_properties_set_data(properties,
-                            "_movit cpu_convert",
-                            cpu_csc,
-                            0,
-                            (mlt_destructor) mlt_filter_close,
-                            NULL);
+    mlt_frame_append_convert_image(frame, convert_image);
 
     return frame;
-}
-
-static mlt_filter create_filter(mlt_profile profile, const char *effect)
-{
-    mlt_filter filter;
-    char *id = strdup(effect);
-    char *arg = strchr(id, ':');
-    if (arg != NULL)
-        *arg++ = '\0';
-
-    filter = mlt_factory_filter(profile, id, arg);
-    if (filter)
-        mlt_properties_set_int(MLT_FILTER_PROPERTIES(filter), "_loader", 1);
-    free(id);
-    return filter;
 }
 
 extern "C" {
@@ -840,16 +801,6 @@ mlt_filter filter_movit_convert_init(mlt_profile profile,
     if (glsl && (filter = mlt_filter_new())) {
         mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
         glsl->add_ref(properties);
-        mlt_filter cpu_csc = create_filter(profile, "avcolor_space");
-        if (!cpu_csc)
-            cpu_csc = create_filter(profile, "imageconvert");
-        if (cpu_csc)
-            mlt_properties_set_data(MLT_FILTER_PROPERTIES(filter),
-                                    "cpu_convert",
-                                    cpu_csc,
-                                    0,
-                                    (mlt_destructor) mlt_filter_close,
-                                    NULL);
         filter->process = process;
     }
     return filter;

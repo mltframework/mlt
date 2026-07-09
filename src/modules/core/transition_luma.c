@@ -140,22 +140,23 @@ static inline int dissolve_yuv422(mlt_frame frame,
     int ret = 0;
     int i = height + 1;
     int width_src = width, height_src = height;
-    mlt_image_format format = (fix_background_alpha && frame->convert_image) ? mlt_image_rgba
-                                                                             : mlt_image_yuv422;
+    mlt_image_format format = (fix_background_alpha && mlt_frame_has_convert_image(frame))
+                                  ? mlt_image_rgba
+                                  : mlt_image_yuv422;
     uint8_t *p_src, *p_dest;
     uint8_t *alpha_src;
     uint8_t *alpha_dst;
     int mix = weight * (1 << 16);
 
     mlt_frame_get_image(frame, &p_dest, &format, &width, &height, 1);
-    if (fix_background_alpha && frame->convert_image)
-        frame->convert_image(frame, &p_dest, &format, mlt_image_yuv422);
+    if (fix_background_alpha && mlt_frame_has_convert_image(frame))
+        mlt_frame_convert_image(frame, &p_dest, &format, mlt_image_yuv422);
     alpha_dst = mlt_frame_get_alpha(frame);
-    if (fix_background_alpha && that->convert_image)
+    if (fix_background_alpha && mlt_frame_has_convert_image(that))
         format = mlt_image_rgba;
     mlt_frame_get_image(that, &p_src, &format, &width_src, &height_src, 0);
-    if (that->convert_image)
-        that->convert_image(that, &p_src, &format, mlt_image_yuv422);
+    if (mlt_frame_has_convert_image(that))
+        mlt_frame_convert_image(that, &p_src, &format, mlt_image_yuv422);
     alpha_src = mlt_frame_get_alpha(that);
     int is_translucent = (alpha_dst && !is_opaque(alpha_dst, width, height))
                          || (alpha_src && !is_opaque(alpha_src, width_src, height_src));
@@ -339,10 +340,10 @@ static void luma_composite_yuv422(mlt_frame a_frame,
 {
     int width_src = *width, height_src = *height;
     int width_dest = *width, height_dest = *height;
-    mlt_image_format format_src = (fix_background_alpha && a_frame->convert_image)
+    mlt_image_format format_src = (fix_background_alpha && mlt_frame_has_convert_image(a_frame))
                                       ? mlt_image_rgba
                                       : mlt_image_yuv422;
-    mlt_image_format format_dest = (fix_background_alpha && b_frame->convert_image)
+    mlt_image_format format_dest = (fix_background_alpha && mlt_frame_has_convert_image(b_frame))
                                        ? mlt_image_rgba
                                        : mlt_image_yuv422;
     uint8_t *p_src, *p_dest;
@@ -356,12 +357,12 @@ static void luma_composite_yuv422(mlt_frame a_frame,
                            "distort",
                            mlt_properties_get(&a_frame->parent, "distort"));
     mlt_frame_get_image(a_frame, &p_dest, &format_dest, &width_dest, &height_dest, 1);
-    if (fix_background_alpha && a_frame->convert_image)
-        a_frame->convert_image(a_frame, &p_dest, &format_dest, mlt_image_yuv422);
+    if (fix_background_alpha && mlt_frame_has_convert_image(a_frame))
+        mlt_frame_convert_image(a_frame, &p_dest, &format_dest, mlt_image_yuv422);
     alpha_dest = mlt_frame_get_alpha(a_frame);
     mlt_frame_get_image(b_frame, &p_src, &format_src, &width_src, &height_src, 0);
-    if (fix_background_alpha && b_frame->convert_image)
-        b_frame->convert_image(b_frame, &p_src, &format_src, mlt_image_yuv422);
+    if (fix_background_alpha && mlt_frame_has_convert_image(b_frame))
+        mlt_frame_convert_image(b_frame, &p_src, &format_src, mlt_image_yuv422);
     alpha_src = mlt_frame_get_alpha(b_frame);
 
     if (*width == 0 || *height == 0)

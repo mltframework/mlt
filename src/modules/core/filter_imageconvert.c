@@ -1,6 +1,6 @@
 /*
  * filter_imageconvert.c -- colorspace and pixel format converter
- * Copyright (C) 2009-2021 Meltytech, LLC
+ * Copyright (C) 2009-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -493,8 +493,7 @@ static int convert_image(mlt_frame frame,
 
 static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
 {
-    if (!frame->convert_image)
-        frame->convert_image = convert_image;
+    mlt_frame_append_convert_image(frame, convert_image);
     return frame;
 }
 

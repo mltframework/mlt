@@ -1,6 +1,6 @@
 /*
  * producer_pixbuf.c -- raster image loader based upon gdk-pixbuf
- * Copyright (C) 2003-2023 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -635,7 +635,7 @@ static void refresh_image(
 
         // Convert image to requested format
         if (format != mlt_image_none && format != mlt_image_movit && format != self->format
-            && frame->convert_image) {
+            && mlt_frame_has_convert_image(frame)) {
             // cache copies of the image and alpha buffers
             uint8_t *buffer = self->image;
             if (buffer) {
@@ -644,7 +644,7 @@ static void refresh_image(
                 mlt_properties_set_int(properties, "height", self->height);
                 mlt_properties_set_int(properties, "format", self->format);
 
-                if (!frame->convert_image(frame, &self->image, &self->format, format)) {
+                if (!mlt_frame_convert_image(frame, &self->image, &self->format, format)) {
                     buffer = self->image;
                     image_size
                         = mlt_image_format_size(self->format, self->width, self->height, NULL);

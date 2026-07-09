@@ -1,6 +1,6 @@
 /*
  * filter_crop.c -- cropping filter
- * Copyright (C) 2009-2022 Meltytech, LLC
+ * Copyright (C) 2009-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -108,8 +108,8 @@ static int filter_get_image(mlt_frame frame,
             requested_format = mlt_image_rgb;
         }
 
-        if (*format != requested_format && frame->convert_image) {
-            frame->convert_image(frame, image, format, requested_format);
+        if (*format != requested_format && mlt_frame_has_convert_image(frame)) {
+            mlt_frame_convert_image(frame, image, format, requested_format);
         }
 
         mlt_log_debug(NULL,

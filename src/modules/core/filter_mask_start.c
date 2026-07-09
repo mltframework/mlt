@@ -36,7 +36,6 @@ static int get_image(mlt_frame frame,
     if (!error && !mlt_properties_exists(properties, "mask frame")) {
         mlt_frame clone = mlt_frame_clone(frame, 1);
         clone->convert_audio = frame->convert_audio;
-        clone->convert_image = frame->convert_image;
         mlt_properties_set_data(properties,
                                 "mask frame",
                                 clone,

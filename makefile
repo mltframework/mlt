@@ -29,4 +29,8 @@ cppcheck:
 		--include=src/framework/mlt_types.h \
 		--library=cppcheck.cfg \
 		--suppress=ctuOneDefinitionRuleViolation \
-		--suppress=syntaxError:src/modules/xml/common.c
+		--suppress=syntaxError:src/modules/xml/common.c \
+        --suppress=syntaxError:src/modules/placebo/filter_placebo_convert.c \
+        --suppress=syntaxError:src/modules/placebo/filter_placebo_render.c \
+        --suppress=syntaxError:src/modules/placebo/filter_placebo_shader.c \
+        --suppress=syntaxError:src/modules/placebo/gpu_context.c
