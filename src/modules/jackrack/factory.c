@@ -703,6 +703,7 @@ static mlt_properties vst2_metadata(mlt_service_type type, const char *id, char 
 
 JACKRACK_MODULE_EXPORT MLT_REPOSITORY
 {
+#if defined(mltladspa_EXPORTS)
 #ifdef GPL
     GSList *list;
     g_jackrack_plugin_mgr = plugin_mgr_new();
@@ -783,17 +784,26 @@ JACKRACK_MODULE_EXPORT MLT_REPOSITORY
 
 #endif
 
+    MLT_REGISTER(mlt_service_filter_type, "ladspa", filter_ladspa_init);
+    MLT_REGISTER_METADATA(mlt_service_filter_type, "ladspa", metadata, "filter_ladspa.yml");
+#endif
+#endif
+#if defined(mltjackrack_EXPORTS)
+#ifdef GPL
 #ifdef WITH_JACK
+    // JACK filter services belong to mltjackrack to avoid duplicate registration.
     MLT_REGISTER(mlt_service_filter_type, "jack", filter_jackrack_init);
     MLT_REGISTER_METADATA(mlt_service_filter_type, "jack", metadata, "filter_jack.yml");
     MLT_REGISTER(mlt_service_filter_type, "jackrack", filter_jackrack_init);
     MLT_REGISTER_METADATA(mlt_service_filter_type, "jackrack", metadata, "filter_jackrack.yml");
 #endif
-    MLT_REGISTER(mlt_service_filter_type, "ladspa", filter_ladspa_init);
-    MLT_REGISTER_METADATA(mlt_service_filter_type, "ladspa", metadata, "filter_ladspa.yml");
+#endif
 #endif
 #ifdef WITH_JACK
+#if defined(mltjackrack_EXPORTS)
+    // JACK consumer belongs to mltjackrack to avoid duplicate registration.
     MLT_REGISTER(mlt_service_consumer_type, "jack", consumer_jack_init);
     MLT_REGISTER_METADATA(mlt_service_consumer_type, "jack", metadata, "consumer_jack.yml");
+#endif
 #endif
 }
