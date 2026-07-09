@@ -1226,6 +1226,18 @@ private Q_SLOTS:
         QCOMPARE(p.anim_get_rect("key", 25).y, 1.0);
     }
 
+    void RectIsNotData()
+    {
+        Properties p;
+        mlt_rect r = {1, 2, 3, 4, 5};
+        p.set("a", r);
+        QCOMPARE(p.get_data("a"), (void *) 0);
+
+        p.set("b", "1.1/2.2:3.3x4.4:5.5");
+        r = p.get_rect("b");
+        QCOMPARE(p.get_data("b"), (void *) 0);
+    }
+
     void ColorFromInt()
     {
         Properties p;

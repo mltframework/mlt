@@ -154,6 +154,14 @@ mapping:
               - text
               - textbox # multi-line
               - timecode
+          "layout-hint": # A hint to the UI for relative control placement
+            type: str
+            enum:
+              - divider
+              - no_new_line
+          "hide-label": # A hint to the UI to suppress the field label; omitted means false
+            type: bool
+            default: no
           "minimum": # For numeric types, the minimal value
             type: number
           "maximum": # For numeric types, the maximal value 
@@ -176,4 +184,6 @@ mapping:
           "normalized_coordinates": # For types that represent coordinates, whether values are normalized to 0..1
             type: bool
             default: no
-
+          "normalized_default": # Whether the default value is normalized to 0..1
+            type: bool
+            default: no

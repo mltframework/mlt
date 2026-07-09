@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.14...3.31)
 
 project(MLT
-  VERSION 7.39.0
+  VERSION 7.41.0
   DESCRIPTION "Multimedia Framework"
   HOMEPAGE_URL "https://www.mltframework.org"
   LANGUAGES C CXX
@@ -20,6 +20,7 @@ option(CLANG_FORMAT "Enable Clang Format" ON)
 option(BUILD_TESTS_WITH_QT6 "Build test against Qt 6" ON)
 
 option(MOD_AVFORMAT "Enable avformat module" ON)
+option(USE_AVDEVICE "Integrate FFmpeg libavdevice for capture" ON)
 option(MOD_DECKLINK "Enable DeckLink module" ON)
 option(MOD_FREI0R "Enable Frei0r module" ON)
 option(MOD_GDK "Enable GDK module" ON)
@@ -228,14 +229,19 @@ if(MOD_GDK OR MOD_GTK)
 endif()
 
 if(MOD_AVFORMAT)
+  set(OPTIONAL_FFMPEG_COMPONENTS)
+  if(USE_AVDEVICE)
+    list(APPEND OPTIONAL_FFMPEG_COMPONENTS AVDEVICE)
+  endif()
+
   find_package(FFmpeg REQUIRED COMPONENTS
     AVFORMAT
     SWSCALE
     AVUTIL
     AVCODEC
     AVFILTER
-    AVDEVICE
     SWRESAMPLE
+    ${OPTIONAL_FFMPEG_COMPONENTS}
   )
 
   list(APPEND MLT_SUPPORTED_COMPONENTS avformat)

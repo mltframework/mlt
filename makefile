@@ -6,7 +6,7 @@ dist:
 	git archive --format=tar --prefix=mlt-$(version)/ v$(version) | gzip >mlt-$(version).tar.gz
 
 validate-yml:
-	for file in $$(find src/modules -maxdepth 2 -type f -name \*.yml \! -name resolution_scale.yml); do \
+	for file in $$(find src/modules -maxdepth 2 -type f -name \*.yml \! -name resolution_scale.yml \! -name filter_info.yml); do \
 		echo "validate: $$file"; \
 		kwalify -f src/framework/metaschema.yaml $$file || exit 1; \
 	done
@@ -30,4 +30,4 @@ cppcheck:
 		--library=cppcheck.cfg \
 		--suppress=ctuOneDefinitionRuleViolation \
 		--suppress=syntaxError:src/modules/xml/common.c \
-        --suppress=syntaxError:src/modules/placebo/*.c
+    --suppress=syntaxError:src/modules/placebo/*.c

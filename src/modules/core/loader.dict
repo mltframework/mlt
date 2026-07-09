@@ -31,6 +31,7 @@ plain:https://*=webvfx:plain:
 *.kdenlivetitle=kdenlivetitle
 *.kino=xml
 *.kra=qimage
+*.lot=glaxnimate
 *.lottie=glaxnimate
 *.mpl=pango
 *.ogg=avformat,vorbis

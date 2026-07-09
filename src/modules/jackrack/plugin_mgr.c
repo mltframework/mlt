@@ -945,11 +945,24 @@ static void vst2_mgr_get_dir_plugins(vst2_mgr_t *vst2_mgr, const char *dir)
         }
 
         stat(file_name, &info);
-        if (S_ISDIR(info.st_mode))
-	  {
-	    vst2_mgr_get_dir_plugins(vst2_mgr, file_name);
-	  }
-        else {
+        if (S_ISDIR(info.st_mode)) {
+#ifdef __APPLE__
+            char *ext = strrchr(file_name, '.');
+            if (ext && strcasecmp(ext, ".vst") == 0) {
+                /* macOS VST2 bundle: binary lives at <bundle>/Contents/MacOS/<name> */
+                char *base = strrchr(file_name, '/');
+                base = base ? base + 1 : file_name;
+                char *stem = g_strndup(base, ext - base);
+                char *binary = g_strdup_printf("%s/Contents/MacOS/%s", file_name, stem);
+                g_free(stem);
+                struct stat binary_info;
+                if (stat(binary, &binary_info) == 0 && S_ISREG(binary_info.st_mode))
+                    vst2_mgr_get_object_file_plugins(vst2_mgr, binary);
+                g_free(binary);
+            } else
+#endif
+            vst2_mgr_get_dir_plugins(vst2_mgr, file_name);
+        } else {
             char *ext = strrchr(file_name, '.');
             if (ext
                 && (strcmp(ext, ".so") == 0 || strcasecmp(ext, ".dll") == 0

@@ -145,7 +145,7 @@ def output(mlt_type, services, type_title)
   index.close
 end
 
-Dir.mkdir($folder) if not Dir.exists?($folder)
+Dir.mkdir($folder) if not Dir.exist?($folder)
 
 [
   [Mlt::Mlt_service_consumer_type, $repo.consumers, 'Consumer'],

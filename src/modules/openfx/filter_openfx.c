@@ -223,19 +223,31 @@ static void update_plugin_params(mlt_properties properties,
         if (!mlt_properties_exists(properties, param_name))
             continue;
         char *type = mlt_properties_get(param, "type");
-        char *widget = mlt_properties_get(param, "widget");
         if (!type)
             continue;
-        if (widget && (strcmp(widget, "point") == 0 || strcmp(widget, "size") == 0)
-            && strcmp(type, "float") == 0) {
+        if (strcmp(type, "rect") == 0) {
             mlt_rect value = mlt_properties_anim_get_rect(properties, param_name, position, length);
-            mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_double2d, value);
-        } else if (widget && (strcmp(widget, "point") == 0 || strcmp(widget, "size") == 0)
-                   && strcmp(type, "integer") == 0) {
-            mlt_rect value = mlt_properties_anim_get_rect(properties, param_name, position, length);
-            int x = (int) value.x;
-            int y = (int) value.y;
-            mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_int2d, x, y);
+            // Look up the native OFX param type to select the correct setter
+            mlt_properties ofx_param = mlt_properties_get_properties(image_effect_params,
+                                                                     param_name);
+            const char *ofx_type = ofx_param ? mlt_properties_get(ofx_param, "t") : NULL;
+            if (ofx_type && strcmp(ofx_type, kOfxParamTypeInteger2D) == 0)
+                mltofx_param_set_value(image_effect_params,
+                                       param_name,
+                                       mltofx_prop_int2d,
+                                       (int) value.x,
+                                       (int) value.y);
+            else if (ofx_type && strcmp(ofx_type, kOfxParamTypeDouble3D) == 0)
+                mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_double3d, value);
+            else if (ofx_type && strcmp(ofx_type, kOfxParamTypeInteger3D) == 0)
+                mltofx_param_set_value(image_effect_params,
+                                       param_name,
+                                       mltofx_prop_int3d,
+                                       (int) value.x,
+                                       (int) value.y,
+                                       (int) value.w);
+            else
+                mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_double2d, value);
         } else if (strcmp(type, "float") == 0) {
             double value = mlt_properties_anim_get_double(properties, param_name, position, length);
             mltofx_param_set_value(image_effect_params, param_name, mltofx_prop_double, value);
@@ -270,6 +282,7 @@ static int filter_get_image(mlt_frame frame,
     OfxPlugin *plugin = mlt_properties_get_data(properties, "ofx_plugin", NULL);
     mlt_properties base_image_effect = mlt_properties_get_properties(properties, OFX_IMAGE_EFFECT);
     int allow_frame_threading = mlt_properties_get_int(properties, "_allow_frame_threading");
+    int top_left_origin = mlt_properties_get_int(properties, "mlt_origin");
     mlt_properties image_effect = base_image_effect;
     if (allow_frame_threading) {
         image_effect = create_image_effect_instance(plugin, properties, 0);
@@ -376,6 +389,12 @@ static int filter_get_image(mlt_frame frame,
 
     // In serialized mode, image_effect is shared across frames; update scale under lock.
     mltofx_set_render_scale(image_effect, render_scale_x, render_scale_y);
+    mltofx_set_project_properties(image_effect,
+                                  *width,
+                                  *height,
+                                  pixel_aspect_ratio,
+                                  mlt_profile_fps(profile),
+                                  (double) length);
 
     update_plugin_params(properties, image_effect_params, params, position, length);
 
@@ -389,7 +408,8 @@ static int filter_get_image(mlt_frame frame,
                                 *height,
                                 *format,
                                 pixel_aspect_ratio,
-                                ofx_depth);
+                                ofx_depth,
+                                top_left_origin);
     mltofx_set_output_clip_data(plugin,
                                 image_effect,
                                 prime_buf,
@@ -397,7 +417,8 @@ static int filter_get_image(mlt_frame frame,
                                 *height,
                                 *format,
                                 pixel_aspect_ratio,
-                                ofx_depth);
+                                ofx_depth,
+                                top_left_origin);
 
     // OFX pre-render action order:
     // GetClipPreferences -> GetRegionOfDefinition -> GetRegionsOfInterest -> BeginSequenceRender
@@ -414,7 +435,8 @@ static int filter_get_image(mlt_frame frame,
                                 *height,
                                 *format,
                                 pixel_aspect_ratio,
-                                ofx_depth);
+                                ofx_depth,
+                                top_left_origin);
     mltofx_set_output_clip_data(plugin,
                                 image_effect,
                                 render_dst,
@@ -422,7 +444,8 @@ static int filter_get_image(mlt_frame frame,
                                 *height,
                                 *format,
                                 pixel_aspect_ratio,
-                                ofx_depth);
+                                ofx_depth,
+                                top_left_origin);
 
     mltofx_action_render(plugin, image_effect, ofx_time, *width, *height);
     mltofx_end_sequence_render(plugin, image_effect, ofx_time);

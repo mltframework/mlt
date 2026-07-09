@@ -102,18 +102,18 @@
             "name": "msys2-debug",
             "displayName": "msys2 (debug)",
             "binaryDir": "${sourceDir}/build/${presetName}",
+            "environment": {
+                "HOME": "C:/msys64/home/$penv{USERNAME}",
+                "PKG_CONFIG_PATH": "$env{HOME}/build/Shotcut/lib/pkgconfig;C:/msys64/mingw64/lib/pkgconfig;C:/msys64/clangarm64/lib/pkgconfig;$penv{PKG_CONFIG_PATH}",
+                "Path": "C:/msys64/usr/local/bin;C:/msys64/mingw64/bin;C:/msys64/clangarm64/bin;C:/msys64/usr/bin;$penv{Path}"
+            },
             "cacheVariables": {
                 "BUILD_TESTING": "OFF",
-                "CMAKE_INSTALL_PREFIX": "c:/Projects/Shotcut",
+                "CMAKE_INSTALL_PREFIX": "$env{HOME}/build/Shotcut",
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-                "CMAKE_PREFIX_PATH": "C:/Qt/$env{QT_VERSION}/mingw_64;C:/msys64/mingw64;C:/msys64/clangarm64",
+                "CMAKE_PREFIX_PATH": "C:/msys64/mingw64;C:/msys64/clangarm64",
                 "MOD_GLAXNIMATE_QT6": "ON",
                 "MOD_MOVIT": "OFF"
-            },
-            "environment": {
-                "PKG_CONFIG_PATH": "C:/Projects/Shotcut/lib/pkgconfig;C:/msys64/mingw64/lib/pkgconfig;C:/msys64/clangarm64/lib/pkgconfig;$penv{PKG_CONFIG_PATH}",
-                "Path": "C:/msys64/usr/local/bin;C:/msys64/mingw64/bin;C:/msys64/clangarm64/bin;$penv{Path}",
-                "QT_VERSION": "6.10.3"
             },
             "generator": "Ninja"
         }
@@ -138,6 +138,16 @@
             "name": "install-macos",
             "configurePreset": "cc-debug-macos",
             "targets": ["install"]
+        },
+        {
+            "name": "format-build-windows",
+            "description": "Run clang-format and then build",
+            "displayName": "clang-format and build (Windows)",
+            "configurePreset": "msys2-debug",
+            "targets": [
+                "clang-format",
+                "install"
+            ]
         }
     ],
     "workflowPresets": [

@@ -1,6 +1,6 @@
 /*
  * link_avfilter.c -- provide various links based on libavfilter
- * Copyright (C) 2023-2025 Meltytech, LLC
+ * Copyright (C) 2023-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -772,11 +772,11 @@ static int link_get_audio(mlt_frame frame,
     if (pdata->reset || pdata->format != *format || pdata->channels != *channels
         || pdata->frequency != *frequency
         || pdata->expected_frame != mlt_frame_get_position(frame)) {
-        mlt_log_error(MLT_LINK_SERVICE(self),
-                      "Init: %s\t%dc\t%dHz\n",
-                      mlt_audio_format_name(*format),
-                      *channels,
-                      *frequency);
+        mlt_log_verbose(MLT_LINK_SERVICE(self),
+                        "Init: %s\t%dc\t%dHz\n",
+                        mlt_audio_format_name(*format),
+                        *channels,
+                        *frequency);
         init_audio_filtergraph(self, *format, *frequency, *channels);
         pdata->reset = 0;
         pdata->format = *format;

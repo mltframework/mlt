@@ -85,12 +85,21 @@ static std::string get_typewriter_text_for_filter(mlt_properties filter_properti
     unsigned int random_seed = mlt_properties_get_int(filter_properties, "typewriter.random_seed");
     int macro_type = mlt_properties_get_int(filter_properties, "typewriter.macro_type");
 
+    bool text_changed = tw_data->original_text != text_str || tw_data->macro_type != macro_type;
+    bool settings_changed = tw_data->typewriter.getFrameStep() != step_length
+                            || tw_data->typewriter.getStepSigma() != step_sigma
+                            || tw_data->typewriter.getStepSeed() != random_seed;
+
     // Check if text or typewriter settings changed
-    if (tw_data->original_text != text_str || tw_data->typewriter.getFrameStep() != step_length
-        || tw_data->typewriter.getStepSigma() != step_sigma
-        || tw_data->typewriter.getStepSeed() != random_seed || tw_data->macro_type != macro_type) {
-        tw_data->original_text = text_str;
-        tw_data->start_position = position;
+    if (text_changed || settings_changed) {
+        // Only reset the start position when text content changes, not when
+        // numeric settings (step_length, etc.) change, to avoid a negative
+        // relative_position when the user adjusts settings and replays.
+        if (text_changed) {
+            tw_data->original_text = text_str;
+            tw_data->macro_type = macro_type;
+            tw_data->start_position = position;
+        }
         tw_data->typewriter.setPattern(text_str);
 
         if (step_length == 0)
@@ -99,7 +108,6 @@ static std::string get_typewriter_text_for_filter(mlt_properties filter_properti
         tw_data->typewriter.setFrameStep(step_length);
         tw_data->typewriter.setStepSigma(step_sigma);
         tw_data->typewriter.setStepSeed(random_seed);
-        tw_data->macro_type = macro_type;
 
         // Apply macro type if specified
         if (macro_type > 0) {
@@ -128,7 +136,7 @@ static std::string get_typewriter_text_for_filter(mlt_properties filter_properti
         tw_data->typewriter.parse();
     }
 
-    mlt_position relative_position = position - tw_data->start_position;
+    mlt_position relative_position = std::max(position - tw_data->start_position, 0);
     std::string rendered_text = tw_data->typewriter.render(relative_position);
 
     // Add blinking cursor if enabled

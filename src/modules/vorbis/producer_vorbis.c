@@ -57,7 +57,7 @@ static sw_metadata *vorbis_metadata_from_str(char *str)
             str[i] = '\0';
             meta = malloc(sizeof(sw_metadata));
             meta->name = malloc(strlen(str) + 18);
-            sprintf(meta->name, "meta.attr.%s.markup", str);
+            snprintf(meta->name, strlen(str) + 18, "meta.attr.%s.markup", str);
             meta->content = strdup(&str[i + 1]);
             break;
         }

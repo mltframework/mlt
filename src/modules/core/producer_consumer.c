@@ -1,6 +1,6 @@
 /*
  * producer_consumer.c -- produce as a consumer of an encapsulated producer
- * Copyright (C) 2008-2022 Meltytech, LLC
+ * Copyright (C) 2008-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -224,7 +224,7 @@ static int get_frame(mlt_producer self, mlt_frame_ptr frame, int index)
         mlt_frame_push_audio(*frame, get_audio);
 
         // Give the returned frame temporal identity
-        mlt_frame_set_position(*frame, mlt_producer_position(self));
+        mlt_frame_set_position(*frame, mlt_producer_frame(self));
 
         // Store the nested frame on the produced frame for destruction
         mlt_properties frame_props = MLT_FRAME_PROPERTIES(*frame);
