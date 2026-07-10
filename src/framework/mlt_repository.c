@@ -262,8 +262,7 @@ void mlt_repository_register(mlt_repository self,
 
     if (mlt_properties_get_data(service_list, service, NULL)) {
         mlt_log_error(NULL,
-                      "%s: Duplicate %s service registration for \"%s\" (overwriting previous "
-                      "registration)\n",
+                      "%s: Duplicate %s registration for \"%s\"\n",
                       __FUNCTION__,
                       service_type_name,
                       service);
