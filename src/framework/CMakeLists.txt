@@ -107,11 +107,19 @@ set_target_properties(mlt PROPERTIES
 
 if(WIN32)
   if(MINGW)
-    target_link_libraries(mlt PRIVATE ${MLT_PTHREAD_LIBS})
     target_link_options(mlt PRIVATE -Wl,--output-def,${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmlt-${MLT_VERSION_MAJOR}.def)
     install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmlt-${MLT_VERSION_MAJOR}.def" DESTINATION ${CMAKE_INSTALL_LIBDIR})
   endif()
+  
+  include(CheckSymbolExists)
+  set(CMAKE_REQUIRED_LIBRARIES Threads::Threads)
+  check_symbol_exists(nanosleep "pthread.h;pthread_time.h" HAVE_PTHREAD_NANOSLEEP)
+  unset(CMAKE_REQUIRED_LIBRARIES)
+
   target_sources(mlt PRIVATE ../win32/win32.c)
+  set_source_files_properties(../win32/win32.c PROPERTIES
+    COMPILE_DEFINITIONS "HAVE_PTHREAD_NANOSLEEP=${HAVE_PTHREAD_NANOSLEEP}")
+
   target_link_libraries(mlt PRIVATE Iconv::Iconv)
   if(NOT WINDOWS_DEPLOY)
     target_compile_definitions(mlt PRIVATE NODEPLOY)
