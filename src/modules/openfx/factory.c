@@ -263,6 +263,19 @@ static void scan_ofx_dir(mlt_repository repository, const char *dir, int *dli, i
                     continue;
                 }
 
+                char *s = NULL;
+                size_t pluginIdentifier_len = strlen(plugin_id);
+                s = malloc(pluginIdentifier_len + 8);
+                sprintf(s, "openfx.%s", plugin_id);
+                // if colon `:` exists in plugin identifier change it to accent
+                // sign `^` because `:` can cause issues with mlt if put in
+                // filter name
+                char *str_ptr = strchr(s, ':');
+                while (str_ptr != NULL) {
+                    *str_ptr++ = '^';
+                    str_ptr = strchr(str_ptr, ':');
+                }
+
                 int diagnostics = mltofx_discovery_diagnostics_enabled(plugin_id);
                 if (diagnostics) {
                     mlt_log_info(NULL,
@@ -270,6 +283,20 @@ static void scan_ofx_dir(mlt_repository repository, const char *dir, int *dli, i
                                  plugin_id ? plugin_id : "(null)",
                                  name,
                                  i);
+                }
+
+                // Skip duplicate service keys before detect/register work.
+                if (mlt_properties_get_properties(mltofx_context, s) != NULL) {
+                    if (diagnostics) {
+                        mlt_log_info(NULL,
+                                     "[openfx] skipped plugin `%s` (index=%d): duplicate service "
+                                     "`%s` already registered\n",
+                                     plugin_id ? plugin_id : "(null)",
+                                     i,
+                                     s);
+                    }
+                    free(s);
+                    continue;
                 }
 
                 int detected = mltofx_detect_plugin(plugin_ptr);
@@ -280,22 +307,8 @@ static void scan_ofx_dir(mlt_repository repository, const char *dir, int *dli, i
                                      "[openfx] skipped plugin `%s`: detection rejected it\n",
                                      plugin_id ? plugin_id : "(null)");
                     }
+                    free(s);
                     continue;
-                }
-
-                char *s = NULL;
-                size_t pluginIdentifier_len = strlen(plugin_id);
-                s = malloc(pluginIdentifier_len + 8);
-                sprintf(s, "openfx.%s", plugin_id);
-
-                // if colon `:` exists in plugin identifier
-                // change it to accent sign `^` because `:`
-                // can cause issues with mlt if put in filter
-                // name
-                char *str_ptr = strchr(s, ':');
-                while (str_ptr != NULL) {
-                    *str_ptr++ = '^';
-                    str_ptr = strchr(str_ptr, ':');
                 }
 
                 mlt_properties p = mlt_properties_new();
