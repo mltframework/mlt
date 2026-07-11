@@ -43,7 +43,7 @@ extern mlt_consumer consumer_jack_init(mlt_profile profile,
 #include "plugin_mgr.h"
 #include <ladspa.h>
 
-#ifdef WITH_JACK
+#if defined(mltjackrack_EXPORTS)
 extern mlt_filter filter_jackrack_init(mlt_profile profile,
                                        mlt_service_type type,
                                        const char *id,
@@ -109,7 +109,6 @@ lv2_mgr_t *g_lv2_plugin_mgr = NULL;
 vst2_mgr_t *g_vst2_plugin_mgr = NULL;
 #endif
 
-#if defined(mltladspa_EXPORTS) || (defined(mltjackrack_EXPORTS) && defined(WITH_JACK))
 static void add_port_to_metadata(mlt_properties p, plugin_desc_t *desc, int j)
 {
     LADSPA_Data sample_rate = 48000;
@@ -154,12 +153,9 @@ static void add_port_to_metadata(mlt_properties p, plugin_desc_t *desc, int j)
     mlt_properties_set(p, "mutable", "yes");
     mlt_properties_set(p, "animation", "yes");
 }
-#endif
 
 #endif
 
-#if (defined(mltladspa_EXPORTS) && defined(GPL)) \
-    || (defined(mltjackrack_EXPORTS) && defined(WITH_JACK))
 static mlt_properties metadata(mlt_service_type type, const char *id, char *data)
 {
     char file[PATH_MAX];
@@ -291,7 +287,6 @@ static mlt_properties metadata(mlt_service_type type, const char *id, char *data
 
     return result;
 }
-#endif
 
 #ifdef WITH_LV2
 
@@ -798,7 +793,7 @@ JACKRACK_MODULE_EXPORT MLT_REPOSITORY
 #endif
 
     // Registrations owned by mltjackrack.
-#if defined(mltjackrack_EXPORTS) && defined(GPL) && defined(WITH_JACK)
+#if defined(mltjackrack_EXPORTS) && defined(GPL)
     MLT_REGISTER(mlt_service_filter_type, "jack", filter_jackrack_init);
     MLT_REGISTER_METADATA(mlt_service_filter_type, "jack", metadata, "filter_jack.yml");
     MLT_REGISTER(mlt_service_filter_type, "jackrack", filter_jackrack_init);
@@ -807,7 +802,7 @@ JACKRACK_MODULE_EXPORT MLT_REPOSITORY
     MLT_REGISTER_METADATA(mlt_service_filter_type, "ladspa", metadata, "filter_ladspa.yml");
 #endif
 
-#if defined(mltjackrack_EXPORTS) && defined(WITH_JACK)
+#if defined(mltjackrack_EXPORTS)
     MLT_REGISTER(mlt_service_consumer_type, "jack", consumer_jack_init);
     MLT_REGISTER_METADATA(mlt_service_consumer_type, "jack", metadata, "consumer_jack.yml");
 #endif

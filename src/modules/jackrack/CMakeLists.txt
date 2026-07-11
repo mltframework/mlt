@@ -1,62 +1,58 @@
-add_library(mltjackrack MODULE factory.c)
-
 file(GLOB YML "*.yml")
 add_custom_target(Other_jackrack_Files SOURCES
   ${YML}
 )
 
-include(GenerateExportHeader)
-generate_export_header(mltjackrack)
-target_compile_options(mltjackrack PRIVATE ${MLT_COMPILE_OPTIONS})
-
-target_link_libraries(mltjackrack PRIVATE mlt Threads::Threads)
-if(MSVC)
-    target_link_libraries(mltjackrack PRIVATE PThreads4W::PThreads4W)
-endif()
-target_include_directories(mltjackrack PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 if(TARGET JACK::JACK)
-  target_sources(mltjackrack PRIVATE consumer_jack.c)
-  target_link_libraries(mltjackrack PRIVATE JACK::JACK)
+  add_library(mltjackrack MODULE factory.c)
+
+  include(GenerateExportHeader)
+  generate_export_header(mltjackrack)
+  target_compile_options(mltjackrack PRIVATE ${MLT_COMPILE_OPTIONS})
+
+  target_link_libraries(mltjackrack PRIVATE mlt Threads::Threads JACK::JACK)
   if(MSVC)
-      target_link_libraries(mltjackrack PRIVATE msvccompat)
+      target_link_libraries(mltjackrack PRIVATE PThreads4W::PThreads4W msvccompat)
   endif()
+  target_include_directories(mltjackrack PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+  target_sources(mltjackrack PRIVATE consumer_jack.c)
   target_compile_definitions(mltjackrack PRIVATE WITH_JACK)
   install(FILES consumer_jack.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
-endif()
 
-if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
-  target_sources(mltjackrack PRIVATE
-    jack_rack.c jack_rack.h
-    lock_free_fifo.c lock_free_fifo.h
-    plugin.c plugin.h
-    plugin_desc.c plugin_desc.h
-    plugin_mgr.c plugin_mgr.h
-    plugin_settings.c plugin_settings.h
-    process.c process.h
-    producer_ladspa.c
-    filter_ladspa.c
-  )
-  target_link_libraries(mltjackrack PRIVATE ${CMAKE_DL_LIBS} PkgConfig::xml PkgConfig::glib)
+  if(GPL AND TARGET PkgConfig::xml AND TARGET PkgConfig::glib AND ladspa_h_FOUND)
+    target_sources(mltjackrack PRIVATE
+      jack_rack.c jack_rack.h
+      lock_free_fifo.c lock_free_fifo.h
+      plugin.c plugin.h
+      plugin_desc.c plugin_desc.h
+      plugin_mgr.c plugin_mgr.h
+      plugin_settings.c plugin_settings.h
+      process.c process.h
+      producer_ladspa.c
+      filter_ladspa.c
+    )
+    target_link_libraries(mltjackrack PRIVATE ${CMAKE_DL_LIBS} PkgConfig::xml PkgConfig::glib)
   if(MSVC)
-    target_link_libraries(mltjackrack PRIVATE dirent)
+      target_link_libraries(mltjackrack PRIVATE dirent)
   else()
-    target_link_libraries(mltjackrack PRIVATE m)
+      target_link_libraries(mltjackrack PRIVATE m)
   endif()
 
-  target_compile_definitions(mltjackrack PRIVATE GPL)
-  if(RELOCATABLE)
-    target_compile_definitions(mltjackrack PRIVATE RELOCATABLE)
-  endif()
+    target_compile_definitions(mltjackrack PRIVATE GPL)
+    if(RELOCATABLE)
+      target_compile_definitions(mltjackrack PRIVATE RELOCATABLE)
+    endif()
 
-  install(FILES filter_jack.yml blacklist.txt DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
+    install(FILES filter_jack.yml blacklist.txt DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
 
-  if(TARGET JACK::JACK)
     target_sources(mltjackrack PRIVATE filter_jackrack.c)
     install(FILES filter_jackrack.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
   endif()
-endif()
 
-set_target_properties(mltjackrack PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
+  set_target_properties(mltjackrack PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
+else()
+  message(STATUS "JACK not found; disabling mltjackrack target")
+endif()
 
 add_library(mltladspa MODULE factory.c)
 
@@ -132,4 +128,8 @@ endif()
 
 set_target_properties(mltladspa PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
-install(TARGETS mltjackrack mltladspa LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
+if(TARGET mltjackrack)
+  install(TARGETS mltjackrack mltladspa LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
+else()
+  install(TARGETS mltladspa LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
+endif()
