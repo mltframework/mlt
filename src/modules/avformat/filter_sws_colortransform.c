@@ -54,7 +54,7 @@ static int filter_get_image(mlt_frame frame,
 
     // Only process if we have a valid image
     if (!*image || *format == mlt_image_none || *format == mlt_image_movit
-        || *format == mlt_image_opengl_texture)
+        || *format == mlt_image_opengl_texture || *format == mlt_image_private)
         return 0;
 
     // Get the current color transfer characteristics

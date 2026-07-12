@@ -447,6 +447,10 @@ static int convert_image(mlt_frame frame,
     int height = mlt_properties_get_int(properties, "height");
 
     if (*format != requested_format) {
+        // Only handle standard CPU formats; skip private/invalid/none formats
+        if (*format <= mlt_image_none || *format >= mlt_image_invalid
+            || requested_format <= mlt_image_none || requested_format >= mlt_image_invalid)
+            return 1;
         conversion_function converter = conversion_matrix[*format - 1][requested_format - 1];
 
         mlt_log_debug(NULL,

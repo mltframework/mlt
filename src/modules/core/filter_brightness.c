@@ -175,6 +175,7 @@ static int filter_get_image(mlt_frame frame,
             break;
         case mlt_image_movit:
         case mlt_image_opengl_texture:
+        case mlt_image_private:
             *format = mlt_image_rgba;
             break;
         case mlt_image_none:
