@@ -1,6 +1,14 @@
 name: build-test-linux-on-push
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   python:
@@ -38,7 +46,7 @@ jobs:
           sudo sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
           sudo apt-get -qq update
           sudo apt-get -yqq build-dep mlt
-          sudo apt-get -yqq install autoconf automake git libtool pkg-config wget qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev liblilv-dev
+          sudo apt-get -yqq install autoconf automake git libtool pkg-config wget libplacebo-dev qt6-base-dev libqt6svg6-dev libqt6core5compat6-dev liblilv-dev
           git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
           pushd /tmp/rnnoise
           ./autogen.sh

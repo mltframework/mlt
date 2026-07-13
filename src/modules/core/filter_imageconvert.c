@@ -1,6 +1,6 @@
 /*
  * filter_imageconvert.c -- colorspace and pixel format converter
- * Copyright (C) 2009-2021 Meltytech, LLC
+ * Copyright (C) 2009-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -447,6 +447,10 @@ static int convert_image(mlt_frame frame,
     int height = mlt_properties_get_int(properties, "height");
 
     if (*format != requested_format) {
+        // Only handle standard CPU formats; skip private/invalid/none formats
+        if (*format <= mlt_image_none || *format >= mlt_image_invalid
+            || requested_format <= mlt_image_none || requested_format >= mlt_image_invalid)
+            return 1;
         conversion_function converter = conversion_matrix[*format - 1][requested_format - 1];
 
         mlt_log_debug(NULL,
@@ -493,8 +497,7 @@ static int convert_image(mlt_frame frame,
 
 static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
 {
-    if (!frame->convert_image)
-        frame->convert_image = convert_image;
+    mlt_frame_append_convert_image(frame, convert_image);
     return frame;
 }
 

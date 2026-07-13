@@ -15,8 +15,9 @@ function(add_qt_test)
   target_link_libraries(${_testname} PRIVATE
     Qt${QT_MAJOR_VERSION}::Core
     Qt${QT_MAJOR_VERSION}::Test
+    mlt
     mlt++
-    ${ARG_LINK_LIBRARIES}
+    ${arg_LINK_LIBRARIES}
   )
   if(MSVC)
     target_link_libraries(${_testname} PRIVATE PThreads4W::PThreads4W)

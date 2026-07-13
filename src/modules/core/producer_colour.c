@@ -94,7 +94,7 @@ static int producer_get_image(mlt_frame frame,
         *format = mlt_image_format_id(mlt_properties_get(producer_props, "mlt_image_format"));
 
     // Choose suitable out values if nothing specific requested
-    if (*format == mlt_image_none || *format == mlt_image_movit)
+    if (*format == mlt_image_none || *format == mlt_image_movit || *format == mlt_image_private)
         *format = mlt_image_rgba;
     // Optimize the format to avoid unnecessary conversion
     if ((requested_format == mlt_image_rgba && *format == mlt_image_rgba64)
@@ -109,7 +109,7 @@ static int producer_get_image(mlt_frame frame,
     // Choose default image format if specific request is unsupported
     if (*format != mlt_image_yuv420p && *format != mlt_image_yuv422 && *format != mlt_image_rgb
         && *format != mlt_image_movit && *format != mlt_image_opengl_texture
-        && *format != mlt_image_rgba64)
+        && *format != mlt_image_private && *format != mlt_image_rgba64)
         *format = mlt_image_rgba;
 
     // See if we need to regenerate
@@ -182,6 +182,7 @@ static int producer_get_image(mlt_frame frame,
                 break;
             case mlt_image_movit:
             case mlt_image_opengl_texture:
+            case mlt_image_private:
                 memset(p, 0, size);
                 break;
             case mlt_image_rgba:

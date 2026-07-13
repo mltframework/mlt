@@ -322,6 +322,7 @@ int mlt_to_av_image_format(mlt_image_format format)
         return AV_PIX_FMT_RGBA64LE;
     case mlt_image_movit:
     case mlt_image_opengl_texture:
+    case mlt_image_private:
     case mlt_image_invalid:
         mlt_log_error(NULL,
                       "[filter_avfilter] Unexpected image format: %s\n",
@@ -339,6 +340,7 @@ mlt_image_format mlt_get_supported_image_format(mlt_image_format format)
     case mlt_image_none:
     case mlt_image_movit:
     case mlt_image_opengl_texture:
+    case mlt_image_private:
     case mlt_image_rgba:
         return mlt_image_rgba;
     case mlt_image_rgb:

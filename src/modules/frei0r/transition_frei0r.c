@@ -1,7 +1,7 @@
 /*
  * transition_frei0r.c -- frei0r transition
  * Copyright (c) 2008 Marco Gittler <g.marco@freenet.de>
- * Copyright (C) 2009-2020 Meltytech, LLC
+ * Copyright (C) 2009-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -46,10 +46,11 @@ static int transition_get_image(mlt_frame a_frame,
     if (error)
         return error;
 
-    if (b_frame->convert_image && (*width != request_width || *height != request_height)) {
+    if (mlt_frame_has_convert_image(b_frame)
+        && (*width != request_width || *height != request_height)) {
         mlt_properties_set_int(b_props, "convert_image_width", request_width);
         mlt_properties_set_int(b_props, "convert_image_height", request_height);
-        b_frame->convert_image(b_frame, &images[1], format, *format);
+        mlt_frame_convert_image(b_frame, &images[1], format, *format);
         *width = request_width;
         *height = request_height;
     }
@@ -82,10 +83,11 @@ static int transition_get_image(mlt_frame a_frame,
         if (error)
             return error;
 
-        if (a_frame->convert_image && (*width != request_width || *height != request_height)) {
+        if (mlt_frame_has_convert_image(a_frame)
+            && (*width != request_width || *height != request_height)) {
             mlt_properties_set_int(a_props, "convert_image_width", request_width);
             mlt_properties_set_int(a_props, "convert_image_height", request_height);
-            a_frame->convert_image(a_frame, &images[0], format, *format);
+            mlt_frame_convert_image(a_frame, &images[0], format, *format);
             *width = request_width;
             *height = request_height;
         }

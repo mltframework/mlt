@@ -1,6 +1,15 @@
 name: build-test-msys2-mingw64-on-push
 
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build:
@@ -60,6 +69,7 @@ jobs:
             mingw-w64-x86_64-x264
             mingw-w64-x86_64-x265
             mingw-w64-x86_64-zimg
+            mingw-w64-x86_64-libplacebo
 
       - uses: actions/checkout@v4
 

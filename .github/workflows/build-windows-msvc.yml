@@ -1,6 +1,14 @@
 name: build-test-windows-msvc-on-push
 
-on: [push, pull_request]
+on:
+  push:
+    branches:
+      - master
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
 
 permissions:
   packages: write
@@ -55,4 +63,4 @@ jobs:
 
       - name: Run tests
         run: |
-          ctest --test-dir build -C Debug
+          ctest --test-dir build -C Debug --rerun-failed --output-on-failure

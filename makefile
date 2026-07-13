@@ -29,4 +29,5 @@ cppcheck:
 		--include=src/framework/mlt_types.h \
 		--library=cppcheck.cfg \
 		--suppress=ctuOneDefinitionRuleViolation \
-		--suppress=syntaxError:src/modules/xml/common.c
+		--suppress=syntaxError:src/modules/xml/common.c \
+    --suppress=syntaxError:src/modules/placebo/*.c

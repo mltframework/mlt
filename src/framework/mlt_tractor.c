@@ -3,7 +3,7 @@
  * \brief tractor service class
  * \see mlt_tractor_s
  *
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -418,8 +418,8 @@ static int producer_get_image(mlt_frame self,
     if (data) {
         mlt_frame_set_alpha(self, data, size, NULL);
     }
-    self->convert_image = frame->convert_image;
     self->convert_audio = frame->convert_audio;
+    mlt_frame_copy_convert_image(self, frame);
     return 0;
 }
 
@@ -537,9 +537,8 @@ static int producer_get_frame(mlt_producer parent, mlt_frame_ptr frame, int trac
                                                   subtitle_properties);
                 }
 
-                // Copy the format conversion virtual functions
-                if (!(*frame)->convert_image && temp->convert_image)
-                    (*frame)->convert_image = temp->convert_image;
+                // Copy only audio conversion callbacks here. Image conversion callbacks
+                // must come from the track frame that is ultimately selected for video.
                 if (!(*frame)->convert_audio && temp->convert_audio)
                     (*frame)->convert_audio = temp->convert_audio;
 

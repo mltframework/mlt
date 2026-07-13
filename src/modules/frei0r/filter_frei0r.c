@@ -1,7 +1,7 @@
 /*
  * filter_frei0r.c -- frei0r filter
  * Copyright (c) 2008 Marco Gittler <g.marco@freenet.de>
- * Copyright (C) 2009-2025 Meltytech, LLC
+ * Copyright (C) 2009-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -80,11 +80,11 @@ static int filter_get_image(mlt_frame frame,
         int error = mlt_frame_get_image(frame, image, format, width, height, 0);
 
         // Now request the same image as rgba using convert_image
-        if (!error && *image && *format == mlt_image_rgba64 && frame->convert_image) {
+        if (!error && *image && *format == mlt_image_rgba64 && mlt_frame_has_convert_image(frame)) {
             // Convert to rgba
             mlt_frame temp_frame = mlt_frame_clone(frame, 0);
             uint8_t *rgba64_image = *image;
-            error = frame->convert_image(temp_frame, image, format, mlt_image_rgba);
+            error = mlt_frame_convert_image(temp_frame, image, format, mlt_image_rgba);
             if (!error && *image && *format == mlt_image_rgba) {
                 // Process with frei0r using rgba image
                 mlt_position position = mlt_filter_get_position(filter, frame);

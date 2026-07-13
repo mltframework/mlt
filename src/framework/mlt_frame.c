@@ -63,6 +63,7 @@ mlt_frame mlt_frame_init(mlt_service service)
         self->stack_image = mlt_deque_init();
         self->stack_audio = mlt_deque_init();
         self->stack_service = mlt_deque_init();
+        self->convert_image = mlt_frame_convert_image;
     }
 
     return self;
@@ -423,8 +424,8 @@ static int generate_test_image(mlt_properties properties,
                                           mlt_frame_get_aspect_ratio(test_frame));
                 mlt_properties_set_int(properties, "width", *width);
                 mlt_properties_set_int(properties, "height", *height);
-                if (test_frame->convert_image && requested_format != mlt_image_none)
-                    test_frame->convert_image(test_frame, buffer, format, requested_format);
+                if (mlt_frame_has_convert_image(test_frame) && requested_format != mlt_image_none)
+                    mlt_frame_convert_image(test_frame, buffer, format, requested_format);
                 mlt_properties_set_int(properties, "format", *format);
             }
         } else {
@@ -447,6 +448,7 @@ static int generate_test_image(mlt_properties properties,
         case mlt_image_none:
         case mlt_image_movit:
         case mlt_image_opengl_texture:
+        case mlt_image_private:
             *format = mlt_image_yuv422;
             break;
         case mlt_image_invalid:
@@ -516,8 +518,8 @@ int mlt_frame_get_image(mlt_frame self,
         if (!error && buffer && *buffer) {
             mlt_properties_set_int(properties, "width", *width);
             mlt_properties_set_int(properties, "height", *height);
-            if (self->convert_image && requested_format != mlt_image_none)
-                self->convert_image(self, buffer, format, requested_format);
+            if (mlt_frame_has_convert_image(self) && requested_format != mlt_image_none)
+                mlt_frame_convert_image(self, buffer, format, requested_format);
             mlt_properties_set_int(properties, "format", *format);
         } else {
             error = generate_test_image(properties, buffer, format, width, height, writable);
@@ -527,8 +529,8 @@ int mlt_frame_get_image(mlt_frame self,
         *buffer = mlt_properties_get_data(properties, "image", NULL);
         *width = mlt_properties_get_int(properties, "width");
         *height = mlt_properties_get_int(properties, "height");
-        if (self->convert_image && *buffer && requested_format != mlt_image_none) {
-            self->convert_image(self, buffer, format, requested_format);
+        if (mlt_frame_has_convert_image(self) && *buffer && requested_format != mlt_image_none) {
+            mlt_frame_convert_image(self, buffer, format, requested_format);
             mlt_properties_set_int(properties, "format", *format);
         }
     } else {
@@ -829,6 +831,205 @@ void mlt_frame_close(mlt_frame self)
     }
 }
 
+/* ---- Image conversion callback list ---- */
+
+#define CONVERT_IMAGE_CALLBACKS "_convert_image_callbacks"
+#define CONVERT_IMAGE_IDX "_convert_image_idx"
+
+static int do_convert_image(
+    mlt_frame self, uint8_t **image, mlt_image_format *format, mlt_image_format output, int idx)
+{
+    mlt_properties props = MLT_FRAME_PROPERTIES(self);
+    mlt_deque list = mlt_properties_get_data(props, CONVERT_IMAGE_CALLBACKS, NULL);
+    int count = list ? mlt_deque_count(list) : 0;
+
+    while (idx < count) {
+        mlt_properties_set_int(props, CONVERT_IMAGE_IDX, idx);
+        mlt_convert_image fn = (mlt_convert_image) mlt_deque_peek(list, idx);
+        int error = fn(self, image, format, output);
+        if (!error)
+            return 0;
+        // fn may have internally advanced _convert_image_idx via mlt_frame_next_convert_image;
+        // skip past any indices already tried to avoid double-calling.
+        int next = mlt_properties_get_int(props, CONVERT_IMAGE_IDX);
+        idx = (next > idx) ? next + 1 : idx + 1;
+    }
+    return 1;
+}
+
+/** Register an image-conversion callback on the frame.
+ *
+ * Callbacks are appended to a list and dispatched in order by
+ * \p mlt_frame_convert_image. If \p convert is already registered on this
+ * frame it is silently ignored (deduplication). Has no effect if either
+ * argument is NULL.
+ * 
+ * This function is primarily used by the \p loader producer per \p loader.ini
+ * to add the default and fallback converters. Most modules or external callers
+ * will want to use \p mlt_frame_prepend_convert_image.
+ *
+ * \public \memberof mlt_frame_s
+ * \param self a frame
+ * \param convert the conversion callback to register
+ */
+void mlt_frame_append_convert_image(mlt_frame self, mlt_convert_image convert)
+{
+    if (!self || !convert)
+        return;
+    mlt_properties props = MLT_FRAME_PROPERTIES(self);
+    mlt_deque list = mlt_properties_get_data(props, CONVERT_IMAGE_CALLBACKS, NULL);
+    if (!list) {
+        list = mlt_deque_init();
+        mlt_properties_set_data(props,
+                                CONVERT_IMAGE_CALLBACKS,
+                                list,
+                                0,
+                                (mlt_destructor) mlt_deque_close,
+                                NULL);
+    }
+    // Deduplicate: don't register the same function pointer twice.
+    for (int i = 0; i < mlt_deque_count(list); i++)
+        if (mlt_deque_peek(list, i) == (void *) convert)
+            return;
+    mlt_deque_push_back(list, (void *) convert);
+}
+
+/** Register an image-conversion callback on the frame.
+ *
+ * Callbacks are prepended to a list and dispatched in order by
+ * \p mlt_frame_convert_image. If \p convert is already registered on this
+ * frame it is silently ignored (deduplication). Has no effect if either
+ * argument is NULL.
+ * 
+ * This is more useful for a specialized or incomplete converter. Return 
+ * error from your callback to hand-off to the next converters, one of which
+ * ought to be able to do the conversion. This is not all-or-nothing; you can
+ * still convert to a supported format that your code handles even if it does
+ * not match the requested format. Simply update the \p format argument and/or
+ * \p image argument and return a non-zero value.
+ *
+ * \public \memberof mlt_frame_s
+ * \param self a frame
+ * \param convert the conversion callback to register
+ */
+void mlt_frame_prepend_convert_image(mlt_frame self, mlt_convert_image convert)
+{
+    if (!self || !convert)
+        return;
+    mlt_properties props = MLT_FRAME_PROPERTIES(self);
+    mlt_deque list = mlt_properties_get_data(props, CONVERT_IMAGE_CALLBACKS, NULL);
+    if (!list) {
+        list = mlt_deque_init();
+        mlt_properties_set_data(props,
+                                CONVERT_IMAGE_CALLBACKS,
+                                list,
+                                0,
+                                (mlt_destructor) mlt_deque_close,
+                                NULL);
+    }
+    // Deduplicate: don't register the same function pointer twice.
+    for (int i = 0; i < mlt_deque_count(list); i++)
+        if (mlt_deque_peek(list, i) == (void *) convert)
+            return;
+    mlt_deque_push_front(list, (void *) convert);
+}
+
+/** Determine whether any image-conversion callbacks are registered.
+ *
+ * \public \memberof mlt_frame_s
+ * \param self a frame
+ * \return non-zero if at least one callback has been pushed, zero otherwise
+ */
+int mlt_frame_has_convert_image(mlt_frame self)
+{
+    if (!self)
+        return 0;
+    mlt_deque list = mlt_properties_get_data(MLT_FRAME_PROPERTIES(self),
+                                             CONVERT_IMAGE_CALLBACKS,
+                                             NULL);
+    return list && mlt_deque_count(list) > 0;
+}
+
+/** Convert the frame image to the requested format.
+ *
+ * Dispatches the registered conversion callbacks in order, stopping at the
+ * first one that succeeds (returns 0). If no callback succeeds, returns 1.
+ * This is also the function stored in the \p convert_image field of every
+ * frame; external callers that hold a pointer to that field will therefore
+ * invoke this dispatcher transparently.
+ *
+ * \public \memberof mlt_frame_s
+ * \param self a frame
+ * \param[in,out] image the image buffer pointer
+ * \param[in,out] format the current image format; updated to \p output on success
+ * \param output the desired image format
+ * \return 0 on success, 1 if no callback could perform the conversion
+ */
+int mlt_frame_convert_image(mlt_frame self,
+                            uint8_t **image,
+                            mlt_image_format *format,
+                            mlt_image_format output)
+{
+    return do_convert_image(self, image, format, output, 0);
+}
+
+/** Advance to the next image-conversion callback and continue dispatching.
+ *
+ * Call this from inside a conversion callback to delegate to the next
+ * registered callback in the list (fallback chaining). The current
+ * callback's index is read from the frame's internal dispatch state, so
+ * this must only be called from within an active \p mlt_frame_convert_image
+ * dispatch.
+ *
+ * \public \memberof mlt_frame_s
+ * \param self a frame
+ * \param[in,out] image the image buffer pointer
+ * \param[in,out] format the current image format
+ * \param output the desired image format
+ * \return 0 if a subsequent callback succeeded, 1 if none did
+ */
+int mlt_frame_next_convert_image(mlt_frame self,
+                                 uint8_t **image,
+                                 mlt_image_format *format,
+                                 mlt_image_format output)
+{
+    int idx = mlt_properties_get_int(MLT_FRAME_PROPERTIES(self), CONVERT_IMAGE_IDX);
+    return do_convert_image(self, image, format, output, idx + 1);
+}
+
+/** Copy the image-conversion callback list from one frame to another.
+ *
+ * Used by the tractor and clone functions to propagate converters attached
+ * to track or source frames onto merged or cloned frames. If \p dst already
+ * has a callback list the copy is skipped (first-wins semantics).
+ *
+ * \public \memberof mlt_frame_s
+ * \param dst the frame to copy callbacks onto
+ * \param src the frame to copy callbacks from
+ */
+void mlt_frame_copy_convert_image(mlt_frame dst, mlt_frame src)
+{
+    mlt_deque src_list = mlt_properties_get_data(MLT_FRAME_PROPERTIES(src),
+                                                 CONVERT_IMAGE_CALLBACKS,
+                                                 NULL);
+    if (!src_list || !mlt_deque_count(src_list))
+        return;
+    mlt_deque dst_list = mlt_properties_get_data(MLT_FRAME_PROPERTIES(dst),
+                                                 CONVERT_IMAGE_CALLBACKS,
+                                                 NULL);
+    if (dst_list)
+        return;
+    dst_list = mlt_deque_init();
+    for (int i = 0; i < mlt_deque_count(src_list); i++)
+        mlt_deque_push_back(dst_list, mlt_deque_peek(src_list, i));
+    mlt_properties_set_data(MLT_FRAME_PROPERTIES(dst),
+                            CONVERT_IMAGE_CALLBACKS,
+                            dst_list,
+                            0,
+                            (mlt_destructor) mlt_deque_close,
+                            NULL);
+}
+
 /***** convenience functions *****/
 
 void mlt_frame_write_ppm(mlt_frame frame)
@@ -942,18 +1143,7 @@ mlt_frame mlt_frame_clone(mlt_frame self, int is_deep)
                             0,
                             NULL,
                             NULL);
-    mlt_properties_set_data(new_props,
-                            "movit.convert",
-                            mlt_properties_get_data(properties, "movit.convert", NULL),
-                            0,
-                            NULL,
-                            NULL);
-    mlt_properties_set_data(new_props,
-                            "_movit cpu_convert",
-                            mlt_properties_get_data(properties, "_movit cpu_convert", NULL),
-                            0,
-                            NULL,
-                            NULL);
+    mlt_frame_copy_convert_image(new_frame, self);
 
     if (is_deep) {
         data = mlt_properties_get_data(properties, "audio", &size);
@@ -968,15 +1158,13 @@ mlt_frame mlt_frame_clone(mlt_frame self, int is_deep)
         }
         size = 0;
         data = mlt_properties_get_data(properties, "image", &size);
-        if (data && mlt_image_movit != mlt_properties_get_int(properties, "format")) {
+        mlt_image_format format = mlt_properties_get_int(properties, "format");
+        if (data && format != mlt_image_movit && format != mlt_image_private) {
             int width = mlt_properties_get_int(properties, "width");
             int height = mlt_properties_get_int(properties, "height");
 
             if (!size)
-                size = mlt_image_format_size(mlt_properties_get_int(properties, "format"),
-                                             width,
-                                             height,
-                                             NULL);
+                size = mlt_image_format_size(format, width, height, NULL);
             copy = mlt_pool_alloc(size);
             memcpy(copy, data, size);
             mlt_properties_set_data(new_props, "image", copy, size, mlt_pool_release, NULL);
@@ -1045,18 +1233,7 @@ mlt_frame mlt_frame_clone_audio(mlt_frame self, int is_deep)
                             0,
                             NULL,
                             NULL);
-    mlt_properties_set_data(new_props,
-                            "movit.convert",
-                            mlt_properties_get_data(properties, "movit.convert", NULL),
-                            0,
-                            NULL,
-                            NULL);
-    mlt_properties_set_data(new_props,
-                            "_movit cpu_convert",
-                            mlt_properties_get_data(properties, "_movit cpu_convert", NULL),
-                            0,
-                            NULL,
-                            NULL);
+    mlt_frame_copy_convert_image(new_frame, self);
 
     if (is_deep) {
         data = mlt_properties_get_data(properties, "audio", &size);
@@ -1117,30 +1294,17 @@ mlt_frame mlt_frame_clone_image(mlt_frame self, int is_deep)
                             0,
                             NULL,
                             NULL);
-    mlt_properties_set_data(new_props,
-                            "movit.convert",
-                            mlt_properties_get_data(properties, "movit.convert", NULL),
-                            0,
-                            NULL,
-                            NULL);
-    mlt_properties_set_data(new_props,
-                            "_movit cpu_convert",
-                            mlt_properties_get_data(properties, "_movit cpu_convert", NULL),
-                            0,
-                            NULL,
-                            NULL);
+    mlt_frame_copy_convert_image(new_frame, self);
 
     if (is_deep) {
         data = mlt_properties_get_data(properties, "image", &size);
-        if (data && mlt_image_movit != mlt_properties_get_int(properties, "format")) {
+        mlt_image_format format = mlt_properties_get_int(properties, "format");
+        if (data && format != mlt_image_movit && format != mlt_image_private) {
             int width = mlt_properties_get_int(properties, "width");
             int height = mlt_properties_get_int(properties, "height");
 
             if (!size)
-                size = mlt_image_format_size(mlt_properties_get_int(properties, "format"),
-                                             width,
-                                             height,
-                                             NULL);
+                size = mlt_image_format_size(format, width, height, NULL);
             copy = mlt_pool_alloc(size);
             memcpy(copy, data, size);
             mlt_properties_set_data(new_props, "image", copy, size, mlt_pool_release, NULL);
