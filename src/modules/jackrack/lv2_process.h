@@ -5,7 +5,7 @@
  * Copyright (C) Robert Ham 2002, 2003 (node@users.sourceforge.net)
  *
  * Modification for MLT:
- * Copyright (C) 2024-2025 Meltytech, LLC
+ * Copyright (C) 2024-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -22,8 +22,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-#ifndef __JLH_PROCESS_H__
-#define __JLH_PROCESS_H__
+#ifndef __LV2_PROCESS_H__
+#define __LV2_PROCESS_H__
 
 #include <glib.h>
 #ifdef WITH_JACK
