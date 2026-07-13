@@ -2884,10 +2884,14 @@ static void mltofx_log_clip_diagnostics(int diagnostics, const char *plugin_id, 
                  clip_count);
     for (int c = 0; c < clip_count; ++c) {
         char *clip_name = mlt_properties_get_name(clips, c);
-        mlt_properties clip_props = mlt_properties_get_properties(clips, clip_name);
+        mlt_properties clip = mlt_properties_get_properties(clips, clip_name);
+        mlt_properties clip_props = clip ? mlt_properties_get_properties(clip, "props") : NULL;
         int optional = 0;
-        if (clip_props)
+        if (clip_props
+            && propGetInt((OfxPropertySetHandle) clip_props, kOfxImageClipPropOptional, 0, &optional)
+                   != kOfxStatOK) {
             optional = mlt_properties_get_int(clip_props, kOfxImageClipPropOptional);
+        }
         const char *role = clip_name && !strcmp(clip_name, kOfxImageEffectOutputClipName) ? "output"
                                                                                           : "input";
         mlt_log_info(NULL,
