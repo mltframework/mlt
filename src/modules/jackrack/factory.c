@@ -20,7 +20,6 @@
 #include <framework/mlt.h>
 
 #include <float.h>
-#include <limits.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,21 +33,22 @@
 #define JACKRACK_MODULE_EXPORT
 #endif
 
+#ifdef WITH_JACK
 extern mlt_consumer consumer_jack_init(mlt_profile profile,
                                        mlt_service_type type,
                                        const char *id,
                                        char *arg);
-
-#ifdef GPL
-#include "plugin_mgr.h"
-#include <ladspa.h>
-
-#ifdef WITH_JACK
+#ifdef WITH_LADSPA
 extern mlt_filter filter_jackrack_init(mlt_profile profile,
                                        mlt_service_type type,
                                        const char *id,
                                        char *arg);
 #endif
+#endif
+
+#ifdef WITH_LADSPA
+
+#if !defined(WITH_JACK)
 extern mlt_filter filter_ladspa_init(mlt_profile profile,
                                      mlt_service_type type,
                                      const char *id,
@@ -57,6 +57,11 @@ extern mlt_producer producer_ladspa_init(mlt_profile profile,
                                          mlt_service_type type,
                                          const char *id,
                                          char *arg);
+#endif
+
+#include "plugin_mgr.h"
+#include <ladspa.h>
+plugin_mgr_t *g_jackrack_plugin_mgr = NULL;
 
 #ifdef WITH_LV2
 
@@ -82,6 +87,7 @@ extern mlt_producer producer_lv2_init(mlt_profile profile,
                                       mlt_service_type type,
                                       const char *id,
                                       char *arg);
+lv2_mgr_t *g_lv2_plugin_mgr = NULL;
 #endif
 
 #ifdef WITH_VST2
@@ -97,15 +103,6 @@ extern mlt_producer producer_vst2_init(mlt_profile profile,
                                        const char *id,
                                        char *arg);
 
-#endif
-
-plugin_mgr_t *g_jackrack_plugin_mgr = NULL;
-
-#ifdef WITH_LV2
-lv2_mgr_t *g_lv2_plugin_mgr = NULL;
-#endif
-
-#ifdef WITH_VST2
 vst2_mgr_t *g_vst2_plugin_mgr = NULL;
 #endif
 
@@ -154,28 +151,29 @@ static void add_port_to_metadata(mlt_properties p, plugin_desc_t *desc, int j)
     mlt_properties_set(p, "animation", "yes");
 }
 
-#endif
+#endif // WITH_LADSPA
 
 static mlt_properties metadata(mlt_service_type type, const char *id, char *data)
 {
+    int is_ladspa = !strncmp(id, "ladspa.", 7);
     char file[PATH_MAX];
     if (type == mlt_service_filter_type) {
         snprintf(file,
                  PATH_MAX,
                  "%s/jackrack/%s",
                  mlt_environment("MLT_DATA"),
-                 strncmp(id, "ladspa.", 7) ? data : "filter_ladspa.yml");
+                 is_ladspa ? "filter_ladspa.yml" : data);
     } else {
         snprintf(file,
                  PATH_MAX,
                  "%s/jackrack/%s",
                  mlt_environment("MLT_DATA"),
-                 strncmp(id, "ladspa.", 7) ? data : "producer_ladspa.yml");
+                 is_ladspa ? "producer_ladspa.yml" : data);
     }
     mlt_properties result = mlt_properties_parse_yaml(file);
 
-#ifdef GPL
-    if (!strncmp(id, "ladspa.", 7)) {
+#ifdef WITH_LADSPA
+    if (is_ladspa) {
         // Annotate the yaml properties with ladspa control port info.
         plugin_desc_t *desc = plugin_mgr_get_any_desc(g_jackrack_plugin_mgr,
                                                       strtol(id + 7, NULL, 10));
@@ -492,7 +490,7 @@ static mlt_properties lv2_metadata(mlt_service_type type, const char *id, char *
                 mlt_properties_set(p, "title", "Channel Mask");
                 mlt_properties_set(p,
                                    "description",
-                                   "A bitmask inidicating which channels to affect.");
+                                   "A bitmask indicating which channels to affect.");
                 mlt_properties_set(p, "type", "integer");
                 mlt_properties_set(p, "default", "0xFFFFFFFF");
                 mlt_properties_set_int(p, "minimum", 0);
@@ -624,19 +622,19 @@ static mlt_properties vst2_metadata(mlt_service_type type, const char *id, char 
                 mlt_properties_set(p, "mutable", "yes");
             }
             /* for (i = 0; i < desc->status_port_count; i++) {
-         	int j = desc->status_port_indicies[i];
-         	p = mlt_properties_new();
-         	snprintf(key, sizeof(key), "%d", mlt_properties_count(params));
-         	mlt_properties_set_data(params,
-         				key,
-         				p,
-         				0,
-         				(mlt_destructor) mlt_properties_close,
-         				NULL);
-         	snprintf(key, sizeof(key), "%d[*]", j);
-         	mlt_properties_set(p, "identifier", key);
-         	vst2_add_port_to_metadata(p, desc, j);
-         	mlt_properties_set(p, "readonly", "yes");
+            int j = desc->status_port_indicies[i];
+            p = mlt_properties_new();
+            snprintf(key, sizeof(key), "%d", mlt_properties_count(params));
+            mlt_properties_set_data(params,
+                        key,
+                        p,
+                        0,
+                        (mlt_destructor) mlt_properties_close,
+                        NULL);
+            snprintf(key, sizeof(key), "%d[*]", j);
+            mlt_properties_set(p, "identifier", key);
+            vst2_add_port_to_metadata(p, desc, j);
+            mlt_properties_set(p, "readonly", "yes");
          } */
 
             p = mlt_properties_new();
@@ -686,7 +684,7 @@ static mlt_properties vst2_metadata(mlt_service_type type, const char *id, char 
                 mlt_properties_set(p, "title", "Channel Mask");
                 mlt_properties_set(p,
                                    "description",
-                                   "A bitmask inidicating which channels to affect.");
+                                   "A bitmask indicating which channels to affect.");
                 mlt_properties_set(p, "type", "integer");
                 mlt_properties_set(p, "default", "0xFFFFFFFF");
                 mlt_properties_set_int(p, "minimum", 0);
@@ -703,97 +701,106 @@ static mlt_properties vst2_metadata(mlt_service_type type, const char *id, char 
 
 JACKRACK_MODULE_EXPORT MLT_REPOSITORY
 {
-#ifdef GPL
-    GSList *list;
-    g_jackrack_plugin_mgr = plugin_mgr_new();
+    // Registrations owned by mltladspa.
+#if defined(WITH_LADSPA) && !defined(WITH_JACK)
+    MLT_REGISTER(mlt_service_filter_type, "ladspa", filter_ladspa_init);
+    MLT_REGISTER_METADATA(mlt_service_filter_type, "ladspa", metadata, "filter_ladspa.yml");
+    {
+        GSList *list;
+        g_jackrack_plugin_mgr = plugin_mgr_new();
 
-    for (list = g_jackrack_plugin_mgr->all_plugins; list; list = g_slist_next(list)) {
-        plugin_desc_t *desc = (plugin_desc_t *) list->data;
-        char *s = malloc(strlen("ladpsa.") + 21);
+        for (list = g_jackrack_plugin_mgr->all_plugins; list; list = g_slist_next(list)) {
+            plugin_desc_t *desc = (plugin_desc_t *) list->data;
+            char *s = malloc(strlen("ladspa.") + 21);
 
-        sprintf(s, "ladspa.%lu", desc->id);
+            sprintf(s, "ladspa.%lu", desc->id);
 
-        if (desc->has_input) {
-            MLT_REGISTER(mlt_service_filter_type, s, filter_ladspa_init);
-            MLT_REGISTER_METADATA(mlt_service_filter_type, s, metadata, NULL);
-        } else {
-            MLT_REGISTER(mlt_service_producer_type, s, producer_ladspa_init);
-            MLT_REGISTER_METADATA(mlt_service_producer_type, s, metadata, NULL);
+            if (desc->has_input) {
+                MLT_REGISTER(mlt_service_filter_type, s, filter_ladspa_init);
+                MLT_REGISTER_METADATA(mlt_service_filter_type, s, metadata, NULL);
+            } else {
+                MLT_REGISTER(mlt_service_producer_type, s, producer_ladspa_init);
+                MLT_REGISTER_METADATA(mlt_service_producer_type, s, metadata, NULL);
+            }
+
+            free(s);
         }
-
-        free(s);
+        mlt_factory_register_for_clean_up(g_jackrack_plugin_mgr,
+                                          (mlt_destructor) plugin_mgr_destroy);
     }
-    mlt_factory_register_for_clean_up(g_jackrack_plugin_mgr, (mlt_destructor) plugin_mgr_destroy);
+#endif
 
 #ifdef WITH_LV2
-    g_lv2_plugin_mgr = lv2_mgr_new();
+    {
+        GSList *list;
+        g_lv2_plugin_mgr = lv2_mgr_new();
 
-    char global_lv2_world[20];
-    snprintf(global_lv2_world, 20, "%p", g_lv2_plugin_mgr->lv2_world);
-    mlt_environment_set("global_lv2_world", global_lv2_world);
+        char global_lv2_world[20];
+        snprintf(global_lv2_world, 20, "%p", g_lv2_plugin_mgr->lv2_world);
+        mlt_environment_set("global_lv2_world", global_lv2_world);
 
-    for (list = g_lv2_plugin_mgr->all_plugins; list; list = g_slist_next(list)) {
-        lv2_plugin_desc_t *desc = (lv2_plugin_desc_t *) list->data;
-        char *s = NULL;
-        s = calloc(1, strlen("lv2.") + strlen(desc->uri) + 1);
+        for (list = g_lv2_plugin_mgr->all_plugins; list; list = g_slist_next(list)) {
+            lv2_plugin_desc_t *desc = (lv2_plugin_desc_t *) list->data;
+            char *s = NULL;
+            s = calloc(1, strlen("lv2.") + strlen(desc->uri) + 1);
 
-        sprintf(s, "lv2.%s", desc->uri);
+            sprintf(s, "lv2.%s", desc->uri);
 
-        char *str_ptr = strchr(s, ':');
-        while (str_ptr != NULL) {
-            *str_ptr++ = '^';
-            str_ptr = strchr(str_ptr, ':');
-        }
+            char *str_ptr = strchr(s, ':');
+            while (str_ptr != NULL) {
+                *str_ptr++ = '^';
+                str_ptr = strchr(str_ptr, ':');
+            }
 
-        if (desc->has_input) {
-            MLT_REGISTER(mlt_service_filter_type, s, filter_lv2_init);
-            MLT_REGISTER_METADATA(mlt_service_filter_type, s, lv2_metadata, NULL);
-        } else {
-            MLT_REGISTER(mlt_service_producer_type, s, producer_lv2_init);
-            MLT_REGISTER_METADATA(mlt_service_producer_type, s, lv2_metadata, NULL);
-        }
+            if (desc->has_input) {
+                MLT_REGISTER(mlt_service_filter_type, s, filter_lv2_init);
+                MLT_REGISTER_METADATA(mlt_service_filter_type, s, lv2_metadata, NULL);
+            } else {
+                MLT_REGISTER(mlt_service_producer_type, s, producer_lv2_init);
+                MLT_REGISTER_METADATA(mlt_service_producer_type, s, lv2_metadata, NULL);
+            }
 
-        if (s) {
-            free(s);
+            if (s) {
+                free(s);
+            }
         }
     }
 #endif
 
 #ifdef WITH_VST2
+    {
+        GSList *list;
+        g_vst2_plugin_mgr = vst2_mgr_new();
 
-    g_vst2_plugin_mgr = vst2_mgr_new();
+        for (list = g_vst2_plugin_mgr->all_plugins; list; list = g_slist_next(list)) {
+            vst2_plugin_desc_t *desc = (vst2_plugin_desc_t *) list->data;
+            char *s = malloc(strlen("vst2.") + 21);
 
-    for (list = g_vst2_plugin_mgr->all_plugins; list; list = g_slist_next(list)) {
-        vst2_plugin_desc_t *desc = (vst2_plugin_desc_t *) list->data;
-        char *s = malloc(strlen("vst2.") + 21);
+            sprintf(s, "vst2.%lu", desc->id);
 
-        sprintf(s, "vst2.%lu", desc->id);
+            if (desc->has_input) {
+                MLT_REGISTER(mlt_service_filter_type, s, filter_vst2_init);
+                MLT_REGISTER_METADATA(mlt_service_filter_type, s, vst2_metadata, NULL);
+            } else {
+                MLT_REGISTER(mlt_service_producer_type, s, producer_vst2_init);
+                MLT_REGISTER_METADATA(mlt_service_producer_type, s, vst2_metadata, NULL);
+            }
 
-        if (desc->has_input) {
-            MLT_REGISTER(mlt_service_filter_type, s, filter_vst2_init);
-            MLT_REGISTER_METADATA(mlt_service_filter_type, s, vst2_metadata, NULL);
-        } else {
-            MLT_REGISTER(mlt_service_producer_type, s, producer_vst2_init);
-            MLT_REGISTER_METADATA(mlt_service_producer_type, s, vst2_metadata, NULL);
+            free(s);
         }
-
-        free(s);
+        mlt_factory_register_for_clean_up(g_vst2_plugin_mgr, (mlt_destructor) vst2_mgr_destroy);
     }
-    mlt_factory_register_for_clean_up(g_vst2_plugin_mgr, (mlt_destructor) vst2_mgr_destroy);
-
 #endif
 
+    // Registrations owned by mltjackrack.
 #ifdef WITH_JACK
+    MLT_REGISTER(mlt_service_consumer_type, "jack", consumer_jack_init);
+    MLT_REGISTER_METADATA(mlt_service_consumer_type, "jack", metadata, "consumer_jack.yml");
+#ifdef WITH_LADSPA
     MLT_REGISTER(mlt_service_filter_type, "jack", filter_jackrack_init);
     MLT_REGISTER_METADATA(mlt_service_filter_type, "jack", metadata, "filter_jack.yml");
     MLT_REGISTER(mlt_service_filter_type, "jackrack", filter_jackrack_init);
     MLT_REGISTER_METADATA(mlt_service_filter_type, "jackrack", metadata, "filter_jackrack.yml");
 #endif
-    MLT_REGISTER(mlt_service_filter_type, "ladspa", filter_ladspa_init);
-    MLT_REGISTER_METADATA(mlt_service_filter_type, "ladspa", metadata, "filter_ladspa.yml");
-#endif
-#ifdef WITH_JACK
-    MLT_REGISTER(mlt_service_consumer_type, "jack", consumer_jack_init);
-    MLT_REGISTER_METADATA(mlt_service_consumer_type, "jack", metadata, "consumer_jack.yml");
 #endif
 }
