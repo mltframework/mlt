@@ -6,3 +6,7 @@ colorhalftone:
   0: 1.0
 IIRblur:
   0: 1.7
+camerashake:
+  0: 1.0
+  1: 1.0
+  
