@@ -2875,9 +2875,6 @@ static void mltofx_log_clip_diagnostics(int diagnostics, const char *plugin_id, 
         return;
 
     int clip_count = mlt_properties_count(clips);
-    int output_clip_count = 0;
-    int input_clip_count = 0;
-    int optional_input_clip_count = 0;
     mlt_log_info(NULL,
                  "[openfx] plugin `%s`: clip_count=%d\n",
                  plugin_id ? plugin_id : "(null)",
@@ -2901,13 +2898,6 @@ static void mltofx_log_clip_diagnostics(int diagnostics, const char *plugin_id, 
                      clip_name ? clip_name : "(null)",
                      role,
                      optional);
-        if (clip_name && !strcmp(clip_name, kOfxImageEffectOutputClipName))
-            ++output_clip_count;
-        else {
-            ++input_clip_count;
-            if (optional)
-                ++optional_input_clip_count;
-        }
     }
 }
 
