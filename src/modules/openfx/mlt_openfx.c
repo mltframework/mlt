@@ -2839,8 +2839,74 @@ void mltofx_set_output_clip_data(OfxPlugin *plugin,
     mltofx_apply_cached_clip_preferences(image_effect);
 }
 
+// Logs all indexed string values for an OFX property (for discovery diagnostics).
+static void mltofx_log_property_diagnostics(int diagnostics,
+                                            const char *plugin_id,
+                                            mlt_properties props,
+                                            const char *property,
+                                            const char *label)
+{
+    if (!diagnostics || !props)
+        return;
+
+    int count = 0;
+    propGetDimension((OfxPropertySetHandle) props, property, &count);
+    mlt_log_info(NULL,
+                 "[openfx] plugin `%s`: %s count=%d\n",
+                 plugin_id ? plugin_id : "(null)",
+                 label,
+                 count);
+    for (int i = 0; i < count; ++i) {
+        char *value = NULL;
+        if (propGetString((OfxPropertySetHandle) props, property, i, &value) == kOfxStatOK) {
+            mlt_log_info(NULL,
+                         "[openfx] plugin `%s`: %s[%d]=`%s`\n",
+                         plugin_id ? plugin_id : "(null)",
+                         label,
+                         i,
+                         value ? value : "(null)");
+        }
+    }
+}
+
+static void mltofx_log_clip_diagnostics(int diagnostics, const char *plugin_id, mlt_properties clips)
+{
+    if (!diagnostics || !clips)
+        return;
+
+    int clip_count = mlt_properties_count(clips);
+    mlt_log_info(NULL,
+                 "[openfx] plugin `%s`: clip_count=%d\n",
+                 plugin_id ? plugin_id : "(null)",
+                 clip_count);
+    for (int c = 0; c < clip_count; ++c) {
+        char *clip_name = mlt_properties_get_name(clips, c);
+        mlt_properties clip = mlt_properties_get_properties(clips, clip_name);
+        mlt_properties clip_props = clip ? mlt_properties_get_properties(clip, "props") : NULL;
+        int optional = 0;
+        if (clip_props
+            && propGetInt((OfxPropertySetHandle) clip_props, kOfxImageClipPropOptional, 0, &optional)
+                   != kOfxStatOK) {
+            optional = mlt_properties_get_int(clip_props, kOfxImageClipPropOptional);
+        }
+        const char *role = clip_name && !strcmp(clip_name, kOfxImageEffectOutputClipName) ? "output"
+                                                                                          : "input";
+        mlt_log_info(NULL,
+                     "[openfx] plugin `%s`: clip[%d]=`%s` role=%s optional=%d\n",
+                     plugin_id ? plugin_id : "(null)",
+                     c,
+                     clip_name ? clip_name : "(null)",
+                     role,
+                     optional);
+    }
+}
+
 int mltofx_detect_plugin(OfxPlugin *plugin)
 {
+    const char *plugin_id = plugin ? plugin->pluginIdentifier : NULL;
+    int diagnostics = mltofx_discovery_diagnostics_enabled(plugin_id);
+    int result = 0;
+
     mlt_properties image_effect = mlt_properties_new();
     mlt_properties clips = mlt_properties_new();
     mlt_properties props = mlt_properties_new();
@@ -2865,7 +2931,13 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
     mltofx_log_status_code(status_code, "kOfxActionLoad");
 
     if (status_code != kOfxStatOK) {
-        return 0;
+        if (diagnostics) {
+            mlt_log_info(NULL,
+                         "[openfx] rejected plugin `%s`: load failed status=%d\n",
+                         plugin_id ? plugin_id : "(null)",
+                         status_code);
+        }
+        goto cleanup;
     }
 
     status_code
@@ -2873,8 +2945,14 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
     mltofx_log_status_code(status_code, "kOfxActionDescribe");
 
     if (status_code != kOfxStatOK) {
+        if (diagnostics) {
+            mlt_log_info(NULL,
+                         "[openfx] rejected plugin `%s`: describe failed status=%d\n",
+                         plugin_id ? plugin_id : "(null)",
+                         status_code);
+        }
         plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
-        return 0;
+        goto cleanup;
     }
 
     status_code = plugin->mainEntry(kOfxImageEffectActionDescribeInContext,
@@ -2889,8 +2967,16 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
         describe_in_context_valid = 1;
     }
 
+    mltofx_log_clip_diagnostics(diagnostics, plugin_id, clips);
+
     int i = 0;
     int count = 0;
+
+    mltofx_log_property_diagnostics(diagnostics,
+                                    plugin_id,
+                                    props,
+                                    kOfxImageEffectPropSupportedContexts,
+                                    "supported_context");
 
     propGetDimension((OfxPropertySetHandle) props, kOfxImageEffectPropSupportedContexts, &count);
     for (i = 0; i < count; i++) {
@@ -2904,10 +2990,21 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
         }
     }
     if (i == count) {
+        if (diagnostics) {
+            mlt_log_info(NULL,
+                         "[openfx] rejected plugin `%s`: missing filter context\n",
+                         plugin_id ? plugin_id : "(null)");
+        }
         mlt_log_debug(NULL, "[openfx] Plugin not a filter: %s\n", plugin->pluginIdentifier);
         // since plugin is not filter then load fail so we must not unload it
-        return 0;
+        goto cleanup;
     }
+
+    mltofx_log_property_diagnostics(diagnostics,
+                                    plugin_id,
+                                    props,
+                                    kOfxImageEffectPropSupportedPixelDepths,
+                                    "supported_pixel_depth");
 
     count = 0;
 
@@ -2924,23 +3021,40 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
         }
     }
     if (i == count) {
+        if (diagnostics) {
+            mlt_log_info(NULL,
+                         "[openfx] rejected plugin `%s`: no supported pixel depth\n",
+                         plugin_id ? plugin_id : "(null)");
+        }
         mlt_log_verbose(NULL,
                         "[openfx] Plugin does not support byte, short, half, or float pixels: %s\n",
                         plugin->pluginIdentifier);
         // since no pixel depth is supported by us then plugin is load fail so we must not unload it
-        return 0;
+        goto cleanup;
     }
 
-    if (describe_in_context_valid)
-        return 1;
+    if (describe_in_context_valid) {
+        if (diagnostics) {
+            mlt_log_info(NULL, "[openfx] accepted plugin `%s`\n", plugin_id ? plugin_id : "(null)");
+        }
+        result = 1;
+        goto cleanup;
+    }
+
+    if (diagnostics) {
+        mlt_log_info(NULL,
+                     "[openfx] rejected plugin `%s`: missing host feature in describeInContext\n",
+                     plugin_id ? plugin_id : "(null)");
+    }
 
     plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
+cleanup:
     mlt_properties_close(image_effect);
     mlt_properties_close(clips);
     mlt_properties_close(iparams);
     mlt_properties_close(props);
     mlt_properties_close(params);
-    return 0;
+    return result;
 }
 
 static int param_type_is_supported(const char *type)

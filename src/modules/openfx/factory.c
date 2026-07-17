@@ -20,6 +20,7 @@
 #include "mlt_openfx.h"
 #include <glib.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 extern OfxHost MltOfxHost;
 mlt_properties mltofx_context;
@@ -252,33 +253,100 @@ static void scan_ofx_dir(mlt_repository repository, const char *dir, int *dli, i
                 if (!plugin_ptr)
                     break;
 
-                int detected = mltofx_detect_plugin(plugin_ptr);
-
-                if (!detected)
+                const char *plugin_id = plugin_ptr->pluginIdentifier;
+                if (!plugin_id || !plugin_id[0]) {
+                    mlt_log_warning(
+                        NULL,
+                        "[openfx] skipping plugin with missing identifier in bundle `%s` "
+                        "(index=%d)\n",
+                        name,
+                        i);
                     continue;
+                }
 
                 char *s = NULL;
-                size_t pluginIdentifier_len = strlen(plugin_ptr->pluginIdentifier);
-                s = malloc(pluginIdentifier_len + 8);
-                sprintf(s, "openfx.%s", plugin_ptr->pluginIdentifier);
-
-                // if colon `:` exists in plugin identifier
-                // change it to accent sign `^` because `:`
-                // can cause issues with mlt if put in filter
-                // name
+                size_t pluginIdentifier_len = strlen(plugin_id);
+                size_t service_prefix_len = strlen("openfx.");
+                if (pluginIdentifier_len > SIZE_MAX - service_prefix_len - 1) {
+                    continue;
+                }
+                size_t service_key_size = pluginIdentifier_len + service_prefix_len + 1;
+                s = malloc(service_key_size);
+                if (!s) {
+                    continue;
+                }
+                if (snprintf(s, service_key_size, "openfx.%s", plugin_id)
+                    >= (int) service_key_size) {
+                    free(s);
+                    continue;
+                }
+                // if colon `:` exists in plugin identifier change it to accent
+                // sign `^` because `:` can cause issues with mlt if put in
+                // filter name
                 char *str_ptr = strchr(s, ':');
                 while (str_ptr != NULL) {
                     *str_ptr++ = '^';
                     str_ptr = strchr(str_ptr, ':');
                 }
 
+                int diagnostics = mltofx_discovery_diagnostics_enabled(plugin_id);
+                if (diagnostics) {
+                    mlt_log_info(NULL,
+                                 "[openfx] discovered plugin `%s` in bundle `%s` (index=%d)\n",
+                                 plugin_id ? plugin_id : "(null)",
+                                 name,
+                                 i);
+                }
+
+                // Skip duplicate service keys before detect/register work.
+                if (mlt_properties_get_properties(mltofx_context, s) != NULL) {
+                    if (diagnostics) {
+                        mlt_log_info(NULL,
+                                     "[openfx] skipped plugin `%s` (index=%d): duplicate service "
+                                     "`%s` already registered\n",
+                                     plugin_id ? plugin_id : "(null)",
+                                     i,
+                                     s);
+                    }
+                    free(s);
+                    continue;
+                }
+
+                int detected = mltofx_detect_plugin(plugin_ptr);
+
+                if (!detected) {
+                    if (diagnostics) {
+                        mlt_log_info(NULL,
+                                     "[openfx] skipped plugin `%s`: detection rejected it\n",
+                                     plugin_id ? plugin_id : "(null)");
+                    }
+                    free(s);
+                    continue;
+                }
+
                 mlt_properties p = mlt_properties_new();
-                mlt_properties_set_properties(mltofx_context, s, p);
-                mlt_properties_close(p);
+                if (!p) {
+                    free(s);
+                    continue;
+                }
+
                 mlt_properties_set(p, "dli", dl_n);
                 mlt_properties_set_int(p, "index", i);
+                if (mlt_properties_set_properties(mltofx_context, s, p)) {
+                    mlt_properties_close(p);
+                    free(s);
+                    continue;
+                }
+                mlt_properties_close(p);
+
                 MLT_REGISTER(mlt_service_filter_type, s, filter_openfx_init);
                 MLT_REGISTER_METADATA(mlt_service_filter_type, s, metadata, "filter_openfx.yml");
+                if (diagnostics) {
+                    mlt_log_info(NULL,
+                                 "[openfx] added plugin `%s` as filter `%s`\n",
+                                 plugin_id ? plugin_id : "(null)",
+                                 s);
+                }
                 free(s);
             }
         } else if (depth == 0 && name[0] != '.') {

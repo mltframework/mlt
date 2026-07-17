@@ -59,6 +59,30 @@ typedef enum {
     mltofx_components_rgba = 2,
 } mltofx_components_mask;
 
+// Set to 1 to print OpenFX discovery diagnostics during repository initialization.
+#ifndef MLTOFX_DISCOVERY_DIAGNOSTICS
+#define MLTOFX_DISCOVERY_DIAGNOSTICS 0
+#endif
+
+// Optional plugin identifier substring filter for diagnostics (example: "MergeDifference").
+// Set to NULL or "" to log all detected OpenFX plugins.
+#ifndef MLTOFX_DISCOVERY_DIAGNOSTICS_PLUGIN
+#define MLTOFX_DISCOVERY_DIAGNOSTICS_PLUGIN NULL
+#endif
+
+static inline int mltofx_discovery_diagnostics_enabled(const char *plugin_identifier)
+{
+#if MLTOFX_DISCOVERY_DIAGNOSTICS
+    const char *filter = MLTOFX_DISCOVERY_DIAGNOSTICS_PLUGIN;
+    if (!filter || !filter[0])
+        return 1;
+    return plugin_identifier && strstr(plugin_identifier, filter);
+#else
+    (void) plugin_identifier;
+    return 0;
+#endif
+}
+
 void mltofx_init_host_properties(OfxPropertySetHandle host_properties);
 
 void mltofx_create_instance(OfxPlugin *plugin, mlt_properties image_effect);
