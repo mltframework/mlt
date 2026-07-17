@@ -20,6 +20,7 @@
 #include "mlt_openfx.h"
 #include <glib.h>
 #include <stdbool.h>
+#include <stdint.h>
 
 extern OfxHost MltOfxHost;
 mlt_properties mltofx_context;
@@ -265,8 +266,20 @@ static void scan_ofx_dir(mlt_repository repository, const char *dir, int *dli, i
 
                 char *s = NULL;
                 size_t pluginIdentifier_len = strlen(plugin_id);
-                s = malloc(pluginIdentifier_len + 8);
-                sprintf(s, "openfx.%s", plugin_id);
+                size_t service_prefix_len = strlen("openfx.");
+                if (pluginIdentifier_len > SIZE_MAX - service_prefix_len - 1) {
+                    continue;
+                }
+                size_t service_key_size = pluginIdentifier_len + service_prefix_len + 1;
+                s = malloc(service_key_size);
+                if (!s) {
+                    continue;
+                }
+                if (snprintf(s, service_key_size, "openfx.%s", plugin_id)
+                    >= (int) service_key_size) {
+                    free(s);
+                    continue;
+                }
                 // if colon `:` exists in plugin identifier change it to accent
                 // sign `^` because `:` can cause issues with mlt if put in
                 // filter name
@@ -312,10 +325,20 @@ static void scan_ofx_dir(mlt_repository repository, const char *dir, int *dli, i
                 }
 
                 mlt_properties p = mlt_properties_new();
-                mlt_properties_set_properties(mltofx_context, s, p);
-                mlt_properties_close(p);
+                if (!p) {
+                    free(s);
+                    continue;
+                }
+
                 mlt_properties_set(p, "dli", dl_n);
                 mlt_properties_set_int(p, "index", i);
+                if (mlt_properties_set_properties(mltofx_context, s, p)) {
+                    mlt_properties_close(p);
+                    free(s);
+                    continue;
+                }
+                mlt_properties_close(p);
+
                 MLT_REGISTER(mlt_service_filter_type, s, filter_openfx_init);
                 MLT_REGISTER_METADATA(mlt_service_filter_type, s, metadata, "filter_openfx.yml");
                 if (diagnostics) {

@@ -2905,6 +2905,7 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
 {
     const char *plugin_id = plugin ? plugin->pluginIdentifier : NULL;
     int diagnostics = mltofx_discovery_diagnostics_enabled(plugin_id);
+    int result = 0;
 
     mlt_properties image_effect = mlt_properties_new();
     mlt_properties clips = mlt_properties_new();
@@ -2936,7 +2937,7 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
                          plugin_id ? plugin_id : "(null)",
                          status_code);
         }
-        return 0;
+        goto cleanup;
     }
 
     status_code
@@ -2951,7 +2952,7 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
                          status_code);
         }
         plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
-        return 0;
+        goto cleanup;
     }
 
     status_code = plugin->mainEntry(kOfxImageEffectActionDescribeInContext,
@@ -2996,7 +2997,7 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
         }
         mlt_log_debug(NULL, "[openfx] Plugin not a filter: %s\n", plugin->pluginIdentifier);
         // since plugin is not filter then load fail so we must not unload it
-        return 0;
+        goto cleanup;
     }
 
     mltofx_log_property_diagnostics(diagnostics,
@@ -3029,14 +3030,15 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
                         "[openfx] Plugin does not support byte, short, half, or float pixels: %s\n",
                         plugin->pluginIdentifier);
         // since no pixel depth is supported by us then plugin is load fail so we must not unload it
-        return 0;
+        goto cleanup;
     }
 
     if (describe_in_context_valid) {
         if (diagnostics) {
             mlt_log_info(NULL, "[openfx] accepted plugin `%s`\n", plugin_id ? plugin_id : "(null)");
         }
-        return 1;
+        result = 1;
+        goto cleanup;
     }
 
     if (diagnostics) {
@@ -3046,12 +3048,13 @@ int mltofx_detect_plugin(OfxPlugin *plugin)
     }
 
     plugin->mainEntry(kOfxActionUnload, NULL, NULL, NULL);
+cleanup:
     mlt_properties_close(image_effect);
     mlt_properties_close(clips);
     mlt_properties_close(iparams);
     mlt_properties_close(props);
     mlt_properties_close(params);
-    return 0;
+    return result;
 }
 
 static int param_type_is_supported(const char *type)
