@@ -473,17 +473,21 @@ static int transition_get_frame(mlt_service service, mlt_frame_ptr frame, int in
 
             // If we're not active then...
             if (!active) {
-                // Hunt for the a_frame
-                while (a_frame <= b_frame
-                       && (invalid(self->frames[a_frame])
-                           || (mlt_properties_get_int(MLT_FRAME_PROPERTIES(self->frames[a_frame]),
-                                                      "hide")
-                               & type))) {
+                // Hunt for the a_frame, skipping invalid, fx_cut, and hidden frames
+                while (a_frame <= b_frame) {
+                    mlt_properties a_props = MLT_FRAME_PROPERTIES(self->frames[a_frame]);
+                    if (!invalid(self->frames[a_frame])
+                        && !mlt_properties_get_int(a_props, "fx_cut")
+                        && !(mlt_properties_get_int(a_props, "hide") & type))
+                        break;
                     a_frame++;
                 }
 
                 // Determine if we're active now
-                active = a_frame != b_frame && !invalid(self->frames[b_frame]);
+                // fx_cut frames are processed by the tractor, not transitions
+                mlt_properties b_props = MLT_FRAME_PROPERTIES(self->frames[b_frame]);
+                active = a_frame != b_frame && !invalid(self->frames[b_frame])
+                         && !mlt_properties_get_int(b_props, "fx_cut");
             }
             break;
 
