@@ -547,8 +547,7 @@ static int producer_get_frame(mlt_producer parent, mlt_frame_ptr frame, int trac
 
                 // Handle fx only tracks
                 if (mlt_properties_get_int(temp_properties, "fx_cut")) {
-                    int hide = (video == NULL ? 1 : 0) | (audio == NULL ? 2 : 0);
-                    mlt_properties_set_int(temp_properties, "hide", hide);
+                    mlt_properties_set_int(temp_properties, "hide", 3);
                 }
 
                 // We store all frames with a destructor on the output frame

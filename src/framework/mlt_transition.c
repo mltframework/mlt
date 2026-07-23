@@ -418,6 +418,47 @@ static int get_image_b(mlt_frame b_frame,
  * \return true on error
  */
 
+/** Route an image request through an fx_cut frame's filter chain.
+ *
+ * When an fx_cut track sits between a transition's a and b tracks,
+ * the a_frame's image must pass through the fx_cut's filters before
+ * compositing with the b_frame.
+ */
+
+static int get_image_fx_cut(mlt_frame a_frame,
+                            uint8_t **image,
+                            mlt_image_format *format,
+                            int *width,
+                            int *height,
+                            int writable)
+{
+    // Pop the fx_cut frame first, before any other stack operations
+    mlt_frame fx_frame = mlt_frame_pop_service(a_frame);
+
+    // Get the a_frame's image (the video below)
+    int error = mlt_frame_get_image(a_frame, image, format, width, height, writable);
+
+    // Now route through the fx_cut frame's filter chain
+    if (!error && fx_frame) {
+        // Set the a_frame's image as the fx_cut frame's image so filters process it
+        mlt_frame_set_image(fx_frame, *image, 0, NULL);
+        mlt_properties_set_int(MLT_FRAME_PROPERTIES(fx_frame), "width", *width);
+        mlt_properties_set_int(MLT_FRAME_PROPERTIES(fx_frame), "height", *height);
+        mlt_properties_set_int(MLT_FRAME_PROPERTIES(fx_frame), "format", *format);
+        mlt_properties_set_double(MLT_FRAME_PROPERTIES(fx_frame),
+                                  "aspect_ratio",
+                                  mlt_frame_get_aspect_ratio(a_frame));
+        mlt_properties_pass_list(MLT_FRAME_PROPERTIES(fx_frame),
+                                 MLT_FRAME_PROPERTIES(a_frame),
+                                 "progressive,colorspace,full_range,color_trc");
+
+        // Get image from fx_cut frame, which runs its filters on the image
+        error = mlt_frame_get_image(fx_frame, image, format, width, height, 1);
+        mlt_frame_set_image(a_frame, *image, 0, NULL);
+    }
+    return error;
+}
+
 static int transition_get_frame(mlt_service service, mlt_frame_ptr frame, int index)
 {
     int error = 0;
@@ -516,6 +557,20 @@ static int transition_get_frame(mlt_service service, mlt_frame_ptr frame, int in
                 int a_hide = mlt_properties_get_int(MLT_FRAME_PROPERTIES(a_frame_ptr), "hide");
                 int b_hide = mlt_properties_get_int(MLT_FRAME_PROPERTIES(b_frame_ptr), "hide");
                 if (!(a_hide & type) && !(b_hide & type)) {
+                    // Apply any intermediate fx_cut frames' filters to the a_frame
+                    // so the fx_cut effect is visible in the composited result.
+                    if (type == 1) {
+                        for (int j = a_frame + 1; j < b_frame; j++) {
+                            mlt_frame fx_frame = self->frames[j];
+                            if (fx_frame
+                                && mlt_properties_get_int(MLT_FRAME_PROPERTIES(fx_frame),
+                                                          "fx_cut")) {
+                                mlt_frame_push_service(a_frame_ptr, fx_frame);
+                                mlt_frame_push_get_image(a_frame_ptr, get_image_fx_cut);
+                            }
+                        }
+                    }
+
                     // Add hooks for pre-processing frames
                     mlt_frame_push_service(a_frame_ptr, self);
                     mlt_frame_push_get_image(a_frame_ptr, get_image_a);
