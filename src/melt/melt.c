@@ -45,9 +45,11 @@
 #include "io.h"
 
 static mlt_producer melt = NULL;
+static volatile sig_atomic_t stop_signum = 0;
 
 static void stop_handler(int signum)
 {
+    stop_signum = signum;
     if (melt) {
         mlt_properties properties = MLT_PRODUCER_PROPERTIES(melt);
         mlt_properties_set_int(properties, "done", 1);
@@ -1137,6 +1139,18 @@ int main(int argc, char **argv)
 
     // Flush all open writable streams
     fflush(NULL);
+
+    // Interrupted by a signal: the render is incomplete. Restore the default
+    // handler and re-raise so the exit status reflects the signal (e.g. 130 for
+    // SIGINT), mirroring abnormal_exit_handler above. (#547)
+    if (stop_signum && !error) {
+#ifndef _WIN32
+        term_exit();
+        signal(stop_signum, SIG_DFL);
+        raise(stop_signum);
+#endif
+        error = EXIT_FAILURE; // Windows: no re-raise, so surface a non-zero status
+    }
 
     return error;
 }
