@@ -1143,11 +1143,10 @@ int main(int argc, char **argv)
     // Interrupted by a signal: the render is incomplete. Restore the default
     // handler and re-raise so the exit status reflects the signal (e.g. 130 for
     // SIGINT), mirroring abnormal_exit_handler above. (#547)
-    if (stop_signum && !error) {
+    sig_atomic_t signum = stop_signum;
+    if (signum && !error) {
 #ifndef _WIN32
-        term_exit();
-        signal(stop_signum, SIG_DFL);
-        raise(stop_signum);
+        abnormal_exit_handler(signum);
 #endif
         error = EXIT_FAILURE; // Windows: no re-raise, so surface a non-zero status
     }
