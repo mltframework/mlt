@@ -89,6 +89,32 @@ static int filter_get_image(mlt_frame frame,
     // Now get the image
     error = mlt_frame_get_image(frame, image, format, width, height, writable);
 
+    // The producer may not be able to supply the image at its original resolution - for
+    // example, a hardware decoder that scales while decoding. Scale the crop values to
+    // match the resolution that was actually delivered.
+    if (left || right || top || bottom) {
+        int original_width = mlt_properties_get_int(properties, "crop.original_width");
+        int original_height = mlt_properties_get_int(properties, "crop.original_height");
+
+        if (original_width > 0 && *width > 0 && *width != original_width) {
+            double factor = (double) *width / (double) original_width;
+            left = lrint(left * factor);
+            right = lrint(right * factor);
+            // Coerce the output to an even width because subsampled YUV with odd widths is
+            // too risky for downstream processing to handle correctly.
+            left += (*width - left - right) & 1;
+            if (*width - left - right < 8)
+                left = right = 0;
+        }
+        if (original_height > 0 && *height > 0 && *height != original_height) {
+            double factor = (double) *height / (double) original_height;
+            top = lrint(top * factor);
+            bottom = lrint(bottom * factor);
+            if (*height - top - bottom < 8)
+                top = bottom = 0;
+        }
+    }
+
     int owidth = *width - left - right;
     int oheight = *height - top - bottom;
     owidth = owidth < 0 ? 0 : owidth;
