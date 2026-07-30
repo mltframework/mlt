@@ -468,18 +468,19 @@ static int filter_get_image(mlt_frame frame,
     }
 
     if (blur > 0 && data->boundingBox.width > 1 && data->boundingBox.height > 1) {
+        cv::Mat roi = cvFrame(data->boundingBox);
+        cv::Mat blurredRoi;
+        roi.copyTo(blurredRoi);
+        bool do_blur = true;
+
         switch (mlt_properties_get_int(filter_properties, "blur_type")) {
         case 1:
             // Gaussian Blur
-            cv::GaussianBlur(cvFrame(data->boundingBox),
-                             cvFrame(data->boundingBox),
-                             cv::Size(0, 0),
-                             blur);
+            cv::GaussianBlur(roi, blurredRoi, cv::Size(0, 0), blur);
             break;
         case 2:
             // Pixelate
             {
-                cv::Mat roi = cvFrame(data->boundingBox);
                 cv::Mat res;
                 cv::resize(roi,
                            res,
@@ -487,17 +488,17 @@ static int filter_get_image(mlt_frame frame,
                                     MAX(2, data->boundingBox.height / blur)),
                            cv::INTER_NEAREST);
                 cv::resize(res,
-                           roi,
+                           blurredRoi,
                            cv::Size(data->boundingBox.width, data->boundingBox.height),
                            0,
                            0,
                            cv::INTER_NEAREST);
-                cvFrame(data->boundingBox) = roi;
             }
             break;
         case 3:
             // Opaque fill, handled in shape_width option
             shape_width = -1;
+            do_blur = false;
             break;
         case 0:
             // Median Blur
@@ -506,11 +507,31 @@ static int filter_get_image(mlt_frame frame,
                 // median blur param must be odd and, minimum 3
                 ++blur;
             }
-            cv::medianBlur(cvFrame(data->boundingBox), cvFrame(data->boundingBox), blur);
+            cv::medianBlur(roi, blurredRoi, blur);
             break;
         default:
-            // Do nothing
+            do_blur = false;
             break;
+        }
+
+        if (do_blur) {
+            switch (mlt_properties_get_int(filter_properties, "shape")) {
+            case 1:
+                // Ellipse
+                {
+                    cv::Mat mask = cv::Mat::zeros(roi.size(), CV_8UC1);
+                    cv::RotatedRect bounding = cv::RotatedRect(cv::Point2f(data->boundingBox.width / 2.0f,
+                                                                           data->boundingBox.height / 2.0f),
+                                                               cv::Size2f(data->boundingBox.width, data->boundingBox.height),
+                                                               0);
+                    cv::ellipse(mask, bounding, cv::Scalar(255), -1, 1);
+                    blurredRoi.copyTo(roi, mask);
+                }
+                break;
+            default:
+                blurredRoi.copyTo(roi);
+                break;
+            }
         }
     }
 
