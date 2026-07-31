@@ -418,20 +418,25 @@ static void luma_composite_yuv422(mlt_frame a_frame,
                 while (j--) {
                     float weight = l[x_offset >> 16] / 65535.f;
                     float value = smoothstep_float(weight, softness + weight, field_pos[field]);
+                    mix_a = calculate_mix(1.0f - value, alpha_dest ? *alpha_dest : 255);
                     mix_b = calculate_mix(value, alpha_src ? *alpha_src : 255);
-                    if (alpha_over) {
-                        // Alpha over-blending, source alpha will be passed to dest
-                        mix_a = calculate_mix(1.0f - value, alpha_dest ? *alpha_dest : 255);
-                        if (invert && alpha_src) {
-                            float mix2 = mix_b + mix_a;
+                    if (invert && alpha_src) {
+                        float mix2 = mix_b + mix_a;
+                        if (alpha_over) {
                             *alpha_src = 255 * mix2;
                             if (mix2 != 0.f)
                                 mix_b /= mix2;
-                        } else if (!invert && alpha_dest) {
-                            float mix2 = mix_b + mix_a;
+                        } else {
+                            *alpha_src = CLAMP(*alpha_src + 255 * mix_b, 0, 255);
+                        }
+                    } else if (!invert && alpha_dest) {
+                        float mix2 = mix_b + mix_a;
+                        if (alpha_over) {
                             *alpha_dest = 255 * mix2;
                             if (mix2 != 0.f)
                                 mix_b /= mix2;
+                        } else {
+                            *alpha_dest = CLAMP(*alpha_dest + 255 * mix_b, 0, 255);
                         }
                     }
                     *q = sample_mix(*q, *p++, mix_b);
@@ -540,20 +545,24 @@ static int luma_composite_rgba32(mlt_frame a_frame,
                 while (j--) {
                     float weight = l[x_offset >> 16] / 65535.f;
                     float value = smoothstep_float(weight, softness + weight, field_pos[field]);
+                    mix_a = calculate_mix(1.0f - value, q[3]);
                     mix_b = calculate_mix(value, p[3]);
-                    if (alpha_over) {
-                        // Alpha over-blending, source alpha will be passed to dest
-                        mix_a = calculate_mix(1.0f - value, q[3]);
-                        if (invert) {
-                            float mix2 = mix_b + mix_a;
+                    float mix2 = mix_b + mix_a;
+                    if (invert) {
+                        if (alpha_over) {
                             q[3] = 255 * mix2;
                             if (mix2 != 0.f)
                                 mix_b /= mix2;
                         } else {
-                            float mix2 = mix_b + mix_a;
+                            q[3] = CLAMP(q[3] + 255 * mix_b, 0, 255);
+                        }
+                    } else {
+                        if (alpha_over) {
                             q[3] = 255 * mix2;
                             if (mix2 != 0.f)
                                 mix_b /= mix2;
+                        } else {
+                            q[3] = CLAMP(q[3] + 255 * mix_b, 0, 255);
                         }
                     }
                     q[0] = sample_mix(q[0], p[0], mix_b);
@@ -661,20 +670,24 @@ static int luma_composite_rgba64(mlt_frame a_frame,
                 while (j--) {
                     float weight = l[x_offset >> 16] / 65535.f;
                     float value = smoothstep_float(weight, softness + weight, field_pos[field]);
+                    mix_a = calculate_mix_16(1.0f - value, q[3]);
                     mix_b = calculate_mix_16(value, p[3]);
-                    if (alpha_over) {
-                        // Alpha over-blending, source alpha will be passed to dest
-                        mix_a = calculate_mix_16(1.0f - value, q[3]);
-                        if (invert) {
-                            float mix2 = mix_b + mix_a;
+                    float mix2 = mix_b + mix_a;
+                    if (invert) {
+                        if (alpha_over) {
                             q[3] = 65535 * mix2;
                             if (mix2 != 0.f)
                                 mix_b /= mix2;
                         } else {
-                            float mix2 = mix_b + mix_a;
+                            q[3] = CLAMP(q[3] + 65535 * mix_b, 0, 65535);
+                        }
+                    } else {
+                        if (alpha_over) {
                             q[3] = 65535 * mix2;
                             if (mix2 != 0.f)
                                 mix_b /= mix2;
+                        } else {
+                            q[3] = CLAMP(q[3] + 65535 * mix_b, 0, 65535);
                         }
                     }
                     q[0] = sample_mix_16(q[0], p[0], mix_b);
