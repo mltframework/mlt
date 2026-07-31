@@ -566,7 +566,7 @@ static int filter_get_image(mlt_frame frame,
                             bounding,
                             cv::Scalar(shape_color.r, shape_color.g, shape_color.b),
                             shape_width,
-                            1);
+                            cv::LINE_4);
             }
             break;
         case 0:
