@@ -470,7 +470,6 @@ static int filter_get_image(mlt_frame frame,
     if (blur > 0 && data->boundingBox.width > 1 && data->boundingBox.height > 1) {
         cv::Mat roi = cvFrame(data->boundingBox);
         cv::Mat blurredRoi;
-        roi.copyTo(blurredRoi);
         bool do_blur = true;
 
         switch (mlt_properties_get_int(filter_properties, "blur_type")) {
@@ -524,7 +523,7 @@ static int filter_get_image(mlt_frame frame,
                                                                            data->boundingBox.height / 2.0f),
                                                                cv::Size2f(data->boundingBox.width, data->boundingBox.height),
                                                                0);
-                    cv::ellipse(mask, bounding, cv::Scalar(255), -1, 1);
+                    cv::ellipse(mask, bounding, cv::Scalar(255), -1, cv::LINE_4);
                     blurredRoi.copyTo(roi, mask);
                 }
                 break;
