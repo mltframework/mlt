@@ -110,6 +110,8 @@ static int get_image(mlt_frame a_frame,
         } else {
             transformScale = geometry_dar / b_dar;
         }
+        b_width = *width;
+        b_height = *height;
     }
 
     if (mlt_properties_get(transition_properties, "rect")) {
@@ -121,6 +123,10 @@ static int get_image(mlt_frame a_frame,
             rect.w *= normalized_width;
             rect.h *= normalized_height;
         }
+    } else {
+        // Optimization, request profile sized image
+        b_width = normalized_width;
+        b_height = normalized_height;
     }
     int request_width = *width;
     int request_height = *height;
@@ -156,6 +162,10 @@ static int get_image(mlt_frame a_frame,
     // Ensure we don't request an image with a 0 width or height
     b_width = qMax(1, b_width);
     b_height = qMax(1, b_height);
+    /*} else {
+        b_height = *height;
+        b_width = *width;
+    }*/
 
     // Normalize source dimensions to consumer PAR to handle anamorphic sources
     normalize_mlt_source_size(b_ar, consumer_ar, &b_width, b_height);
