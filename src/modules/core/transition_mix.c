@@ -181,6 +181,71 @@ static double gain_to_reduction_db(double gain)
     return -20.0 * log10(gain);
 }
 
+static void apply_ducking(transition_mix self,
+                          mlt_properties transition_props,
+                          float *buffer_a,
+                          float *buffer_b,
+                          int channels_a,
+                          int channels_b,
+                          int channels_out,
+                          int samples,
+                          int frequency,
+                          int discontinuity_a,
+                          int discontinuity_b)
+{
+    double duck_threshold = mlt_properties_get_double(transition_props, "duck_threshold");
+    double duck_attenuation = mlt_properties_get_double(transition_props, "duck_attenuation");
+    double duck_fade_in = mlt_properties_get_double(transition_props, "duck_fade_in");
+    double duck_fade_out = mlt_properties_get_double(transition_props, "duck_fade_out");
+
+    if (duck_fade_in < 0.0)
+        duck_fade_in = 0.0;
+    else if (duck_fade_in > 5000.0)
+        duck_fade_in = 5000.0;
+
+    if (duck_fade_out < 0.0)
+        duck_fade_out = 0.0;
+    else if (duck_fade_out > 5000.0)
+        duck_fade_out = 5000.0;
+
+    double a_dbfs = rms_audio_dbfs(buffer_a, channels_a, channels_out, samples);
+    double target_gain = 1.0;
+
+    if (!self->previous_duck_valid || duck_threshold != self->previous_duck_threshold
+        || duck_attenuation != self->previous_duck_attenuation
+        || duck_fade_in != self->previous_duck_fade_in
+        || duck_fade_out != self->previous_duck_fade_out) {
+        self->previous_duck_valid = 0;
+        self->previous_duck_threshold = duck_threshold;
+        self->previous_duck_attenuation = duck_attenuation;
+        self->previous_duck_fade_in = duck_fade_in;
+        self->previous_duck_fade_out = duck_fade_out;
+    }
+
+    if (duck_attenuation > 0.0)
+        duck_attenuation = 0.0;
+
+    if (a_dbfs > duck_threshold)
+        target_gain = DBFSTOAMP(duck_attenuation);
+
+    if (!self->previous_duck_valid || discontinuity_a || discontinuity_b) {
+        self->previous_duck_gain = target_gain;
+        self->previous_duck_valid = 1;
+    }
+
+    double duck_start = self->previous_duck_gain;
+    double duck_end = target_gain;
+    if (target_gain < duck_start) {
+        duck_end = smooth_gain(duck_start, target_gain, duck_fade_out, frequency, samples);
+    } else if (target_gain > duck_start) {
+        duck_end = smooth_gain(duck_start, target_gain, duck_fade_in, frequency, samples);
+    }
+
+    self->previous_duck_gain = duck_end;
+    mlt_properties_set_double(transition_props, "duck_level", gain_to_reduction_db(duck_end));
+    sum_audio(duck_start, duck_end, buffer_a, buffer_b, channels_a, channels_b, channels_out, samples);
+}
+
 /** Get the audio.
 */
 
@@ -320,64 +385,17 @@ static int transition_get_audio(mlt_frame frame_a,
     mlt_properties transition_props = MLT_TRANSITION_PROPERTIES(transition);
     double duck_threshold = mlt_properties_get_double(transition_props, "duck_threshold");
     if (duck_threshold != 0.0) {
-        double duck_attenuation = mlt_properties_get_double(transition_props, "duck_attenuation");
-        double duck_fade_in = mlt_properties_get_double(transition_props, "duck_fade_in");
-        double duck_fade_out = mlt_properties_get_double(transition_props, "duck_fade_out");
-
-        if (duck_fade_in < 0.0)
-            duck_fade_in = 0.0;
-        else if (duck_fade_in > 5000.0)
-            duck_fade_in = 5000.0;
-
-        if (duck_fade_out < 0.0)
-            duck_fade_out = 0.0;
-        else if (duck_fade_out > 5000.0)
-            duck_fade_out = 5000.0;
-
-        double a_dbfs = rms_audio_dbfs(buffer_a, channels_a, *channels, *samples);
-        double target_gain = 1.0;
-
-        if (!self->previous_duck_valid || duck_threshold != self->previous_duck_threshold
-            || duck_attenuation != self->previous_duck_attenuation
-            || duck_fade_in != self->previous_duck_fade_in
-            || duck_fade_out != self->previous_duck_fade_out) {
-            self->previous_duck_valid = 0;
-            self->previous_duck_threshold = duck_threshold;
-            self->previous_duck_attenuation = duck_attenuation;
-            self->previous_duck_fade_in = duck_fade_in;
-            self->previous_duck_fade_out = duck_fade_out;
-        }
-
-        if (duck_attenuation > 0.0)
-            duck_attenuation = 0.0;
-
-        if (a_dbfs > duck_threshold) {
-            target_gain = DBFSTOAMP(duck_attenuation);
-        }
-
-        if (!self->previous_duck_valid || discontinuity_a || discontinuity_b) {
-            self->previous_duck_gain = target_gain;
-            self->previous_duck_valid = 1;
-        }
-
-        double duck_start = self->previous_duck_gain;
-        double duck_end = target_gain;
-        if (target_gain < duck_start) {
-            duck_end = smooth_gain(duck_start, target_gain, duck_fade_out, *frequency, *samples);
-        } else if (target_gain > duck_start) {
-            duck_end = smooth_gain(duck_start, target_gain, duck_fade_in, *frequency, *samples);
-        }
-
-        self->previous_duck_gain = duck_end;
-        mlt_properties_set_double(transition_props, "duck_level", gain_to_reduction_db(duck_end));
-        sum_audio(duck_start,
-                  duck_end,
-                  buffer_a,
-                  buffer_b,
-                  channels_a,
-                  channels_b,
-                  *channels,
-                  *samples);
+        apply_ducking(self,
+                      transition_props,
+                      buffer_a,
+                      buffer_b,
+                      channels_a,
+                      channels_b,
+                      *channels,
+                      *samples,
+                      *frequency,
+                      discontinuity_a,
+                      discontinuity_b);
     } else if (mlt_properties_get_int(transition_props, "sum")) {
         mlt_properties_set_double(transition_props, "duck_level", 0.0);
         double mix_start = 1.0, mix_end = 1.0;
