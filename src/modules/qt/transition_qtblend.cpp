@@ -71,7 +71,7 @@ static int get_image(mlt_frame a_frame,
     // Flag to avoid applying PAR normalization twice: set true whenever we
     // intentionally set b_width/b_height to consumer/profile/requested values.
     bool parAlreadyNormalized = false;
-    
+
     // reference rect
     mlt_rect rect = {0, 0, (double) normalized_width, (double) normalized_height, 1.0};
 
@@ -173,7 +173,7 @@ static int get_image(mlt_frame a_frame,
         b_height = normalized_height;
         parAlreadyNormalized = true;
     }
-    
+
     // Ensure we don't request an image with a 0 width or height
     b_width = qMax(1, b_width);
     b_height = qMax(1, b_height);
