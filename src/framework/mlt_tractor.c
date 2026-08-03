@@ -440,6 +440,10 @@ static int producer_get_audio(mlt_frame self,
                        "producer_consumer_fps",
                        mlt_properties_get(properties, "producer_consumer_fps"));
     mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
+
+    // Propagate audio-level metadata onto the tractor output frame.
+    mlt_properties_copy(properties, frame_properties, "meta.");
+
     mlt_frame_set_audio(self,
                         *buffer,
                         *format,

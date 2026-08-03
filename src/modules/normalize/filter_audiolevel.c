@@ -2,7 +2,7 @@
  * filter_audiolevel.c -- get the audio level of each channel
  * Copyright (C) 2002 Steve Harris
  * Copyright (C) 2010 Marco Gittler <g.marco@freenet.de>
- * Copyright (C) 2012-2023 Dan Dennedy <dan@dennedy.org>
+ * Copyright (C) 2012-2026 Dan Dennedy <dan@dennedy.org>
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -24,7 +24,41 @@
 #include <framework/mlt_log.h>
 
 #include <math.h>
+#include <stdio.h>
 #include <stdlib.h>
+
+static const char *kDefaultPrefix = "meta.media.audio_level.";
+
+static void append_int(char *out, size_t out_size, size_t *offset, int value)
+{
+    if (!out || !out_size || !offset || *offset >= out_size)
+        return;
+
+    const int n = snprintf(out + *offset, out_size - *offset, "%d", value);
+    if (n < 0)
+        return;
+    *offset += (size_t) n;
+    if (*offset >= out_size)
+        out[out_size - 1] = '\0';
+}
+
+static void make_audio_level_key(const char *prefix, int channel, char *key, size_t key_size)
+{
+    if (!key || key_size == 0)
+        return;
+
+    if (!prefix || !prefix[0])
+        prefix = kDefaultPrefix;
+
+    const int n = snprintf(key, key_size, "%s", prefix);
+    size_t offset = n > 0 ? (size_t) n : 0;
+    if (offset >= key_size)
+        offset = key_size - 1;
+    key[offset] = '\0';
+
+    append_int(key, key_size, &offset, channel);
+    key[offset < key_size ? offset : key_size - 1] = '\0';
+}
 
 #define AMPTODBFS(n) (log10(n) * 20.0)
 
@@ -67,6 +101,7 @@ static int filter_get_audio(mlt_frame frame,
 
     int iec_scale = mlt_properties_get_int(filter_props, "iec_scale");
     int dbPeak = mlt_properties_get_int(filter_props, "dbpeak");
+    const char *prefix = mlt_properties_get(filter_props, "prefix");
     *format = mlt_audio_s16;
     int error = mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
     if (error || !buffer || !buffer[0])
@@ -76,7 +111,7 @@ static int filter_get_audio(mlt_frame frame,
     int num_samples = *samples > 200 ? 200 : *samples;
     int num_oversample = 0;
     int c, s;
-    char key[50];
+    char key[128];
     int16_t *pcm = (int16_t *) *buffer;
 
     for (c = 0; c < *channels; c++) {
@@ -119,7 +154,7 @@ static int filter_get_audio(mlt_frame frame,
             if (iec_scale)
                 level = IEC_Scale(AMPTODBFS(level));
         }
-        sprintf(key, "meta.media.audio_level.%d", c);
+        make_audio_level_key(prefix, c, key, sizeof(key));
         mlt_properties_set_double(MLT_FRAME_PROPERTIES(frame), key, level);
         sprintf(key, "_audio_level.%d", c);
         mlt_properties_set_double(filter_props, key, level);
@@ -152,6 +187,7 @@ mlt_filter filter_audiolevel_init(mlt_profile profile,
     if (filter) {
         filter->process = filter_process;
         mlt_properties_set_int(MLT_FILTER_PROPERTIES(filter), "iec_scale", 1);
+        mlt_properties_set(MLT_FILTER_PROPERTIES(filter), "prefix", kDefaultPrefix);
     }
     return filter;
 }

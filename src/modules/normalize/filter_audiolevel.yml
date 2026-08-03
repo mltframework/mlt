@@ -2,7 +2,7 @@ schema_version: 7.2
 type: filter
 identifier: audiolevel
 title: Audio Levels
-version: 3
+version: 4
 copyright: Meltytech, LLC, Marco Gittler, and Steve Harris
 creator: Dan Dennedy
 contributor:
@@ -17,11 +17,20 @@ notes: >
   troughs of short duration like a VU meter.
   Applications can also get this data on the frame as meta.media.audio_level.<N>
   where <N> is the channel number starting with 0.
+  The prefix is configurable using the prefix property.
 tags:
   - Audio
 audio_formats:
   - s16
 parameters:
+  - identifier: prefix
+    title: Frame Property Prefix
+    description: >
+      Prefix for frame audio level keys. The filter appends the channel index
+      to this prefix.
+    type: string
+    default: meta.media.audio_level.
+
   - identifier: iec_scale
     title: Use IEC 60268-18 Scale
     type: boolean
