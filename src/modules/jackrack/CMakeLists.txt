@@ -43,7 +43,7 @@ if(TARGET JACK::JACK)
       target_link_libraries(mltjackrack PRIVATE m)
     endif()
 
-    install(FILES filter_jack.yml filter_jackrack.yml blacklist.txt DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
+    install(FILES filter_jack.yml filter_jackrack.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
   endif()
 
   set_target_properties(mltjackrack PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
@@ -84,7 +84,7 @@ if(USE_LADSPA)
     target_link_libraries(mltladspa PRIVATE m)
   endif()
 
-  install(FILES filter_ladspa.yml producer_ladspa.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
+  install(FILES filter_ladspa.yml producer_ladspa.yml blacklist.txt DESTINATION ${MLT_INSTALL_DATA_DIR}/jackrack)
 
   if(USE_LV2)
     target_compile_definitions(mltladspa PRIVATE WITH_LV2)
