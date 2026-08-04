@@ -446,7 +446,11 @@ static int filter_get_image(mlt_frame frame,
                 data->producer_in + data->producer_length);
     }
 
-    if (blur > 0 && data->boundingBox.width > 1 && data->boundingBox.height > 1) {
+    if (blur > 0 && 
+        data->boundingBox.width > 1 && 
+        data->boundingBox.height > 1 &&
+        data->boundingBox.x > - data->boundingBox.width && data->boundingBox.x < *width &&
+        data->boundingBox.y > - data->boundingBox.height && data->boundingBox.y < *height) {
         // ensure bounding box is within the frame boundaries or OpenCV will crash
         // this only affects the blurring functions, drawn shapes are handled properly
         cv::Rect clippedBox = data->boundingBox;
