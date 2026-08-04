@@ -446,37 +446,8 @@ static int filter_get_image(mlt_frame frame,
                 data->producer_in + data->producer_length);
     }
 
-    if (blur > 0 && 
-        data->boundingBox.width > 1 && 
-        data->boundingBox.height > 1 &&
-        data->boundingBox.x > - data->boundingBox.width && 
-        data->boundingBox.x < *width &&
-        data->boundingBox.y > - data->boundingBox.height && 
-        data->boundingBox.y < *height) {
-        // ensure bounding box is within the frame boundaries or OpenCV will crash
-        // this only affects the blurring functions, drawn shapes are handled properly
-        cv::Rect clippedBox = data->boundingBox;
-        if (clippedBox.x > *width) {
-            clippedBox.x = *width;
-            clippedBox.width = 0;
-        } else if (clippedBox.x < 0) {
-            clippedBox.width = MAX(0, clippedBox.width + clippedBox.x);
-            clippedBox.x = 0;
-        }
-        if (clippedBox.y > *height) {
-            clippedBox.y = *height;
-            clippedBox.height = 0;
-        } else if (clippedBox.y < 0) {
-            clippedBox.height = MAX(0, clippedBox.height + clippedBox.y);
-            clippedBox.y = 0;
-        }
-        if (clippedBox.x + clippedBox.width > *width) {
-            clippedBox.width = *width - clippedBox.x;
-        }
-        if (clippedBox.y + clippedBox.height > *height) {
-            clippedBox.height = *height - clippedBox.y;
-        }
-
+    cv::Rect clippedBox = data->boundingBox & cv::Rect(0, 0, *width, *height);
+    if (blur > 0 && clippedBox.width > 1 && clippedBox.height > 1) {
         cv::Mat roi = cvFrame(clippedBox);
         cv::Mat blurredRoi;
         bool do_blur = true;
@@ -528,8 +499,8 @@ static int filter_get_image(mlt_frame frame,
                 // Ellipse
                 {
                     cv::Mat mask = cv::Mat::zeros(roi.size(), CV_8UC1);
-                    cv::RotatedRect bounding = cv::RotatedRect(cv::Point2f(data->boundingBox.x < 0 ? data->boundingBox.width / 2.0f + data->boundingBox.x : data->boundingBox.width / 2.0f,
-                                                                           data->boundingBox.y < 0 ? data->boundingBox.height / 2.0f + data->boundingBox.y : data->boundingBox.height / 2.0f),
+                    cv::RotatedRect bounding = cv::RotatedRect(cv::Point2f(data->boundingBox.x + data->boundingBox.width / 2.0f - clippedBox.x,
+                                                                            data->boundingBox.y + data->boundingBox.height / 2.0f - clippedBox.y),
                                                                cv::Size2f(data->boundingBox.width, data->boundingBox.height),
                                                                0);
                     cv::ellipse(mask, bounding, cv::Scalar(255), -1, cv::LINE_4);
