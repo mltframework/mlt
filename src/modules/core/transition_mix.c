@@ -147,6 +147,7 @@ static int transition_get_audio(mlt_frame frame_a,
 
     // Get the properties of the b frame
     mlt_properties b_props = MLT_FRAME_PROPERTIES(frame_b);
+    mlt_properties a_props = MLT_FRAME_PROPERTIES(frame_a);
 
     transition_mix self = transition->child;
     float *buffer_b, *buffer_a;
@@ -159,6 +160,9 @@ static int transition_get_audio(mlt_frame frame_a,
     // Get the audio from our producers
     mlt_frame_get_audio(frame_b, (void **) &buffer_b, format, &frequency_b, &channels_b, &samples_b);
     mlt_frame_get_audio(frame_a, (void **) &buffer_a, format, &frequency_a, &channels_a, &samples_a);
+
+    // Merge b-frame level metadata onto a-frame after both callbacks run.
+    mlt_properties_copy(a_props, b_props, "meta.");
 
     // Prevent dividing by zero.
     if (!channels_a || !channels_b || !buffer_a || !buffer_b)
