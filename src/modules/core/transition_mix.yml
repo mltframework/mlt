@@ -2,7 +2,7 @@ schema_version: 7.2
 type: transition
 identifier: mix
 title: Mix
-version: 3
+version: 4
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -66,3 +66,59 @@ parameters:
     type: boolean
     default: 0
     mutable: yes
+
+  - identifier: duck_threshold
+    title: Duck Threshold
+    type: float
+    default: 0
+    mutable: yes
+    unit: dB
+    widget: slider
+    description: >
+      Enables ducking when non-zero. If the RMS level of frame A exceeds this
+      dBFS threshold, frame B is attenuated before mixing. When this is non-
+      zero, the sum and combine mix modes are ignored.
+
+  - identifier: duck_attenuation
+    title: Duck Attenuation
+    type: float
+    default: -12
+    mutable: yes
+    unit: dB
+    widget: slider
+    description: >
+      The minimum attenuation, in dBFS, applied to frame B while ducking.
+
+  - identifier: duck_level
+    title: Duck Level
+    type: float
+    default: 0
+    readonly: yes
+    unit: dB
+    widget: spinner
+    description: >
+      Reports the current gain reduction, in dB, being applied to frame B.
+
+  - identifier: duck_fade_in
+    title: Duck Fade In
+    type: float
+    default: 1500
+    minimum: 0
+    maximum: 5000
+    mutable: yes
+    unit: ms
+    widget: spinner
+    description: >
+      The fade-in time, in milliseconds, used when restoring frame B.
+
+  - identifier: duck_fade_out
+    title: Duck Fade Out
+    type: float
+    default: 250
+    minimum: 0
+    maximum: 5000
+    mutable: yes
+    unit: ms
+    widget: spinner
+    description: >
+      The fade-out time, in milliseconds, used when reducing frame B.

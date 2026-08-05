@@ -30,6 +30,8 @@
 #define MAX_SAMPLES (192000)
 #define SAMPLE_BYTES(samples, channels) ((samples) * (channels) * sizeof(float))
 #define MAX_BYTES SAMPLE_BYTES(MAX_SAMPLES, MAX_CHANNELS)
+#define DBFSTOAMP(x) pow(10.0, (x) / 20.0)
+#define MIN_DBFS (-100.0)
 
 typedef struct transition_mix_s
 {
@@ -40,6 +42,12 @@ typedef struct transition_mix_s
     int dest_buffer_count;
     mlt_position previous_frame_a;
     mlt_position previous_frame_b;
+    double previous_duck_gain;
+    int previous_duck_valid;
+    double previous_duck_threshold;
+    double previous_duck_attenuation;
+    double previous_duck_fade_in;
+    double previous_duck_fade_out;
 } * transition_mix;
 
 static void mix_audio(double weight_start,
@@ -125,6 +133,117 @@ static void combine_audio(double weight,
             v_prev[j] = buffer_a[i * channels_a + j] = v * A + v_prev[j] * B;
         }
     }
+}
+
+static double rms_audio_dbfs(float *buffer, int channels_in, int channels_out, int samples)
+{
+    double sum = 0.0;
+    int count = samples * channels_out;
+    int i, j;
+
+    if (!buffer || channels_in <= 0 || channels_out <= 0 || samples <= 0)
+        return MIN_DBFS;
+
+    for (i = 0; i < samples; i++) {
+        for (j = 0; j < channels_out; j++) {
+            double sample = buffer[i * channels_in + j];
+            sum += sample * sample;
+        }
+    }
+
+    if (sum <= 0.0 || count <= 0)
+        return MIN_DBFS;
+
+    return 20.0 * log10(sqrt(sum / count));
+}
+
+static double smooth_gain(
+    double previous_gain, double target_gain, double time_ms, int frequency, int samples)
+{
+    if (time_ms <= 0.0 || frequency <= 0 || samples <= 0)
+        return target_gain;
+
+    double time_samples = time_ms * frequency / 1000.0;
+    if (time_samples <= 0.0)
+        return target_gain;
+
+    double coefficient = exp(-(double) samples / time_samples);
+    return target_gain + coefficient * (previous_gain - target_gain);
+}
+
+static double gain_to_reduction_db(double gain)
+{
+    if (gain >= 1.0)
+        return 0.0;
+    if (gain <= 0.0)
+        return -MIN_DBFS;
+
+    return -20.0 * log10(gain);
+}
+
+static void apply_ducking(transition_mix self,
+                          mlt_properties transition_props,
+                          float *buffer_a,
+                          float *buffer_b,
+                          int channels_a,
+                          int channels_b,
+                          int channels_out,
+                          int samples,
+                          int frequency,
+                          int discontinuity_a,
+                          int discontinuity_b)
+{
+    double duck_threshold = mlt_properties_get_double(transition_props, "duck_threshold");
+    double duck_attenuation = mlt_properties_get_double(transition_props, "duck_attenuation");
+    double duck_fade_in = mlt_properties_get_double(transition_props, "duck_fade_in");
+    double duck_fade_out = mlt_properties_get_double(transition_props, "duck_fade_out");
+
+    if (duck_fade_in < 0.0)
+        duck_fade_in = 0.0;
+    else if (duck_fade_in > 5000.0)
+        duck_fade_in = 5000.0;
+
+    if (duck_fade_out < 0.0)
+        duck_fade_out = 0.0;
+    else if (duck_fade_out > 5000.0)
+        duck_fade_out = 5000.0;
+
+    double a_dbfs = rms_audio_dbfs(buffer_a, channels_a, channels_out, samples);
+    double target_gain = 1.0;
+
+    if (!self->previous_duck_valid || duck_threshold != self->previous_duck_threshold
+        || duck_attenuation != self->previous_duck_attenuation
+        || duck_fade_in != self->previous_duck_fade_in
+        || duck_fade_out != self->previous_duck_fade_out) {
+        self->previous_duck_valid = 0;
+        self->previous_duck_threshold = duck_threshold;
+        self->previous_duck_attenuation = duck_attenuation;
+        self->previous_duck_fade_in = duck_fade_in;
+        self->previous_duck_fade_out = duck_fade_out;
+    }
+
+    if (duck_attenuation > 0.0)
+        duck_attenuation = 0.0;
+
+    if (a_dbfs > duck_threshold)
+        target_gain = DBFSTOAMP(duck_attenuation);
+
+    if (!self->previous_duck_valid || discontinuity_a || discontinuity_b) {
+        self->previous_duck_gain = target_gain;
+        self->previous_duck_valid = 1;
+    }
+
+    double duck_start = self->previous_duck_gain;
+    double duck_end = target_gain;
+    if (target_gain < duck_start) {
+        duck_end = smooth_gain(duck_start, target_gain, duck_fade_out, frequency, samples);
+    } else if (target_gain > duck_start) {
+        duck_end = smooth_gain(duck_start, target_gain, duck_fade_in, frequency, samples);
+    }
+
+    self->previous_duck_gain = duck_end;
+    mlt_properties_set_double(transition_props, "duck_level", gain_to_reduction_db(duck_end));
+    sum_audio(duck_start, duck_end, buffer_a, buffer_b, channels_a, channels_b, channels_out, samples);
 }
 
 /** Get the audio.
@@ -228,9 +347,12 @@ static int transition_get_audio(mlt_frame frame_a,
     }
 
     // Silence src buffer if discontinuity
-    if (self->src_buffer_count > 0 && mlt_frame_get_position(frame_b) != self->previous_frame_b + 1)
+    mlt_position current_frame_b = mlt_frame_get_position(frame_b);
+    int discontinuity_b = self->src_buffer_count > 0
+                          && current_frame_b != self->previous_frame_b + 1;
+    if (discontinuity_b)
         memset(self->src_buffer, 0, SAMPLE_BYTES(self->src_buffer_count, channels_b));
-    self->previous_frame_b = mlt_frame_get_position(frame_b);
+    self->previous_frame_b = current_frame_b;
 
     // Append the new samples from frame B to the src buffer
     memcpy(&self->src_buffer[self->src_buffer_count * channels_b], buffer_b, bytes);
@@ -251,9 +373,12 @@ static int transition_get_audio(mlt_frame frame_a,
     }
 
     // Silence dest buffer if discontinuity
-    if (self->dest_buffer_count > 0 && mlt_frame_get_position(frame_a) != self->previous_frame_a + 1)
+    mlt_position current_frame_a = mlt_frame_get_position(frame_a);
+    int discontinuity_a = self->dest_buffer_count > 0
+                          && current_frame_a != self->previous_frame_a + 1;
+    if (discontinuity_a)
         memset(self->dest_buffer, 0, SAMPLE_BYTES(self->dest_buffer_count, channels_a));
-    self->previous_frame_a = mlt_frame_get_position(frame_a);
+    self->previous_frame_a = current_frame_a;
 
     // Append the new samples from frame A to the dest buffer
     memcpy(&self->dest_buffer[self->dest_buffer_count * channels_a], buffer_a, bytes);
@@ -261,7 +386,22 @@ static int transition_get_audio(mlt_frame frame_a,
     buffer_a = self->dest_buffer;
 
     // Do the mixing.
-    if (mlt_properties_get_int(MLT_TRANSITION_PROPERTIES(transition), "sum")) {
+    mlt_properties transition_props = MLT_TRANSITION_PROPERTIES(transition);
+    double duck_threshold = mlt_properties_get_double(transition_props, "duck_threshold");
+    if (duck_threshold != 0.0) {
+        apply_ducking(self,
+                      transition_props,
+                      buffer_a,
+                      buffer_b,
+                      channels_a,
+                      channels_b,
+                      *channels,
+                      *samples,
+                      *frequency,
+                      discontinuity_a,
+                      discontinuity_b);
+    } else if (mlt_properties_get_int(transition_props, "sum")) {
+        mlt_properties_set_double(transition_props, "duck_level", 0.0);
         double mix_start = 1.0, mix_end = 1.0;
         if (mlt_properties_get(b_props, "audio.previous_mix"))
             mix_start = mlt_properties_get_double(b_props, "audio.previous_mix");
@@ -272,12 +412,14 @@ static int transition_get_audio(mlt_frame frame_a,
             mix_end = 1.0 - mix_end;
         }
         sum_audio(mix_start, mix_end, buffer_a, buffer_b, channels_a, channels_b, *channels, *samples);
-    } else if (mlt_properties_get_int(MLT_TRANSITION_PROPERTIES(transition), "combine")) {
+    } else if (mlt_properties_get_int(transition_props, "combine")) {
+        mlt_properties_set_double(transition_props, "duck_level", 0.0);
         double weight = 1.0;
         if (mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame_a), "meta.mixdown"))
             weight = 1.0 - mlt_properties_get_double(MLT_FRAME_PROPERTIES(frame_a), "meta.volume");
         combine_audio(weight, buffer_a, buffer_b, channels_a, channels_b, *channels, *samples);
     } else {
+        mlt_properties_set_double(transition_props, "duck_level", 0.0);
         double mix_start = 0.5, mix_end = 0.5;
         if (mlt_properties_get(b_props, "audio.previous_mix"))
             mix_start = mlt_properties_get_double(b_props, "audio.previous_mix");
@@ -287,8 +429,7 @@ static int transition_get_audio(mlt_frame frame_a,
             mix_start = 1.0 - mix_start;
             mix_end = 1.0 - mix_end;
         }
-        int power = mlt_properties_get_double(MLT_TRANSITION_PROPERTIES(transition), "start")
-                    < -1.0;
+        int power = mlt_properties_get_double(transition_props, "start") < -1.0;
         mix_audio(mix_start,
                   mix_end,
                   buffer_a,
@@ -457,6 +598,11 @@ mlt_transition transition_mix_init(mlt_profile profile,
         mix->parent = transition;
         transition->close = transition_close;
         transition->process = transition_process;
+        mlt_properties_set_double(MLT_TRANSITION_PROPERTIES(transition), "duck_threshold", 0.0);
+        mlt_properties_set_double(MLT_TRANSITION_PROPERTIES(transition), "duck_attenuation", -12.0);
+        mlt_properties_set_double(MLT_TRANSITION_PROPERTIES(transition), "duck_level", 0.0);
+        mlt_properties_set_double(MLT_TRANSITION_PROPERTIES(transition), "duck_fade_in", 1500.0);
+        mlt_properties_set_double(MLT_TRANSITION_PROPERTIES(transition), "duck_fade_out", 250.0);
         if (arg) {
             mlt_properties_set_double(MLT_TRANSITION_PROPERTIES(transition), "start", atof(arg));
             if (atof(arg) < 0)
