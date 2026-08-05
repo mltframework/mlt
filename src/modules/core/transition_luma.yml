@@ -2,7 +2,7 @@ schema_version: 7.2
 type: transition
 identifier: luma
 title: Wipe
-version: 3
+version: 4
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -54,6 +54,20 @@ parameters:
     mutable: yes
     description: >
       Reverse the direction of the transition.
+    default: 0
+
+  - identifier: invert
+    title: Invert
+    type: integer
+    mutable: yes
+    description: >
+      In wipe mode (when "resource" is supplied), swap frames A and B so that
+      the output image size and alpha channel are taken from B instead of A,
+      and invert the polarity of the luma map; this also reverses the direction
+      of the transition, similar to "reverse". This is used internally when a
+      non-PGM luma producer is supplied, but it may also be set explicitly.
+      In dissolve mode (no "resource"), it only reverses the direction of the
+      transition, same as "reverse", without swapping frames A and B.
     default: 0
 
   - identifier: producer.*
