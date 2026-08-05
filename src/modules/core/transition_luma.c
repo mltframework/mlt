@@ -336,7 +336,8 @@ static void luma_composite_yuv422(mlt_frame a_frame,
                                   int *width,
                                   int *height,
                                   int invert,
-                                  int fix_background_alpha)
+                                  int fix_background_alpha,
+                                  int alpha_over)
 {
     int width_src = *width, height_src = *height;
     int width_dest = *width, height_dest = *height;
@@ -421,14 +422,22 @@ static void luma_composite_yuv422(mlt_frame a_frame,
                     mix_b = calculate_mix(value, alpha_src ? *alpha_src : 255);
                     if (invert && alpha_src) {
                         float mix2 = mix_b + mix_a;
-                        *alpha_src = 255 * mix2;
-                        if (mix2 != 0.f)
-                            mix_b /= mix2;
+                        if (alpha_over) {
+                            *alpha_src = 255 * mix2;
+                            if (mix2 != 0.f)
+                                mix_b /= mix2;
+                        } else {
+                            *alpha_src = CLAMP(*alpha_src + 255 * mix_b, 0, 255);
+                        }
                     } else if (!invert && alpha_dest) {
                         float mix2 = mix_b + mix_a;
-                        *alpha_dest = 255 * mix2;
-                        if (mix2 != 0.f)
-                            mix_b /= mix2;
+                        if (alpha_over) {
+                            *alpha_dest = 255 * mix2;
+                            if (mix2 != 0.f)
+                                mix_b /= mix2;
+                        } else {
+                            *alpha_dest = CLAMP(*alpha_dest + 255 * mix_b, 0, 255);
+                        }
                     }
                     *q = sample_mix(*q, *p++, mix_b);
                     q++;
@@ -474,7 +483,8 @@ static int luma_composite_rgba32(mlt_frame a_frame,
                                  int field_order,
                                  int width,
                                  int height,
-                                 int invert)
+                                 int invert,
+                                 int alpha_over)
 {
     if (mlt_properties_get(&a_frame->parent, "distort"))
         mlt_properties_set(&b_frame->parent,
@@ -537,16 +547,23 @@ static int luma_composite_rgba32(mlt_frame a_frame,
                     float value = smoothstep_float(weight, softness + weight, field_pos[field]);
                     mix_a = calculate_mix(1.0f - value, q[3]);
                     mix_b = calculate_mix(value, p[3]);
+                    float mix2 = mix_b + mix_a;
                     if (invert) {
-                        float mix2 = mix_b + mix_a;
-                        q[3] = 255 * mix2;
-                        if (mix2 != 0.f)
-                            mix_b /= mix2;
+                        if (alpha_over) {
+                            q[3] = 255 * mix2;
+                            if (mix2 != 0.f)
+                                mix_b /= mix2;
+                        } else {
+                            q[3] = CLAMP(q[3] + 255 * mix_b, 0, 255);
+                        }
                     } else {
-                        float mix2 = mix_b + mix_a;
-                        q[3] = 255 * mix2;
-                        if (mix2 != 0.f)
-                            mix_b /= mix2;
+                        if (alpha_over) {
+                            q[3] = 255 * mix2;
+                            if (mix2 != 0.f)
+                                mix_b /= mix2;
+                        } else {
+                            q[3] = CLAMP(q[3] + 255 * mix_b, 0, 255);
+                        }
                     }
                     q[0] = sample_mix(q[0], p[0], mix_b);
                     q[1] = sample_mix(q[1], p[1], mix_b);
@@ -591,7 +608,8 @@ static int luma_composite_rgba64(mlt_frame a_frame,
                                  int field_order,
                                  int width,
                                  int height,
-                                 int invert)
+                                 int invert,
+                                 int alpha_over)
 {
     if (mlt_properties_get(&a_frame->parent, "distort"))
         mlt_properties_set(&b_frame->parent,
@@ -654,16 +672,23 @@ static int luma_composite_rgba64(mlt_frame a_frame,
                     float value = smoothstep_float(weight, softness + weight, field_pos[field]);
                     mix_a = calculate_mix_16(1.0f - value, q[3]);
                     mix_b = calculate_mix_16(value, p[3]);
+                    float mix2 = mix_b + mix_a;
                     if (invert) {
-                        float mix2 = mix_b + mix_a;
-                        q[3] = 65535 * mix2;
-                        if (mix2 != 0.f)
-                            mix_b /= mix2;
+                        if (alpha_over) {
+                            q[3] = 65535 * mix2;
+                            if (mix2 != 0.f)
+                                mix_b /= mix2;
+                        } else {
+                            q[3] = CLAMP(q[3] + 65535 * mix_b, 0, 65535);
+                        }
                     } else {
-                        float mix2 = mix_b + mix_a;
-                        q[3] = 65535 * mix2;
-                        if (mix2 != 0.f)
-                            mix_b /= mix2;
+                        if (alpha_over) {
+                            q[3] = 65535 * mix2;
+                            if (mix2 != 0.f)
+                                mix_b /= mix2;
+                        } else {
+                            q[3] = CLAMP(q[3] + 65535 * mix_b, 0, 65535);
+                        }
                     }
                     q[0] = sample_mix_16(q[0], p[0], mix_b);
                     q[1] = sample_mix_16(q[1], p[1], mix_b);
@@ -958,7 +983,8 @@ static int transition_get_image(mlt_frame a_frame,
                                         progressive ? -1 : top_field_first,
                                         *width,
                                         *height,
-                                        invert);
+                                        invert,
+                                        alpha_over);
         } else if (*format == mlt_image_rgba64) {
             ret = luma_composite_rgba64(!invert ? a_frame : b_frame,
                                         !invert ? b_frame : a_frame,
@@ -971,7 +997,8 @@ static int transition_get_image(mlt_frame a_frame,
                                         progressive ? -1 : top_field_first,
                                         *width,
                                         *height,
-                                        invert);
+                                        invert,
+                                        alpha_over);
         } else {
             *format = mlt_image_yuv422;
             luma_composite_yuv422(!invert ? a_frame : b_frame,
@@ -986,7 +1013,8 @@ static int transition_get_image(mlt_frame a_frame,
                                   width,
                                   height,
                                   invert,
-                                  fix_background_alpha);
+                                  fix_background_alpha,
+                                  alpha_over);
         }
     } else {
         if (mlt_properties_get(&a_frame->parent, "distort"))
