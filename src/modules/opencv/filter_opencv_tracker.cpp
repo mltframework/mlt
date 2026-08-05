@@ -465,6 +465,8 @@ static int filter_get_image(mlt_frame frame,
                            res,
                            cv::Size(MAX(2, clippedBox.width / blur),
                                     MAX(2, clippedBox.height / blur)),
+                           0,
+                           0,
                            cv::INTER_NEAREST);
                 cv::resize(res,
                            blurredRoi,
