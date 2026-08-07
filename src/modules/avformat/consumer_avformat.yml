@@ -3,7 +3,7 @@ type: consumer
 identifier: avformat
 title: FFmpeg Output
 version: 7
-copyright: Copyright (C) 2003-2019 Meltytech, LLC
+copyright: Copyright (C) 2003-2026 Meltytech, LLC
 license: LGPL
 language: en
 url: http://www.ffmpeg.org/
@@ -452,6 +452,10 @@ parameters:
   - identifier: dc
     title: Intra DC precision
     type: integer
+    description: >
+      Sets intra_dc_precision for MPEG-2 encoding. The value is offset by 8,
+      so the default of 8 means precision 0 (8-bit). Only relevant for
+      MPEG-2; ignored on FFmpeg 8.0 and later.
     default: 8
 
   - identifier: muxdelay
