@@ -232,8 +232,7 @@ static int producer_get_image(mlt_frame frame,
         self->current_alpha = mlt_cache_item_data(self->alpha_cache, &self->alpha_size);
 
         const char *dst_color_range = mlt_properties_get(properties, "consumer.color_range");
-        if (mlt_image_full_range(dst_color_range))
-            mlt_properties_set_int(properties, "full_range", 1);
+        mlt_properties_set_int(properties, "full_range", mlt_image_full_range(dst_color_range));
     }
     refresh_image(self, frame, *format, *width, *height, enable_caching);
 
@@ -241,6 +240,9 @@ static int producer_get_image(mlt_frame frame,
     *width = mlt_properties_get_int(properties, "width");
     *height = mlt_properties_get_int(properties, "height");
     *format = self->format;
+    // A reused image may hold a different color range than the consumer asked for.
+    mlt_properties_set_int(properties, "full_range", self->full_range);
+    mlt_properties_set_int(properties, "colorspace", self->colorspace);
 
     // NB: Cloning is necessary with this producer (due to processing of images ahead of use)
     // The fault is not in the design of mlt, but in the implementation of the qimage producer...

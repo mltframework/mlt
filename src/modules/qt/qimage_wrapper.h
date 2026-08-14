@@ -45,6 +45,8 @@ struct producer_qimage_s
     mlt_cache_item qimage_cache;
     void *qimage;
     mlt_image_format format;
+    int full_range;
+    int colorspace;
 };
 
 typedef struct producer_qimage_s *producer_qimage;

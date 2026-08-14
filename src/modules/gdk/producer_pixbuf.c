@@ -75,6 +75,8 @@ struct producer_pixbuf_s
     mlt_cache_item pixbuf_cache;
     GdkPixbuf *pixbuf;
     mlt_image_format format;
+    int full_range;
+    int colorspace;
 };
 
 static void load_filenames(producer_pixbuf self, mlt_properties producer_properties);
@@ -583,10 +585,18 @@ static void refresh_image(
                   self->pixbuf_idx,
                   width);
 
+    // Y'CbCr formats are ambiguous without a color range, so a cached image must be
+    // regenerated if the requested range changes even when the format does not.
+    int dst_full_range = mlt_properties_get_int(properties, "full_range");
+    int format_is_yuv = format == mlt_image_yuv422 || format == mlt_image_yuv420p
+                        || format == mlt_image_yuv422p16 || format == mlt_image_yuv420p10
+                        || format == mlt_image_yuv444p10;
+
     // If we have a pixbuf and we need an image
     if (self->pixbuf
         && (!self->image
-            || (format != mlt_image_none && format != mlt_image_movit && format != self->format))) {
+            || (format != mlt_image_none && format != mlt_image_movit && format != self->format)
+            || (format_is_yuv && format == self->format && dst_full_range != self->full_range))) {
         char *interps = mlt_properties_get(properties, "consumer.rescale");
         if (interps)
             interps = strdup(interps);
@@ -615,6 +625,9 @@ static void refresh_image(
         int src_stride = gdk_pixbuf_get_rowstride(pixbuf);
         int dst_stride = self->width * (has_alpha ? 4 : 3);
         self->format = has_alpha ? mlt_image_rgba : mlt_image_rgb;
+        // RGB(A) is inherently full range.
+        self->full_range = 1;
+        self->colorspace = mlt_colorspace_rgb;
         int image_size = mlt_image_format_size(self->format, width, height, NULL);
         self->image = mlt_pool_alloc(image_size);
         self->alpha = NULL;
@@ -645,6 +658,13 @@ static void refresh_image(
                 mlt_properties_set_int(properties, "format", self->format);
 
                 if (!mlt_frame_convert_image(frame, &self->image, &self->format, format)) {
+                    self->full_range = self->format == mlt_image_rgb
+                                               || self->format == mlt_image_rgba
+                                               || self->format == mlt_image_rgba64
+                                           ? 1
+                                           : dst_full_range;
+                    // The converter records the colorspace it produced.
+                    self->colorspace = mlt_properties_get_int(properties, "colorspace");
                     buffer = self->image;
                     image_size
                         = mlt_image_format_size(self->format, self->width, self->height, NULL);
@@ -719,6 +739,9 @@ static int producer_get_image(mlt_frame frame,
     self->alpha_cache = mlt_service_cache_get(MLT_PRODUCER_SERVICE(producer), "pixbuf.alpha");
     self->alpha = mlt_cache_item_data(self->alpha_cache, NULL);
 
+    const char *dst_color_range = mlt_properties_get(properties, "consumer.color_range");
+    mlt_properties_set_int(properties, "full_range", mlt_image_full_range(dst_color_range));
+
     // Refresh the image
     refresh_image(self, frame, *format, *width, *height);
 
@@ -726,6 +749,9 @@ static int producer_get_image(mlt_frame frame,
     *width = self->width;
     *height = self->height;
     *format = self->format;
+    // A reused image may hold a different color range than the consumer asked for.
+    mlt_properties_set_int(properties, "full_range", self->full_range);
+    mlt_properties_set_int(properties, "colorspace", self->colorspace);
 
     // NB: Cloning is necessary with this producer (due to processing of images ahead of use)
     // The fault is not in the design of mlt, but in the implementation of the pixbuf producer...

@@ -223,10 +223,18 @@ void refresh_image(producer_qimage self,
         || height != self->current_height)
         self->current_image = NULL;
 
+    // Y'CbCr formats are ambiguous without a color range, so a cached image must be
+    // regenerated if the requested range changes even when the format does not.
+    int dst_full_range = mlt_properties_get_int(properties, "full_range");
+    bool format_is_yuv = format == mlt_image_yuv422 || format == mlt_image_yuv420p
+                         || format == mlt_image_yuv422p16 || format == mlt_image_yuv420p10
+                         || format == mlt_image_yuv444p10;
+
     // If we have a qimage and need a new scaled image
     if (self->qimage
         && (!self->current_image
-            || (format != mlt_image_none && format != mlt_image_movit && format != self->format))) {
+            || (format != mlt_image_none && format != mlt_image_movit && format != self->format)
+            || (format_is_yuv && format == self->format && dst_full_range != self->full_range))) {
         QString interps = mlt_properties_get(properties, "consumer.rescale");
         bool interp = (interps != "nearest") && (interps != "none");
         QImage *qimage = static_cast<QImage *>(self->qimage);
@@ -265,6 +273,9 @@ void refresh_image(producer_qimage self,
 
         // Copy the image
         int image_size;
+        // RGB(A) is inherently full range.
+        self->full_range = 1;
+        self->colorspace = mlt_colorspace_rgb;
         if (has_alpha) {
             self->format = mlt_image_rgba;
             scaled = scaled.convertToFormat(QImage::Format_RGBA8888);
@@ -298,6 +309,12 @@ void refresh_image(producer_qimage self,
                 self->current_width = width;
                 self->current_height = height;
                 self->format = format;
+                self->full_range = format == mlt_image_rgb || format == mlt_image_rgba
+                                           || format == mlt_image_rgba64
+                                       ? 1
+                                       : dst_full_range;
+                // The converter records the colorspace it produced.
+                self->colorspace = mlt_properties_get_int(properties, "colorspace");
                 image_size = mlt_image_format_size(format, width, height, NULL);
                 self->current_image = (uint8_t *) mlt_pool_alloc(image_size);
                 memcpy(self->current_image, buffer, image_size);
