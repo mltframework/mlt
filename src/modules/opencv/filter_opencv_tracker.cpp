@@ -445,59 +445,41 @@ static int filter_get_image(mlt_frame frame,
                 position,
                 data->producer_in + data->producer_length);
     }
-    // ensure bounding box is within the frame boundaries or OpenCV will crash
-    if (data->boundingBox.x > *width) {
-        data->boundingBox.x = *width;
-        data->boundingBox.width = 0;
-    } else if (data->boundingBox.x < 0) {
-        data->boundingBox.width = MAX(0, data->boundingBox.width + data->boundingBox.x);
-        data->boundingBox.x = 0;
-    }
-    if (data->boundingBox.y > *height) {
-        data->boundingBox.y = *height;
-        data->boundingBox.height = 0;
-    } else if (data->boundingBox.y < 0) {
-        data->boundingBox.height = MAX(0, data->boundingBox.height + data->boundingBox.y);
-        data->boundingBox.y = 0;
-    }
-    if (data->boundingBox.x + data->boundingBox.width > *width) {
-        data->boundingBox.width = *width - data->boundingBox.x;
-    }
-    if (data->boundingBox.y + data->boundingBox.height > *height) {
-        data->boundingBox.height = *height - data->boundingBox.y;
-    }
 
-    if (blur > 0 && data->boundingBox.width > 1 && data->boundingBox.height > 1) {
+    cv::Rect clippedBox = data->boundingBox & cv::Rect(0, 0, *width, *height);
+    if (blur > 0 && clippedBox.width > 1 && clippedBox.height > 1) {
+        cv::Mat roi = cvFrame(clippedBox);
+        cv::Mat blurredRoi;
+        bool do_blur = true;
+
         switch (mlt_properties_get_int(filter_properties, "blur_type")) {
         case 1:
             // Gaussian Blur
-            cv::GaussianBlur(cvFrame(data->boundingBox),
-                             cvFrame(data->boundingBox),
-                             cv::Size(0, 0),
-                             blur);
+            cv::GaussianBlur(roi, blurredRoi, cv::Size(0, 0), blur);
             break;
         case 2:
             // Pixelate
             {
-                cv::Mat roi = cvFrame(data->boundingBox);
                 cv::Mat res;
                 cv::resize(roi,
                            res,
-                           cv::Size(MAX(2, data->boundingBox.width / blur),
-                                    MAX(2, data->boundingBox.height / blur)),
+                           cv::Size(MAX(2, clippedBox.width / blur),
+                                    MAX(2, clippedBox.height / blur)),
+                           0,
+                           0,
                            cv::INTER_NEAREST);
                 cv::resize(res,
-                           roi,
-                           cv::Size(data->boundingBox.width, data->boundingBox.height),
+                           blurredRoi,
+                           cv::Size(clippedBox.width, clippedBox.height),
                            0,
                            0,
                            cv::INTER_NEAREST);
-                cvFrame(data->boundingBox) = roi;
             }
             break;
         case 3:
             // Opaque fill, handled in shape_width option
             shape_width = -1;
+            do_blur = false;
             break;
         case 0:
             // Median Blur
@@ -506,11 +488,31 @@ static int filter_get_image(mlt_frame frame,
                 // median blur param must be odd and, minimum 3
                 ++blur;
             }
-            cv::medianBlur(cvFrame(data->boundingBox), cvFrame(data->boundingBox), blur);
+            cv::medianBlur(roi, blurredRoi, blur);
             break;
         default:
-            // Do nothing
+            do_blur = false;
             break;
+        }
+
+        if (do_blur) {
+            switch (mlt_properties_get_int(filter_properties, "shape")) {
+            case 1:
+                // Ellipse
+                {
+                    cv::Mat mask = cv::Mat::zeros(roi.size(), CV_8UC1);
+                    cv::RotatedRect bounding = cv::RotatedRect(cv::Point2f(data->boundingBox.x + data->boundingBox.width / 2.0f - clippedBox.x,
+                                                                            data->boundingBox.y + data->boundingBox.height / 2.0f - clippedBox.y),
+                                                               cv::Size2f(data->boundingBox.width, data->boundingBox.height),
+                                                               0);
+                    cv::ellipse(mask, bounding, cv::Scalar(255), -1, cv::LINE_4);
+                    blurredRoi.copyTo(roi, mask);
+                }
+                break;
+            default:
+                blurredRoi.copyTo(roi);
+                break;
+            }
         }
     }
 
@@ -546,7 +548,7 @@ static int filter_get_image(mlt_frame frame,
                             bounding,
                             cv::Scalar(shape_color.r, shape_color.g, shape_color.b),
                             shape_width,
-                            1);
+                            cv::LINE_4);
             }
             break;
         case 0:
