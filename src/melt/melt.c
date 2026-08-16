@@ -420,6 +420,27 @@ static void event_handling(mlt_producer producer, mlt_consumer consumer)
 
 #endif
 
+void report_progress(
+    mlt_producer producer, int progress, int *last_position, mlt_consumer consumer, int silent)
+{
+    if (!silent && mlt_properties_get_int(MLT_PRODUCER_PROPERTIES(producer), "stats_off") == 0) {
+        if (progress) {
+            int current_position = mlt_producer_position(producer);
+            if (current_position > *last_position) {
+                fprintf(stderr,
+                        "Current Frame: %10d, percentage: %10d%c",
+                        current_position,
+                        100 * current_position / mlt_producer_get_playtime(producer),
+                        progress == 2 ? '\n' : '\r');
+                *last_position = current_position;
+            }
+        } else {
+            fprintf(stderr, "Current Position: %10d\r", (int) mlt_consumer_position(consumer));
+        }
+        fflush(stderr);
+    }
+}
+
 static void transport(mlt_producer producer, mlt_consumer consumer)
 {
     mlt_properties properties = MLT_PRODUCER_PROPERTIES(producer);
@@ -427,7 +448,6 @@ static void transport(mlt_producer producer, mlt_consumer consumer)
     int progress = mlt_properties_get_int(MLT_CONSUMER_PROPERTIES(consumer), "progress");
     int is_getc = mlt_properties_get_int(MLT_CONSUMER_PROPERTIES(consumer), "melt_getc");
     struct timespec tm = {0, 40000000};
-    int total_length = mlt_producer_get_playtime(producer);
     int last_position = 0;
 
     if (mlt_properties_get_int(properties, "done") == 0 && !mlt_consumer_is_stopped(consumer)) {
@@ -473,29 +493,13 @@ static void transport(mlt_producer producer, mlt_consumer consumer)
             event_handling(producer, consumer);
 #endif
 
-            if (!silent && mlt_properties_get_int(properties, "stats_off") == 0) {
-                if (progress) {
-                    int current_position = mlt_producer_position(producer);
-                    if (current_position > last_position) {
-                        fprintf(stderr,
-                                "Current Frame: %10d, percentage: %10d%c",
-                                current_position,
-                                100 * current_position / total_length,
-                                progress == 2 ? '\n' : '\r');
-                        last_position = current_position;
-                    }
-                } else {
-                    fprintf(stderr,
-                            "Current Position: %10d\r",
-                            (int) mlt_consumer_position(consumer));
-                }
-                fflush(stderr);
-            }
+            report_progress(producer, progress, &last_position, consumer, silent);
 
             if (silent || progress)
                 nanosleep(&tm, NULL);
         }
 
+        report_progress(producer, progress, &last_position, consumer, silent);
         if (!silent)
             fprintf(stderr, "\n");
     }
