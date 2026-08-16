@@ -3002,6 +3002,7 @@ static void *consumer_thread(void *arg)
                 }
             }
     }
+    mlt_log_verbose(MLT_CONSUMER_SERVICE(consumer), "finished processing %ld frames\n", frames - 1);
 
 on_fatal_error:
 
