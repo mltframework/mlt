@@ -181,6 +181,20 @@ static double gain_to_reduction_db(double gain)
     return -20.0 * log10(gain);
 }
 
+// Relay duck_level onto the frame so it can be read back when that frame is
+// eventually presented, rather than only reflecting the most recently processed frame.
+static void set_duck_meta(mlt_properties transition_props,
+                          mlt_properties a_props,
+                          double duck_level_db)
+{
+    const char *prefix = mlt_properties_get(transition_props, "prefix");
+    if (prefix && prefix[0]) {
+        char key[512];
+        snprintf(key, sizeof(key), "%sduck_level", prefix);
+        mlt_properties_set_double(a_props, key, duck_level_db);
+    }
+}
+
 static void apply_ducking(transition_mix self,
                           mlt_properties transition_props,
                           float *buffer_a,
@@ -440,6 +454,9 @@ static int transition_get_audio(mlt_frame frame_a,
                   *samples,
                   power);
     }
+    set_duck_meta(transition_props,
+                  a_props,
+                  mlt_properties_get_double(transition_props, "duck_level"));
 
     // Copy the audio from the dest buffer into the frame.
     bytes = SAMPLE_BYTES(*samples, *channels);
@@ -603,6 +620,7 @@ mlt_transition transition_mix_init(mlt_profile profile,
         mlt_properties_set_double(MLT_TRANSITION_PROPERTIES(transition), "duck_level", 0.0);
         mlt_properties_set_double(MLT_TRANSITION_PROPERTIES(transition), "duck_fade_in", 1500.0);
         mlt_properties_set_double(MLT_TRANSITION_PROPERTIES(transition), "duck_fade_out", 250.0);
+        mlt_properties_set(MLT_TRANSITION_PROPERTIES(transition), "prefix", "");
         if (arg) {
             mlt_properties_set_double(MLT_TRANSITION_PROPERTIES(transition), "start", atof(arg));
             if (atof(arg) < 0)

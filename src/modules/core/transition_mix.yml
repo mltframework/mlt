@@ -2,7 +2,7 @@ schema_version: 7.2
 type: transition
 identifier: mix
 title: Mix
-version: 4
+version: 5
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -122,3 +122,14 @@ parameters:
     widget: spinner
     description: >
       The fade-out time, in milliseconds, used when reducing frame B.
+
+  - identifier: prefix
+    title: Frame Property Prefix
+    type: string
+    default: ""
+    mutable: yes
+    description: >
+      When non-empty, the duck level is also written to a frame property
+      named "<prefix>duck_level" on frame A so that it can be read back
+      once that frame is actually presented. When empty, no frame property
+      is set.
