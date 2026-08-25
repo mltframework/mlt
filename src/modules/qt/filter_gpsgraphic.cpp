@@ -1,6 +1,6 @@
 /*
  * filter_gpsgraphic.cpp -- draws gps related graphics
- * Copyright (c) 2015-2025 Meltytech, LLC
+ * Copyright (c) 2015-2026 Meltytech, LLC
  * Original author: Daniel F
  *
  * This library is free software; you can redistribute it and/or
@@ -586,7 +586,8 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
         if (strcmp(bg_path, pdata->last_bg_img_path)) {
             if (pdata->bg_img.load(bg_path)) {
                 pdata->bg_img = pdata->bg_img.convertToFormat(QImage::Format_ARGB32);
-                strncpy(pdata->last_bg_img_path, bg_path, 255);
+                strncpy(pdata->last_bg_img_path, bg_path, sizeof(pdata->last_bg_img_path) - 1);
+                pdata->last_bg_img_path[sizeof(pdata->last_bg_img_path) - 1] = '\0';
                 new_img_loaded = true;
             } else {
                 mlt_log_warning(filter, "Failed to load background image: %s\n", bg_path);
@@ -664,7 +665,8 @@ static void process_file(mlt_filter filter, mlt_frame frame)
     if (strcmp(pdata->last_filename, filename)) {
         // mlt_log_info(filter, "Reading new file: last_filename (%s) != entered_filename (%s), swap_180 = %d\n", pdata->last_filename, filename, swap);
         default_priv_data(pdata);
-        strcpy(pdata->last_filename, filename);
+        strncpy(pdata->last_filename, filename, sizeof(pdata->last_filename) - 1);
+        pdata->last_filename[sizeof(pdata->last_filename) - 1] = '\0';
 
         if (qxml_parse_file(filter_to_gps_data(filter)) == 1) {
             get_first_gps_time(filter_to_gps_data(filter));
@@ -684,7 +686,8 @@ static void process_file(mlt_filter filter, mlt_frame frame)
         } else {
             default_priv_data(pdata);
             //store name in pdata or it'll retry reading every frame if bad file
-            strcpy(pdata->last_filename, filename);
+            strncpy(pdata->last_filename, filename, sizeof(pdata->last_filename) - 1);
+            pdata->last_filename[sizeof(pdata->last_filename) - 1] = '\0';
         }
     }
 }

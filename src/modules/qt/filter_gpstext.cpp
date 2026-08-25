@@ -19,6 +19,7 @@
 
 #include "gps_parser.h"
 
+#include <climits>
 #include <QMutex>
 static QMutex f_mutex;
 
@@ -39,7 +40,7 @@ typedef struct
     int64_t gps_proc_start_t; //process only points after this time (epoch miliseconds)
     double speed_multiplier;
     double updates_per_second;
-    char last_filename[256]; //gps file fullpath
+    char last_filename[PATH_MAX]; //gps file fullpath
     char interpolated;
     int swap_180;
 } private_data;
@@ -546,7 +547,8 @@ static void process_file(mlt_filter filter, mlt_frame frame)
     if (strcmp(pdata->last_filename, filename)) {
         // mlt_log_info(filter, "Reading new file: last_filename (%s) != entered_filename (%s), swap_180 = %d\n", pdata->last_filename, filename, swap);
         default_priv_data(pdata);
-        strcpy(pdata->last_filename, filename);
+        strncpy(pdata->last_filename, filename, sizeof(pdata->last_filename) - 1);
+        pdata->last_filename[sizeof(pdata->last_filename) - 1] = '\0';
 
         if (qxml_parse_file(filter_to_gps_data(filter)) == 1) {
             get_first_gps_time(filter_to_gps_data(filter));
@@ -558,7 +560,8 @@ static void process_file(mlt_filter filter, mlt_frame frame)
         } else {
             default_priv_data(pdata);
             //store name in pdata or it'll retry reading every frame if bad file
-            strcpy(pdata->last_filename, filename);
+            strncpy(pdata->last_filename, filename, sizeof(pdata->last_filename) - 1);
+            pdata->last_filename[sizeof(pdata->last_filename) - 1] = '\0';
         }
     }
 }

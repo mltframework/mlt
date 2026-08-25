@@ -4,6 +4,7 @@
 //only using get_graph_colors() from graph.h
 #include "gps_parser.h"
 #include "graph.h"
+#include <climits>
 #include <framework/mlt.h>
 #include <QPainterPath>
 
@@ -42,13 +43,13 @@ typedef struct
     int64_t first_gps_time, last_gps_time;
     int64_t gps_offset;
     double speed_multiplier;
-    char last_filename[256]; //gps file fullpath
+    char last_filename[PATH_MAX]; //gps file fullpath
     char interpolated;
     s_gps_data_bounds minmax;
     s_crops ui_crops;
     int graph_data_source, graph_type;
     mlt_rect img_rect;
-    char last_bg_img_path[256];
+    char last_bg_img_path[PATH_MAX];
     double map_aspect_ratio_from_distance;
     QImage bg_img, bg_img_scaled;
     double bg_img_scaled_width, bg_img_scaled_height;
