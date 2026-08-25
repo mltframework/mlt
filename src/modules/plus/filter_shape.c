@@ -1,6 +1,6 @@
 /*
  * filter_shape.c -- Arbitrary alpha channel shaping
- * Copyright (C) 2008-2025 Meltytech, LLC
+ * Copyright (C) 2008-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License as published by
@@ -150,10 +150,12 @@ static int slice_alpha_subtract(int id, int index, int jobs, void *data)
     const int size = desc->width * slice_height;
     uint8_t *p = desc->alpha + slice_line_start * desc->width * desc->bpp;
     const uint8_t *q = desc->mask + slice_line_start * desc->width * desc->bpp;
+    const int channel = desc->bpp == 4 ? 3 : 0;
 
     for (int i = 0; i < size; ++i) {
-        uint8_t a = q[i * desc->bpp + (desc->bpp == 4 ? 3 : 0)] ^ desc->invert_mask;
-        p[i * desc->bpp] = (p[i * desc->bpp] > a ? p[i * desc->bpp] - a : 0) ^ desc->invert;
+        uint8_t a = q[i * desc->bpp + channel] ^ desc->invert_mask;
+        p[i * desc->bpp + channel]
+            = (p[i * desc->bpp + channel] > a ? p[i * desc->bpp + channel] - a : 0) ^ desc->invert;
     }
 
     return 0;
