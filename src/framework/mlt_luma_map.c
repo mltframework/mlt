@@ -2,7 +2,7 @@
  * \file mlt_luma_map.c
  * \brief functions to generate and read luma-wipe transition maps
  *
- * Copyright (C) 2003-2019 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -374,6 +374,13 @@ int mlt_luma_map_from_pgm(const char *filename, uint16_t **map, int *width, int 
             i = sscanf(line, "%d", &maxval);
             if (i == 0)
                 break;
+        }
+
+        // Validate dimensions and maxval to prevent integer overflow
+        if (*width <= 0 || *height <= 0 || maxval <= 0 || maxval > 65535 || *width > 16384
+            || *height > 16384) {
+            error = 1;
+            break;
         }
 
         // determine if this is one or two bytes per pixel
