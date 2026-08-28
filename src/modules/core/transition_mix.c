@@ -295,7 +295,7 @@ static int transition_get_audio(mlt_frame frame_a,
     mlt_frame_get_audio(frame_a, (void **) &buffer_a, format, &frequency_a, &channels_a, &samples_a);
 
     // Merge b-frame level metadata onto a-frame after both callbacks run.
-    mlt_properties_copy(a_props, b_props, "meta.");
+    mlt_properties_copy(a_props, b_props, "meta.audio.");
 
     // Prevent dividing by zero.
     if (!channels_a || !channels_b || !buffer_a || !buffer_b)
