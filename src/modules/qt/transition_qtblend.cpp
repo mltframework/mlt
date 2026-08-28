@@ -320,17 +320,22 @@ static int get_image(mlt_frame a_frame,
     }
 
     // Get bottom frame
-    uint8_t *a_image = NULL;
-    error = mlt_frame_get_image(a_frame, &a_image, format, width, height, 0);
+    error = mlt_frame_get_image(a_frame, image, format, width, height, 1);
     if (error) {
         return error;
     }
-    // Prepare output image
-    int image_size = mlt_image_format_size(*format, *width, *height, NULL);
-    *image = (uint8_t *) mlt_pool_alloc(image_size);
 
-    // Copy bottom frame in output
-    memcpy(*image, a_image, image_size);
+    // Ensure the bottom frame is the requested size.
+    if (mlt_frame_has_convert_image(a_frame)
+        && (*width != request_width || *height != request_height)) {
+        mlt_properties_set_int(MLT_FRAME_PROPERTIES(a_frame), "convert_image_width", request_width);
+        mlt_properties_set_int(MLT_FRAME_PROPERTIES(a_frame),
+                               "convert_image_height",
+                               request_height);
+        mlt_frame_convert_image(a_frame, image, format, *format);
+        *width = request_width;
+        *height = request_height;
+    }
 
     // convert bottom mlt image to qimage
     QImage bottomImg;
@@ -349,7 +354,6 @@ static int get_image(mlt_frame a_frame,
     // finish Qt drawing
     painter.end();
     convert_qimage_to_mlt(&bottomImg, *image, *width, *height);
-    mlt_frame_set_image(a_frame, *image, image_size, mlt_pool_release);
     // Remove potentially large image on the B frame.
     mlt_frame_set_image(b_frame, NULL, 0, NULL);
     return error;
