@@ -1,6 +1,6 @@
 /*
  * common.h
- * Copyright (C) 2018 Meltytech, LLC
+ * Copyright (C) 2018-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,6 +22,9 @@
 
 #include <SDL.h>
 
+#define SDL_AUDIO_BUFFER_MIN_BYTES (2048 * 2 * (int) sizeof(float) * 2)
+
 SDL_AudioDeviceID sdl2_open_audio(const SDL_AudioSpec *desired, SDL_AudioSpec *obtained);
+int sdl2_ensure_buffer_capacity(uint8_t **buffer, int *capacity, int minimum);
 
 #endif // COMMON_H

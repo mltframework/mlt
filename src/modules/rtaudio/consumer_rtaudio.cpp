@@ -36,6 +36,8 @@
 #define RTAUDIO_VERSION_6
 #endif
 
+#define RTAUDIO_AUDIO_BUFFER_MIN_BYTES (2048 * 2 * (int) sizeof(float) * 2)
+
 static void consumer_refresh_cb(mlt_consumer sdl, mlt_consumer consumer, mlt_event_data);
 static int rtaudio_callback(void *outputBuffer,
                             void *inputBuffer,
@@ -86,7 +88,8 @@ public:
     int joined;
     int running;
     int out_channels;
-    uint8_t audio_buffer[4096 * 10];
+    uint8_t *audio_buffer;
+    int audio_buffer_size;
     int audio_avail;
     pthread_mutex_t audio_mutex;
     pthread_cond_t audio_cond;
@@ -106,6 +109,8 @@ public:
         , queue(nullptr)
         , joined(0)
         , running(0)
+        , audio_buffer(nullptr)
+        , audio_buffer_size(0)
         , audio_avail(0)
         , playing(0)
         , refresh_count(0)
@@ -116,6 +121,8 @@ public:
 
     ~RtAudioConsumer()
     {
+        free(audio_buffer);
+
         // Close the queue
         mlt_deque_close(queue);
 
@@ -131,6 +138,20 @@ public:
             rt->closeStream();
         delete rt;
         rt = nullptr;
+    }
+
+    bool ensure_audio_buffer_capacity(int minimum)
+    {
+        if (audio_buffer_size >= minimum)
+            return true;
+
+        auto new_buffer = (uint8_t *) realloc(audio_buffer, minimum);
+        if (!new_buffer)
+            return false;
+
+        audio_buffer = new_buffer;
+        audio_buffer_size = minimum;
+        return true;
     }
 
     bool create_rtaudio(RtAudio::Api api, int channels, int frequency)
@@ -235,8 +256,23 @@ public:
                            &bufferFrames,
                            &rtaudio_callback,
                            this,
-                           &options)
-            || rt->startStream()) {
+                           &options)) {
+            mlt_log_info(getConsumer(), "%s\n", rt->getErrorText().c_str());
+            delete rt;
+            rt = nullptr;
+            return false;
+        }
+        {
+            int audio_queue_size = mlt_audio_format_size(mlt_audio_f32le, bufferFrames, channels);
+            if (audio_queue_size < RTAUDIO_AUDIO_BUFFER_MIN_BYTES)
+                audio_queue_size = RTAUDIO_AUDIO_BUFFER_MIN_BYTES;
+            if (!ensure_audio_buffer_capacity(audio_queue_size)) {
+                delete rt;
+                rt = nullptr;
+                return false;
+            }
+        }
+        if (rt->startStream()) {
             mlt_log_info(getConsumer(), "%s\n", rt->getErrorText().c_str());
             delete rt;
             rt = nullptr;
@@ -255,6 +291,18 @@ public:
                            &rtaudio_callback,
                            this,
                            &options);
+            {
+                int audio_queue_size = mlt_audio_format_size(mlt_audio_f32le,
+                                                             bufferFrames,
+                                                             channels);
+                if (audio_queue_size < RTAUDIO_AUDIO_BUFFER_MIN_BYTES)
+                    audio_queue_size = RTAUDIO_AUDIO_BUFFER_MIN_BYTES;
+                if (!ensure_audio_buffer_capacity(audio_queue_size)) {
+                    delete rt;
+                    rt = nullptr;
+                    return false;
+                }
+            }
             rt->startStream();
         }
 #ifdef RTERROR_H
@@ -660,11 +708,11 @@ public:
             pthread_mutex_lock(&audio_mutex);
 
             while (running && samples_copied < samples) {
-                int sample_space = (sizeof(audio_buffer) - audio_avail) / dst_stride;
+                int sample_space = (audio_buffer_size - audio_avail) / dst_stride;
 
                 while (running && sample_space == 0) {
                     pthread_cond_wait(&audio_cond, &audio_mutex);
-                    sample_space = (sizeof(audio_buffer) - audio_avail) / dst_stride;
+                    sample_space = (audio_buffer_size - audio_avail) / dst_stride;
                 }
                 if (running) {
                     int samples_to_copy = samples - samples_copied;

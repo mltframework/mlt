@@ -53,7 +53,8 @@ struct consumer_sdl_s
     pthread_t thread;
     int joined;
     atomic_int running;
-    uint8_t audio_buffer[4096 * 10];
+    uint8_t *audio_buffer;
+    int audio_buffer_size;
     int audio_avail;
     pthread_mutex_t audio_mutex;
     pthread_cond_t audio_cond;
@@ -334,6 +335,7 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
         SDL_AudioSpec got;
         SDL_AudioDeviceID dev;
         int audio_buffer = mlt_properties_get_int(properties, "audio_buffer");
+        int audio_queue_size = 0;
 
         // specify audio format
         memset(&request, 0, sizeof(SDL_AudioSpec));
@@ -349,6 +351,16 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
             mlt_log_error(MLT_CONSUMER_SERVICE(self), "SDL failed to open audio\n");
             init_audio = 2;
         } else {
+            audio_queue_size = got.size > SDL_AUDIO_BUFFER_MIN_BYTES ? got.size
+                                                                     : SDL_AUDIO_BUFFER_MIN_BYTES;
+            if (sdl2_ensure_buffer_capacity(&self->audio_buffer,
+                                            &self->audio_buffer_size,
+                                            audio_queue_size)) {
+                mlt_log_error(MLT_CONSUMER_SERVICE(self), "Failed to allocate SDL audio queue\n");
+                SDL_CloseAudioDevice(dev);
+                init_audio = 2;
+                return init_audio;
+            }
             if (got.channels != request.channels) {
                 mlt_log_info(MLT_CONSUMER_SERVICE(self),
                              "Unable to output %d channels. Change to %d\n",
@@ -374,7 +386,7 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
         pthread_mutex_lock(&self->audio_mutex);
 
         while (self->running && samples_copied < samples) {
-            int sample_space = (sizeof(self->audio_buffer) - self->audio_avail) / dst_stride;
+            int sample_space = (self->audio_buffer_size - self->audio_avail) / dst_stride;
             while (self->running && sample_space == 0) {
                 struct timeval now;
                 struct timespec tm;
@@ -383,7 +395,7 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
                 tm.tv_sec = now.tv_sec + 1;
                 tm.tv_nsec = now.tv_usec * 1000;
                 pthread_cond_timedwait(&self->audio_cond, &self->audio_mutex, &tm);
-                sample_space = (sizeof(self->audio_buffer) - self->audio_avail) / dst_stride;
+                sample_space = (self->audio_buffer_size - self->audio_avail) / dst_stride;
 
                 if (sample_space == 0) {
                     mlt_log_warning(MLT_CONSUMER_SERVICE(&self->parent), "audio timed out\n");
@@ -697,6 +709,7 @@ static void consumer_close(mlt_consumer parent)
     pthread_cond_destroy(&self->video_cond);
     pthread_mutex_destroy(&self->refresh_mutex);
     pthread_cond_destroy(&self->refresh_cond);
+    free(self->audio_buffer);
 
     // Finally clean up this
     free(self);
