@@ -445,6 +445,8 @@ static void set_audio_format(mlt_consumer self)
     if (format) {
         if (!strcmp(format, "none"))
             priv->audio_format = mlt_audio_none;
+        else if (!strcmp(format, "s16"))
+            priv->audio_format = mlt_audio_s16;
         else if (!strcmp(format, "s32"))
             priv->audio_format = mlt_audio_s32;
         else if (!strcmp(format, "s32le"))
