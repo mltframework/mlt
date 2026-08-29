@@ -22,6 +22,11 @@ tags:
   - Audio
 audio_formats:
   - s16
+  - s32
+  - float
+  - s32le
+  - f32le
+  - u8
 parameters:
   - identifier: prefix
     title: Frame Property Prefix

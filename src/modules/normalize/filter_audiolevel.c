@@ -87,6 +87,22 @@ static inline double IEC_Scale(double dB)
     return fScale;
 }
 
+static double get_sample(
+    mlt_audio_format format, void *buffer, int channel, int sample, int channels, int samples)
+{
+    if (format == mlt_audio_s16)
+        return ((int16_t *) buffer)[channel + sample * channels] / -(double) INT16_MIN;
+    if (format == mlt_audio_s32)
+        return ((int32_t *) buffer)[channel * samples + sample] / -(double) INT32_MIN;
+    if (format == mlt_audio_float)
+        return ((float *) buffer)[channel * samples + sample];
+    if (format == mlt_audio_s32le)
+        return ((int32_t *) buffer)[channel + sample * channels] / -(double) INT32_MIN;
+    if (format == mlt_audio_f32le)
+        return ((float *) buffer)[channel + sample * channels];
+    return (((uint8_t *) buffer)[channel + sample * channels] - 128) / 128.0;
+}
+
 static int filter_get_audio(mlt_frame frame,
                             void **buffer,
                             mlt_audio_format *format,
@@ -102,7 +118,9 @@ static int filter_get_audio(mlt_frame frame,
     int iec_scale = mlt_properties_get_int(filter_props, "iec_scale");
     int dbPeak = mlt_properties_get_int(filter_props, "dbpeak");
     const char *prefix = mlt_properties_get(filter_props, "prefix");
-    *format = mlt_audio_s16;
+    if (*format != mlt_audio_s16 && *format != mlt_audio_s32 && *format != mlt_audio_float
+        && *format != mlt_audio_s32le && *format != mlt_audio_f32le && *format != mlt_audio_u8)
+        *format = mlt_audio_float;
     int error = mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
     if (error || !buffer || !buffer[0])
         return error;
@@ -112,30 +130,29 @@ static int filter_get_audio(mlt_frame frame,
     int num_oversample = 0;
     int c, s;
     char key[128];
-    int16_t *pcm = (int16_t *) *buffer;
 
     for (c = 0; c < *channels; c++) {
         double level = 0.0;
         if (dbPeak) {
-            int16_t peakVal = 0;
+            double peak = 0.0;
             for (s = 0; s < num_samples; s++) {
-                int16_t sample = abs(pcm[c + s * num_channels]);
-                if (sample > peakVal)
-                    peakVal = sample;
+                double sample = fabs(get_sample(*format, *buffer, c, s, num_channels, *samples));
+                if (sample > peak)
+                    peak = sample;
             }
-            if (peakVal == 0)
+            if (peak == 0)
                 level = -100;
             else
-                level = AMPTODBFS((double) peakVal / (double) INT16_MAX);
+                level = AMPTODBFS(peak);
 
             if (iec_scale)
                 level = IEC_Scale(level);
         } else {
             double val = 0;
             for (s = 0; s < num_samples; s++) {
-                double sample = fabs(pcm[c + s * num_channels] / 128.0);
+                double sample = fabs(get_sample(*format, *buffer, c, s, num_channels, *samples));
                 val += sample;
-                if (sample == 128)
+                if (sample >= 1.0)
                     num_oversample++;
                 else
                     num_oversample = 0;
@@ -150,7 +167,7 @@ static int filter_get_audio(mlt_frame frame,
             }
             // max amplitude = 40/42, 3to10  oversamples=41, more then 10 oversamples=42
             if (level == 0.0 && num_samples > 0)
-                level = val / num_samples * 40.0 / 42.0 / 127.0;
+                level = val / num_samples * 40.0 / 42.0;
             if (iec_scale)
                 level = IEC_Scale(AMPTODBFS(level));
         }
