@@ -385,7 +385,10 @@ static void foreach_consumer_put(mlt_consumer consumer, mlt_frame frame)
 
             // get the audio for the current frame
             uint8_t *buffer = NULL;
-            mlt_audio_format format = mlt_audio_s16;
+            mlt_audio_format format = mlt_audio_f32le;
+            const char *format_name = mlt_properties_get(properties, "mlt_audio_format");
+            if (format_name)
+                mlt_audio_format_id(format_name, &format);
             int channels = mlt_properties_get_int(properties, "channels");
             int frequency = mlt_properties_get_int(properties, "frequency");
             int current_samples = mlt_audio_calculate_frame_samples(self_fps, frequency, self_pos);
