@@ -100,7 +100,7 @@ static double get_sample(
         return ((int32_t *) buffer)[channel + sample * channels] / -(double) INT32_MIN;
     if (format == mlt_audio_f32le)
         return ((float *) buffer)[channel + sample * channels];
-    return (((uint8_t *) buffer)[channel + sample * channels] - 128) / 128.0;
+    return (((uint8_t *) buffer)[channel + sample * channels] - 128) / 256.0;
 }
 
 static int filter_get_audio(mlt_frame frame,
