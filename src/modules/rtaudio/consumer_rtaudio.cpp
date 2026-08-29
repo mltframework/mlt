@@ -1,6 +1,6 @@
 /*
  * consumer_rtaudio.c -- output through RtAudio audio wrapper
- * Copyright (C) 2011-2023 Meltytech, LLC
+ * Copyright (C) 2011-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -230,7 +230,7 @@ public:
         }
         if (rt->openStream(&parameters,
                            nullptr,
-                           RTAUDIO_SINT16,
+                           RTAUDIO_FLOAT32,
                            frequency,
                            &bufferFrames,
                            &rtaudio_callback,
@@ -249,7 +249,7 @@ public:
             }
             rt->openStream(&parameters,
                            nullptr,
-                           RTAUDIO_SINT16,
+                           RTAUDIO_FLOAT32,
                            frequency,
                            &bufferFrames,
                            &rtaudio_callback,
@@ -565,15 +565,15 @@ public:
         audio_avail = 0;
     }
 
-    int callback(int16_t *outbuf,
-                 int16_t *inbuf,
+    int callback(float *outbuf,
+                 float *inbuf,
                  unsigned int samples,
                  double streamTime,
                  RtAudioStreamStatus status)
     {
         mlt_properties properties = MLT_CONSUMER_PROPERTIES(getConsumer());
         double volume = mlt_properties_get_double(properties, "volume");
-        int len = mlt_audio_format_size(mlt_audio_s16, samples, out_channels);
+        int len = mlt_audio_format_size(mlt_audio_f32le, samples, out_channels);
 
         pthread_mutex_lock(&audio_mutex);
 
@@ -602,7 +602,7 @@ public:
         }
 
         if (volume != 1.0) {
-            int16_t *p = outbuf;
+            float *p = outbuf;
             int i = samples * out_channels + 1;
             while (--i)
                 *p++ *= volume;
@@ -621,7 +621,7 @@ public:
     {
         // Get the properties of this consumer
         mlt_properties properties = MLT_CONSUMER_PROPERTIES(getConsumer());
-        mlt_audio_format afmt = mlt_audio_s16;
+        mlt_audio_format afmt = mlt_audio_f32le;
 
         // Set the preferred params of the test card signal
         int channels = mlt_properties_get_int(properties, "channels");
@@ -631,7 +631,7 @@ public:
         int samples = mlt_audio_calculate_frame_samples(mlt_properties_get_double(properties, "fps"),
                                                         frequency,
                                                         counter++);
-        int16_t *pcm;
+        float *pcm;
 
         mlt_frame_get_audio(frame, (void **) &pcm, &afmt, &frequency, &channels, &samples);
         *duration = 1000000LL * samples / frequency;
@@ -678,7 +678,7 @@ public:
                             memcpy(&audio_buffer[audio_avail], pcm, dst_bytes);
                             pcm += samples_to_copy * channels;
                         } else {
-                            int16_t *dest = (int16_t *) &audio_buffer[audio_avail];
+                            float *dest = (float *) &audio_buffer[audio_avail];
                             int i = samples_to_copy + 1;
                             while (--i) {
                                 memcpy(dest, pcm, dst_stride);
@@ -817,8 +817,8 @@ static int rtaudio_callback(void *outputBuffer,
                             void *userData)
 {
     RtAudioConsumer *rtaudio = (RtAudioConsumer *) userData;
-    return rtaudio->callback((int16_t *) outputBuffer,
-                             (int16_t *) inputBuffer,
+    return rtaudio->callback((float *) outputBuffer,
+                             (float *) inputBuffer,
                              nFrames,
                              streamTime,
                              status);

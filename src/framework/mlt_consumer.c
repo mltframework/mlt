@@ -177,7 +177,7 @@ int mlt_consumer_init(mlt_consumer self, void *child, mlt_profile profile)
 
         // Hmm - default all consumers to yuv422 with s16 :-/
         priv->image_format = mlt_image_yuv422;
-        priv->audio_format = mlt_audio_s16;
+        priv->audio_format = mlt_audio_f32le;
 
         mlt_events_register(properties, "consumer-frame-show");
         mlt_events_register(properties, "consumer-frame-render");

@@ -1,6 +1,6 @@
 /*
  * consumer_sdl2_audio.c -- A Simple DirectMedia Layer audio-only consumer
- * Copyright (C) 2009-2024 Meltytech, LLC
+ * Copyright (C) 2009-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -282,11 +282,11 @@ static void sdl_fill_audio(void *udata, uint8_t *stream, int len)
     // Place in the audio buffer
     if (volume != 1.0) {
         // Adjust the volume while copying.
-        int16_t *src = (int16_t *) self->audio_buffer;
-        int16_t *dst = (int16_t *) stream;
+        float *src = (float *) self->audio_buffer;
+        float *dst = (float *) stream;
         int i = bytes / sizeof(*dst) + 1;
         while (--i) {
-            *dst++ = CLAMP(volume * src[0], -32768, 32767);
+            *dst++ = volume * src[0];
             src++;
         }
     } else {
@@ -307,7 +307,7 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
 {
     // Get the properties of self consumer
     mlt_properties properties = self->properties;
-    mlt_audio_format afmt = mlt_audio_s16;
+    mlt_audio_format afmt = mlt_audio_f32le;
 
     // Set the preferred params of the test card signal
     int channels = mlt_properties_get_int(properties, "channels");
@@ -319,7 +319,7 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
                                                                               "fps"),
                                                     frequency,
                                                     counter++);
-    int16_t *pcm;
+    float *pcm;
     mlt_frame_get_audio(frame, (void **) &pcm, &afmt, &frequency, &channels, &samples);
     *duration = 1000000LL * samples / frequency;
     pcm += mlt_properties_get_int(properties, "audio_offset");
@@ -338,7 +338,7 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
         // specify audio format
         memset(&request, 0, sizeof(SDL_AudioSpec));
         request.freq = frequency;
-        request.format = AUDIO_S16SYS;
+        request.format = AUDIO_F32SYS;
         request.channels = mlt_properties_get_int(properties, "channels");
         request.samples = audio_buffer;
         request.callback = sdl_fill_audio;
@@ -406,7 +406,7 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
                         memcpy(&self->audio_buffer[self->audio_avail], pcm, dst_bytes);
                         pcm += samples_to_copy * channels;
                     } else {
-                        int16_t *dest = (int16_t *) &self->audio_buffer[self->audio_avail];
+                        float *dest = (float *) &self->audio_buffer[self->audio_avail];
                         int i = samples_to_copy + 1;
                         while (--i) {
                             memcpy(dest, pcm, dst_stride);
