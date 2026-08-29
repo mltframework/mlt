@@ -34,6 +34,7 @@ endfunction()
 
 add_qt_test(TEST_NAME animation)
 add_qt_test(TEST_NAME audio)
+add_qt_test(TEST_NAME audioconvert)
 add_qt_test(TEST_NAME events)
 add_qt_test(TEST_NAME filter)
 add_qt_test(TEST_NAME frame)

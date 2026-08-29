@@ -1,6 +1,6 @@
 /*
  * filter_audioconvert.c -- convert from one audio format to another
- * Copyright (C) 2009-2016 Meltytech, LLC
+ * Copyright (C) 2009-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,8 +21,37 @@
 #include <framework/mlt_frame.h>
 #include <framework/mlt_log.h>
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+
+/* Convert a normalised float sample to integer PCM.
+ *
+ * The scale factor is the negative full-scale magnitude (32768 for s16, not
+ * 32767), matching the divisor used by the integer -> float conversions, so an
+ * integer -> float -> integer round trip is lossless. Rounding is to nearest
+ * rather than the truncation an implicit cast would do, and the clamp is
+ * applied after scaling so +1.0 saturates to the positive maximum instead of
+ * wrapping.
+ */
+static inline int16_t f32_to_s16(float f)
+{
+    long pcm = lrintf(f * 32768.0f);
+    return CLAMP(pcm, -32768, 32767);
+}
+
+static inline int32_t f32_to_s32(float f)
+{
+    /* float has a 24-bit mantissa, so scale in double to round correctly. */
+    int64_t pcm = llrint((double) f * 2147483648.0);
+    return CLAMP(pcm, -2147483648LL, 2147483647LL);
+}
+
+static inline uint8_t f32_to_u8(float f)
+{
+    long pcm = lrintf(f * 128.0f) + 128;
+    return CLAMP(pcm, 0, 255);
+}
 
 static int convert_audio(mlt_frame frame,
                          void **audio,
@@ -191,11 +220,8 @@ static int convert_audio(mlt_frame frame,
                 float *q = (float *) *audio;
                 int s, c;
                 for (s = 0; s < samples; s++)
-                    for (c = 0; c < channels; c++) {
-                        float f = *(q + c * samples + s);
-                        f = CLAMP(f, -1.0f, 1.0f);
-                        *p++ = 32767 * f;
-                    }
+                    for (c = 0; c < channels; c++)
+                        *p++ = f32_to_s16(*(q + c * samples + s));
                 *audio = buffer;
                 error = 0;
                 break;
@@ -205,12 +231,8 @@ static int convert_audio(mlt_frame frame,
                 int32_t *p = buffer;
                 float *q = (float *) *audio;
                 int i = samples * channels + 1;
-                while (--i) {
-                    float f = *q++;
-                    f = CLAMP(f, -1.0f, 1.0f);
-                    int64_t pcm = (f > 0.0f ? 2147483647LL : 2147483648LL) * f;
-                    *p++ = CLAMP(pcm, -2147483648LL, 2147483647LL);
-                }
+                while (--i)
+                    *p++ = f32_to_s32(*q++);
                 *audio = buffer;
                 error = 0;
                 break;
@@ -221,12 +243,8 @@ static int convert_audio(mlt_frame frame,
                 float *q = (float *) *audio;
                 int s, c;
                 for (s = 0; s < samples; s++)
-                    for (c = 0; c < channels; c++) {
-                        float f = *(q + c * samples + s);
-                        f = CLAMP(f, -1.0f, 1.0f);
-                        int64_t pcm = (f > 0.0f ? 2147483647LL : 2147483648LL) * f;
-                        *p++ = CLAMP(pcm, -2147483648LL, 2147483647LL);
-                    }
+                    for (c = 0; c < channels; c++)
+                        *p++ = f32_to_s32(*(q + c * samples + s));
                 *audio = buffer;
                 error = 0;
                 break;
@@ -249,11 +267,8 @@ static int convert_audio(mlt_frame frame,
                 float *q = (float *) *audio;
                 int s, c;
                 for (s = 0; s < samples; s++)
-                    for (c = 0; c < channels; c++) {
-                        float f = *(q + c * samples + s);
-                        f = CLAMP(f, -1.0f, 1.0f);
-                        *p++ = (127 * f) + 128;
-                    }
+                    for (c = 0; c < channels; c++)
+                        *p++ = f32_to_u8(*(q + c * samples + s));
                 *audio = buffer;
                 error = 0;
                 break;
@@ -340,11 +355,8 @@ static int convert_audio(mlt_frame frame,
                 int16_t *p = buffer;
                 float *q = (float *) *audio;
                 int i = samples * channels + 1;
-                while (--i) {
-                    float f = *q++;
-                    f = CLAMP(f, -1.0f, 1.0f);
-                    *p++ = 32767 * f;
-                }
+                while (--i)
+                    *p++ = f32_to_s16(*q++);
                 *audio = buffer;
                 error = 0;
                 break;
@@ -373,10 +385,7 @@ static int convert_audio(mlt_frame frame,
                     float *q = (float *) *audio + c;
                     int i = samples + 1;
                     while (--i) {
-                        float f = *q;
-                        f = CLAMP(f, -1.0f, 1.0f);
-                        int64_t pcm = (f > 0.0f ? 2147483647LL : 2147483648LL) * f;
-                        *p++ = CLAMP(pcm, -2147483648LL, 2147483647LL);
+                        *p++ = f32_to_s32(*q);
                         q += channels;
                     }
                 }
@@ -389,12 +398,8 @@ static int convert_audio(mlt_frame frame,
                 int32_t *p = buffer;
                 float *q = (float *) *audio;
                 int i = samples * channels + 1;
-                while (--i) {
-                    float f = *q++;
-                    f = CLAMP(f, -1.0f, 1.0f);
-                    int64_t pcm = (f > 0.0f ? 2147483647LL : 2147483648LL) * f;
-                    *p++ = CLAMP(pcm, -2147483648LL, 2147483647LL);
-                }
+                while (--i)
+                    *p++ = f32_to_s32(*q++);
                 *audio = buffer;
                 error = 0;
                 break;
@@ -404,11 +409,8 @@ static int convert_audio(mlt_frame frame,
                 uint8_t *p = buffer;
                 float *q = (float *) *audio;
                 int i = samples * channels + 1;
-                while (--i) {
-                    float f = *q++;
-                    f = CLAMP(f, -1.0f, 1.0f);
-                    *p++ = (127 * f) + 128;
-                }
+                while (--i)
+                    *p++ = f32_to_u8(*q++);
                 *audio = buffer;
                 error = 0;
                 break;
@@ -443,7 +445,7 @@ static int convert_audio(mlt_frame frame,
                     uint8_t *q = (uint8_t *) *audio + c;
                     int i = samples + 1;
                     while (--i) {
-                        *p++ = ((float) *q - 128) / 256.0f;
+                        *p++ = ((float) *q - 128) / 128.0f;
                         q += channels;
                     }
                 }
@@ -478,10 +480,8 @@ static int convert_audio(mlt_frame frame,
                 float *p = buffer;
                 uint8_t *q = (uint8_t *) *audio;
                 int i = samples * channels + 1;
-                while (--i) {
-                    float f = ((float) *q++ - 128) / 256.0f;
-                    *p++ = CLAMP(f, -1.0f, 1.0f);
-                }
+                while (--i)
+                    *p++ = ((float) *q++ - 128) / 128.0f;
                 *audio = buffer;
                 error = 0;
                 break;
