@@ -2,7 +2,7 @@ schema_version: 7.2
 type: consumer
 identifier: sdl2_audio
 title: SDL2 Audio Only
-version: 3
+version: 4
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 license: LGPLv2.1
@@ -12,7 +12,7 @@ tags:
 description: >
   Simple DirectMedia Layer audio only output module.
 audio_formats:
-  - s16
+  - f32le
 parameters:
   - identifier: volume
     title: Volume

@@ -175,7 +175,6 @@ int mlt_consumer_init(mlt_consumer self, void *child, mlt_profile profile)
         // Default to environment test card
         mlt_properties_set(properties, "test_card", mlt_environment("MLT_TEST_CARD"));
 
-        // Hmm - default all consumers to yuv422 with s16 :-/
         priv->image_format = mlt_image_yuv422;
         priv->audio_format = mlt_audio_f32le;
 

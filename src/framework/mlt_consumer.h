@@ -82,7 +82,7 @@
  * \properties \em top_field_first when not progressive, whether interlace field order is top-field-first, defaults to 0.
  *   Set this to -1 if the consumer does not care about the field order.
  * \properties \em mlt_image_format the image format to request in rendering threads, defaults to yuv422
- * \properties \em mlt_audio_format the audio format to request in rendering threads, defaults to S16
+ * \properties \em mlt_audio_format the audio format to request in rendering threads, defaults to f32le
  * \properties \em audio_off set non-zero to disable audio processing
  * \properties \em video_off set non-zero to disable video processing
  * \properties \em drop_count the number of video frames not rendered since starting consumer
