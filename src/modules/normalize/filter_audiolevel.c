@@ -152,7 +152,7 @@ static int filter_get_audio(mlt_frame frame,
             for (s = 0; s < num_samples; s++) {
                 double sample = fabs(get_sample(*format, *buffer, c, s, num_channels, *samples));
                 val += sample;
-                if (sample >= 1.0)
+                if (sample > 0.9999)
                     num_oversample++;
                 else
                     num_oversample = 0;
