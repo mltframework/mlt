@@ -441,22 +441,8 @@ static void set_audio_format(mlt_consumer self)
     consumer_private *priv = self->local;
     mlt_properties properties = MLT_CONSUMER_PROPERTIES(self);
     const char *format = mlt_properties_get(properties, "mlt_audio_format");
-    if (format) {
-        if (!strcmp(format, "none"))
-            priv->audio_format = mlt_audio_none;
-        else if (!strcmp(format, "s16"))
-            priv->audio_format = mlt_audio_s16;
-        else if (!strcmp(format, "s32"))
-            priv->audio_format = mlt_audio_s32;
-        else if (!strcmp(format, "s32le"))
-            priv->audio_format = mlt_audio_s32le;
-        else if (!strcmp(format, "float"))
-            priv->audio_format = mlt_audio_float;
-        else if (!strcmp(format, "f32le"))
-            priv->audio_format = mlt_audio_f32le;
-        else if (!strcmp(format, "u8"))
-            priv->audio_format = mlt_audio_u8;
-    }
+    if (format)
+        mlt_audio_format_id(format, &priv->audio_format);
 }
 
 /** Set the image format to use in render threads.

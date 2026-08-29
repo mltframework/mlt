@@ -3,7 +3,7 @@
  * \brief Audio class
  * \see mlt_audio_s
  *
- * Copyright (C) 2020 Meltytech, LLC
+ * Copyright (C) 2020-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -68,6 +68,7 @@ MLT_EXPORT int mlt_audio_calculate_frame_samples(float fps, int frequency, int64
 MLT_EXPORT int64_t mlt_audio_calculate_samples_to_position(float fps,
                                                            int frequency,
                                                            int64_t position);
+MLT_EXPORT int mlt_audio_format_id(const char *name, mlt_audio_format *format);
 MLT_EXPORT const char *mlt_audio_format_name(mlt_audio_format format);
 MLT_EXPORT int mlt_audio_format_size(mlt_audio_format format, int samples, int channels);
 MLT_EXPORT const char *mlt_audio_channel_layout_name(mlt_channel_layout layout);
