@@ -1,6 +1,6 @@
 /*
  * common.h
- * Copyright (C) 2018 Meltytech, LLC
+ * Copyright (C) 2018-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,6 +20,7 @@
 #include "common.h"
 
 #include <framework/mlt_log.h>
+#include <stdlib.h>
 #include <string.h>
 
 SDL_AudioDeviceID sdl2_open_audio(const SDL_AudioSpec *desired, SDL_AudioSpec *obtained)
@@ -65,4 +66,23 @@ SDL_AudioDeviceID sdl2_open_audio(const SDL_AudioSpec *desired, SDL_AudioSpec *o
     }
 
     return dev;
+}
+
+int sdl2_ensure_buffer_capacity(uint8_t **buffer, int *capacity, int minimum)
+{
+    uint8_t *resized = NULL;
+
+    if (!buffer || !capacity || minimum <= 0)
+        return 1;
+
+    if (*capacity >= minimum)
+        return 0;
+
+    resized = realloc(*buffer, minimum);
+    if (!resized)
+        return 1;
+
+    *buffer = resized;
+    *capacity = minimum;
+    return 0;
 }

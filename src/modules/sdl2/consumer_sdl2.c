@@ -1,6 +1,6 @@
 /*
  * consumer_sdl.c -- A Simple DirectMedia Layer consumer
- * Copyright (C) 2017-2025 Meltytech, LLC
+ * Copyright (C) 2017-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -55,7 +55,8 @@ struct consumer_sdl_s
     pthread_t thread;
     int joined;
     atomic_int running;
-    uint8_t audio_buffer[4096 * 10];
+    uint8_t *audio_buffer;
+    int audio_buffer_size;
     int audio_avail;
     pthread_mutex_t audio_mutex;
     pthread_cond_t audio_cond;
@@ -327,10 +328,11 @@ static void sdl_fill_audio(void *udata, uint8_t *stream, int len)
     if (self->audio_avail >= len) {
         // Place in the audio buffer
         if (volume != 1.0)
-            SDL_MixAudio(stream,
-                         self->audio_buffer,
-                         len,
-                         (int) ((float) SDL_MIX_MAXVOLUME * volume));
+            SDL_MixAudioFormat(stream,
+                               self->audio_buffer,
+                               AUDIO_F32SYS,
+                               len,
+                               (int) ((float) SDL_MIX_MAXVOLUME * volume));
         else
             memcpy(stream, self->audio_buffer, len);
 
@@ -341,7 +343,11 @@ static void sdl_fill_audio(void *udata, uint8_t *stream, int len)
         memmove(self->audio_buffer, self->audio_buffer + len, self->audio_avail);
     } else {
         // Mix the audio
-        SDL_MixAudio(stream, self->audio_buffer, len, (int) ((float) SDL_MIX_MAXVOLUME * volume));
+        SDL_MixAudioFormat(stream,
+                           self->audio_buffer,
+                           AUDIO_F32SYS,
+                           len,
+                           (int) ((float) SDL_MIX_MAXVOLUME * volume));
 
         // No audio left
         self->audio_avail = 0;
@@ -355,7 +361,7 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
 {
     // Get the properties of self consumer
     mlt_properties properties = self->properties;
-    mlt_audio_format afmt = mlt_audio_s16;
+    mlt_audio_format afmt = mlt_audio_f32le;
 
     // Set the preferred params of the test card signal
     int channels = mlt_properties_get_int(properties, "channels");
@@ -367,7 +373,7 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
                                                                               "fps"),
                                                     frequency,
                                                     counter++);
-    int16_t *pcm;
+    float *pcm;
     mlt_frame_get_audio(frame, (void **) &pcm, &afmt, &frequency, &channels, &samples);
     *duration = ((samples * 1000) / frequency);
     pcm += mlt_properties_get_int(properties, "audio_offset");
@@ -382,11 +388,12 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
         SDL_AudioSpec got;
         SDL_AudioDeviceID dev;
         int audio_buffer = mlt_properties_get_int(properties, "audio_buffer");
+        int audio_queue_size = 0;
 
         // specify audio format
         memset(&request, 0, sizeof(SDL_AudioSpec));
         request.freq = frequency;
-        request.format = AUDIO_S16SYS;
+        request.format = AUDIO_F32SYS;
         request.channels = mlt_properties_get_int(properties, "channels");
         request.samples = audio_buffer;
         request.callback = sdl_fill_audio;
@@ -397,6 +404,16 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
             mlt_log_error(MLT_CONSUMER_SERVICE(self), "SDL failed to open audio\n");
             init_audio = 2;
         } else {
+            audio_queue_size = got.size > SDL_AUDIO_BUFFER_MIN_BYTES ? got.size
+                                                                     : SDL_AUDIO_BUFFER_MIN_BYTES;
+            if (sdl2_ensure_buffer_capacity(&self->audio_buffer,
+                                            &self->audio_buffer_size,
+                                            audio_queue_size)) {
+                mlt_log_error(MLT_CONSUMER_SERVICE(self), "Failed to allocate SDL audio queue\n");
+                SDL_CloseAudioDevice(dev);
+                init_audio = 2;
+                return init_audio;
+            }
             if (got.channels != request.channels) {
                 mlt_log_info(MLT_CONSUMER_SERVICE(self),
                              "Unable to output %d channels. Change to %d\n",
@@ -422,7 +439,7 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
         pthread_mutex_lock(&self->audio_mutex);
 
         while (self->running && samples_copied < samples) {
-            int sample_space = (sizeof(self->audio_buffer) - self->audio_avail) / dst_stride;
+            int sample_space = (self->audio_buffer_size - self->audio_avail) / dst_stride;
             while (self->running && sample_space == 0) {
                 struct timeval now;
                 struct timespec tm;
@@ -431,7 +448,7 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
                 tm.tv_sec = now.tv_sec + 1;
                 tm.tv_nsec = now.tv_usec * 1000;
                 pthread_cond_timedwait(&self->audio_cond, &self->audio_mutex, &tm);
-                sample_space = (sizeof(self->audio_buffer) - self->audio_avail) / dst_stride;
+                sample_space = (self->audio_buffer_size - self->audio_avail) / dst_stride;
 
                 if (sample_space == 0 && self->running) {
                     mlt_log_warning(MLT_CONSUMER_SERVICE(&self->parent), "audio timed out\n");
@@ -454,7 +471,7 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
                         memcpy(&self->audio_buffer[self->audio_avail], pcm, dst_bytes);
                         pcm += samples_to_copy * channels;
                     } else {
-                        int16_t *dest = (int16_t *) &self->audio_buffer[self->audio_avail];
+                        float *dest = (float *) &self->audio_buffer[self->audio_avail];
                         int i = samples_to_copy + 1;
                         while (--i) {
                             memcpy(dest, pcm, dst_stride);
@@ -925,6 +942,7 @@ static void consumer_close(mlt_consumer parent)
     // Destroy mutexes
     pthread_mutex_destroy(&self->audio_mutex);
     pthread_cond_destroy(&self->audio_cond);
+    free(self->audio_buffer);
 
     // Finally clean up this
     free(self);

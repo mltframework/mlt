@@ -697,3 +697,8 @@ MLT_7.40.0 {
     mlt_frame_next_convert_image;
     mlt_frame_copy_convert_image;
 } MLT_7.36.0;
+
+MLT_7.42.0 {
+  global:
+    mlt_audio_format_id;
+} MLT_7.40.0;

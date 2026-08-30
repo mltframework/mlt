@@ -6,7 +6,7 @@ description: >
   RtAudio provides native, realtime audio output across Linux,
   Macintosh OS X, Windows, and some BSD operating systems.
 url: http://www.music.mcgill.ca/~gary/rtaudio/
-version: 3
+version: 4
 copyright: Meltytech, LLC
 creator: Dan Dennedy
 creator: Gary P. Scavone
@@ -15,7 +15,7 @@ language: en
 tags:
   - Audio
 audio_formats:
-  - s16
+  - f32le
 parameters:
   - identifier: resource
     title: Device

@@ -544,6 +544,40 @@ int64_t mlt_audio_calculate_samples_to_position(float fps, int frequency, int64_
     return samples;
 }
 
+/** Get the enum value for an audio format name.
+ *
+ * 
+ * \public \memberof mlt_audio_s
+ * \param name the short name for an audio format
+ * \param[out] format the parsed audio format enum
+ * \return 0 on success, 1 if the name is invalid
+ */
+
+int mlt_audio_format_id(const char *name, mlt_audio_format *format)
+{
+    if (!name || !format)
+        return 1;
+
+    if (!strcmp(name, "none"))
+        *format = mlt_audio_none;
+    else if (!strcmp(name, "s16"))
+        *format = mlt_audio_s16;
+    else if (!strcmp(name, "s32"))
+        *format = mlt_audio_s32;
+    else if (!strcmp(name, "s32le"))
+        *format = mlt_audio_s32le;
+    else if (!strcmp(name, "float"))
+        *format = mlt_audio_float;
+    else if (!strcmp(name, "f32le"))
+        *format = mlt_audio_f32le;
+    else if (!strcmp(name, "u8"))
+        *format = mlt_audio_u8;
+    else
+        return 1;
+
+    return 0;
+}
+
 /** Get the short name for an audio format.
  *
  * You do not need to deallocate the returned string.

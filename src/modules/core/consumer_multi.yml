@@ -2,7 +2,7 @@ schema_version: 7.2
 type: consumer
 identifier: multi
 title: Multiple outputs
-version: 2
+version: 3
 copyright: Copyright (C) 2011-2014 Meltytech, LLC
 license: LGPL
 language: en
@@ -30,6 +30,12 @@ notes: |
 
 audio_formats:
   - s16
+  - s32
+  - s32le
+  - float
+  - f32le
+  - u8
+
 parameters:
   - identifier: resource
     argument: yes
