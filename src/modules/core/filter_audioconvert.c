@@ -36,6 +36,7 @@
  */
 static inline int16_t f32_to_s16(float f)
 {
+    f = CLAMP(f, -1.0f, 1.0f);
     long pcm = lrintf(f * 32768.0f);
     return CLAMP(pcm, -32768, 32767);
 }
@@ -43,12 +44,14 @@ static inline int16_t f32_to_s16(float f)
 static inline int32_t f32_to_s32(float f)
 {
     /* float has a 24-bit mantissa, so scale in double to round correctly. */
+    f = CLAMP(f, -1.0f, 1.0f);
     int64_t pcm = llrint((double) f * 2147483648.0);
     return CLAMP(pcm, -2147483648LL, 2147483647LL);
 }
 
 static inline uint8_t f32_to_u8(float f)
 {
+    f = CLAMP(f, -1.0f, 1.0f);
     long pcm = lrintf(f * 128.0f) + 128;
     return CLAMP(pcm, 0, 255);
 }
