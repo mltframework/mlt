@@ -1,7 +1,7 @@
 schema_version: 7.2
 type: filter
 identifier: sox
-title: SoX
+title: SoX (*DEPRECATED*)
 version: 3
 copyright: Meltytech, LLC
 license: LGPL
