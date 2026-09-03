@@ -195,6 +195,18 @@ MLT_EXPORT int mlt_frame_next_convert_image(mlt_frame self,
                                             mlt_image_format *format,
                                             mlt_image_format output);
 MLT_EXPORT void mlt_frame_copy_convert_image(mlt_frame dst, mlt_frame src);
+MLT_EXPORT int mlt_frame_get_image_from_service(mlt_frame self,
+                                                uint8_t **buffer,
+                                                mlt_image_format *format,
+                                                int *width,
+                                                int *height,
+                                                int writable);
+MLT_EXPORT int mlt_frame_get_image_with_fx_cut(mlt_frame self,
+                                               uint8_t **buffer,
+                                               mlt_image_format *format,
+                                               int *width,
+                                               int *height,
+                                               int writable);
 MLT_EXPORT mlt_frame mlt_frame_clone(mlt_frame self, int is_deep);
 MLT_EXPORT mlt_frame mlt_frame_clone_audio(mlt_frame self, int is_deep);
 MLT_EXPORT mlt_frame mlt_frame_clone_image(mlt_frame self, int is_deep);

@@ -380,6 +380,55 @@ static int get_image_b(mlt_frame b_frame,
     return mlt_frame_get_image(b_frame, image, format, width, height, writable);
 }
 
+static void process_transition_pair(mlt_transition self,
+                                    mlt_frame_ptr frame,
+                                    mlt_frame a_frame_ptr,
+                                    mlt_frame b_frame_ptr,
+                                    int type,
+                                    int active,
+                                    int (*invalid)(mlt_frame))
+{
+    if (!a_frame_ptr || !MLT_FRAME_PROPERTIES(a_frame_ptr)->local || !b_frame_ptr
+        || !MLT_FRAME_PROPERTIES(b_frame_ptr)->local)
+        return;
+
+    int a_hide = mlt_properties_get_int(MLT_FRAME_PROPERTIES(a_frame_ptr), "hide");
+    int b_hide = mlt_properties_get_int(MLT_FRAME_PROPERTIES(b_frame_ptr), "hide");
+    int b_is_fx_cut = type == 1
+                      && mlt_properties_get_int(MLT_FRAME_PROPERTIES(b_frame_ptr), "fx_cut");
+
+    if (b_is_fx_cut && !mlt_properties_get_int(MLT_FRAME_PROPERTIES(a_frame_ptr), "fx_cut")
+        && !invalid(a_frame_ptr) && !(a_hide & type)) {
+        // Apply fx_cut filters to A; do not composite the dummy B.
+        mlt_frame_push_service(a_frame_ptr, b_frame_ptr);
+        mlt_frame_push_get_image(a_frame_ptr, mlt_frame_get_image_with_fx_cut);
+        mlt_properties_set_int(MLT_FRAME_PROPERTIES(b_frame_ptr), "hide", b_hide | 1);
+        return;
+    }
+
+    if (!active || (a_hide & type) || (b_hide & type))
+        return;
+
+    // Add hooks for pre-processing frames
+    mlt_frame_push_service(a_frame_ptr, self);
+    mlt_frame_push_get_image(a_frame_ptr, get_image_a);
+    mlt_frame_push_frame(b_frame_ptr, a_frame_ptr);
+    mlt_frame_push_service(b_frame_ptr, self);
+    mlt_frame_push_get_image(b_frame_ptr, get_image_b);
+
+    // Process the transition
+    *frame = mlt_transition_process(self, a_frame_ptr, b_frame_ptr);
+
+    // We need to ensure that the tractor doesn't consider this frame for output
+    if (*frame == a_frame_ptr)
+        b_hide |= type;
+    else
+        a_hide |= type;
+
+    mlt_properties_set_int(MLT_FRAME_PROPERTIES(a_frame_ptr), "hide", a_hide);
+    mlt_properties_set_int(MLT_FRAME_PROPERTIES(b_frame_ptr), "hide", b_hide);
+}
+
 /** Get a frame from a transition.
 
 	The logic is complex here. A transition is typically applied to frames on the a and
@@ -484,7 +533,7 @@ static int transition_get_frame(mlt_service service, mlt_frame_ptr frame, int in
                 }
 
                 // Determine if we're active now
-                // fx_cut frames are processed by the tractor, not transitions
+                // fx_cut is not composited as B; it is applied as a filter wrap below
                 mlt_properties b_props = MLT_FRAME_PROPERTIES(self->frames[b_frame]);
                 active = a_frame != b_frame && !invalid(self->frames[b_frame])
                          && !mlt_properties_get_int(b_props, "fx_cut");
@@ -506,36 +555,13 @@ static int transition_get_frame(mlt_service service, mlt_frame_ptr frame, int in
         }
 
         // Finally, process the a and b frames
-        if (active && !mlt_properties_get_int(MLT_TRANSITION_PROPERTIES(self), "disable")) {
+        if (!mlt_properties_get_int(MLT_TRANSITION_PROPERTIES(self), "disable")
+            && a_frame <= b_track) {
             int frame_nb = (!reverse_order && a_frame <= b_track) ? a_frame : b_frame;
             mlt_frame a_frame_ptr = self->frames[frame_nb];
             frame_nb = (!reverse_order || a_frame > b_track) ? b_frame : a_frame;
             mlt_frame b_frame_ptr = self->frames[frame_nb];
-            if (a_frame_ptr && MLT_FRAME_PROPERTIES(a_frame_ptr)->local && b_frame_ptr
-                && MLT_FRAME_PROPERTIES(b_frame_ptr)->local) {
-                int a_hide = mlt_properties_get_int(MLT_FRAME_PROPERTIES(a_frame_ptr), "hide");
-                int b_hide = mlt_properties_get_int(MLT_FRAME_PROPERTIES(b_frame_ptr), "hide");
-                if (!(a_hide & type) && !(b_hide & type)) {
-                    // Add hooks for pre-processing frames
-                    mlt_frame_push_service(a_frame_ptr, self);
-                    mlt_frame_push_get_image(a_frame_ptr, get_image_a);
-                    mlt_frame_push_frame(b_frame_ptr, a_frame_ptr);
-                    mlt_frame_push_service(b_frame_ptr, self);
-                    mlt_frame_push_get_image(b_frame_ptr, get_image_b);
-
-                    // Process the transition
-                    *frame = mlt_transition_process(self, a_frame_ptr, b_frame_ptr);
-
-                    // We need to ensure that the tractor doesn't consider this frame for output
-                    if (*frame == a_frame_ptr)
-                        b_hide |= type;
-                    else
-                        a_hide |= type;
-
-                    mlt_properties_set_int(MLT_FRAME_PROPERTIES(a_frame_ptr), "hide", a_hide);
-                    mlt_properties_set_int(MLT_FRAME_PROPERTIES(b_frame_ptr), "hide", b_hide);
-                }
-            }
+            process_transition_pair(self, frame, a_frame_ptr, b_frame_ptr, type, active, invalid);
         }
     }
 

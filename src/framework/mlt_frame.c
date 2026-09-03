@@ -1030,6 +1030,157 @@ void mlt_frame_copy_convert_image(mlt_frame dst, mlt_frame src)
                             NULL);
 }
 
+/** Copy consumer scaling hints from \p src onto \p dst. */
+static void copy_consumer_image_hints(mlt_frame dst, mlt_frame src)
+{
+    mlt_properties dst_properties = MLT_FRAME_PROPERTIES(dst);
+    mlt_properties src_properties = MLT_FRAME_PROPERTIES(src);
+
+    mlt_properties_set_int(dst_properties,
+                           "resize_alpha",
+                           mlt_properties_get_int(src_properties, "resize_alpha"));
+    mlt_properties_set_int(dst_properties,
+                           "distort",
+                           mlt_properties_get_int(src_properties, "distort"));
+    mlt_properties_copy(dst_properties, src_properties, "consumer.");
+    // WebVfx uses this to setup a consumer-stopping event handler.
+    mlt_properties_set_data(dst_properties,
+                            "consumer",
+                            mlt_properties_get_data(src_properties, "consumer", NULL),
+                            0,
+                            NULL,
+                            NULL);
+}
+
+/** Copy image properties, alpha, converters, and Movit state from \p src to \p dst.
+ *
+ * Does not take ownership of the image or alpha buffers.
+ */
+static void copy_image_state(mlt_frame dst, mlt_frame src)
+{
+    mlt_properties dst_properties = MLT_FRAME_PROPERTIES(dst);
+    mlt_properties src_properties = MLT_FRAME_PROPERTIES(src);
+    int size = 0;
+    uint8_t *data;
+
+    mlt_properties_set_int(dst_properties, "width", mlt_properties_get_int(src_properties, "width"));
+    mlt_properties_set_int(dst_properties,
+                           "height",
+                           mlt_properties_get_int(src_properties, "height"));
+    mlt_properties_set_int(dst_properties,
+                           "format",
+                           mlt_properties_get_int(src_properties, "format"));
+    mlt_properties_set_double(dst_properties, "aspect_ratio", mlt_frame_get_aspect_ratio(src));
+    mlt_properties_pass_list(
+        dst_properties,
+        src_properties,
+        "progressive,distort,colorspace,full_range,force_full_luma,top_field_first,color_trc");
+
+    mlt_properties_set_data(dst_properties,
+                            "movit.convert.fence",
+                            mlt_properties_get_data(src_properties, "movit.convert.fence", NULL),
+                            0,
+                            NULL,
+                            NULL);
+    mlt_properties_set_data(dst_properties,
+                            "movit.convert.texture",
+                            mlt_properties_get_data(src_properties, "movit.convert.texture", NULL),
+                            0,
+                            NULL,
+                            NULL);
+    mlt_properties_set_int(dst_properties,
+                           "movit.convert.use_texture",
+                           mlt_properties_get_int(src_properties, "movit.convert.use_texture"));
+    int i;
+    for (i = 0; i < mlt_properties_count(src_properties); i++) {
+        char *name = mlt_properties_get_name(src_properties, i);
+        if (name && !strncmp(name, "_movit ", 7)) {
+            mlt_properties_set_data(dst_properties,
+                                    name,
+                                    mlt_properties_get_data_at(src_properties, i, NULL),
+                                    0,
+                                    NULL,
+                                    NULL);
+        }
+    }
+
+    data = mlt_frame_get_alpha_size(src, &size);
+    if (data)
+        mlt_frame_set_alpha(dst, data, size, NULL);
+    dst->convert_audio = src->convert_audio;
+    mlt_frame_copy_convert_image(dst, src);
+}
+
+/** Share \p src's image buffer and image state onto \p dst without taking ownership.
+ *
+ * Both frames must remain alive while \p dst's image is used (typically both are
+ * stored on the tractor output frame).
+ */
+static void share_image(mlt_frame dst, mlt_frame src)
+{
+    int size = 0;
+    uint8_t *image = mlt_properties_get_data(MLT_FRAME_PROPERTIES(src), "image", &size);
+    mlt_frame_set_image(dst, image, 0, NULL);
+    copy_image_state(dst, src);
+}
+
+/** Get an image from a source frame previously pushed with mlt_frame_push_service().
+ *
+ * Used as an image-stack callback (tractor track stacking and fx_cut routing).
+ * Copies consumer scaling onto the source, fetches its image, then shares that
+ * buffer onto \p self without taking ownership, along with format, alpha,
+ * converters, and Movit state.
+ *
+ * \public \memberof mlt_frame_s
+ * \return true if the stacked source frame is missing
+ */
+int mlt_frame_get_image_from_service(mlt_frame self,
+                                     uint8_t **buffer,
+                                     mlt_image_format *format,
+                                     int *width,
+                                     int *height,
+                                     int writable)
+{
+    mlt_frame frame = mlt_frame_pop_service(self);
+    if (!frame)
+        return 1;
+
+    copy_consumer_image_hints(frame, self);
+    mlt_frame_get_image(frame, buffer, format, width, height, writable);
+    share_image(self, frame);
+    return 0;
+}
+
+/** Route A through an fx_cut frame's filter chain without compositing the dummy.
+ *
+ * Pops the fx_cut frame, feeds A's image through that frame's filters via the
+ * tractor stacking callback, then shares the filtered result back onto A.
+ *
+ * \public \memberof mlt_frame_s
+ */
+int mlt_frame_get_image_with_fx_cut(mlt_frame a_frame,
+                                    uint8_t **image,
+                                    mlt_image_format *format,
+                                    int *width,
+                                    int *height,
+                                    int writable)
+{
+    mlt_frame fx_frame = mlt_frame_pop_service(a_frame);
+    if (!fx_frame)
+        return mlt_frame_get_image(a_frame, image, format, width, height, writable);
+
+    copy_consumer_image_hints(fx_frame, a_frame);
+    mlt_frame_copy_convert_image(fx_frame, a_frame);
+
+    mlt_deque_push_front(MLT_FRAME_IMAGE_STACK(fx_frame), mlt_frame_get_image_from_service);
+    mlt_deque_push_front(MLT_FRAME_IMAGE_STACK(fx_frame), a_frame);
+
+    int error = mlt_frame_get_image(fx_frame, image, format, width, height, writable);
+    if (!error)
+        share_image(a_frame, fx_frame);
+    return error;
+}
+
 /***** convenience functions *****/
 
 void mlt_frame_write_ppm(mlt_frame frame)

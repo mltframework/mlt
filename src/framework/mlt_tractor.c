@@ -345,84 +345,6 @@ mlt_producer mlt_tractor_get_track(mlt_tractor self, int index)
     return mlt_multitrack_track(mlt_tractor_multitrack(self), index);
 }
 
-static int producer_get_image(mlt_frame self,
-                              uint8_t **buffer,
-                              mlt_image_format *format,
-                              int *width,
-                              int *height,
-                              int writable)
-{
-    uint8_t *data = NULL;
-    int size = 0;
-    mlt_properties properties = MLT_FRAME_PROPERTIES(self);
-    mlt_frame frame = mlt_frame_pop_service(self);
-    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
-
-    mlt_properties_set_int(frame_properties,
-                           "resize_alpha",
-                           mlt_properties_get_int(properties, "resize_alpha"));
-    mlt_properties_set_int(frame_properties,
-                           "distort",
-                           mlt_properties_get_int(properties, "distort"));
-    mlt_properties_copy(frame_properties, properties, "consumer.");
-    // WebVfx uses this to setup a consumer-stopping event handler.
-    mlt_properties_set_data(frame_properties,
-                            "consumer",
-                            mlt_properties_get_data(properties, "consumer", NULL),
-                            0,
-                            NULL,
-                            NULL);
-
-    mlt_frame_get_image(frame, buffer, format, width, height, writable);
-    mlt_frame_set_image(self, *buffer, 0, NULL);
-
-    mlt_properties_set_int(properties, "width", *width);
-    mlt_properties_set_int(properties, "height", *height);
-    mlt_properties_set_int(properties, "format", *format);
-    mlt_properties_set_double(properties, "aspect_ratio", mlt_frame_get_aspect_ratio(frame));
-    // Pass all required frame properties
-    mlt_properties_pass_list(
-        properties,
-        frame_properties,
-        "progressive,distort,colorspace,full_range,force_full_luma,top_field_first,color_trc");
-
-    mlt_properties_set_data(properties,
-                            "movit.convert.fence",
-                            mlt_properties_get_data(frame_properties, "movit.convert.fence", NULL),
-                            0,
-                            NULL,
-                            NULL);
-    mlt_properties_set_data(properties,
-                            "movit.convert.texture",
-                            mlt_properties_get_data(frame_properties, "movit.convert.texture", NULL),
-                            0,
-                            NULL,
-                            NULL);
-    mlt_properties_set_int(properties,
-                           "movit.convert.use_texture",
-                           mlt_properties_get_int(frame_properties, "movit.convert.use_texture"));
-    int i;
-    for (i = 0; i < mlt_properties_count(frame_properties); i++) {
-        char *name = mlt_properties_get_name(frame_properties, i);
-        if (name && !strncmp(name, "_movit ", 7)) {
-            mlt_properties_set_data(properties,
-                                    name,
-                                    mlt_properties_get_data_at(frame_properties, i, NULL),
-                                    0,
-                                    NULL,
-                                    NULL);
-        }
-    }
-
-    data = mlt_frame_get_alpha_size(frame, &size);
-    if (data) {
-        mlt_frame_set_alpha(self, data, size, NULL);
-    }
-    self->convert_audio = frame->convert_audio;
-    mlt_frame_copy_convert_image(self, frame);
-    return 0;
-}
-
 static int producer_get_audio(mlt_frame self,
                               void **buffer,
                               mlt_audio_format *format,
@@ -549,9 +471,12 @@ static int producer_get_frame(mlt_producer parent, mlt_frame_ptr frame, int trac
                 // Check for last track
                 done = mlt_properties_get_int(temp_properties, "last_track");
 
-                // Handle fx only tracks
+                // Handle fx only tracks. Always hide video so the tractor does
+                // not apply fx_cut filters to the already-composited mix of all
+                // tracks; transitions wrap lower tracks instead. Audio hide is
+                // unchanged: mute the dummy only when no audio has been found yet.
                 if (mlt_properties_get_int(temp_properties, "fx_cut")) {
-                    int hide = (video == NULL ? 1 : 0) | (audio == NULL ? 2 : 0);
+                    int hide = 1 | (audio == NULL ? 2 : 0);
                     mlt_properties_set_int(temp_properties, "hide", hide);
                 }
 
@@ -577,7 +502,8 @@ static int producer_get_frame(mlt_producer parent, mlt_frame_ptr frame, int trac
                 if (!done && !mlt_frame_is_test_card(temp)
                     && !(mlt_properties_get_int(temp_properties, "hide") & 1)) {
                     if (video != NULL) {
-                        mlt_deque_push_front(MLT_FRAME_IMAGE_STACK(temp), producer_get_image);
+                        mlt_deque_push_front(MLT_FRAME_IMAGE_STACK(temp),
+                                             mlt_frame_get_image_from_service);
                         mlt_deque_push_front(MLT_FRAME_IMAGE_STACK(temp), video);
                     }
                     video = temp;
@@ -598,7 +524,7 @@ static int producer_get_frame(mlt_producer parent, mlt_frame_ptr frame, int trac
             if (video != NULL) {
                 mlt_properties video_properties = MLT_FRAME_PROPERTIES(first_video);
                 mlt_frame_push_service(*frame, video);
-                mlt_frame_push_service(*frame, producer_get_image);
+                mlt_frame_push_service(*frame, mlt_frame_get_image_from_service);
                 mlt_properties_set_int(frame_properties,
                                        "width",
                                        mlt_properties_get_int(video_properties, "width"));

@@ -701,4 +701,6 @@ MLT_7.40.0 {
 MLT_7.42.0 {
   global:
     mlt_audio_format_id;
+    mlt_frame_get_image_from_service;
+    mlt_frame_get_image_with_fx_cut;
 } MLT_7.40.0;
