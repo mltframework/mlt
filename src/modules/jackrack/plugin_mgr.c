@@ -543,6 +543,25 @@ lv2_mgr_t *lv2_mgr_new()
     pm->plugins = NULL;
     pm->plugin_count = 0;
 
+#ifdef _WIN32
+    /* lilv's built-in default LV2_PATH is the literal string "%APPDATA%\LV2;..."
+     * which it does not expand itself, so provide an already-expanded default. */
+    if (!getenv("LV2_PATH")) {
+        const char *appdata = getenv("APPDATA");
+        const char *common = getenv("COMMONPROGRAMFILES");
+        char lv2_path[PATH_MAX] = "";
+
+        if (appdata)
+            snprintf(lv2_path, PATH_MAX, "%s\\LV2", appdata);
+        if (common) {
+            size_t len = strlen(lv2_path);
+            snprintf(lv2_path + len, PATH_MAX - len, "%s%s\\LV2", len ? ";" : "", common);
+        }
+        if (lv2_path[0])
+            _putenv_s("LV2_PATH", lv2_path);
+    }
+#endif
+
     pm->lv2_world = lilv_world_new();
     lilv_world_load_all(pm->lv2_world);
     pm->plugin_list = (LilvPlugins *) lilv_world_get_all_plugins(pm->lv2_world);
