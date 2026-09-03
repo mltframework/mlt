@@ -20,11 +20,11 @@ Framework
     longer have that function called. If you really need that (never heard of
     someone who does), clear the frame's "_convert_image_callbacks" property
     and use `mlt_frame_append_convert_image()` instead.
-  - `fx_cut` (Shotcut Adjustment clip) now applies its filters only to tracks
+  - `fx_cut` (Adjustment Clip) now applies its filters only to tracks
     below it. Higher tracks composite on top of the filtered result.
-    New image-stack callbacks used by tractor stacking and this path:
-    - `mlt_frame_get_image_from_service()`
-    - `mlt_frame_get_image_with_fx_cut()`
+    New image-stack helpers used by tractor stacking and this path:
+    - `mlt_frame_prepend_image_from_service()`
+    - `mlt_frame_push_image_with_fx_cut()`
 
 Modules
   - Image converters (`movit.convert`, `avcolor_space`, `imageconvert`) are

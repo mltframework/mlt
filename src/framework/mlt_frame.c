@@ -1124,22 +1124,22 @@ static void share_image(mlt_frame dst, mlt_frame src)
     copy_image_state(dst, src);
 }
 
-/** Get an image from a source frame previously pushed with mlt_frame_push_service().
+/** Get an image from a source frame previously installed by
+ * mlt_frame_prepend_image_from_service().
  *
- * Used as an image-stack callback (tractor track stacking and fx_cut routing).
  * Copies consumer scaling onto the source, fetches its image, then shares that
  * buffer onto \p self without taking ownership, along with format, alpha,
  * converters, and Movit state.
  *
- * \public \memberof mlt_frame_s
+ * \private \memberof mlt_frame_s
  * \return true if the stacked source frame is missing
  */
-int mlt_frame_get_image_from_service(mlt_frame self,
-                                     uint8_t **buffer,
-                                     mlt_image_format *format,
-                                     int *width,
-                                     int *height,
-                                     int writable)
+static int get_image_from_service(mlt_frame self,
+                                  uint8_t **buffer,
+                                  mlt_image_format *format,
+                                  int *width,
+                                  int *height,
+                                  int writable)
 {
     mlt_frame frame = mlt_frame_pop_service(self);
     if (!frame)
@@ -1151,19 +1151,36 @@ int mlt_frame_get_image_from_service(mlt_frame self,
     return 0;
 }
 
-/** Route A through an fx_cut frame's filter chain without compositing the dummy.
+/** Install \p source as the image under this frame's existing get_image callbacks.
  *
- * Pops the fx_cut frame, feeds A's image through that frame's filters via the
- * tractor stacking callback, then shares the filtered result back onto A.
+ * Prepends so filters already on \p self run first and read \p source. On an
+ * empty stack this is equivalent to pushing the source then the callback.
+ * Used by tractor track stacking and the tractor output frame.
  *
  * \public \memberof mlt_frame_s
+ * \return true if error
  */
-int mlt_frame_get_image_with_fx_cut(mlt_frame a_frame,
-                                    uint8_t **image,
-                                    mlt_image_format *format,
-                                    int *width,
-                                    int *height,
-                                    int writable)
+int mlt_frame_prepend_image_from_service(mlt_frame self, mlt_frame source)
+{
+    int error = mlt_deque_push_front(self->stack_image, get_image_from_service);
+    if (!error)
+        error = mlt_deque_push_front(self->stack_image, source);
+    return error;
+}
+
+/** Route \p self through \p fx's filter chain without compositing the dummy.
+ *
+ * Pops the fx_cut frame, feeds this frame's image through that frame's filters
+ * via mlt_frame_prepend_image_from_service(), then shares the filtered result back.
+ *
+ * \private \memberof mlt_frame_s
+ */
+static int get_image_with_fx_cut(mlt_frame a_frame,
+                                 uint8_t **image,
+                                 mlt_image_format *format,
+                                 int *width,
+                                 int *height,
+                                 int writable)
 {
     mlt_frame fx_frame = mlt_frame_pop_service(a_frame);
     if (!fx_frame)
@@ -1172,12 +1189,24 @@ int mlt_frame_get_image_with_fx_cut(mlt_frame a_frame,
     copy_consumer_image_hints(fx_frame, a_frame);
     mlt_frame_copy_convert_image(fx_frame, a_frame);
 
-    mlt_deque_push_front(MLT_FRAME_IMAGE_STACK(fx_frame), mlt_frame_get_image_from_service);
-    mlt_deque_push_front(MLT_FRAME_IMAGE_STACK(fx_frame), a_frame);
+    mlt_frame_prepend_image_from_service(fx_frame, a_frame);
 
     int error = mlt_frame_get_image(fx_frame, image, format, width, height, writable);
     if (!error)
         share_image(a_frame, fx_frame);
+    return error;
+}
+
+/** Push an fx_cut wrap so \p self is filtered through \p fx on get_image.
+ *
+ * \public \memberof mlt_frame_s
+ * \return true if error
+ */
+int mlt_frame_push_image_with_fx_cut(mlt_frame self, mlt_frame fx)
+{
+    int error = mlt_frame_push_service(self, fx);
+    if (!error)
+        error = mlt_frame_push_get_image(self, get_image_with_fx_cut);
     return error;
 }
 

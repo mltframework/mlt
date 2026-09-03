@@ -178,6 +178,8 @@ MLT_EXPORT int mlt_frame_push_service_int(mlt_frame self, int that);
 MLT_EXPORT int mlt_frame_pop_service_int(mlt_frame self);
 MLT_EXPORT int mlt_frame_push_audio(mlt_frame self, void *that);
 MLT_EXPORT void *mlt_frame_pop_audio(mlt_frame self);
+MLT_EXPORT int mlt_frame_prepend_image_from_service(mlt_frame self, mlt_frame source);
+MLT_EXPORT int mlt_frame_push_image_with_fx_cut(mlt_frame self, mlt_frame fx);
 MLT_EXPORT mlt_deque mlt_frame_service_stack(mlt_frame self);
 MLT_EXPORT mlt_producer mlt_frame_get_original_producer(mlt_frame self);
 MLT_EXPORT void mlt_frame_close(mlt_frame self);
@@ -195,18 +197,6 @@ MLT_EXPORT int mlt_frame_next_convert_image(mlt_frame self,
                                             mlt_image_format *format,
                                             mlt_image_format output);
 MLT_EXPORT void mlt_frame_copy_convert_image(mlt_frame dst, mlt_frame src);
-MLT_EXPORT int mlt_frame_get_image_from_service(mlt_frame self,
-                                                uint8_t **buffer,
-                                                mlt_image_format *format,
-                                                int *width,
-                                                int *height,
-                                                int writable);
-MLT_EXPORT int mlt_frame_get_image_with_fx_cut(mlt_frame self,
-                                               uint8_t **buffer,
-                                               mlt_image_format *format,
-                                               int *width,
-                                               int *height,
-                                               int writable);
 MLT_EXPORT mlt_frame mlt_frame_clone(mlt_frame self, int is_deep);
 MLT_EXPORT mlt_frame mlt_frame_clone_audio(mlt_frame self, int is_deep);
 MLT_EXPORT mlt_frame mlt_frame_clone_image(mlt_frame self, int is_deep);

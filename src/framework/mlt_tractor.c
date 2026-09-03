@@ -471,12 +471,18 @@ static int producer_get_frame(mlt_producer parent, mlt_frame_ptr frame, int trac
                 // Check for last track
                 done = mlt_properties_get_int(temp_properties, "last_track");
 
-                // Handle fx only tracks. Always hide video so the tractor does
-                // not apply fx_cut filters to the already-composited mix of all
-                // tracks; transitions wrap lower tracks instead. Audio hide is
-                // unchanged: mute the dummy only when no audio has been found yet.
+                // Handle fx only tracks. Hide the dummy when nothing below has
+                // supplied video/audio yet. If a transition already hid this
+                // frame, keep that hide bit — do not overwrite — so tractor
+                // stacking does not re-apply filters to the full composite.
+                // With no transition, leave video visible so the fx_cut can
+                // filter the lower track (classic melt path).
                 if (mlt_properties_get_int(temp_properties, "fx_cut")) {
-                    int hide = 1 | (audio == NULL ? 2 : 0);
+                    int hide = mlt_properties_get_int(temp_properties, "hide");
+                    if (video == NULL)
+                        hide |= 1;
+                    if (audio == NULL)
+                        hide |= 2;
                     mlt_properties_set_int(temp_properties, "hide", hide);
                 }
 
@@ -501,11 +507,8 @@ static int producer_get_frame(mlt_producer parent, mlt_frame_ptr frame, int trac
                 }
                 if (!done && !mlt_frame_is_test_card(temp)
                     && !(mlt_properties_get_int(temp_properties, "hide") & 1)) {
-                    if (video != NULL) {
-                        mlt_deque_push_front(MLT_FRAME_IMAGE_STACK(temp),
-                                             mlt_frame_get_image_from_service);
-                        mlt_deque_push_front(MLT_FRAME_IMAGE_STACK(temp), video);
-                    }
+                    if (video != NULL)
+                        mlt_frame_prepend_image_from_service(temp, video);
                     video = temp;
                     if (first_video == NULL)
                         first_video = temp;
@@ -523,8 +526,7 @@ static int producer_get_frame(mlt_producer parent, mlt_frame_ptr frame, int trac
 
             if (video != NULL) {
                 mlt_properties video_properties = MLT_FRAME_PROPERTIES(first_video);
-                mlt_frame_push_service(*frame, video);
-                mlt_frame_push_service(*frame, mlt_frame_get_image_from_service);
+                mlt_frame_prepend_image_from_service(*frame, video);
                 mlt_properties_set_int(frame_properties,
                                        "width",
                                        mlt_properties_get_int(video_properties, "width"));

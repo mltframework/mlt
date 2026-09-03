@@ -380,6 +380,11 @@ static int get_image_b(mlt_frame b_frame,
     return mlt_frame_get_image(b_frame, image, format, width, height, writable);
 }
 
+static int frame_is_fx_cut(mlt_frame frame, int type)
+{
+    return type == 1 && mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "fx_cut");
+}
+
 static void process_transition_pair(mlt_transition self,
                                     mlt_frame_ptr frame,
                                     mlt_frame a_frame_ptr,
@@ -394,15 +399,19 @@ static void process_transition_pair(mlt_transition self,
 
     int a_hide = mlt_properties_get_int(MLT_FRAME_PROPERTIES(a_frame_ptr), "hide");
     int b_hide = mlt_properties_get_int(MLT_FRAME_PROPERTIES(b_frame_ptr), "hide");
-    int b_is_fx_cut = type == 1
-                      && mlt_properties_get_int(MLT_FRAME_PROPERTIES(b_frame_ptr), "fx_cut");
 
-    if (b_is_fx_cut && !mlt_properties_get_int(MLT_FRAME_PROPERTIES(a_frame_ptr), "fx_cut")
-        && !invalid(a_frame_ptr) && !(a_hide & type)) {
-        // Apply fx_cut filters to A; do not composite the dummy B.
-        mlt_frame_push_service(a_frame_ptr, b_frame_ptr);
-        mlt_frame_push_get_image(a_frame_ptr, mlt_frame_get_image_with_fx_cut);
-        mlt_properties_set_int(MLT_FRAME_PROPERTIES(b_frame_ptr), "hide", b_hide | 1);
+    // Wrap is not a composite: fx may be A or B after reverse_order mapping.
+    mlt_frame picture = a_frame_ptr;
+    mlt_frame fx = b_frame_ptr;
+    if (frame_is_fx_cut(a_frame_ptr, type) && !frame_is_fx_cut(b_frame_ptr, type)) {
+        picture = b_frame_ptr;
+        fx = a_frame_ptr;
+    }
+    if (frame_is_fx_cut(fx, type) && !frame_is_fx_cut(picture, type) && !invalid(picture)
+        && !(mlt_properties_get_int(MLT_FRAME_PROPERTIES(picture), "hide") & type)) {
+        mlt_frame_push_image_with_fx_cut(picture, fx);
+        int fx_hide = mlt_properties_get_int(MLT_FRAME_PROPERTIES(fx), "hide");
+        mlt_properties_set_int(MLT_FRAME_PROPERTIES(fx), "hide", fx_hide | 1);
         return;
     }
 
@@ -533,7 +542,7 @@ static int transition_get_frame(mlt_service service, mlt_frame_ptr frame, int in
                 }
 
                 // Determine if we're active now
-                // fx_cut is not composited as B; it is applied as a filter wrap below
+                // fx_cut is not composited; process_transition_pair wraps it
                 mlt_properties b_props = MLT_FRAME_PROPERTIES(self->frames[b_frame]);
                 active = a_frame != b_frame && !invalid(self->frames[b_frame])
                          && !mlt_properties_get_int(b_props, "fx_cut");
