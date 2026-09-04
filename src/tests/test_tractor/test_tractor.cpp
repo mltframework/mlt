@@ -23,6 +23,56 @@
 #include <mlt++/Mlt.h>
 using namespace Mlt;
 
+static Producer makeColor(Profile &profile, const char *color)
+{
+    Producer p(profile, "color", color);
+    p.set("length", 10);
+    p.set_in_and_out(0, 9);
+    return p;
+}
+
+static Producer makeFxCut(Profile &profile, Filter &filter)
+{
+    Producer fx = makeColor(profile, "0x00000000");
+    fx.set("mlt_image_format", "rgba");
+    fx.set("meta.fx_cut", 1);
+    fx.attach(filter);
+    return fx;
+}
+
+static bool sampleCenterRgb(Frame *frame, int &r, int &g, int &b)
+{
+    mlt_image_format fmt = mlt_image_rgb;
+    int w = 0, h = 0;
+    uint8_t *image = frame->get_image(fmt, w, h, 0);
+    if (!image || w < 2 || h < 1)
+        return false;
+    int x = (w / 2) & ~1;
+    int y = h / 2;
+    if (fmt == mlt_image_rgb) {
+        int i = (y * w + x) * 3;
+        r = image[i];
+        g = image[i + 1];
+        b = image[i + 2];
+    } else if (fmt == mlt_image_rgba) {
+        int i = (y * w + x) * 4;
+        r = image[i];
+        g = image[i + 1];
+        b = image[i + 2];
+    } else if (fmt == mlt_image_yuv422) {
+        int off = y * w * 2 + x * 2;
+        int yy = image[off];
+        int u = image[off + 1];
+        int v = image[off + 3];
+        r = qBound(0, (int) (1.164 * (yy - 16) + 1.596 * (v - 128)), 255);
+        g = qBound(0, (int) (1.164 * (yy - 16) - 0.813 * (v - 128) - 0.391 * (u - 128)), 255);
+        b = qBound(0, (int) (1.164 * (yy - 16) + 2.018 * (u - 128)), 255);
+    } else {
+        return false;
+    }
+    return true;
+}
+
 class TestTractor : public QObject
 {
     Q_OBJECT
@@ -406,8 +456,9 @@ private Q_SLOTS:
 
     void ConvertImagePropagatesThroughMultitrack()
     {
-        // The tractor's producer_get_image calls mlt_frame_copy_convert_image to
-        // propagate converters from each track frame onto the merged frame.
+        // The tractor's mlt_frame_prepend_image_from_service path calls
+        // mlt_frame_copy_convert_image to propagate converters from each track
+        // frame onto the merged frame.
         Tractor t(profile);
         QVERIFY(t.is_valid());
 
@@ -421,9 +472,9 @@ private Q_SLOTS:
         mlt_service_get_frame(MLT_PRODUCER_SERVICE(t.get_producer()), &merged, 0);
         QVERIFY(merged != NULL);
 
-        // Calling get_image triggers producer_get_image in the tractor, which pulls
-        // track frames through the loader filter chain (causing converters to be pushed
-        // onto them), then copies them onto the merged frame via
+        // Calling get_image triggers the tractor's from-service image callback,
+        // which pulls track frames through the loader filter chain (causing converters
+        // to be pushed onto them), then copies them onto the merged frame via
         // mlt_frame_copy_convert_image.
         uint8_t *image = NULL;
         mlt_image_format fmt = mlt_image_rgb;
@@ -433,6 +484,350 @@ private Q_SLOTS:
         QVERIFY(mlt_frame_has_convert_image(merged));
 
         mlt_frame_close(merged);
+    }
+
+    void FxCutAppliesToTrackBelow()
+    {
+        Transition blend(profile, "composite");
+        Filter brightness(profile, "brightness");
+        if (!blend.is_valid() || !brightness.is_valid())
+            QSKIP("composite or brightness not available");
+        brightness.set("level", 0.0);
+
+        Producer red = makeColor(profile, "0xff0000ff");
+        QVERIFY(red.is_valid());
+        Producer fx = makeFxCut(profile, brightness);
+        QVERIFY(fx.is_valid());
+
+        Playlist track0(profile);
+        Playlist track1(profile);
+        track0.append(red);
+        track1.append(fx);
+
+        Tractor t(profile);
+        t.set_track(track0, 0);
+        t.set_track(track1, 1);
+        t.plant_transition(blend, 0, 1);
+
+        Frame *frame = t.get_frame();
+        QVERIFY(frame != NULL);
+        int r = 0, g = 0, b = 0;
+        QVERIFY(sampleCenterRgb(frame, r, g, b));
+        // brightness level=0 turns the lower red clip black.
+        QString pixel = QString("rgb=%1,%2,%3").arg(r).arg(g).arg(b);
+        QVERIFY2(r < 40, qPrintable(pixel));
+        QVERIFY2(g < 40, qPrintable(pixel));
+        QVERIFY2(b < 40, qPrintable(pixel));
+        delete frame;
+    }
+
+    void FxCutAppliesToTrackBelowWithReversedTracks()
+    {
+        Transition blend(profile, "composite");
+        Filter brightness(profile, "brightness");
+        if (!blend.is_valid() || !brightness.is_valid())
+            QSKIP("composite or brightness not available");
+        brightness.set("level", 0.0);
+
+        Producer red = makeColor(profile, "0xff0000ff");
+        QVERIFY(red.is_valid());
+        Producer fx = makeFxCut(profile, brightness);
+        QVERIFY(fx.is_valid());
+
+        Playlist track0(profile);
+        Playlist track1(profile);
+        track0.append(red);
+        track1.append(fx);
+
+        Tractor t(profile);
+        t.set_track(track0, 0);
+        t.set_track(track1, 1);
+        // a_track > b_track: reverse_order must still wrap the lower clip.
+        t.plant_transition(blend, 1, 0);
+
+        Frame *frame = t.get_frame();
+        QVERIFY(frame != NULL);
+        int r = 0, g = 0, b = 0;
+        QVERIFY(sampleCenterRgb(frame, r, g, b));
+        QString pixel = QString("rgb=%1,%2,%3").arg(r).arg(g).arg(b);
+        QVERIFY2(r < 40, qPrintable(pixel));
+        QVERIFY2(g < 40, qPrintable(pixel));
+        QVERIFY2(b < 40, qPrintable(pixel));
+        delete frame;
+    }
+
+    void FxCutAppliesToTrackBelowWithoutTransition()
+    {
+        Filter brightness(profile, "brightness");
+        if (!brightness.is_valid())
+            QSKIP("brightness not available");
+        brightness.set("level", 0.0);
+
+        Producer red = makeColor(profile, "0xff0000ff");
+        QVERIFY(red.is_valid());
+        Producer fx = makeFxCut(profile, brightness);
+        QVERIFY(fx.is_valid());
+
+        Playlist track0(profile);
+        Playlist track1(profile);
+        track0.append(red);
+        track1.append(fx);
+
+        Tractor t(profile);
+        t.set_track(track0, 0);
+        t.set_track(track1, 1);
+
+        Frame *frame = t.get_frame();
+        QVERIFY(frame != NULL);
+        int r = 0, g = 0, b = 0;
+        QVERIFY(sampleCenterRgb(frame, r, g, b));
+        // Classic tractor stacking: fx_cut filters the lower track with no blend.
+        QString pixel = QString("rgb=%1,%2,%3").arg(r).arg(g).arg(b);
+        QVERIFY2(r < 40, qPrintable(pixel));
+        QVERIFY2(g < 40, qPrintable(pixel));
+        QVERIFY2(b < 40, qPrintable(pixel));
+        delete frame;
+    }
+
+    void FxCutDoesNotAffectTrackAbove()
+    {
+        Transition blendFx(profile, "composite");
+        Transition blendOverlay(profile, "composite");
+        Filter brightness(profile, "brightness");
+        if (!blendFx.is_valid() || !blendOverlay.is_valid() || !brightness.is_valid())
+            QSKIP("composite or brightness not available");
+        brightness.set("level", 0.0);
+
+        Producer red = makeColor(profile, "0xff0000ff");
+        QVERIFY(red.is_valid());
+        Producer fx = makeFxCut(profile, brightness);
+        QVERIFY(fx.is_valid());
+        Producer green = makeColor(profile, "0x00ff00ff");
+        QVERIFY(green.is_valid());
+
+        Playlist track0(profile);
+        Playlist track1(profile);
+        Playlist track2(profile);
+        track0.append(red);
+        track1.append(fx);
+        track2.append(green);
+
+        Tractor t(profile);
+        t.set_track(track0, 0);
+        t.set_track(track1, 1);
+        t.set_track(track2, 2);
+        // Same a_track layout as Shotcut: both overlays blend onto the bottom video.
+        t.plant_transition(blendFx, 0, 1);
+        t.plant_transition(blendOverlay, 0, 2);
+
+        Frame *frame = t.get_frame();
+        QVERIFY(frame != NULL);
+        int r = 0, g = 0, b = 0;
+        QVERIFY(sampleCenterRgb(frame, r, g, b));
+        // Opaque green overlay must stay green (not darkened by the fx_cut).
+        QString pixel = QString("rgb=%1,%2,%3").arg(r).arg(g).arg(b);
+        QVERIFY2(r < 40, qPrintable(pixel));
+        QVERIFY2(g > 200, qPrintable(pixel));
+        QVERIFY2(b < 40, qPrintable(pixel));
+        delete frame;
+    }
+
+    void FxCutAppliesToIntermediateTrackWithoutDirectTransition()
+    {
+        Transition blend(profile, "composite");
+        Filter brightness(profile, "brightness");
+        if (!blend.is_valid() || !brightness.is_valid())
+            QSKIP("composite or brightness not available");
+        brightness.set("level", 0.0);
+
+        Producer red = makeColor(profile, "0xff0000ff");
+        QVERIFY(red.is_valid());
+        Producer green = makeColor(profile, "0x00ff00ff");
+        QVERIFY(green.is_valid());
+        Producer fx = makeFxCut(profile, brightness);
+        QVERIFY(fx.is_valid());
+        Producer blue = makeColor(profile, "0x0000ffff");
+        QVERIFY(blue.is_valid());
+
+        Playlist track0(profile);
+        Playlist track1(profile);
+        Playlist track2(profile);
+        Playlist track3(profile);
+        track0.append(red);
+        track1.append(green);
+        track2.append(fx);
+        track3.append(blue);
+
+        Tractor t(profile);
+        t.set_track(track0, 0);
+        t.set_track(track1, 1);
+        t.set_track(track2, 2);
+        t.set_track(track3, 3);
+        // Only 0→3: the cut must wrap the nearest visible lower track (green),
+        // not only hunted A, so tractor stacking cannot bypass it.
+        t.plant_transition(blend, 0, 3);
+
+        Frame *frame = t.get_frame();
+        QVERIFY(frame != NULL);
+        int r = 0, g = 0, b = 0;
+        QVERIFY(sampleCenterRgb(frame, r, g, b));
+        QString pixel = QString("rgb=%1,%2,%3").arg(r).arg(g).arg(b);
+        QVERIFY2(r < 40, qPrintable(pixel));
+        QVERIFY2(g < 40, qPrintable(pixel));
+        QVERIFY2(b < 40, qPrintable(pixel));
+        delete frame;
+    }
+
+    void FxCutDoesNotAffectTrackAboveWithoutFxTransition()
+    {
+        Transition blendOverlay(profile, "composite");
+        Filter brightness(profile, "brightness");
+        if (!blendOverlay.is_valid() || !brightness.is_valid())
+            QSKIP("composite or brightness not available");
+        brightness.set("level", 0.0);
+
+        Producer red = makeColor(profile, "0xff0000ff");
+        QVERIFY(red.is_valid());
+        Producer fx = makeFxCut(profile, brightness);
+        QVERIFY(fx.is_valid());
+        Producer green = makeColor(profile, "0x00ff00ff");
+        QVERIFY(green.is_valid());
+
+        Playlist track0(profile);
+        Playlist track1(profile);
+        Playlist track2(profile);
+        track0.append(red);
+        track1.append(fx);
+        track2.append(green);
+
+        Tractor t(profile);
+        t.set_track(track0, 0);
+        t.set_track(track1, 1);
+        t.set_track(track2, 2);
+        // Only a 0→2 composite: wrap the in-between fx_cut before blending so
+        // tractor stacking cannot grade the overlay.
+        t.plant_transition(blendOverlay, 0, 2);
+
+        Frame *frame = t.get_frame();
+        QVERIFY(frame != NULL);
+        int r = 0, g = 0, b = 0;
+        QVERIFY(sampleCenterRgb(frame, r, g, b));
+        QString pixel = QString("rgb=%1,%2,%3").arg(r).arg(g).arg(b);
+        QVERIFY2(r < 40, qPrintable(pixel));
+        QVERIFY2(g > 200, qPrintable(pixel));
+        QVERIFY2(b < 40, qPrintable(pixel));
+        delete frame;
+    }
+
+    void FxCutDoesNotAffectTrackAboveWithDisabledFxTransition()
+    {
+        Transition blendFx(profile, "composite");
+        Transition blendOverlay(profile, "composite");
+        Filter brightness(profile, "brightness");
+        if (!blendFx.is_valid() || !blendOverlay.is_valid() || !brightness.is_valid())
+            QSKIP("composite or brightness not available");
+        brightness.set("level", 0.0);
+        blendFx.set("disable", 1);
+
+        Producer red = makeColor(profile, "0xff0000ff");
+        QVERIFY(red.is_valid());
+        Producer fx = makeFxCut(profile, brightness);
+        QVERIFY(fx.is_valid());
+        Producer green = makeColor(profile, "0x00ff00ff");
+        QVERIFY(green.is_valid());
+
+        Playlist track0(profile);
+        Playlist track1(profile);
+        Playlist track2(profile);
+        track0.append(red);
+        track1.append(fx);
+        track2.append(green);
+
+        Tractor t(profile);
+        t.set_track(track0, 0);
+        t.set_track(track1, 1);
+        t.set_track(track2, 2);
+        t.plant_transition(blendFx, 0, 1);
+        t.plant_transition(blendOverlay, 0, 2);
+
+        Frame *frame = t.get_frame();
+        QVERIFY(frame != NULL);
+        int r = 0, g = 0, b = 0;
+        QVERIFY(sampleCenterRgb(frame, r, g, b));
+        QString pixel = QString("rgb=%1,%2,%3").arg(r).arg(g).arg(b);
+        QVERIFY2(r < 40, qPrintable(pixel));
+        QVERIFY2(g > 200, qPrintable(pixel));
+        QVERIFY2(b < 40, qPrintable(pixel));
+        delete frame;
+    }
+
+    void FxCutDoesNotAffectTrackAboveWithReversedTracks()
+    {
+        Transition blendFx(profile, "composite");
+        Transition blendOverlay(profile, "composite");
+        Filter brightness(profile, "brightness");
+        if (!blendFx.is_valid() || !blendOverlay.is_valid() || !brightness.is_valid())
+            QSKIP("composite or brightness not available");
+        brightness.set("level", 0.0);
+
+        Producer red = makeColor(profile, "0xff0000ff");
+        QVERIFY(red.is_valid());
+        Producer fx = makeFxCut(profile, brightness);
+        QVERIFY(fx.is_valid());
+        Producer green = makeColor(profile, "0x00ff00ff");
+        QVERIFY(green.is_valid());
+
+        Playlist track0(profile);
+        Playlist track1(profile);
+        Playlist track2(profile);
+        track0.append(red);
+        track1.append(fx);
+        track2.append(green);
+
+        Tractor t(profile);
+        t.set_track(track0, 0);
+        t.set_track(track1, 1);
+        t.set_track(track2, 2);
+        // Reversed fx blend: wrap must still hide the fx_cut so stacking does
+        // not grade the overlay.
+        t.plant_transition(blendFx, 1, 0);
+        t.plant_transition(blendOverlay, 0, 2);
+
+        Frame *frame = t.get_frame();
+        QVERIFY(frame != NULL);
+        int r = 0, g = 0, b = 0;
+        QVERIFY(sampleCenterRgb(frame, r, g, b));
+        QString pixel = QString("rgb=%1,%2,%3").arg(r).arg(g).arg(b);
+        QVERIFY2(r < 40, qPrintable(pixel));
+        QVERIFY2(g > 200, qPrintable(pixel));
+        QVERIFY2(b < 40, qPrintable(pixel));
+        delete frame;
+    }
+
+    void FxCutAloneDoesNotCrash()
+    {
+        Transition blend(profile, "composite");
+        Filter brightness(profile, "brightness");
+        if (!blend.is_valid() || !brightness.is_valid())
+            QSKIP("composite or brightness not available");
+        brightness.set("level", 0.0);
+
+        Producer fx = makeFxCut(profile, brightness);
+        QVERIFY(fx.is_valid());
+
+        Playlist track0(profile);
+        track0.append(fx);
+
+        Tractor t(profile);
+        t.set_track(track0, 0);
+
+        Frame *frame = t.get_frame();
+        QVERIFY(frame != NULL);
+        mlt_image_format fmt = mlt_image_rgb;
+        int w = 0, h = 0;
+        uint8_t *image = frame->get_image(fmt, w, h, 0);
+        QVERIFY(image != NULL);
+        delete frame;
     }
 };
 

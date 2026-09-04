@@ -3,7 +3,7 @@
  * \brief playlist service class
  * \see mlt_playlist_s
  *
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -60,6 +60,7 @@ typedef struct playlist_entry_s playlist_entry;
  * automatically close producers as they are finished being used to free resources.
  * \properties \em meta.fx_cut Set true on a producer to indicate that it is a "fx_cut,"
  * which is a way to add filters as a playlist entry - useful only in a multitrack. See FxCut in the docs.
+ * Filters apply to the composite of lower-index tracks; higher tracks composite on top.
  * \properties \em mix_in
  * \properties \em mix_out
  * \properties \em hide Set to 1 to hide the video (make it an audio-only track),
