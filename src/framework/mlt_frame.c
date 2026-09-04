@@ -1052,6 +1052,18 @@ static void copy_consumer_image_hints(mlt_frame dst, mlt_frame src)
                             NULL);
 }
 
+/** Install \p data on \p dst without taking ownership.
+ *
+ * Skips the set when \p dst already holds \p data: mlt_property_set_data
+ * nulls the destructor if the pointer is unchanged, which would leak the
+ * original owner's buffer (fx_cut wrap shares onto the fx frame and back).
+ */
+static void share_data(mlt_properties dst, const char *name, void *data, int size)
+{
+    if (data && data != mlt_properties_get_data(dst, name, NULL))
+        mlt_properties_set_data(dst, name, data, size, NULL, NULL);
+}
+
 /** Copy image properties, alpha, converters, and Movit state from \p src to \p dst.
  *
  * Does not take ownership of the image or alpha buffers.
@@ -1076,37 +1088,26 @@ static void copy_image_state(mlt_frame dst, mlt_frame src)
         src_properties,
         "progressive,distort,colorspace,full_range,force_full_luma,top_field_first,color_trc");
 
-    mlt_properties_set_data(dst_properties,
-                            "movit.convert.fence",
-                            mlt_properties_get_data(src_properties, "movit.convert.fence", NULL),
-                            0,
-                            NULL,
-                            NULL);
-    mlt_properties_set_data(dst_properties,
-                            "movit.convert.texture",
-                            mlt_properties_get_data(src_properties, "movit.convert.texture", NULL),
-                            0,
-                            NULL,
-                            NULL);
+    share_data(dst_properties,
+               "movit.convert.fence",
+               mlt_properties_get_data(src_properties, "movit.convert.fence", NULL),
+               0);
+    share_data(dst_properties,
+               "movit.convert.texture",
+               mlt_properties_get_data(src_properties, "movit.convert.texture", NULL),
+               0);
     mlt_properties_set_int(dst_properties,
                            "movit.convert.use_texture",
                            mlt_properties_get_int(src_properties, "movit.convert.use_texture"));
     int i;
     for (i = 0; i < mlt_properties_count(src_properties); i++) {
         char *name = mlt_properties_get_name(src_properties, i);
-        if (name && !strncmp(name, "_movit ", 7)) {
-            mlt_properties_set_data(dst_properties,
-                                    name,
-                                    mlt_properties_get_data_at(src_properties, i, NULL),
-                                    0,
-                                    NULL,
-                                    NULL);
-        }
+        if (name && !strncmp(name, "_movit ", 7))
+            share_data(dst_properties, name, mlt_properties_get_data_at(src_properties, i, NULL), 0);
     }
 
     data = mlt_frame_get_alpha_size(src, &size);
-    if (data)
-        mlt_frame_set_alpha(dst, data, size, NULL);
+    share_data(dst_properties, "alpha", data, size);
     dst->convert_audio = src->convert_audio;
     mlt_frame_copy_convert_image(dst, src);
 }
@@ -1118,9 +1119,8 @@ static void copy_image_state(mlt_frame dst, mlt_frame src)
  */
 static void share_image(mlt_frame dst, mlt_frame src)
 {
-    int size = 0;
-    uint8_t *image = mlt_properties_get_data(MLT_FRAME_PROPERTIES(src), "image", &size);
-    mlt_frame_set_image(dst, image, 0, NULL);
+    uint8_t *image = mlt_properties_get_data(MLT_FRAME_PROPERTIES(src), "image", NULL);
+    share_data(MLT_FRAME_PROPERTIES(dst), "image", image, 0);
     copy_image_state(dst, src);
 }
 

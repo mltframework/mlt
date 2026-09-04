@@ -385,13 +385,43 @@ static int frame_is_fx_cut(mlt_frame frame, int type)
     return type == 1 && mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "fx_cut");
 }
 
+/** Route \p picture through \p fx and hide the dummy. No-op if already hidden. */
+static void wrap_fx_cut(mlt_frame picture, mlt_frame fx)
+{
+    int fx_hide = mlt_properties_get_int(MLT_FRAME_PROPERTIES(fx), "hide");
+    if (fx_hide & 1)
+        return;
+    mlt_frame_push_image_with_fx_cut(picture, fx);
+    mlt_properties_set_int(MLT_FRAME_PROPERTIES(fx), "hide", fx_hide | 1);
+}
+
+/** Wrap every fx_cut from the hunted picture through B, inclusive.
+ *
+ * Physical indices, so reverse_order does not matter. Includes B so a 0→1
+ * blend and a 0→2 blend with fx_cut on track 1 share this path. Hide on the
+ * dummy prevents a second wrap from an outer transition.
+ */
+static void apply_fx_cuts(
+    mlt_transition self, int a_frame, int b_frame, int type, int (*invalid)(mlt_frame))
+{
+    mlt_frame picture = self->frames[a_frame];
+    if (!picture || !MLT_FRAME_PROPERTIES(picture)->local || invalid(picture)
+        || frame_is_fx_cut(picture, type)
+        || (mlt_properties_get_int(MLT_FRAME_PROPERTIES(picture), "hide") & type))
+        return;
+    for (int i = a_frame + 1; i <= b_frame; i++) {
+        mlt_frame fx = self->frames[i];
+        if (fx && MLT_FRAME_PROPERTIES(fx)->local && frame_is_fx_cut(fx, type))
+            wrap_fx_cut(picture, fx);
+    }
+}
+
 static void process_transition_pair(mlt_transition self,
                                     mlt_frame_ptr frame,
                                     mlt_frame a_frame_ptr,
                                     mlt_frame b_frame_ptr,
                                     int type,
-                                    int active,
-                                    int (*invalid)(mlt_frame))
+                                    int active)
 {
     if (!a_frame_ptr || !MLT_FRAME_PROPERTIES(a_frame_ptr)->local || !b_frame_ptr
         || !MLT_FRAME_PROPERTIES(b_frame_ptr)->local)
@@ -400,20 +430,8 @@ static void process_transition_pair(mlt_transition self,
     int a_hide = mlt_properties_get_int(MLT_FRAME_PROPERTIES(a_frame_ptr), "hide");
     int b_hide = mlt_properties_get_int(MLT_FRAME_PROPERTIES(b_frame_ptr), "hide");
 
-    // Wrap is not a composite: fx may be A or B after reverse_order mapping.
-    mlt_frame picture = a_frame_ptr;
-    mlt_frame fx = b_frame_ptr;
-    if (frame_is_fx_cut(a_frame_ptr, type) && !frame_is_fx_cut(b_frame_ptr, type)) {
-        picture = b_frame_ptr;
-        fx = a_frame_ptr;
-    }
-    if (frame_is_fx_cut(fx, type) && !frame_is_fx_cut(picture, type) && !invalid(picture)
-        && !(mlt_properties_get_int(MLT_FRAME_PROPERTIES(picture), "hide") & type)) {
-        mlt_frame_push_image_with_fx_cut(picture, fx);
-        int fx_hide = mlt_properties_get_int(MLT_FRAME_PROPERTIES(fx), "hide");
-        mlt_properties_set_int(MLT_FRAME_PROPERTIES(fx), "hide", fx_hide | 1);
+    if (frame_is_fx_cut(a_frame_ptr, type) || frame_is_fx_cut(b_frame_ptr, type))
         return;
-    }
 
     if (!active || (a_hide & type) || (b_hide & type))
         return;
@@ -542,7 +560,7 @@ static int transition_get_frame(mlt_service service, mlt_frame_ptr frame, int in
                 }
 
                 // Determine if we're active now
-                // fx_cut is not composited; process_transition_pair wraps it
+                // fx_cut is not composited; apply_fx_cuts wraps it
                 mlt_properties b_props = MLT_FRAME_PROPERTIES(self->frames[b_frame]);
                 active = a_frame != b_frame && !invalid(self->frames[b_frame])
                          && !mlt_properties_get_int(b_props, "fx_cut");
@@ -566,11 +584,12 @@ static int transition_get_frame(mlt_service service, mlt_frame_ptr frame, int in
         // Finally, process the a and b frames
         if (!mlt_properties_get_int(MLT_TRANSITION_PROPERTIES(self), "disable")
             && a_frame <= b_track) {
+            apply_fx_cuts(self, a_frame, b_frame, type, invalid);
             int frame_nb = (!reverse_order && a_frame <= b_track) ? a_frame : b_frame;
             mlt_frame a_frame_ptr = self->frames[frame_nb];
             frame_nb = (!reverse_order || a_frame > b_track) ? b_frame : a_frame;
             mlt_frame b_frame_ptr = self->frames[frame_nb];
-            process_transition_pair(self, frame, a_frame_ptr, b_frame_ptr, type, active, invalid);
+            process_transition_pair(self, frame, a_frame_ptr, b_frame_ptr, type, active);
         }
     }
 
