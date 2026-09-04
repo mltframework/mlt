@@ -1113,14 +1113,14 @@ static void copy_image_state(mlt_frame dst, mlt_frame src)
     mlt_frame_copy_convert_image(dst, src);
 }
 
-/** Share \p src's image buffer and image state onto \p dst without taking ownership.
+/** Share \p image and \p src's image state onto \p dst without taking ownership.
  *
- * Both frames must remain alive while \p dst's image is used (typically both are
- * stored on the tractor output frame).
+ * \p image is the pointer returned by mlt_frame_get_image(), which need not be
+ * stored in src's "image" property. Both frames must remain alive while \p dst's
+ * image is used (typically both are stored on the tractor output frame).
  */
-static void share_image(mlt_frame dst, mlt_frame src)
+static void share_image(mlt_frame dst, mlt_frame src, uint8_t *image)
 {
-    uint8_t *image = mlt_properties_get_data(MLT_FRAME_PROPERTIES(src), "image", NULL);
     share_data(MLT_FRAME_PROPERTIES(dst), "image", image, 0);
     copy_image_state(dst, src);
 }
@@ -1148,7 +1148,7 @@ static int get_image_from_service(mlt_frame self,
 
     copy_consumer_image_hints(frame, self);
     mlt_frame_get_image(frame, buffer, format, width, height, writable);
-    share_image(self, frame);
+    share_image(self, frame, (buffer && *buffer) ? *buffer : NULL);
     return 0;
 }
 
@@ -1194,7 +1194,7 @@ static int get_image_with_fx_cut(mlt_frame a_frame,
 
     int error = mlt_frame_get_image(fx_frame, image, format, width, height, writable);
     if (!error)
-        share_image(a_frame, fx_frame);
+        share_image(a_frame, fx_frame, (image && *image) ? *image : NULL);
     return error;
 }
 
