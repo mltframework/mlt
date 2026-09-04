@@ -124,6 +124,15 @@ void sample_fifo_close(sample_fifo fifo)
 
 static AVFilterGraph *vfilter_graph;
 
+static enum AVPixelFormat hwupload_pix_fmt(mlt_properties properties)
+{
+    const char *pix_fmt_name = mlt_properties_get(properties, "pix_fmt");
+    enum AVPixelFormat pix_fmt = pix_fmt_name ? av_get_pix_fmt(pix_fmt_name) : AV_PIX_FMT_NV12;
+    const AVPixFmtDescriptor *descriptor = av_pix_fmt_desc_get(pix_fmt);
+    return (!descriptor || (descriptor->flags & AV_PIX_FMT_FLAG_HWACCEL)) ? AV_PIX_FMT_NV12
+                                                                          : pix_fmt;
+}
+
 static int setup_hwupload_filter(mlt_properties properties,
                                  AVStream *stream,
                                  AVCodecContext *codec_context)
@@ -147,7 +156,7 @@ static int setup_hwupload_filter(mlt_properties properties,
              "video_size=%dx%d:pix_fmt=%d:time_base=%d/%d:pixel_aspect=%d/%d:frame_rate=%d/%d",
              codec_context->width,
              codec_context->height,
-             AV_PIX_FMT_NV12,
+             hwupload_pix_fmt(properties),
              stream->time_base.num,
              stream->time_base.den,
              codec_context->sample_aspect_ratio.num,
@@ -1015,6 +1024,9 @@ static AVStream *add_video_stream(mlt_consumer consumer,
                      : codec ? (codec->pix_fmts ? codec->pix_fmts[0] : AV_PIX_FMT_YUV422P)
                              : AV_PIX_FMT_YUV420P;
 #endif
+
+        if (strstr(codec->name, "_vaapi"))
+            c->pix_fmt = AV_PIX_FMT_VAAPI;
 
         if (AV_PIX_FMT_VAAPI == c->pix_fmt) {
             int result = init_vaapi(properties, c);
@@ -2718,12 +2730,12 @@ static void *consumer_thread(void *arg)
     // Allocate picture
     enum AVPixelFormat pix_fmt = AV_PIX_FMT_YUV420P;
     if (enc_ctx->video_st) {
-        const int need_nv12 = enc_ctx->vcodec_ctx->pix_fmt == AV_PIX_FMT_VAAPI
+        const int need_hwupload = enc_ctx->vcodec_ctx->pix_fmt == AV_PIX_FMT_VAAPI
 #if HAVE_FFMPEG_VULKAN
-                              || enc_ctx->vcodec_ctx->pix_fmt == AV_PIX_FMT_VULKAN
+                                  || enc_ctx->vcodec_ctx->pix_fmt == AV_PIX_FMT_VULKAN
 #endif
             ;
-        pix_fmt = need_nv12 ? AV_PIX_FMT_NV12 : enc_ctx->vcodec_ctx->pix_fmt;
+        pix_fmt = need_hwupload ? hwupload_pix_fmt(properties) : enc_ctx->vcodec_ctx->pix_fmt;
         converted_avframe = alloc_picture(pix_fmt, width, height);
         if (!converted_avframe) {
             mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "failed to allocate video AVFrame\n");
