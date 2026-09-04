@@ -385,6 +385,13 @@ static int frame_is_fx_cut(mlt_frame frame, int type)
     return type == 1 && mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "fx_cut");
 }
 
+static int frame_is_visible_picture(mlt_frame frame, int type, int (*invalid)(mlt_frame))
+{
+    return frame && MLT_FRAME_PROPERTIES(frame)->local && !invalid(frame)
+           && !frame_is_fx_cut(frame, type)
+           && !(mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "hide") & type);
+}
+
 /** Route \p picture through \p fx and hide the dummy. No-op if already hidden. */
 static void wrap_fx_cut(mlt_frame picture, mlt_frame fx)
 {
@@ -395,24 +402,30 @@ static void wrap_fx_cut(mlt_frame picture, mlt_frame fx)
     mlt_properties_set_int(MLT_FRAME_PROPERTIES(fx), "hide", fx_hide | 1);
 }
 
-/** Wrap every fx_cut from the hunted picture through B, inclusive.
+/** Wrap each fx_cut onto the accumulated visible result below it.
  *
- * Physical indices, so reverse_order does not matter. Includes B so a 0→1
- * blend and a 0→2 blend with fx_cut on track 1 share this path. Hide on the
+ * Walk physical indices through B so reverse_order does not matter. A visible
+ * video between A and a later cut becomes the wrap target (and stacks the
+ * previous picture underneath) so the cut filters all lower-index tracks, not
+ * only hunted A. B itself is not accumulated — it is the overlay. Hide on the
  * dummy prevents a second wrap from an outer transition.
  */
 static void apply_fx_cuts(
     mlt_transition self, int a_frame, int b_frame, int type, int (*invalid)(mlt_frame))
 {
     mlt_frame picture = self->frames[a_frame];
-    if (!picture || !MLT_FRAME_PROPERTIES(picture)->local || invalid(picture)
-        || frame_is_fx_cut(picture, type)
-        || (mlt_properties_get_int(MLT_FRAME_PROPERTIES(picture), "hide") & type))
+    if (!frame_is_visible_picture(picture, type, invalid))
         return;
     for (int i = a_frame + 1; i <= b_frame; i++) {
-        mlt_frame fx = self->frames[i];
-        if (fx && MLT_FRAME_PROPERTIES(fx)->local && frame_is_fx_cut(fx, type))
-            wrap_fx_cut(picture, fx);
+        mlt_frame f = self->frames[i];
+        if (!f || !MLT_FRAME_PROPERTIES(f)->local)
+            continue;
+        if (frame_is_fx_cut(f, type))
+            wrap_fx_cut(picture, f);
+        else if (i < b_frame && frame_is_visible_picture(f, type, invalid)) {
+            mlt_frame_prepend_image_from_service(f, picture);
+            picture = f;
+        }
     }
 }
 

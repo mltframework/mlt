@@ -632,6 +632,52 @@ private Q_SLOTS:
         delete frame;
     }
 
+    void FxCutAppliesToIntermediateTrackWithoutDirectTransition()
+    {
+        Transition blend(profile, "composite");
+        Filter brightness(profile, "brightness");
+        if (!blend.is_valid() || !brightness.is_valid())
+            QSKIP("composite or brightness not available");
+        brightness.set("level", 0.0);
+
+        Producer red = makeColor(profile, "0xff0000ff");
+        QVERIFY(red.is_valid());
+        Producer green = makeColor(profile, "0x00ff00ff");
+        QVERIFY(green.is_valid());
+        Producer fx = makeFxCut(profile, brightness);
+        QVERIFY(fx.is_valid());
+        Producer blue = makeColor(profile, "0x0000ffff");
+        QVERIFY(blue.is_valid());
+
+        Playlist track0(profile);
+        Playlist track1(profile);
+        Playlist track2(profile);
+        Playlist track3(profile);
+        track0.append(red);
+        track1.append(green);
+        track2.append(fx);
+        track3.append(blue);
+
+        Tractor t(profile);
+        t.set_track(track0, 0);
+        t.set_track(track1, 1);
+        t.set_track(track2, 2);
+        t.set_track(track3, 3);
+        // Only 0→3: the cut must wrap the nearest visible lower track (green),
+        // not only hunted A, so tractor stacking cannot bypass it.
+        t.plant_transition(blend, 0, 3);
+
+        Frame *frame = t.get_frame();
+        QVERIFY(frame != NULL);
+        int r = 0, g = 0, b = 0;
+        QVERIFY(sampleCenterRgb(frame, r, g, b));
+        QString pixel = QString("rgb=%1,%2,%3").arg(r).arg(g).arg(b);
+        QVERIFY2(r < 40, qPrintable(pixel));
+        QVERIFY2(g < 40, qPrintable(pixel));
+        QVERIFY2(b < 40, qPrintable(pixel));
+        delete frame;
+    }
+
     void FxCutDoesNotAffectTrackAboveWithoutFxTransition()
     {
         Transition blendOverlay(profile, "composite");
