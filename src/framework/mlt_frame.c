@@ -1060,7 +1060,8 @@ static void copy_consumer_image_hints(mlt_frame dst, mlt_frame src)
  */
 static void share_data(mlt_properties dst, const char *name, void *data, int size)
 {
-    if (data && data != mlt_properties_get_data(dst, name, NULL))
+    void *current = mlt_properties_get_data(dst, name, NULL);
+    if (data != current)
         mlt_properties_set_data(dst, name, data, size, NULL, NULL);
 }
 
