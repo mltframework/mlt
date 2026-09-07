@@ -95,7 +95,7 @@ if(WIN32)
   target_compile_definitions(mlt++ PRIVATE MLTPP_EXPORTS)
 endif()
 
-if(NOT (WIN32 OR APPLE))
+if(NOT (WIN32 OR APPLE OR ANDROID))
   target_link_options(mlt++ PRIVATE -Wl,--version-script=${CMAKE_CURRENT_SOURCE_DIR}/mlt++.vers)
   set_target_properties(mlt++ PROPERTIES LINK_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/mlt++.vers)
 endif()
