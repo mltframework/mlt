@@ -88,11 +88,11 @@ static void get_timecode_str(mlt_filter filter,
         strncat(text, s, MAX_TEXT_LEN - strlen(text) - 1);
 }
 
-static void get_frame_str(mlt_filter filter, mlt_frame frame, char *text)
+static void get_frame_str(mlt_filter filter, mlt_frame frame, char *text, int offset)
 {
-    int pos = mlt_frame_get_position(frame);
+    int pos = mlt_frame_get_position(frame) + offset;
     char s[12];
-    snprintf(s, sizeof(s) - 1, "%d", pos);
+    snprintf(s, sizeof(s), "%d", pos);
     strncat(text, s, MAX_TEXT_LEN - strlen(text) - 1);
 }
 
@@ -221,7 +221,9 @@ static void substitute_keywords(mlt_filter filter, char *result, char *value, ml
         } else if (!strcmp(keyword, "smpte_ndf")) {
             get_timecode_str(filter, frame, result, mlt_time_smpte_ndf);
         } else if (!strcmp(keyword, "frame")) {
-            get_frame_str(filter, frame, result);
+            get_frame_str(filter, frame, result, 0);
+        } else if (!strcmp(keyword, "frame+1")) {
+            get_frame_str(filter, frame, result, 1);
         } else if (!strncmp(keyword, "filedate", 8)) {
             get_filedate_str(keyword, filter, frame, result);
         } else if (!strncmp(keyword, "localfiledate", 13)) {
