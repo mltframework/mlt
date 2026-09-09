@@ -1,6 +1,6 @@
 /*
  * producer_noise.c -- noise generating producer
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -126,34 +126,82 @@ static int producer_get_image(mlt_frame frame,
 }
 
 static int producer_get_audio(mlt_frame frame,
-                              int16_t **buffer,
+                              void **buffer,
                               mlt_audio_format *format,
                               int *frequency,
                               int *channels,
                               int *samples)
 {
-    int size = 0;
-
     // Correct the returns if necessary
-    *samples = *samples <= 0 ? 1920 : *samples;
     *channels = *channels <= 0 ? 2 : *channels;
     *frequency = *frequency <= 0 ? 48000 : *frequency;
-    *format = mlt_audio_s16;
+    if (*samples <= 0) {
+        mlt_producer producer = mlt_frame_get_original_producer(frame);
+        double fps = mlt_producer_get_fps(producer);
+        mlt_position position = mlt_frame_get_position(frame);
+        *samples = mlt_audio_calculate_frame_samples(fps, *frequency, position);
+    }
+    if (*format != mlt_audio_s16 && *format != mlt_audio_s32 && *format != mlt_audio_float
+        && *format != mlt_audio_s32le && *format != mlt_audio_f32le && *format != mlt_audio_u8)
+        *format = mlt_audio_float;
 
     // Calculate the size of the buffer
-    size = *samples * *channels * sizeof(int16_t);
+    int size = mlt_audio_format_size(*format, *samples, *channels);
 
     // Allocate the buffer
     *buffer = mlt_pool_alloc(size);
 
     // Make sure we got one and fill it
     if (*buffer != NULL) {
-        int16_t *p = *buffer + size / 2;
         rand_seed seed;
         init_seed(&seed, mlt_frame_get_position(frame));
-        while (p != *buffer) {
-            int16_t val = (int16_t) fast_rand(&seed);
-            *(--p) = val;
+        int channel, sample;
+
+        switch (*format) {
+        case mlt_audio_s16: {
+            int16_t *p = *buffer;
+            for (sample = 0; sample < *samples; sample++)
+                for (channel = 0; channel < *channels; channel++)
+                    *p++ = (int16_t) fast_rand(&seed);
+            break;
+        }
+        case mlt_audio_s32: {
+            int32_t *p = *buffer;
+            for (channel = 0; channel < *channels; channel++)
+                for (sample = 0; sample < *samples; sample++)
+                    *p++ = (int32_t) fast_rand(&seed);
+            break;
+        }
+        case mlt_audio_float: {
+            float *p = *buffer;
+            for (channel = 0; channel < *channels; channel++)
+                for (sample = 0; sample < *samples; sample++)
+                    *p++ = (int32_t) fast_rand(&seed) / -(double) INT32_MIN;
+            break;
+        }
+        case mlt_audio_s32le: {
+            int32_t *p = *buffer;
+            for (sample = 0; sample < *samples; sample++)
+                for (channel = 0; channel < *channels; channel++)
+                    *p++ = (int32_t) fast_rand(&seed);
+            break;
+        }
+        case mlt_audio_f32le: {
+            float *p = *buffer;
+            for (sample = 0; sample < *samples; sample++)
+                for (channel = 0; channel < *channels; channel++)
+                    *p++ = (int32_t) fast_rand(&seed) / -(double) INT32_MIN;
+            break;
+        }
+        case mlt_audio_u8: {
+            uint8_t *p = *buffer;
+            for (sample = 0; sample < *samples; sample++)
+                for (channel = 0; channel < *channels; channel++)
+                    *p++ = fast_rand(&seed) >> 24;
+            break;
+        }
+        default:
+            break;
         }
     }
 
