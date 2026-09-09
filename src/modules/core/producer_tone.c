@@ -1,6 +1,6 @@
 /*
  * producer_tone.c -- audio tone generating producer
- * Copyright (C) 2014 Meltytech, LLC
+ * Copyright (C) 2014-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -23,8 +23,15 @@
 #include <stdlib.h>
 #include <string.h>
 
+static int32_t float_to_s32(float value)
+{
+    value = CLAMP(value, -1.0f, 1.0f);
+    int64_t pcm = (value > 0.0f ? INT32_MAX : -(int64_t) INT32_MIN) * value;
+    return CLAMP(pcm, INT32_MIN, INT32_MAX);
+}
+
 static int producer_get_audio(mlt_frame frame,
-                              int16_t **buffer,
+                              void **buffer,
                               mlt_audio_format *format,
                               int *frequency,
                               int *channels,
@@ -37,14 +44,16 @@ static int producer_get_audio(mlt_frame frame,
     mlt_position length = mlt_producer_get_length(producer);
 
     // Correct the returns if necessary
-    *format = mlt_audio_float;
     *frequency = *frequency <= 0 ? 48000 : *frequency;
     *channels = *channels <= 0 ? 2 : *channels;
     *samples = *samples <= 0 ? mlt_audio_calculate_frame_samples(fps, *frequency, position)
                              : *samples;
+    if (*format != mlt_audio_s16 && *format != mlt_audio_s32 && *format != mlt_audio_float
+        && *format != mlt_audio_s32le && *format != mlt_audio_f32le && *format != mlt_audio_u8)
+        *format = mlt_audio_float;
 
     // Allocate the buffer
-    int size = *samples * *channels * sizeof(float);
+    int size = mlt_audio_format_size(*format, *samples, *channels);
     *buffer = mlt_pool_alloc(size);
 
     // Fill the buffer
@@ -60,12 +69,53 @@ static int producer_get_audio(mlt_frame frame,
 
     for (s = 0; s < *samples; s++) {
         long double t = (first_sample + s) / *frequency;
-
         float value = a * sin(2 * M_PI * f * t + p);
 
-        for (c = 0; c < *channels; c++) {
-            float *sample_ptr = ((float *) *buffer) + (c * *samples) + s;
-            *sample_ptr = value;
+        switch (*format) {
+        case mlt_audio_s16: {
+            int16_t *sample_ptr = (int16_t *) *buffer + s * *channels;
+            for (c = 0; c < *channels; c++)
+                *sample_ptr++ = 32767 * CLAMP(value, -1.0f, 1.0f);
+            break;
+        }
+        case mlt_audio_s32: {
+            int32_t *sample_ptr = (int32_t *) *buffer + s;
+            for (c = 0; c < *channels; c++) {
+                *sample_ptr = float_to_s32(value);
+                sample_ptr += *samples;
+            }
+            break;
+        }
+        case mlt_audio_float: {
+            float *sample_ptr = (float *) *buffer + s;
+            for (c = 0; c < *channels; c++) {
+                *sample_ptr = value;
+                sample_ptr += *samples;
+            }
+            break;
+        }
+        case mlt_audio_s32le: {
+            int32_t *sample_ptr = (int32_t *) *buffer + s * *channels;
+            int32_t pcm = float_to_s32(value);
+            for (c = 0; c < *channels; c++)
+                *sample_ptr++ = pcm;
+            break;
+        }
+        case mlt_audio_f32le: {
+            float *sample_ptr = (float *) *buffer + s * *channels;
+            for (c = 0; c < *channels; c++)
+                *sample_ptr++ = value;
+            break;
+        }
+        case mlt_audio_u8: {
+            uint8_t *sample_ptr = (uint8_t *) *buffer + s * *channels;
+            uint8_t pcm = (127 * CLAMP(value, -1.0f, 1.0f)) + 128;
+            for (c = 0; c < *channels; c++)
+                *sample_ptr++ = pcm;
+            break;
+        }
+        default:
+            break;
         }
     }
 
