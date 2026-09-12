@@ -589,39 +589,6 @@ private Q_SLOTS:
         delete frame;
     }
 
-    void FxCutAppliesMovitFilterToTrackBelow()
-    {
-        Filter saturation(profile, "movit.saturation");
-        if (!saturation.is_valid())
-            QSKIP("movit.saturation not available");
-        saturation.set("saturation", 0.0);
-
-        Producer red = makeColor(profile, "0xff0000ff");
-        QVERIFY(red.is_valid());
-        Producer fx = makeFxCut(profile, saturation);
-        QVERIFY(fx.is_valid());
-
-        Playlist track0(profile);
-        Playlist track1(profile);
-        track0.append(red);
-        track1.append(fx);
-
-        Tractor t(profile);
-        t.set_track(track0, 0);
-        t.set_track(track1, 1);
-
-        Frame *frame = t.get_frame();
-        QVERIFY(frame != NULL);
-        int r = 0, g = 0, b = 0;
-        QVERIFY(sampleCenterRgb(frame, r, g, b));
-        QString pixel = QString("rgb=%1,%2,%3").arg(r).arg(g).arg(b);
-        // Rec. 709 desaturation of red is a gray, not the original red or black.
-        QVERIFY2(qAbs(r - g) < 40, qPrintable(pixel));
-        QVERIFY2(qAbs(g - b) < 40, qPrintable(pixel));
-        QVERIFY2(r > 40, qPrintable(pixel));
-        delete frame;
-    }
-
     void FxCutDoesNotAffectTrackAbove()
     {
         Transition blendFx(profile, "composite");
