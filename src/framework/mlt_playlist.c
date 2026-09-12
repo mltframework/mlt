@@ -2047,13 +2047,13 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
         mlt_frame_set_position(*frame, mlt_producer_get_in((mlt_producer) real) + clip_position);
         mlt_frame_push_service(*frame, NULL);
         mlt_frame_push_audio(*frame, NULL);
+        // Match producer_get_frame(): parent meta, parent filters, cut meta, cut filters.
+        mlt_producer_pass_frame_properties(parent, *frame);
         mlt_service_apply_filters(MLT_PRODUCER_SERVICE(parent), *frame, 0);
+        mlt_producer_pass_frame_properties((mlt_producer) real, *frame);
         mlt_service_apply_filters(real, *frame, 0);
         mlt_deque_pop_front(MLT_FRAME_IMAGE_STACK(*frame));
         mlt_deque_pop_front(MLT_FRAME_AUDIO_STACK(*frame));
-        // This path skips producer_get_frame(); match its parent-then-cut pass.
-        mlt_producer_pass_frame_properties(parent, *frame);
-        mlt_producer_pass_frame_properties((mlt_producer) real, *frame);
     }
     mlt_properties_dec_ref(MLT_SERVICE_PROPERTIES(real));
 
