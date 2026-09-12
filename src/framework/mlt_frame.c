@@ -1065,6 +1065,26 @@ static void share_data(mlt_properties dst, const char *name, void *data, int siz
         mlt_properties_set_data(dst, name, data, size, NULL, NULL);
 }
 
+/** True when both frames have the same cut-parent original producer. */
+static int same_original_producer(mlt_frame a, mlt_frame b)
+{
+    mlt_producer pa = mlt_producer_cut_parent(mlt_frame_get_original_producer(a));
+    mlt_producer pb = mlt_producer_cut_parent(mlt_frame_get_original_producer(b));
+    return pa && pa == pb;
+}
+
+/** Do not fetch an in-progress Movit chain from a different producer.
+ *
+ * mlt_image_movit is keyed by original producer. Across fx_cut / stacking,
+ * finalize to rgba64 so the destination can start its own chain. Same-producer
+ * prepends keep movit so GPU effects can chain without a CPU round trip.
+ */
+static void flatten_foreign_movit(mlt_frame dst, mlt_frame src, mlt_image_format *format)
+{
+    if (format && *format == mlt_image_movit && !same_original_producer(dst, src))
+        *format = mlt_image_rgba64;
+}
+
 /** Copy image properties, alpha, converters, and Movit state from \p src to \p dst.
  *
  * Does not take ownership of the image or alpha buffers.
@@ -1102,9 +1122,7 @@ static void copy_image_state(mlt_frame dst, mlt_frame src)
     mlt_properties_set_int(dst_properties,
                            "movit.convert.use_texture",
                            mlt_properties_get_int(src_properties, "movit.convert.use_texture"));
-    mlt_producer src_producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(src));
-    mlt_producer dst_producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(dst));
-    if (src_producer && src_producer == dst_producer) {
+    if (same_original_producer(dst, src)) {
         int i;
         for (i = 0; i < mlt_properties_count(src_properties); i++) {
             char *name = mlt_properties_get_name(src_properties, i);
@@ -1141,9 +1159,8 @@ static void share_image(mlt_frame dst, mlt_frame src, uint8_t *image)
  * buffer onto \p self without taking ownership, along with format, alpha,
  * converters, and Movit state.
  *
- * Do not fetch mlt_image_movit from another producer: that format is an
- * in-progress GPU chain keyed by the source producer. Finalize to rgba64
- * (RGB+alpha, 16-bit) so the destination can start its own chain.
+ * Across producers, do not fetch mlt_image_movit: flatten to rgba64 so the
+ * destination starts its own chain. Same-producer prepends keep the GPU chain.
  *
  * \private \memberof mlt_frame_s
  * \return true if the stacked source frame is missing
@@ -1160,8 +1177,7 @@ static int get_image_from_service(mlt_frame self,
         return 1;
 
     copy_consumer_image_hints(frame, self);
-    if (*format == mlt_image_movit)
-        *format = mlt_image_rgba64;
+    flatten_foreign_movit(self, frame, format);
     mlt_frame_get_image(frame, buffer, format, width, height, writable);
     share_image(self, frame, (buffer && *buffer) ? *buffer : NULL);
     return 0;
@@ -1207,6 +1223,9 @@ static int get_image_with_fx_cut(mlt_frame a_frame,
 
     mlt_frame_prepend_image_from_service(fx_frame, a_frame);
 
+    // Reverse share onto a_frame is a producer boundary: do not hand back an
+    // in-progress Movit chain whose _movit keys will be dropped.
+    flatten_foreign_movit(a_frame, fx_frame, format);
     int error = mlt_frame_get_image(fx_frame, image, format, width, height, writable);
     if (!error)
         share_image(a_frame, fx_frame, (image && *image) ? *image : NULL);
