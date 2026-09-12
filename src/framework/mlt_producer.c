@@ -746,16 +746,33 @@ static int producer_get_frame(mlt_service service, mlt_frame_ptr frame, int inde
     }
 
     // Pass on all meta properties from the producer/cut on to the frame
-    if (*frame != NULL && self != NULL) {
-        mlt_properties p_props = MLT_PRODUCER_PROPERTIES(self);
-        mlt_properties f_props = MLT_FRAME_PROPERTIES(*frame);
-        mlt_properties_lock(p_props);
-        mlt_properties_copy(f_props, p_props, "meta.");
-        mlt_properties_pass(f_props, p_props, "set.");
-        mlt_properties_unlock(p_props);
-    }
+    mlt_producer_pass_frame_properties(self, *frame);
 
     return result;
+}
+
+/** Copy producer \c meta. and \c set. properties onto a frame.
+ *
+ * \c producer_get_frame() does this for every frame. Services that construct a
+ * frame without going through that path (for example playlist \c fx_cut) should
+ * call this so producer annotations still reach the frame.
+ * \c set. prefixes are stripped, matching \c mlt_properties_pass().
+ *
+ * \public \memberof mlt_producer_s
+ * \param self a producer
+ * \param frame a frame
+ */
+
+void mlt_producer_pass_frame_properties(mlt_producer self, mlt_frame frame)
+{
+    if (!self || !frame)
+        return;
+    mlt_properties p_props = MLT_PRODUCER_PROPERTIES(self);
+    mlt_properties f_props = MLT_FRAME_PROPERTIES(frame);
+    mlt_properties_lock(p_props);
+    mlt_properties_copy(f_props, p_props, "meta.");
+    mlt_properties_pass(f_props, p_props, "set.");
+    mlt_properties_unlock(p_props);
 }
 
 /** Attach a filter.

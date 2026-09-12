@@ -1,6 +1,6 @@
 /**
  * MltProducer.cpp - MLT Wrapper
- * Copyright (C) 2004-2019 Meltytech, LLC
+ * Copyright (C) 2004-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -21,6 +21,7 @@
 #include "MltConsumer.h"
 #include "MltEvent.h"
 #include "MltFilter.h"
+#include "MltFrame.h"
 #include "MltProfile.h"
 using namespace Mlt;
 
@@ -265,4 +266,9 @@ void Producer::set_creation_time(int64_t creation_time)
 bool Producer::probe()
 {
     return mlt_producer_probe(get_producer());
+}
+
+void Producer::pass_frame_properties(Frame &frame)
+{
+    mlt_producer_pass_frame_properties(get_producer(), frame.get_frame());
 }

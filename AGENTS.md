@@ -184,6 +184,12 @@ Add `animation: yes` for keyframeable parameters, `mutable: yes` for runtime-cha
 
 ---
 
+## Symbol Export
+
+New public C functions in `src/framework/` must be listed in `src/framework/mlt.vers` under the current release node (see `NEWS`). New public mlt++ methods must be listed in `src/mlt++/mlt++.vers` under the current release node, using the demangled C++ signature in quotes (e.g. `"Mlt::Producer::probe()"`). A symbol omitted from the version script is not exported from the shared library, so callers cannot link to it.
+
+---
+
 ## Naming Conventions
 
 - **Source files:** `filter_<name>.c/.cpp`, `producer_<name>.c`, `transition_<name>.c`, `consumer_<name>.c`
@@ -223,3 +229,4 @@ The repo includes `.devcontainer/` with a `devcontainer.json` and `Dockerfile`.
 - **`mlt_properties_pass_list` in `filter_process`:** pass properties to the sub-filter on `mlt_frame_unique_properties`, not on the sub-filter's own properties, to avoid data races.
 - **YAML `readonly`:** set `readonly: no` on any parameter the user is expected to set; omitting it defaults to read-only in some tooling.
 - **Delegating to `qtext` vs `text`:** `filter_subtitle` tries `qtext` first, then falls back to `text`. Properties specific to `qtext` (e.g. `typewriter.*`) are silently ignored by the `text` fallback.
+- **Missing version-script entry:** a new exported C function without a `mlt.vers` entry, or a new exported mlt++ method without a `mlt++.vers` entry, will not be visible to linkers. Add it under the current release node when you add the symbol.

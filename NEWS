@@ -30,6 +30,10 @@ Framework
     an in-progress Movit chain to rgba64 and does not copy producer-keyed
     `_movit` chain state. Same-producer prepends keep the GPU chain. Playlist
     `fx_cut` frames now set `_producer` so Movit can key the chain.
+  - Copy `meta.` and `set.` properties from the producer onto `fx_cut` frames
+    so producer annotations reach tractor output. New public API:
+    - `mlt_producer_pass_frame_properties()`
+    - `Mlt::Producer::pass_frame_properties()`
 
 Modules
   - Image converters (`movit.convert`, `avcolor_space`, `imageconvert`) are

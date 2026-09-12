@@ -829,6 +829,33 @@ private Q_SLOTS:
         QVERIFY(image != NULL);
         delete frame;
     }
+
+    void FxCutPassesProducerMetaToTractorFrame()
+    {
+        Filter brightness(profile, "brightness");
+        if (!brightness.is_valid())
+            QSKIP("brightness not available");
+
+        Producer red = makeColor(profile, "0xff0000ff");
+        QVERIFY(red.is_valid());
+        Producer fx = makeFxCut(profile, brightness);
+        QVERIFY(fx.is_valid());
+        fx.set("meta.test.flag", 1);
+
+        Playlist track0(profile);
+        Playlist track1(profile);
+        track0.append(red);
+        track1.append(fx);
+
+        Tractor t(profile);
+        t.set_track(track0, 0);
+        t.set_track(track1, 1);
+
+        Frame *frame = t.get_frame();
+        QVERIFY(frame != NULL);
+        QCOMPARE(frame->get_int("meta.test.flag"), 1);
+        delete frame;
+    }
 };
 
 QTEST_APPLESS_MAIN(TestTractor)
