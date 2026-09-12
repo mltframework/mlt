@@ -153,23 +153,40 @@ static void get_format_from_properties(mlt_properties properties,
     ycbcr_format->cb_y_position = ycbcr_format->cr_y_position = 0.5f;
 }
 
-static void build_fingerprint(GlslChain *chain,
-                              mlt_service service,
-                              mlt_frame frame,
-                              std::string *fingerprint)
+static MltInput *chain_input(GlslChain *chain, mlt_producer producer)
+{
+    if (!chain || !producer)
+        return nullptr;
+    auto it = chain->inputs.find(producer);
+    return it != chain->inputs.end() ? it->second : nullptr;
+}
+
+static Effect *chain_effect(GlslChain *chain, mlt_service service)
+{
+    if (!chain || !service)
+        return nullptr;
+    auto it = chain->effects.find(service);
+    return it != chain->effects.end() ? it->second : nullptr;
+}
+
+static void append_unique_id(std::string *fingerprint, mlt_service service)
+{
+    const char *id = service ? mlt_properties_get(MLT_SERVICE_PROPERTIES(service), "_unique_id")
+                             : NULL;
+    fingerprint->append(id ? id : "unknown");
+}
+
+static void build_fingerprint(mlt_service service, mlt_frame frame, std::string *fingerprint)
 {
     if (service == (mlt_service) -1) {
         mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
-        if (producer && chain && chain->inputs[producer])
-            fingerprint->append(mlt_properties_get(MLT_PRODUCER_PROPERTIES(producer), "_unique_id"));
-        else
-            fingerprint->append("input");
+        append_unique_id(fingerprint, producer ? MLT_PRODUCER_SERVICE(producer) : nullptr);
         return;
     }
 
     mlt_service input_a = GlslManager::get_effect_input(service, frame);
     fingerprint->push_back('(');
-    build_fingerprint(chain, input_a, frame, fingerprint);
+    build_fingerprint(input_a, frame, fingerprint);
     fingerprint->push_back(')');
 
     mlt_frame frame_b;
@@ -177,19 +194,19 @@ static void build_fingerprint(GlslChain *chain,
     GlslManager::get_effect_secondary_input(service, frame, &input_b, &frame_b);
     if (input_b) {
         fingerprint->push_back('(');
-        build_fingerprint(chain, input_b, frame_b, fingerprint);
+        build_fingerprint(input_b, frame_b, fingerprint);
         fingerprint->push_back(')');
     }
 
     GlslManager::get_effect_third_input(service, frame, &input_b, &frame_b);
     if (input_b) {
         fingerprint->push_back('(');
-        build_fingerprint(chain, input_b, frame_b, fingerprint);
+        build_fingerprint(input_b, frame_b, fingerprint);
         fingerprint->push_back(')');
     }
 
     fingerprint->push_back('(');
-    fingerprint->append(mlt_properties_get(MLT_SERVICE_PROPERTIES(service), "_unique_id"));
+    append_unique_id(fingerprint, service);
 
     const char *effect_fingerprint = mlt_properties_get(MLT_SERVICE_PROPERTIES(service),
                                                         "_movit fingerprint");
@@ -277,7 +294,7 @@ static void finalize_movit_chain(mlt_service leaf_service, mlt_frame frame, mlt_
     auto properties = MLT_FRAME_PROPERTIES(frame);
 
     std::string new_fingerprint;
-    build_fingerprint(chain, leaf_service, frame, &new_fingerprint);
+    build_fingerprint(leaf_service, frame, &new_fingerprint);
 
     // Build the chain if needed.
     if (!chain || new_fingerprint != chain->fingerprint) {
@@ -348,13 +365,15 @@ static void set_movit_parameters(GlslChain *chain, mlt_service service, mlt_fram
 {
     if (service == (mlt_service) -1) {
         mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
-        MltInput *input = chain->inputs[producer];
+        MltInput *input = chain_input(chain, producer);
         if (input)
             input->set_pixel_data(GlslManager::get_input_pixel_pointer(producer, frame));
         return;
     }
 
-    Effect *effect = chain->effects[service];
+    Effect *effect = chain_effect(chain, service);
+    if (!effect)
+        return;
     mlt_service input_a = GlslManager::get_effect_input(service, frame);
     set_movit_parameters(chain, input_a, frame);
 
@@ -422,7 +441,7 @@ static void dispose_pixel_pointers(GlslChain *chain, mlt_service service, mlt_fr
 {
     if (service == (mlt_service) -1) {
         mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
-        MltInput *input = chain->inputs[producer];
+        MltInput *input = chain_input(chain, producer);
         if (input)
             input->invalidate_pixel_data();
         mlt_pool_release(GlslManager::get_input_pixel_pointer(producer, frame));
@@ -637,6 +656,10 @@ static int convert_image(mlt_frame frame,
         }
 
         mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
+        if (!producer) {
+            GlslManager::get_instance()->unlock_service(frame);
+            return 1;
+        }
         mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(producer));
         MltInput *input
             = create_input(properties, *format, profile->width, profile->height, width, height);
@@ -673,6 +696,11 @@ static int convert_image(mlt_frame frame,
             // yield the conversion.
             mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
             MltInput *input = GlslManager::get_input(producer, frame);
+            if (!input) {
+                mlt_log_error(NULL, "[filter movit.convert] missing MltInput for passthrough\n");
+                GlslManager::get_instance()->unlock_service(frame);
+                return 1;
+            }
             *image = GlslManager::get_input_pixel_pointer(producer, frame);
             *format = input->get_format();
             delete input;

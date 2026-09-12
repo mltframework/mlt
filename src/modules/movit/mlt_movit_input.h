@@ -47,6 +47,7 @@ public:
 
 private:
     mlt_image_format m_format;
+    GLenum m_gl_type;
     unsigned m_width, m_height;
     // Note: Owned by the EffectChain, so should not be deleted by us.
     movit::Input *input;

@@ -243,6 +243,8 @@ int mlt_producer_is_blank(mlt_producer self)
 
 mlt_producer mlt_producer_cut_parent(mlt_producer self)
 {
+    if (!self)
+        return NULL;
     mlt_properties properties = MLT_PRODUCER_PROPERTIES(self);
     if (mlt_producer_is_cut(self))
         return mlt_properties_get_data(properties, "_cut_parent", NULL);
