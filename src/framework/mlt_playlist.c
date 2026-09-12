@@ -2042,6 +2042,7 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
     } else {
         mlt_producer parent = mlt_producer_cut_parent((mlt_producer) real);
         *frame = mlt_frame_init(MLT_PRODUCER_SERVICE(parent));
+        mlt_properties_set_data(MLT_FRAME_PROPERTIES(*frame), "_producer", real, 0, NULL, NULL);
         mlt_properties_set_int(MLT_FRAME_PROPERTIES(*frame), "fx_cut", 1);
         mlt_frame_set_position(*frame, mlt_producer_get_in((mlt_producer) real) + clip_position);
         mlt_frame_push_service(*frame, NULL);

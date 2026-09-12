@@ -49,7 +49,8 @@ void MltInput::useFlatInput(MovitPixelFormat pix_fmt, unsigned width, unsigned h
         ImageFormat image_format;
         image_format.color_space = COLORSPACE_sRGB;
         image_format.gamma_curve = GAMMA_REC_709; // GAMMA_sRGB causes a color level problem
-        input = new FlatInput(image_format, pix_fmt, GL_UNSIGNED_BYTE, width, height);
+        GLenum type = m_format == mlt_image_rgba64 ? GL_UNSIGNED_SHORT : GL_UNSIGNED_BYTE;
+        input = new FlatInput(image_format, pix_fmt, type, width, height);
     }
 }
 
@@ -94,7 +95,10 @@ void MltInput::set_pixel_data(const unsigned char *data)
 
     if (isRGB) {
         FlatInput *flat = (FlatInput *) input;
-        flat->set_pixel_data(data);
+        if (m_format == mlt_image_rgba64)
+            flat->set_pixel_data(reinterpret_cast<const unsigned short *>(data));
+        else
+            flat->set_pixel_data(data);
     } else if (m_ycbcr_format.num_levels == 1024) {
         YCbCrInput *ycbcr = (YCbCrInput *) input;
         auto p = reinterpret_cast<const uint16_t *>(data);

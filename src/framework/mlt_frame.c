@@ -1068,6 +1068,8 @@ static void share_data(mlt_properties dst, const char *name, void *data, int siz
 /** Copy image properties, alpha, converters, and Movit state from \p src to \p dst.
  *
  * Does not take ownership of the image or alpha buffers.
+ * Producer-keyed `_movit ` chain keys are copied only when both frames
+ * share the same original producer.
  */
 static void copy_image_state(mlt_frame dst, mlt_frame src)
 {
@@ -1100,11 +1102,18 @@ static void copy_image_state(mlt_frame dst, mlt_frame src)
     mlt_properties_set_int(dst_properties,
                            "movit.convert.use_texture",
                            mlt_properties_get_int(src_properties, "movit.convert.use_texture"));
-    int i;
-    for (i = 0; i < mlt_properties_count(src_properties); i++) {
-        char *name = mlt_properties_get_name(src_properties, i);
-        if (name && !strncmp(name, "_movit ", 7))
-            share_data(dst_properties, name, mlt_properties_get_data_at(src_properties, i, NULL), 0);
+    mlt_producer src_producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(src));
+    mlt_producer dst_producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(dst));
+    if (src_producer && src_producer == dst_producer) {
+        int i;
+        for (i = 0; i < mlt_properties_count(src_properties); i++) {
+            char *name = mlt_properties_get_name(src_properties, i);
+            if (name && !strncmp(name, "_movit ", 7))
+                share_data(dst_properties,
+                           name,
+                           mlt_properties_get_data_at(src_properties, i, NULL),
+                           0);
+        }
     }
 
     data = mlt_frame_get_alpha_size(src, &size);
@@ -1132,6 +1141,10 @@ static void share_image(mlt_frame dst, mlt_frame src, uint8_t *image)
  * buffer onto \p self without taking ownership, along with format, alpha,
  * converters, and Movit state.
  *
+ * Do not fetch mlt_image_movit from another producer: that format is an
+ * in-progress GPU chain keyed by the source producer. Finalize to rgba64
+ * (RGB+alpha, 16-bit) so the destination can start its own chain.
+ *
  * \private \memberof mlt_frame_s
  * \return true if the stacked source frame is missing
  */
@@ -1147,6 +1160,8 @@ static int get_image_from_service(mlt_frame self,
         return 1;
 
     copy_consumer_image_hints(frame, self);
+    if (*format == mlt_image_movit)
+        *format = mlt_image_rgba64;
     mlt_frame_get_image(frame, buffer, format, width, height, writable);
     share_image(self, frame, (buffer && *buffer) ? *buffer : NULL);
     return 0;

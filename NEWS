@@ -25,10 +25,19 @@ Framework
     New image-stack helpers used by tractor stacking and this path:
     - `mlt_frame_prepend_image_from_service()`
     - `mlt_frame_push_image_with_fx_cut()`
+  - Fix crash applying a Movit (OpenGL) filter to an `fx_cut` (Adjustment Clip).
+    `mlt_frame_prepend_image_from_service()` finalizes an in-progress Movit
+    chain to rgba64 before sharing onto another producer, and does not copy
+    producer-keyed `_movit` chain state across that boundary. Playlist `fx_cut`
+    frames now set `_producer` so Movit can key the chain.
 
 Modules
   - Image converters (`movit.convert`, `avcolor_space`, `imageconvert`) are
     now attached data-driven via `loader.ini` key `image_convert`.
+  - Movit `rgba64` is now a valid *input* as well as output: `FlatInput` is
+    created with `GL_UNSIGNED_SHORT` and `set_pixel_data()` uses the 16-bit
+    overload. Previously rgba64 was uploaded as 8-bit, which distorted the
+    image when an OpenGL filter ran on an `fx_cut`.
 
 
 Version 7.40.0
