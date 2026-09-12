@@ -108,6 +108,8 @@ public:
     int64_t get_creation_time();
     void set_creation_time(int64_t creation_time);
     bool probe();
+    /** Copy this producer's \c meta. and \c set. properties onto \p frame. */
+    void pass_frame_properties(Frame &frame);
 };
 } // namespace Mlt
 

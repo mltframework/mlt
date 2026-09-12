@@ -3,7 +3,7 @@
  * \brief abstraction for all producer services
  * \see mlt_producer_s
  *
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -146,5 +146,6 @@ MLT_EXPORT void mlt_producer_close(mlt_producer self);
 MLT_EXPORT int64_t mlt_producer_get_creation_time(mlt_producer self);
 MLT_EXPORT void mlt_producer_set_creation_time(mlt_producer self, int64_t creation_time);
 MLT_EXPORT int mlt_producer_probe(mlt_producer self);
+MLT_EXPORT void mlt_producer_pass_frame_properties(mlt_producer self, mlt_frame frame);
 
 #endif

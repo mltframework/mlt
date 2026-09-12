@@ -263,6 +263,27 @@ private Q_SLOTS:
         delete pp2;
         delete pp3;
     }
+
+    void FxCutFrameReceivesProducerMeta()
+    {
+        Producer p(profile, "color", "0x00000000");
+        QVERIFY(p.is_valid());
+        p.set("mlt_image_format", "rgba");
+        p.set("meta.fx_cut", 1);
+        p.set("meta.test.flag", 1);
+        p.set("set.consumer.dummy", 1);
+        p.set_in_and_out(0, 9);
+
+        Playlist pl(profile);
+        pl.append(p);
+
+        Frame *frame = pl.get_frame();
+        QVERIFY(frame != NULL);
+        QCOMPARE(frame->get_int("fx_cut"), 1);
+        QCOMPARE(frame->get_int("meta.test.flag"), 1);
+        QCOMPARE(frame->get_int("consumer.dummy"), 1);
+        delete frame;
+    }
 };
 
 QTEST_APPLESS_MAIN(TestPlaylist)

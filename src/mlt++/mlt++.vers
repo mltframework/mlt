@@ -728,3 +728,10 @@ MLT_7.36.0 {
       "Mlt::Profile::is_valid()";
   };
 } MLT_7.32.0;
+
+MLT_7.42.0 {
+  global:
+    extern "C++" {
+      "Mlt::Producer::pass_frame_properties(Mlt::Frame&)";
+    };
+} MLT_7.36.0;

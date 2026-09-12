@@ -703,4 +703,5 @@ MLT_7.42.0 {
     mlt_audio_format_id;
     mlt_frame_prepend_image_from_service;
     mlt_frame_push_image_with_fx_cut;
+    mlt_producer_pass_frame_properties;
 } MLT_7.40.0;

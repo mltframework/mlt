@@ -2051,6 +2051,9 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
         mlt_service_apply_filters(real, *frame, 0);
         mlt_deque_pop_front(MLT_FRAME_IMAGE_STACK(*frame));
         mlt_deque_pop_front(MLT_FRAME_AUDIO_STACK(*frame));
+        // This path skips producer_get_frame(); match its parent-then-cut pass.
+        mlt_producer_pass_frame_properties(parent, *frame);
+        mlt_producer_pass_frame_properties((mlt_producer) real, *frame);
     }
     mlt_properties_dec_ref(MLT_SERVICE_PROPERTIES(real));
 
