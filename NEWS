@@ -25,7 +25,7 @@ Framework
     New image-stack helpers used by tractor stacking and this path:
     - `mlt_frame_prepend_image_from_service()`
     - `mlt_frame_push_image_with_fx_cut()`
-  - Fix crash applying a Movit (OpenGL) filter to an `fx_cut` (Adjustment Clip).
+  - Fixed crash applying a Movit (OpenGL) filter to an `fx_cut` (Adjustment Clip).
     Cross-producer image sharing (including the reverse fx_cut share) finalizes
     an in-progress Movit chain to rgba64 and does not copy producer-keyed
     `_movit` chain state. Same-producer prepends keep the GPU chain. Playlist
@@ -34,6 +34,19 @@ Framework
     so producer annotations reach tractor output. New public API:
     - `mlt_producer_pass_frame_properties()`
     - `Mlt::Producer::pass_frame_properties()`
+  - Changed the default audio sample format to `float32` (`mlt_audio_f32le`).
+    Added `mlt_audio_format_id()` and an `mlt_audio_format` property on the
+    `multi` consumer. Integer/float conversion is lossless and symmetric
+    (s16 and u8 round-trips are exact).
+  - Deprecated audio services that only support integer samples.
+  - Propagate per-track audio-level metadata to output frames (`meta.audio.*`).
+  - Improved `mlt_property_is_anim()` so strings that merely contain `=`
+    (for example URLs) are not treated as animation.
+  - `mlt_properties_get_data()` no longer returns a data pointer for rect
+    properties.
+  - Fixed signed integer overflow in `mlt_luma_map_from_pgm`.
+  - Fixed `fx_cut` in-point handling in `mlt_transition`.
+  - Fixed Android `mlt++` builds by disabling ELF symbol versioning.
 
 Modules
   - Image converters (`movit.convert`, `avcolor_space`, `imageconvert`) are
@@ -42,6 +55,41 @@ Modules
     created with `GL_UNSIGNED_SHORT` and `set_pixel_data()` uses the 16-bit
     overload. Previously rgba64 was uploaded as 8-bit, which distorted the
     image when an OpenGL filter ran on an `fx_cut`.
+  - Added `placebo` GPU module (`placebo.render`, `placebo.shader`) using
+    libplacebo for scaling, debanding, dithering, tonemapping, and mpv-style
+    `.hook` shaders (D3D11 / Vulkan / OpenGL).
+  - Fixed deadlock in the `decklink` consumer when pausing, seeking, and
+    resuming playback.
+  - Added ducking to the `mix` transition (`duck_threshold`, `duck_attenuation`,
+    `duck_level`, `duck_fade_in`, `duck_fade_out`, and an optional prefix for
+    `duck_level` on the frame).
+  - Added `#frame+1#` keyword in `dynamictext` (1-based frame number).
+  - Added more audio formats to the `audiolevel` filter.
+  - FFmpeg 9 support in `avformat`.
+  - Fixed 10-bit `hevc_vaapi` encoding.
+  - Log when the `avformat` consumer finishes.
+  - Fixed `rnnoise` only working with 48 kHz audio.
+  - `frei0r.kaleid0sc0pe` and `frei0r.squigglevision` report internal threading.
+  - Fixed `frei0r.camerashake` (and its blur) with preview scaling.
+  - Skip duplicate OpenFX plugins.
+  - `USE_LV2` and `USE_VST2` require `USE_LADSPA`; install LADSPA
+    `blacklist.txt` without JACK; expand `LV2_PATH` correctly on Windows.
+  - Fixed `affine` and `qtblend` inside `mask_apply`.
+  - `qtblend`: flag to avoid double PAR normalization.
+  - Fixed luma transition alpha scaling, alpha when using a luma file, and
+    documented the `invert` property.
+  - Fixed `shape` filter alpha subtraction for rgba.
+  - Fixed motion-tracker shapes clipping outside the frame.
+  - Fixed colorspace and range of cached images in `qimage` and `pixbuf`.
+  - Fixed `crop` with hardware decode+scale plus preview scale.
+  - Fixed subtitle filter rendering one frame past the end time, and
+    `subtitle_feed` end-frame calculation.
+  - Fixed file-name buffer overflows in `gpsgraphic` and `gpstext`.
+
+Other
+  - `melt` prints progress at the end and exits non-zero when interrupted
+    by a signal.
+  - Added an MSYS2 Windows CMake preset.
 
 
 Version 7.40.0
