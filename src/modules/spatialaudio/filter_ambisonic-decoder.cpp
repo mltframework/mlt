@@ -23,25 +23,96 @@
 using namespace spaudio;
 
 static const auto MAX_CHANNELS = 6;
-static const auto AMBISONICS_BLOCK_SIZE = 1024;
 static const auto AMBISONICS_ORDER = 1;
 static const auto AMBISONICS_1_CHANNELS = 4;
+static const auto BLOCK_SIZE_MS = 100;
 
 extern "C" {
 static mlt_frame process(mlt_filter filter, mlt_frame frame);
 static void close_filter(mlt_filter filter);
 }
 
+static Amblib_SpeakerSetUps speakerSetup(int channels)
+{
+    switch (channels) {
+    case 2:
+        return Amblib_SpeakerSetUps::kAmblib_Stereo;
+    case 4:
+        return Amblib_SpeakerSetUps::kAmblib_Quad;
+    case 6:
+        return Amblib_SpeakerSetUps::kAmblib_51;
+    default:
+        return Amblib_SpeakerSetUps::kAmblib_CustomSpeakerSetUp;
+    }
+}
+
 class SpatialAudio
 {
 private:
+    struct Setup
+    {
+        int sampleRate = 0;
+        int channels = 0;
+        unsigned blockSize = 0;
+        bool binaural = false;
+
+        bool fits(bool binaural, int sampleRate, int samples, int channels) const
+        {
+            return sampleRate == this->sampleRate && (unsigned) samples <= blockSize
+                   && binaural == this->binaural && (binaural || channels == this->channels);
+        }
+    };
+
     mlt_filter m_filter;
     AmbisonicBinauralizer binauralizer;
-    unsigned tailLength;
+    unsigned tailLength = 0;
     AmbisonicDecoder decoder;
     AmbisonicProcessor processor;
     AmbisonicZoomer zoomer;
     float *speakers[MAX_CHANNELS];
+    Setup m_setup;
+
+    bool configure(bool binaural, int sampleRate, unsigned blockSize, int channels)
+    {
+        if (binaural) {
+            mlt_log_verbose(MLT_FILTER_SERVICE(filter()),
+                            "configuring spatial audio binauralizer\n");
+            if (!binauralizer.Configure(AMBISONICS_ORDER, true, sampleRate, blockSize, tailLength)) {
+                mlt_log_error(MLT_FILTER_SERVICE(filter()),
+                              "failed to configure spatial audio binauralizer\n");
+                return true;
+            }
+            binauralizer.Reset();
+        } else {
+            mlt_log_verbose(MLT_FILTER_SERVICE(filter()),
+                            "configuring spatial audio decoder for %d channels\n",
+                            channels);
+            if (!decoder.Configure(AMBISONICS_ORDER,
+                                   true,
+                                   blockSize,
+                                   sampleRate,
+                                   speakerSetup(channels),
+                                   channels)) {
+                mlt_log_error(MLT_FILTER_SERVICE(filter()),
+                              "failed to configure spatial audio decoder\n");
+                return true;
+            }
+            decoder.Reset();
+            if (!processor.Configure(AMBISONICS_ORDER, true, blockSize, 0)) {
+                mlt_log_error(MLT_FILTER_SERVICE(filter()),
+                              "failed to configure spatial audio processor\n");
+                return true;
+            }
+            if (!zoomer.Configure(AMBISONICS_ORDER, true, blockSize, sampleRate)) {
+                mlt_log_error(MLT_FILTER_SERVICE(filter()),
+                              "failed to configure spatial audio zoomer\n");
+                return true;
+            }
+        }
+
+        m_setup = {sampleRate, channels, blockSize, binaural};
+        return false;
+    }
 
 public:
     SpatialAudio()
@@ -75,58 +146,12 @@ public:
         bool error = false;
         bool binaural = channels >= 2 && mlt_properties_get_int(properties(), "binaural");
         int sampleRate = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "audio_frequency");
+        unsigned blockSize = MAX((unsigned) samples,
+                                 sampleRate > 0 ? (unsigned) sampleRate * BLOCK_SIZE_MS / 1000 : 0);
 
-        // First time setup
-        if (binaural && !binauralizer.GetChannelCount()) {
-            mlt_log_verbose(MLT_FILTER_SERVICE(filter()),
-                            "configuring spatial audio binauralizer\n");
-            error = !binauralizer.Configure(AMBISONICS_ORDER, true, sampleRate, samples, tailLength);
-            if (!error) {
-                binauralizer.Reset();
-            } else {
-                mlt_log_error(MLT_FILTER_SERVICE(filter()),
-                              "failed to configure spatial audio binauralizer\n");
-            }
-        } else if (!binaural && !decoder.GetChannelCount()) {
-            mlt_log_verbose(MLT_FILTER_SERVICE(filter()),
-                            "configuring spatial audio decoder for %d channels\n",
-                            channels);
-            error = !decoder.Configure(AMBISONICS_ORDER,
-                                       true,
-                                       AMBISONICS_BLOCK_SIZE,
-                                       sampleRate,
-                                       channels == 6   ? Amblib_SpeakerSetUps::kAmblib_51
-                                       : channels == 2 ? Amblib_SpeakerSetUps::kAmblib_Stereo
-                                       : channels == 4
-                                           ? Amblib_SpeakerSetUps::kAmblib_Quad
-                                           : Amblib_SpeakerSetUps::kAmblib_CustomSpeakerSetUp,
-                                       channels);
-            if (!error) {
-                mlt_log_verbose(MLT_FILTER_SERVICE(filter()),
-                                "configuring spatial audio processor\n");
-                error = !processor.Configure(AMBISONICS_ORDER, true, AMBISONICS_BLOCK_SIZE, 0);
-                if (!error) {
-                    mlt_log_verbose(MLT_FILTER_SERVICE(filter()),
-                                    "configuring spatial audio zoomer\n");
-                    error = !zoomer.Configure(AMBISONICS_ORDER,
-                                              true,
-                                              AMBISONICS_BLOCK_SIZE,
-                                              sampleRate);
-                    if (error) {
-                        mlt_log_error(MLT_FILTER_SERVICE(filter()),
-                                      "failed to configure spatial audio zoomer\n");
-                    }
-                } else {
-                    mlt_log_error(MLT_FILTER_SERVICE(filter()),
-                                  "failed to configure spatial audio processor\n");
-                }
-            } else {
-                mlt_log_error(MLT_FILTER_SERVICE(filter()),
-                              "failed to configure spatial audio decoder\n");
-            }
-        }
+        if (!m_setup.fits(binaural, sampleRate, samples, channels))
+            error = configure(binaural, sampleRate, blockSize, channels);
 
-        // Processing
         if (!error) {
             BFormat bformat;
             bformat.Configure(AMBISONICS_ORDER, true, samples);
@@ -148,13 +173,13 @@ public:
             }
 
             if (channels == 6) {
-                // libspatialaudio has a different channel order for 5.1
-                speakers[0] = &buffer[samples * 0]; // left
-                speakers[1] = &buffer[samples * 1]; // right
-                speakers[2] = &buffer[samples * 4]; // center
-                speakers[3] = &buffer[samples * 5]; // LFE (subwoofer)
-                speakers[4] = &buffer[samples * 2]; // left surround
-                speakers[5] = &buffer[samples * 3]; // right surround
+                // kAmblib_51 is VLC order L/R/Ls/Rs/C/LFE, not ITU L/R/C/LFE/Ls/Rs.
+                speakers[0] = &buffer[samples * 0]; // L
+                speakers[1] = &buffer[samples * 1]; // R
+                speakers[2] = &buffer[samples * 4]; // Ls
+                speakers[3] = &buffer[samples * 5]; // Rs
+                speakers[4] = &buffer[samples * 2]; // C
+                speakers[5] = &buffer[samples * 3]; // LFE
                 decoder.Process(&bformat, samples, speakers);
             } else if (channels == 4 && mlt_properties_get_int(properties(), "ambisonic")) {
                 for (int i = 0; i < channels; ++i)
