@@ -21,6 +21,7 @@
 #include "common.h"
 #include "mltdecklink_export.h"
 #include <algorithm>
+#include <atomic>
 #include <framework/mlt.h>
 #include <limits.h>
 #include <pthread.h>
@@ -49,8 +50,27 @@ static int swab_sliced(int id, int idx, int jobs, void *cookie)
 
 static const unsigned PREROLL_MINIMUM = 3;
 
-enum { OP_NONE = 0, OP_OPEN, OP_START, OP_STOP, OP_EXIT };
+enum { OP_NONE = 0, OP_OPEN, OP_START, OP_STOP, OP_EXIT, OP_RESUME, OP_REFRESH };
 enum { EOTF_SDR = 0, EOTF_HDR = 1, EOTF_PQ = 2, EOTF_HLG = 3 }; ///< CEA 861.3
+
+static int coalesce_op(int pending, int incoming)
+{
+    auto rank = [](int op) {
+        switch (op) {
+        case OP_EXIT:
+            return 4;
+        case OP_STOP:
+            return 3;
+        case OP_RESUME:
+            return 2;
+        case OP_REFRESH:
+            return 1;
+        default:
+            return 0;
+        }
+    };
+    return rank(incoming) >= rank(pending) ? incoming : pending;
+}
 
 static double clamp_hdr_metadata(mlt_properties properties,
                                  const char *name,
@@ -95,15 +115,14 @@ private:
     pthread_mutex_t m_op_lock;
     pthread_mutex_t m_op_arg_mutex;
     pthread_cond_t m_op_arg_cond;
-    int m_op_id;
+    std::atomic<int> m_op_id{OP_NONE};
+    int m_pending_op{OP_NONE};
     int m_op_res;
     int m_op_arg;
     pthread_t m_op_thread;
     bool m_sliced_swab;
     uint8_t *m_buffer;
     bool m_running{false};
-    pthread_cond_t m_refresh_cond;
-    pthread_mutex_t m_refresh_mutex;
     int m_refresh{0};
     bool m_purge{false};
     int m_previousSpeed{0};
@@ -160,7 +179,6 @@ public:
         m_buffer = nullptr;
 
         // operation locks
-        m_op_id = OP_NONE;
         m_op_arg = 0;
         pthread_mutexattr_init(&mta);
         pthread_mutexattr_settype(&mta, PTHREAD_MUTEX_RECURSIVE);
@@ -171,8 +189,6 @@ public:
         pthread_mutexattr_destroy(&mta);
         pthread_cond_init(&m_op_arg_cond, nullptr);
         pthread_create(&m_op_thread, nullptr, op_main, this);
-        pthread_cond_init(&m_refresh_cond, nullptr);
-        pthread_mutex_init(&m_refresh_mutex, nullptr);
     }
 
     virtual ~DeckLinkConsumer()
@@ -198,14 +214,6 @@ public:
         pthread_mutex_destroy(&m_op_arg_mutex);
         pthread_cond_destroy(&m_op_arg_cond);
 
-        pthread_mutex_lock(&m_refresh_mutex);
-        if (m_refresh < 2)
-            m_refresh = m_refresh <= 0 ? 1 : m_refresh + 1;
-        pthread_cond_broadcast(&m_refresh_cond);
-        pthread_mutex_unlock(&m_refresh_mutex);
-        pthread_mutex_destroy(&m_refresh_mutex);
-        pthread_cond_destroy(&m_refresh_cond);
-
         mlt_log_debug(getConsumer(), "%s: exiting\n", __FUNCTION__);
     }
 
@@ -213,41 +221,107 @@ public:
     {
         int r;
 
-        // lock operation mutex
         pthread_mutex_lock(&m_op_lock);
 
         mlt_log_debug(getConsumer(), "%s: op_id=%d\n", __FUNCTION__, op_id);
 
-        // notify op id
         pthread_mutex_lock(&m_op_arg_mutex);
+        while (OP_NONE != m_op_id)
+            pthread_cond_wait(&m_op_arg_cond, &m_op_arg_mutex);
         m_op_id = op_id;
         m_op_arg = arg;
+        if (op_id == OP_STOP || op_id == OP_EXIT)
+            m_pending_op = OP_NONE;
         pthread_cond_signal(&m_op_arg_cond);
         pthread_mutex_unlock(&m_op_arg_mutex);
 
-        // wait op done
         pthread_mutex_lock(&m_op_arg_mutex);
         while (OP_NONE != m_op_id)
             pthread_cond_wait(&m_op_arg_cond, &m_op_arg_mutex);
         pthread_mutex_unlock(&m_op_arg_mutex);
 
-        // save result
         r = m_op_res;
 
         mlt_log_debug(getConsumer(), "%s: r=%d\n", __FUNCTION__, r);
 
-        // unlock operation mutex
         pthread_mutex_unlock(&m_op_lock);
 
         return r;
     }
 
+    // Fire-and-forget post. Must not wait: DeckLink start/stop APIs cannot run
+    // on the completion callback thread. Coalesce if the op thread is busy
+    // (stop > resume > refresh).
+    void op_async(int op_id)
+    {
+        pthread_mutex_lock(&m_op_arg_mutex);
+        if (OP_NONE == m_op_id)
+            m_op_id = op_id;
+        else
+            m_pending_op = coalesce_op(m_pending_op, op_id);
+        pthread_cond_signal(&m_op_arg_cond);
+        pthread_mutex_unlock(&m_op_arg_mutex);
+    }
+
+    bool schedulerControlInFlight() const
+    {
+        switch (m_op_id.load()) {
+        case OP_START:
+        case OP_STOP:
+        case OP_RESUME:
+        case OP_REFRESH:
+            return true;
+        default:
+            return false;
+        }
+    }
+
+    void wakeOp()
+    {
+        pthread_mutex_lock(&m_op_arg_mutex);
+        pthread_cond_signal(&m_op_arg_cond);
+        pthread_mutex_unlock(&m_op_arg_mutex);
+    }
+
+    double producerSpeed()
+    {
+        mlt_service producer = mlt_service_producer(MLT_CONSUMER_SERVICE(getConsumer()));
+        return producer ? mlt_producer_get_speed(MLT_PRODUCER(producer)) : 0.0;
+    }
+
+    void clearPending()
+    {
+        pthread_mutex_lock(&m_op_arg_mutex);
+        m_pending_op = OP_NONE;
+        pthread_mutex_unlock(&m_op_arg_mutex);
+    }
+
+    // Promote pending work, or a leftover still-count, into m_op_id.
+    int waitOp()
+    {
+        pthread_mutex_lock(&m_op_arg_mutex);
+        for (;;) {
+            if (OP_NONE == m_op_id && OP_NONE != m_pending_op) {
+                m_op_id = m_pending_op;
+                m_pending_op = OP_NONE;
+            } else if (OP_NONE == m_op_id && m_refresh > 0 && m_running && m_currentSpeed == 0) {
+                m_op_id = OP_REFRESH;
+            }
+            if (OP_NONE != m_op_id)
+                break;
+            pthread_cond_wait(&m_op_arg_cond, &m_op_arg_mutex);
+        }
+        const int o = m_op_id;
+        pthread_mutex_unlock(&m_op_arg_mutex);
+        return o;
+    }
+
     void refresh()
     {
-        pthread_mutex_lock(&m_refresh_mutex);
+        pthread_mutex_lock(&m_op_arg_mutex);
         m_refresh = CLAMP(m_refresh + 1, 0, 2);
-        pthread_cond_broadcast(&m_refresh_cond);
-        pthread_mutex_unlock(&m_refresh_mutex);
+        pthread_cond_signal(&m_op_arg_cond);
+        pthread_mutex_unlock(&m_op_arg_mutex);
     }
 
     void purge()
@@ -282,47 +356,69 @@ protected:
         for (;;) {
             int o, r = 0;
 
-            // wait op command
-            pthread_mutex_lock(&d->m_op_arg_mutex);
-            while (OP_NONE == d->m_op_id)
-                pthread_cond_wait(&d->m_op_arg_cond, &d->m_op_arg_mutex);
-            pthread_mutex_unlock(&d->m_op_arg_mutex);
-            o = d->m_op_id;
+            o = d->waitOp();
 
-            mlt_log_debug(d->getConsumer(),
-                          "%s:%d d->m_op_id=%d\n",
-                          __FUNCTION__,
-                          __LINE__,
-                          d->m_op_id);
+            mlt_log_debug(d->getConsumer(), "%s:%d d->m_op_id=%d\n", __FUNCTION__, __LINE__, o);
 
-            switch (d->m_op_id) {
+            bool need_preroll = false;
+            switch (o) {
             case OP_OPEN:
                 r = d->m_op_res = d->open(d->m_op_arg);
                 break;
 
             case OP_START:
                 r = d->m_op_res = d->start(d->m_op_arg);
+                need_preroll = r;
                 break;
 
             case OP_STOP:
+                d->clearPending();
                 r = d->m_op_res = d->stop();
+                break;
+
+            case OP_EXIT:
+                d->clearPending();
+                break;
+
+            case OP_RESUME:
+                need_preroll = d->beginResume();
+                r = d->m_op_res = need_preroll;
+                break;
+
+            case OP_REFRESH:
+                if (d->producerSpeed() != 0.0) {
+                    need_preroll = d->beginResume();
+                    r = d->m_op_res = need_preroll;
+                    break;
+                }
+                r = 0;
+                while (d->m_running) {
+                    pthread_mutex_lock(&d->m_op_arg_mutex);
+                    if (d->m_refresh <= 0) {
+                        pthread_mutex_unlock(&d->m_op_arg_mutex);
+                        break;
+                    }
+                    d->m_refresh--;
+                    pthread_mutex_unlock(&d->m_op_arg_mutex);
+                    d->pullAndPresent();
+                    r = 1;
+                }
+                d->m_op_res = r;
                 break;
             };
 
-            // notify op done
             pthread_mutex_lock(&d->m_op_arg_mutex);
             d->m_op_id = OP_NONE;
-            pthread_cond_signal(&d->m_op_arg_cond);
+            pthread_cond_broadcast(&d->m_op_arg_cond);
             pthread_mutex_unlock(&d->m_op_arg_mutex);
-
-            // post for async
-            if (OP_START == o && r)
-                d->preroll();
 
             if (OP_EXIT == o) {
                 mlt_log_debug(d->getConsumer(), "%s: exiting\n", __FUNCTION__);
                 return nullptr;
             }
+
+            if (need_preroll)
+                d->preroll();
         };
 
         return nullptr;
@@ -416,7 +512,7 @@ protected:
 
         // preroll frames
         for (unsigned i = 0; i < m_preroll; i++)
-            ScheduleNextFrame(true);
+            pullAndPresent();
 
         // start audio preroll
         if (m_isAudio)
@@ -427,6 +523,35 @@ protected:
         mlt_log_debug(getConsumer(), "%s: exiting\n", __FUNCTION__);
 
         return 0;
+    }
+
+    void restartScheduledPlayback()
+    {
+        if (!m_deckLinkOutput)
+            return;
+
+        // Called from the op thread so the DeckLink callback can return first.
+        m_deckLinkOutput->StopScheduledPlayback(0, nullptr, 0);
+        m_count = 0;
+        m_previousSpeed = 1;
+        mlt_consumer_purge(getConsumer());
+        m_purge = false;
+        pthread_mutex_lock(&m_op_arg_mutex);
+        m_refresh = 0;
+        pthread_mutex_unlock(&m_op_arg_mutex);
+
+        pthread_mutex_lock(&m_aqueue_lock);
+        while (mlt_frame frame = (mlt_frame) mlt_deque_pop_back(m_aqueue))
+            mlt_frame_close(frame);
+        pthread_mutex_unlock(&m_aqueue_lock);
+    }
+
+    bool beginResume()
+    {
+        if (!m_running)
+            return false;
+        restartScheduledPlayback();
+        return true;
     }
 
     bool start(unsigned preroll)
@@ -521,12 +646,13 @@ protected:
             pthread_mutex_unlock(&m_frames_lock);
         }
 
-        pthread_mutex_lock(&m_refresh_mutex);
+        pthread_mutex_lock(&m_op_arg_mutex);
         m_refresh = 0;
-        pthread_mutex_unlock(&m_refresh_mutex);
+        pthread_mutex_unlock(&m_op_arg_mutex);
 
         // Set the running state
         m_running = true;
+        m_previousSpeed = 1;
 
         return true;
     }
@@ -536,11 +662,6 @@ protected:
         if (!m_running)
             return false;
         m_running = false;
-
-        // Unlatch the consumer thread
-        pthread_mutex_lock(&m_refresh_mutex);
-        pthread_cond_broadcast(&m_refresh_cond);
-        pthread_mutex_unlock(&m_refresh_mutex);
 
         mlt_log_debug(getConsumer(), "%s: starting\n", __FUNCTION__);
 
@@ -1034,17 +1155,22 @@ protected:
         if (bmdOutputFrameFlushed == completed)
             return S_OK;
 
-        // schedule next frame
-        ScheduleNextFrame(false);
+        // DeckLink start/stop/preroll APIs run on the op thread. Do not block
+        // this callback or call those APIs from here.
+        if (schedulerControlInFlight())
+            return S_OK;
 
-        // step forward frames counter if underrun
+        onScheduledFrame();
+
         if (bmdOutputFrameDisplayedLate == completed) {
             mlt_log_debug(getConsumer(), "ScheduledFrameCompleted: bmdOutputFrameDisplayedLate\n");
         }
         if (bmdOutputFrameDropped == completed) {
             mlt_log_debug(getConsumer(), "ScheduledFrameCompleted: bmdOutputFrameDropped\n");
-            m_count++;
-            ScheduleNextFrame(false);
+            if (!schedulerControlInFlight()) {
+                m_count++;
+                onScheduledFrame();
+            }
         }
 
         return S_OK;
@@ -1055,74 +1181,87 @@ protected:
         return mlt_consumer_is_stopped(getConsumer()) ? S_FALSE : S_OK;
     }
 
-    void ScheduleNextFrame(bool preroll)
+    mlt_frame takeFrame()
     {
-        // get the consumer
-        mlt_consumer consumer = getConsumer();
-
-        // Get the properties
-        mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
-
-        // Frame and size
         mlt_frame frame = nullptr;
-
-        mlt_log_debug(getConsumer(), "%s:%d: preroll=%d\n", __FUNCTION__, __LINE__, preroll);
-
-        while (!frame && (m_running || preroll)) {
+        while (!frame && m_running) {
             mlt_log_timings_begin();
-            frame = mlt_consumer_rt_frame(consumer);
+            frame = mlt_consumer_rt_frame(getConsumer());
             mlt_log_timings_end(nullptr, "mlt_consumer_rt_frame");
-            if (frame) {
-                m_currentSpeed = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "_speed");
-
-                if (m_running) {
-                    if (m_purge && m_currentSpeed == 1.0) {
-                        mlt_frame_close(frame);
-                        frame = nullptr;
-                        m_purge = false;
-                        continue;
-                    } else {
-                        mlt_log_timings_begin();
-
-                        render(frame);
-
-                        mlt_log_timings_end(nullptr, "render");
-                        mlt_events_fire(properties,
-                                        "consumer-frame-show",
-                                        mlt_event_data_from_frame(frame));
-                    }
-                    if (m_currentSpeed || preroll) {
-                        if (!preroll && m_previousSpeed != 1 && m_currentSpeed == 1) {
-                            // Resume
-                            mlt_log_verbose(getConsumer(), "Resuming forward 1x playback\n");
-                            m_deckLinkOutput->StopScheduledPlayback(0, nullptr, 0);
-                            m_count = 0;
-                            if (m_isAudio)
-                                m_deckLinkOutput->BeginAudioPreroll();
-                            else
-                                m_deckLinkOutput->StartScheduledPlayback(0, m_timescale, 1.0);
-                        }
-                    } else {
-                        pthread_mutex_lock(&m_refresh_mutex);
-                        if (--m_refresh <= 0)
-                            pthread_cond_wait(&m_refresh_cond, &m_refresh_mutex);
-                        pthread_mutex_unlock(&m_refresh_mutex);
-
-                        mlt_consumer_purge(consumer);
-                    }
-                }
-
-                // terminate on pause
-                if (m_terminate_on_pause && !m_currentSpeed)
-                    stop();
-
-                mlt_frame_close(frame);
-                m_previousSpeed = m_currentSpeed;
-            } else
+            if (!frame) {
                 mlt_log_warning(getConsumer(),
                                 "%s: mlt_consumer_rt_frame return nullptr\n",
                                 __FUNCTION__);
+                continue;
+            }
+            m_currentSpeed = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "_speed");
+            if (m_purge && m_currentSpeed == 1) {
+                mlt_frame_close(frame);
+                frame = nullptr;
+                m_purge = false;
+            }
         }
+        return frame;
+    }
+
+    void presentFrame(mlt_frame frame)
+    {
+        if (m_running) {
+            mlt_log_timings_begin();
+            render(frame);
+            mlt_log_timings_end(nullptr, "render");
+            mlt_events_fire(MLT_CONSUMER_PROPERTIES(getConsumer()),
+                            "consumer-frame-show",
+                            mlt_event_data_from_frame(frame));
+        }
+        mlt_frame_close(frame);
+        m_previousSpeed = m_currentSpeed;
+        if (m_currentSpeed == 0)
+            wakeOp();
+    }
+
+    bool takeOneXResume(mlt_frame frame)
+    {
+        if (m_previousSpeed == 1 || m_currentSpeed != 1)
+            return false;
+        mlt_log_verbose(getConsumer(), "Resuming forward 1x playback\n");
+        m_previousSpeed = 1;
+        mlt_frame_close(frame);
+        return true;
+    }
+
+    // Completion-callback path: never wait, never call DeckLink start/stop APIs.
+    void onScheduledFrame()
+    {
+        if (schedulerControlInFlight() || m_currentSpeed == 0)
+            return;
+
+        mlt_frame frame = takeFrame();
+        if (!frame)
+            return;
+
+        if (takeOneXResume(frame)) {
+            op_async(OP_RESUME);
+            return;
+        }
+
+        presentFrame(frame);
+        if (m_terminate_on_pause && !m_currentSpeed)
+            op_async(OP_STOP);
+    }
+
+    // Op-thread still/preroll path. 1x resume is beginResume(), not here.
+    void pullAndPresent()
+    {
+        mlt_frame frame = takeFrame();
+        if (!frame)
+            return;
+
+        presentFrame(frame);
+        if (m_running && !m_currentSpeed)
+            mlt_consumer_purge(getConsumer());
+        if (m_terminate_on_pause && !m_currentSpeed)
+            stop();
     }
 };
 
