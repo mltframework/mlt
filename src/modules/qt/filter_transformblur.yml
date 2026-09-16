@@ -1,0 +1,65 @@
+schema_version: 7.2
+type: filter
+identifier: transformblur
+title: Transform with motion blur
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  Position, scale and rotation, with motion blur derived from the
+  frame-to-frame change of all three. Renders several time-interpolated 
+  transform samples and accumulates them, so every pixel
+  is blurred along its own local trajectory.
+parameters:
+  - identifier: rect
+    title: Rectangle
+    type: rect
+    description: >
+      Keyframable position, size and opacity (x/y/w/h/o). Opacity is
+      applied as a final pass.
+    mutable: yes
+    animation: yes
+
+  - identifier: rotation
+    title: Rotation
+    type: float
+    description: >
+      Rotation in degrees, applied around the center of the rectangle.
+    minimum: -3600
+    maximum: 3600
+    default: 0
+    mutable: yes
+    animation: yes
+
+  - identifier: shutter_angle
+    title: Shutter angle
+    type: float
+    description: >
+      Simulated camera shutter angle in degrees, same convention as film/video
+      cameras. 360 = shutter open the full frame duration (blur spans the
+      complete measured frame-to-frame motion). 180 is the conventional
+      film/video default (half the frame duration). 0 disables the blur.
+    minimum: 0
+    maximum: 360
+    default: 180
+    mutable: yes
+    animation: yes
+    widget: slider
+    unit: degrees
+
+  - identifier: samples
+    title: Blur samples
+    type: integer
+    description: >
+      Number of time-interpolated transform samples accumulated to build
+      the blur. Higher values are smoother but proportionally slower to
+      render; lower values may show visible artifacts in the blur.
+    minimum: 1
+    maximum: 64
+    default: 16
+    mutable: yes
+    animation: no
+    widget: spinner
