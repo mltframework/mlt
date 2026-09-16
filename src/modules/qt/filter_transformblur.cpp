@@ -105,7 +105,7 @@ struct BlurSliceContext
     const QImage *weightedSource; // premultiplied, channels pre-scaled by 1/samples
     XformParams current;
     XformParams delta;
-    double frac;
+    double frac; // shutter angle
     int samples;
     int src_width, src_height; // dimensions weightedSource was built from
 
@@ -155,24 +155,46 @@ int sliced_blur_proc(int id, int index, int jobs, void *cookie)
     return 0;
 }
 
+struct WeightSliceContext
+{
+    QImage *image; // premultiplied; scaled in place
+    double weight;
+};
+
+// mlt_slices worker: scales a horizontal strip of rows of ctx->image by
+// ctx->weight in place. Strips don't overlap, so no locking needed.
+int sliced_weight_proc(int id, int index, int jobs, void *cookie)
+{
+    (void) id;
+    const WeightSliceContext *ctx = static_cast<const WeightSliceContext *>(cookie);
+
+    int sliceStart = 0;
+    int sliceHeight = mlt_slices_size_slice(jobs, index, ctx->image->height(), &sliceStart);
+    if (sliceHeight <= 0)
+        return 0;
+
+    for (int y = sliceStart; y < sliceStart + sliceHeight; y++) {
+        quint16 *row = reinterpret_cast<quint16 *>(ctx->image->scanLine(y));
+        for (int x = 0; x < ctx->image->width() * 4; x++) {
+            row[x] = (quint16) qBound(0.0, row[x] * ctx->weight + 0.5, 65535.0);
+        }
+    }
+    return 0;
+}
+
 // Builds the contribution of a single sample to the blurred image.
 //
 // This uses 16 bits/channel to preserve color accuracy even at higher sample counts
 QImage build_weighted_source(const QImage &sourceImage, int samples)
 {
-    // Premultiply the source image
-    QImage premultiplied = sourceImage.convertToFormat(QImage::Format_RGBA64_Premultiplied);
+    QImage weighted = sourceImage.convertToFormat(QImage::Format_RGBA64_Premultiplied);
+    weighted.detach();
 
-    // Weight the image by 1 / samples
-    QImage weighted(premultiplied.size(), QImage::Format_RGBA64_Premultiplied);
-    double weight = 1.0 / samples;
-    for (int y = 0; y < premultiplied.height(); y++) {
-        const quint16 *srcRow = reinterpret_cast<const quint16 *>(premultiplied.constScanLine(y));
-        quint16 *dstRow = reinterpret_cast<quint16 *>(weighted.scanLine(y));
-        for (int x = 0; x < premultiplied.width() * 4; x++) {
-            dstRow[x] = (quint16) qBound(0.0, srcRow[x] * weight + 0.5, 65535.0);
-        }
-    }
+    WeightSliceContext ctx;
+    ctx.image = &weighted;
+    ctx.weight = 1.0 / samples;
+    mlt_slices_run_normal(0, sliced_weight_proc, &ctx);
+
     return weighted;
 }
 
@@ -337,8 +359,7 @@ static int filter_get_image(mlt_frame frame,
     destImage.fill(0);
 
     if (!do_blur || *format != mlt_image_rgba) {
-        // No blur requested, or a bit depth our accumulation path doesn't
-        // handle (that path needs 8-bit RGBA8888 in/out).
+        // No blur requested or unsupported format
         render_transform_only(sourceImage, destImage, current, b_width, b_height);
     } else {
         render_motion_blur(sourceImage,
