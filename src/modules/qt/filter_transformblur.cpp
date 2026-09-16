@@ -1,5 +1,6 @@
 /*
  * filter_transformblur.cpp -- position/scale/rotation filter with motion blur
+ * Author: Jannis <jannis@tadris.de>
  * Copyright (C) 2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
