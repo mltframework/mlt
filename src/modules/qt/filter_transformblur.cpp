@@ -28,23 +28,23 @@
 
 namespace {
 
-struct XformParams
+struct TransformState
 {
     double x, y, w, h, rotation;
 };
 
-XformParams operator-(const XformParams &a, const XformParams &b)
+TransformState operator-(const TransformState &a, const TransformState &b)
 {
     return {a.x - b.x, a.y - b.y, a.w - b.w, a.h - b.h, a.rotation - b.rotation};
 }
 
-XformParams operator*(const XformParams &a, double s)
+TransformState operator*(const TransformState &a, double s)
 {
     return {a.x * s, a.y * s, a.w * s, a.h * s, a.rotation * s};
 }
 
 
-QTransform build_transform(const XformParams &p,
+QTransform build_transform(const TransformState &p,
                            int src_width,
                            int src_height,
                            QPointF outputOffset = QPointF(0, 0))
@@ -68,8 +68,8 @@ QTransform build_transform(const XformParams &p,
 // walking from the current frame (sampleIndex 0) back towards the
 // neighboring keyframe, covering the fraction of the frame-to-frame delta
 // selected by the shutter angle (`frac` = shutter_angle / 360).
-XformParams sample_params(
-    const XformParams &current, const XformParams &delta, double frac, int samples, int sampleIndex)
+TransformState sample_params(
+    const TransformState &current, const TransformState &delta, double frac, int samples, int sampleIndex)
 {
     double t = (samples > 1) ? frac * sampleIndex / (samples - 1) : 0.0;
     return current - delta * t;
@@ -79,8 +79,8 @@ XformParams sample_params(
 // `samples` transforms. Used to restrict rendering to the region that can
 // actually end up non-transparent, instead of always processing the full
 // profile canvas.
-QRectF compute_swept_rect(const XformParams &current,
-                          const XformParams &delta,
+QRectF compute_swept_rect(const TransformState &current,
+                          const TransformState &delta,
                           double frac,
                           int samples,
                           int src_width,
@@ -89,7 +89,7 @@ QRectF compute_swept_rect(const XformParams &current,
     QRectF sourceRect(0, 0, src_width, src_height);
     QRectF swept;
     for (int s = 0; s < samples; s++) {
-        XformParams sampled = sample_params(current, delta, frac, samples, s);
+        TransformState sampled = sample_params(current, delta, frac, samples, s);
         QRectF mapped = build_transform(sampled, src_width, src_height).mapRect(sourceRect);
         swept = (s == 0) ? mapped : swept.united(mapped);
     }
@@ -103,8 +103,8 @@ QRectF compute_swept_rect(const XformParams &current,
 struct BlurSliceContext
 {
     const QImage *weightedSource; // premultiplied, channels pre-scaled by 1/samples
-    XformParams current;
-    XformParams delta;
+    TransformState current;
+    TransformState delta;
     double frac; // shutter angle
     int samples;
     int src_width, src_height; // dimensions weightedSource was built from
@@ -140,7 +140,7 @@ int sliced_blur_proc(int id, int index, int jobs, void *cookie)
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
     painter.setCompositionMode(QPainter::CompositionMode_Plus);
     for (int s = 0; s < ctx->samples; s++) {
-        XformParams sampled = sample_params(ctx->current, ctx->delta, ctx->frac, ctx->samples, s);
+        TransformState sampled = sample_params(ctx->current, ctx->delta, ctx->frac, ctx->samples, s);
         painter.setTransform(build_transform(sampled, ctx->src_width, ctx->src_height, stripOffset));
         painter.drawImage(0, 0, *ctx->weightedSource);
     }
@@ -203,8 +203,8 @@ void render_motion_blur(const QImage &sourceImage,
                         uint8_t *dest_image,
                         int dest_width,
                         int dest_height,
-                        const XformParams &current,
-                        const XformParams &delta,
+                        const TransformState &current,
+                        const TransformState &delta,
                         double frac,
                         int samples,
                         int src_width,
@@ -237,7 +237,7 @@ void render_motion_blur(const QImage &sourceImage,
 
 // Render transform only without any blur
 void render_transform_only(
-    const QImage &sourceImage, QImage &destImage, const XformParams &current, int src_width, int src_height)
+    const QImage &sourceImage, QImage &destImage, const TransformState &current, int src_width, int src_height)
 {
     QPainter painter(&destImage);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
@@ -310,12 +310,12 @@ static int filter_get_image(mlt_frame frame,
         if (mlt_properties_get(properties, "rotation")) {
             rotation = mlt_properties_anim_get_double(properties, "rotation", pos, length);
         }
-        return XformParams{rect.x, rect.y, rect.w, rect.h, rotation};
+        return TransformState{rect.x, rect.y, rect.w, rect.h, rotation};
     };
 
-    XformParams current = fetch_params(position);
-    XformParams neighbor = fetch_params(neighbor_position);
-    XformParams delta = use_forward_diff ? (neighbor - current) : (current - neighbor);
+    TransformState current = fetch_params(position);
+    TransformState neighbor = fetch_params(neighbor_position);
+    TransformState delta = use_forward_diff ? (neighbor - current) : (current - neighbor);
 
     double opacity = 1.0;
     if (mlt_properties_get(properties, "rect")) {
