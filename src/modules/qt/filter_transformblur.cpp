@@ -43,7 +43,6 @@ TransformState operator*(const TransformState &a, double s)
     return {a.x * s, a.y * s, a.w * s, a.h * s, a.rotation * s};
 }
 
-
 QTransform build_transform(const TransformState &p,
                            int src_width,
                            int src_height,
@@ -68,8 +67,11 @@ QTransform build_transform(const TransformState &p,
 // walking from the current frame (sampleIndex 0) back towards the
 // neighboring keyframe, covering the fraction of the frame-to-frame delta
 // selected by the shutter angle (`frac` = shutter_angle / 360).
-TransformState sample_params(
-    const TransformState &current, const TransformState &delta, double frac, int samples, int sampleIndex)
+TransformState sample_params(const TransformState &current,
+                             const TransformState &delta,
+                             double frac,
+                             int samples,
+                             int sampleIndex)
 {
     double t = (samples > 1) ? frac * sampleIndex / (samples - 1) : 0.0;
     return current - delta * t;
@@ -236,8 +238,11 @@ void render_motion_blur(const QImage &sourceImage,
 }
 
 // Render transform only without any blur
-void render_transform_only(
-    const QImage &sourceImage, QImage &destImage, const TransformState &current, int src_width, int src_height)
+void render_transform_only(const QImage &sourceImage,
+                           QImage &destImage,
+                           const TransformState &current,
+                           int src_width,
+                           int src_height)
 {
     QPainter painter(&destImage);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
@@ -246,7 +251,8 @@ void render_transform_only(
     painter.end();
 }
 
-void apply_opacity(uint8_t *dest_image, int width, int height, mlt_image_format format, double opacity)
+void apply_opacity(
+    uint8_t *dest_image, int width, int height, mlt_image_format format, double opacity)
 {
     if (opacity >= 0.999)
         return;
@@ -322,16 +328,14 @@ static int filter_get_image(mlt_frame frame,
         opacity = mlt_properties_anim_get_rect(properties, "rect", position, length).o;
     }
 
-    double shutter_angle = mlt_properties_exists(properties, "shutter_angle")
-                               ? mlt_properties_anim_get_double(properties,
-                                                                "shutter_angle",
-                                                                position,
-                                                                length)
-                               : 180.0;
+    double shutter_angle
+        = mlt_properties_exists(properties, "shutter_angle")
+              ? mlt_properties_anim_get_double(properties, "shutter_angle", position, length)
+              : 180.0;
     double frac = shutter_angle / 360.0;
     int samples = mlt_properties_exists(properties, "samples")
-                     ? mlt_properties_get_int(properties, "samples")
-                     : 16;
+                      ? mlt_properties_get_int(properties, "samples")
+                      : 16;
     if (samples < 1)
         samples = 1;
     bool has_motion = fabs(delta.x) + fabs(delta.y) + fabs(delta.w) + fabs(delta.h)
@@ -396,7 +400,10 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
 */
 extern "C" {
 
-mlt_filter filter_transformblur_init(mlt_profile profile, mlt_service_type type, const char *id, char *arg)
+mlt_filter filter_transformblur_init(mlt_profile profile,
+                                     mlt_service_type type,
+                                     const char *id,
+                                     char *arg)
 {
     mlt_filter filter = mlt_filter_new();
 
