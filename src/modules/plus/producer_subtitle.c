@@ -49,7 +49,7 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
         mlt_properties_pass_list(
             MLT_FILTER_PROPERTIES(sub_filter),
             producer_properties,
-            "resource geometry family size weight style fgcolour bgcolour "
+            "resource geometry family size weight style fgcolour bgcolour bg_radius "
             "olcolour pad halign valign outline underline strikethrough opacity");
         mlt_filter_process(sub_filter, *frame);
     }
@@ -89,6 +89,7 @@ mlt_producer producer_subtitle_init(mlt_profile profile,
         mlt_properties_set_string(producer_properties, "style", "normal");
         mlt_properties_set_string(producer_properties, "fgcolour", "0xffffffff");
         mlt_properties_set_string(producer_properties, "bgcolour", "0x00000020");
+        mlt_properties_set_double(producer_properties, "bg_radius", 0.0);
         mlt_properties_set_string(producer_properties, "olcolour", "0x00000000");
         mlt_properties_set_string(producer_properties, "pad", "0");
         mlt_properties_set_string(producer_properties, "halign", "left");

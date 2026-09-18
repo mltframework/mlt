@@ -2,7 +2,7 @@ schema_version: 7.2
 type: filter
 identifier: timer
 title: Timer
-version: 5
+version: 6
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -174,6 +174,21 @@ parameters:
     readonly: no
     mutable: yes
     widget: color
+
+  - identifier: bg_radius
+    title: Background corner radius
+    type: float
+    description: >
+      The corner radius in pixels of the background rectangle. Values larger
+      than half the rectangle's shortest side are clamped. Only supported when
+      the qtext filter is available.
+    default: 0
+    minimum: 0
+    readonly: no
+    mutable: yes
+    animation: yes
+    widget: spinner
+    unit: pixels
 
   - identifier: olcolour
     title: Outline color

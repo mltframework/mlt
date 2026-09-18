@@ -2,7 +2,7 @@ schema_version: 7.2
 type: filter
 identifier: qtext
 title: QText
-version: 8
+version: 9
 copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
@@ -93,6 +93,19 @@ parameters:
     widget: color
     animation: yes
 
+  - identifier: bg_radius
+    title: Background corner radius
+    type: float
+    description: >
+      The corner radius in pixels of the background rectangle. Values larger
+      than half the rectangle's shortest side are clamped.
+    default: 0
+    minimum: 0
+    mutable: yes
+    animation: yes
+    widget: spinner
+    unit: pixels
+
   - identifier: olcolour
     title: Outline color
     type: color
@@ -180,9 +193,9 @@ parameters:
     type: string
     description: >
       Render rich text from a string containing a subset of HTML 4.
-      The only other properties that can be used with this are geometry and
-      bgcolour. The geometry width and height defines the page or block size
-      while its X and Y coordinates determine its position.
+      The only other properties that can be used with this are geometry,
+      bgcolour, and bg_radius. The geometry width and height defines the page
+      or block size while its X and Y coordinates determine its position.
       This property has a higher priority than argument; argument is ignored if
       this property is set.
     mutable: yes
@@ -192,9 +205,9 @@ parameters:
     type: string
     description: >
       Render rich text from a file containing a subset of HTML 4.
-      The only other properties that can be used with this are geometry and
-      bgcolour. The geometry width and height defines the page or block size
-      while its X and Y coordinates determine its position.
+      The only other properties that can be used with this are geometry,
+      bgcolour, and bg_radius. The geometry width and height defines the page
+      or block size while its X and Y coordinates determine its position.
       This property has a higher priority than both argument and html; argument
       and html are ignored if this property is set.
     mutable: yes

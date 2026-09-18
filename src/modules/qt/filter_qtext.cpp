@@ -351,11 +351,22 @@ static void paint_background(QPainter *painter,
                              QRectF path_rect,
                              mlt_properties filter_properties,
                              mlt_properties frame_properties,
+                             double radius_scale,
                              int position,
                              int length)
 {
     QColor bg_color = get_qcolor(filter_properties, "bgcolour", frame_properties, position, length);
-    painter->fillRect(path_rect, bg_color);
+    qreal radius = mlt_properties_anim_get_double(filter_properties, "bg_radius", position, length)
+                   * radius_scale;
+    if (radius <= 0.0) {
+        painter->fillRect(path_rect, bg_color);
+        return;
+    }
+
+    radius = qMin(radius, qMin(path_rect.width(), path_rect.height()) / 2.0);
+    QPainterPath background_path;
+    background_path.addRoundedRect(path_rect, radius, radius);
+    painter->fillPath(background_path, bg_color);
 }
 
 static void paint_text(QPainter *painter,
@@ -545,6 +556,7 @@ static int filter_get_image(mlt_frame frame,
                                  path_rect,
                                  filter_properties,
                                  frame_properties,
+                                 pixel_ratio,
                                  position,
                                  length);
                 doc->drawContents(&painter, drawRect);
@@ -562,6 +574,7 @@ static int filter_get_image(mlt_frame frame,
                              path_rect,
                              filter_properties,
                              frame_properties,
+                             scale,
                              position,
                              length);
             paint_text(&painter, &text_path, filter_properties, frame_properties, position, length);
@@ -641,6 +654,7 @@ mlt_filter filter_qtext_init(mlt_profile profile, mlt_service_type type, const c
     mlt_properties_set_string(filter_properties, "style", "normal");
     mlt_properties_set_string(filter_properties, "fgcolour", "0x000000ff");
     mlt_properties_set_string(filter_properties, "bgcolour", "0x00000020");
+    mlt_properties_set_double(filter_properties, "bg_radius", 0.0);
     mlt_properties_set_string(filter_properties, "olcolour", "0x00000000");
     mlt_properties_set_string(filter_properties, "pad", "0");
     mlt_properties_set_string(filter_properties, "halign", "left");

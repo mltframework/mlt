@@ -163,7 +163,8 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
     mlt_properties_set_string(text_filter_properties, "argument", text);
     mlt_properties_pass_list(text_filter_properties,
                              properties,
-                             "geometry family size weight style fgcolour bgcolour olcolour pad "
+                             "geometry family size weight style fgcolour bgcolour bg_radius "
+                             "olcolour pad "
                              "halign valign outline underline strikethrough opacity "
                              "typewriter typewriter.step_length typewriter.step_sigma "
                              "typewriter.random_seed typewriter.macro_type typewriter.cursor "
@@ -203,6 +204,7 @@ mlt_filter filter_subtitle_init(mlt_profile profile,
         mlt_properties_set_string(properties, "style", "normal");
         mlt_properties_set_string(properties, "fgcolour", "0x000000ff");
         mlt_properties_set_string(properties, "bgcolour", "0x00000020");
+        mlt_properties_set_double(properties, "bg_radius", 0.0);
         mlt_properties_set_string(properties, "olcolour", "0x00000000");
         mlt_properties_set_string(properties, "pad", "0");
         mlt_properties_set_string(properties, "halign", "left");

@@ -592,7 +592,8 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
 
     mlt_properties_pass_list(text_filter_properties,
                              properties,
-                             "geometry family size weight style fgcolour bgcolour olcolour pad "
+                             "geometry family size weight style fgcolour bgcolour bg_radius "
+                             "olcolour pad "
                              "halign valign outline underline strikethrough opacity");
     mlt_filter_set_in_and_out(text_filter, mlt_filter_get_in(filter), mlt_filter_get_out(filter));
     return mlt_filter_process(text_filter, frame);
@@ -659,6 +660,7 @@ mlt_filter filter_gpstext_init(mlt_profile profile, mlt_service_type type, const
         mlt_properties_set_string(my_properties, "style", "normal");
         mlt_properties_set_string(my_properties, "fgcolour", "0xffffffff");
         mlt_properties_set_string(my_properties, "bgcolour", "0x00000000");
+        mlt_properties_set_double(my_properties, "bg_radius", 0.0);
         mlt_properties_set_string(my_properties, "olcolour", "0x000000ff");
         mlt_properties_set_string(my_properties, "pad", "5");
         mlt_properties_set_string(my_properties, "halign", "left");

@@ -84,6 +84,8 @@ Modules
   - Fixed `crop` with hardware decode+scale plus preview scale.
   - Fixed subtitle filter rendering one frame past the end time, and
     `subtitle_feed` end-frame calculation.
+  - Added a keyframable `bg_radius` property for rounded backgrounds to
+    `qtext` and the text services that delegate to it.
   - Fixed file-name buffer overflows in `gpsgraphic` and `gpstext`.
 
 Other
