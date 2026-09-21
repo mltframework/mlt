@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021  Meltytech, LLC
+ * Copyright (C) 2021-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -69,6 +69,50 @@ private Q_SLOTS:
 
         delete pchild1;
         delete pchild2;
+    }
+
+    void InvalidProducerLookupDoesNotCrash()
+    {
+        Profile profile;
+        const char *xml = R"(<?xml version="1.0" encoding="utf-8"?>
+<mlt>
+  <producer mlt_service="missing-producer"/>
+</mlt>
+)";
+
+        Producer producer(profile, "xml-string", xml);
+
+        QVERIFY(producer.is_valid());
+        QVERIFY(producer.get_producer() != nullptr);
+    }
+
+    void InvalidFilterTransitionAndLinkLookupsDoNotCrash()
+    {
+        Profile profile;
+        const char *xml = R"(<?xml version="1.0" encoding="utf-8"?>
+<mlt>
+  <producer id="track0" mlt_service="colour:red"/>
+  <chain id="track1">
+    <property name="resource">colour:blue</property>
+    <link mlt_service="missing-link"/>
+  </chain>
+  <playlist>
+    <entry>
+      <multitrack>
+        <track producer="track0"/>
+        <track producer="track1"/>
+      </multitrack>
+      <filter mlt_service="missing-filter"/>
+      <transition a_track="0" b_track="1" mlt_service="missing-transition"/>
+    </entry>
+  </playlist>
+</mlt>
+)";
+
+        Producer producer(profile, "xml-string", xml);
+
+        QVERIFY(producer.is_valid());
+        QVERIFY(producer.get_producer() != nullptr);
     }
 };
 
