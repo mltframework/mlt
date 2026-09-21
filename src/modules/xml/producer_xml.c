@@ -1,6 +1,6 @@
 /*
  * producer_xml.c -- a libxml2 parser of mlt service networks
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -725,7 +725,6 @@ static void on_end_link(deserialise_context context, const xmlChar *name)
             if (parent)
                 context_push_service(context, parent, parent_type);
             mlt_service_close(service);
-            free(service);
             return;
         }
 
@@ -758,7 +757,6 @@ static void on_end_link(deserialise_context context, const xmlChar *name)
 
     if (service) {
         mlt_service_close(service);
-        free(service);
     }
 }
 
@@ -844,7 +842,6 @@ static void on_end_producer(deserialise_context context, const xmlChar *name)
             producer = MLT_SERVICE(mlt_factory_producer(context->profile, NULL, "colour:red"));
         if (!producer) {
             mlt_service_close(service);
-            free(service);
             return;
         }
 
@@ -954,7 +951,6 @@ static void on_end_producer(deserialise_context context, const xmlChar *name)
 
     if (service) {
         mlt_service_close(service);
-        free(service);
     }
 }
 
@@ -1148,7 +1144,6 @@ static void on_end_track(deserialise_context context, const xmlChar *name)
 
     if (track) {
         mlt_service_close(track);
-        free(track);
     }
 }
 
@@ -1186,7 +1181,6 @@ static void on_end_filter(deserialise_context context, const xmlChar *name)
             if (parent)
                 context_push_service(context, parent, parent_type);
             mlt_service_close(service);
-            free(service);
             return;
         }
 
@@ -1237,7 +1231,6 @@ static void on_end_filter(deserialise_context context, const xmlChar *name)
 
     if (service) {
         mlt_service_close(service);
-        free(service);
     }
 }
 
@@ -1277,7 +1270,6 @@ static void on_end_transition(deserialise_context context, const xmlChar *name)
             if (parent)
                 context_push_service(context, parent, parent_type);
             mlt_service_close(service);
-            free(service);
             return;
         }
         track_service(context->destructors, effect, (mlt_destructor) mlt_transition_close);
@@ -1325,7 +1317,6 @@ static void on_end_transition(deserialise_context context, const xmlChar *name)
 
     if (service) {
         mlt_service_close(service);
-        free(service);
     }
 }
 
