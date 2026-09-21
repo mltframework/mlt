@@ -214,6 +214,9 @@ static int filter_get_image(mlt_frame frame,
     /* Render */
     if (!pl_render_image(renderer, &pl_src, &pl_dst, &params)) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "pl_render_image failed\n");
+        pl_tex_destroy(gpu, &dst_tex);
+        placebo_render_unlock();
+        return 1;
     }
 
     placebo_render_unlock();
