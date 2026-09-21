@@ -718,7 +718,6 @@ static void on_end_link(deserialise_context context, const xmlChar *name)
     if (service != NULL && type == mlt_link_type) {
         char *id = trim(mlt_properties_get(properties, "mlt_service"));
         mlt_service link = MLT_SERVICE(mlt_factory_link(id, NULL));
-        mlt_properties link_props = MLT_SERVICE_PROPERTIES(link);
 
         if (!link) {
             mlt_log_error(NULL, "[producer_xml] failed to load link \"%s\"\n", id);
@@ -729,6 +728,7 @@ static void on_end_link(deserialise_context context, const xmlChar *name)
         }
 
         track_service(context->destructors, link, (mlt_destructor) mlt_link_close);
+        mlt_properties link_props = MLT_SERVICE_PROPERTIES(link);
         mlt_properties_set_lcnumeric(MLT_SERVICE_PROPERTIES(link), context->lc_numeric);
 
         // Do not let XML overwrite these important properties set by mlt_factory.
@@ -1174,7 +1174,6 @@ static void on_end_filter(deserialise_context context, const xmlChar *name)
     if (service != NULL && type == mlt_dummy_filter_type) {
         char *id = trim(mlt_properties_get(properties, "mlt_service"));
         mlt_service filter = MLT_SERVICE(mlt_factory_filter(context->profile, id, NULL));
-        mlt_properties filter_props = MLT_SERVICE_PROPERTIES(filter);
 
         if (!filter) {
             mlt_log_error(NULL, "[producer_xml] failed to load filter \"%s\"\n", id);
@@ -1185,6 +1184,7 @@ static void on_end_filter(deserialise_context context, const xmlChar *name)
         }
 
         track_service(context->destructors, filter, (mlt_destructor) mlt_filter_close);
+        mlt_properties filter_props = MLT_SERVICE_PROPERTIES(filter);
         mlt_properties_set_lcnumeric(MLT_SERVICE_PROPERTIES(filter), context->lc_numeric);
 
         // Do not let XML overwrite these important properties set by mlt_factory.
@@ -1263,7 +1263,6 @@ static void on_end_transition(deserialise_context context, const xmlChar *name)
     if (service != NULL && type == mlt_dummy_transition_type) {
         char *id = trim(mlt_properties_get(properties, "mlt_service"));
         mlt_service effect = MLT_SERVICE(mlt_factory_transition(context->profile, id, NULL));
-        mlt_properties effect_props = MLT_SERVICE_PROPERTIES(effect);
 
         if (!effect) {
             mlt_log_error(NULL, "[producer_xml] failed to load transition \"%s\"\n", id);
@@ -1273,6 +1272,7 @@ static void on_end_transition(deserialise_context context, const xmlChar *name)
             return;
         }
         track_service(context->destructors, effect, (mlt_destructor) mlt_transition_close);
+        mlt_properties effect_props = MLT_SERVICE_PROPERTIES(effect);
         mlt_properties_set_lcnumeric(MLT_SERVICE_PROPERTIES(effect), context->lc_numeric);
 
         // Do not let XML overwrite these important properties set by mlt_factory.
