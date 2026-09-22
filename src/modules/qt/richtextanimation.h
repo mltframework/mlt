@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: MIT
 #pragma once
 
+#include <algorithm>
+#include <cmath>
+#include <random>
 #include <QAbstractTextDocumentLayout>
 #include <QGraphicsTextItem>
 #include <QPainter>
@@ -8,9 +11,6 @@
 #include <QTextCursor>
 #include <QTextDocument>
 #include <QVector>
-#include <algorithm>
-#include <cmath>
-#include <random>
 
 // Rich text: immutable text plus a frame-to-visible-range schedule.
 // No parser metacharacters are interpreted in the three automatic modes.
@@ -29,7 +29,8 @@ public:
         if (mode == 1) {
             QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, text);
             for (int end = finder.toNextBoundary(); end >= 0; end = finder.toNextBoundary()) {
-                if (end > 0) ends.append(end);
+                if (end > 0)
+                    ends.append(end);
             }
         } else {
             // Preserve the legacy automatic word/line grouping, including
@@ -39,8 +40,10 @@ public:
                 auto separator = [mode](QChar c) {
                     return mode == 2 ? c.isSpace() : c == QLatin1Char('\n');
                 };
-                while (pos < text.size() && !separator(text.at(pos))) ++pos;
-                while (pos < text.size() && separator(text.at(pos))) ++pos;
+                while (pos < text.size() && !separator(text.at(pos)))
+                    ++pos;
+                while (pos < text.size() && separator(text.at(pos)))
+                    ++pos;
                 ends.append(pos);
             }
         }
@@ -52,8 +55,10 @@ public:
             if (sigma > 0) {
                 // Finite input and a bound before conversion prevent overflow.
                 const double value = jitter(generator);
-                const qint64 delta = qint64(std::llround(std::max(-1.0e12, std::min(1.0e12, value))));
-                if (frame + delta > 0) frame += delta;
+                const qint64 delta = qint64(
+                    std::llround(std::max(-1.0e12, std::min(1.0e12, value))));
+                if (frame + delta > 0)
+                    frame += delta;
             }
             frame = std::max(previous + 1, frame);
             m_steps.append({frame, ends.at(i)});
@@ -64,14 +69,22 @@ public:
 
     int visible(qint64 frame) const
     {
-        const auto it = std::upper_bound(m_steps.cbegin(), m_steps.cend(), frame,
-            [](qint64 value, const Step &s) { return value < s.frame; });
+        const auto it = std::upper_bound(m_steps.cbegin(),
+                                         m_steps.cend(),
+                                         frame,
+                                         [](qint64 value, const Step &s) {
+                                             return value < s.frame;
+                                         });
         return it == m_steps.cbegin() ? 0 : (it - 1)->end;
     }
     const QString &text() const { return m_text; }
 
 private:
-    struct Step { qint64 frame; int end; };
+    struct Step
+    {
+        qint64 frame;
+        int end;
+    };
     QString m_text;
     QVector<Step> m_steps;
 };
@@ -88,25 +101,30 @@ public:
         m_visible = m_total;
         m_native = false;
         if (!externallyDriven && parameters.size() >= 5 && parameters.at(0).toInt() != 0) {
-            m_native = m_schedule.reset(document()->toPlainText(), parameters.at(1).toInt(),
-                                       parameters.at(2).toInt(), parameters.at(3).toInt(),
-                                       parameters.at(4).toUInt());
+            m_native = m_schedule.reset(document()->toPlainText(),
+                                        parameters.at(1).toInt(),
+                                        parameters.at(2).toInt(),
+                                        parameters.at(3).toInt(),
+                                        parameters.at(4).toUInt());
         }
         document()->setUndoRedoEnabled(false);
     }
     bool animated() const { return m_native; }
     void setFrame(qint64 frame)
     {
-        if (m_native) setVisibleCharacters(m_schedule.visible(frame));
+        if (m_native)
+            setVisibleCharacters(m_schedule.visible(frame));
     }
     void setVisibleCharacters(int count)
     {
         count = std::max(0, std::min(m_total, count));
         // Never display half a surrogate, combining sequence, or emoji cluster.
-        if (count == m_visible) return;
+        if (count == m_visible)
+            return;
         QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, m_text);
         finder.setPosition(count);
-        if (!finder.isAtBoundary()) count = int(std::max<qsizetype>(0, finder.toPreviousBoundary()));
+        if (!finder.isAtBoundary())
+            count = int(std::max<qsizetype>(0, finder.toPreviousBoundary()));
         if (count != m_visible) {
             m_visible = count;
             update(); // Also invalidates the attached shadow effect's source.
@@ -145,4 +163,4 @@ private:
     int m_visible{0};
     bool m_native{false};
 };
-}
+} // namespace RichTextReveal

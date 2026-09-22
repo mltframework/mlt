@@ -657,7 +657,8 @@ QString XmlParser::getNodeContent(uint i) const
 
 bool XmlParser::hasRichText(uint i) const
 {
-    if (i >= node_vec.size()) return false;
+    if (i >= node_vec.size())
+        return false;
     const QDomElement rich = node_vec[i].parentNode().firstChildElement("richtext");
     return rich.attribute("format") == "qt-html-v1" && !rich.text().isEmpty();
 }

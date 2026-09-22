@@ -28,8 +28,8 @@
 #include <vector>
 
 #include "kdenlivetitle_wrapper.h"
-#include "typewriter.h"
 #include "richtextanimation.h"
+#include "typewriter.h"
 #include <memory>
 
 struct FilterContainer
@@ -113,11 +113,13 @@ static int get_producer_data(mlt_properties filter_p, mlt_properties frame_p, Fi
         const char *resource = mlt_properties_get(producer_properties, "resource");
         cont->is_template = resource && resource[0] != '\0';
         d = mlt_properties_get(producer_properties, cont->is_template ? "_xmldata" : "xmldata");
-        if (d) sourceXml = d;
+        if (d)
+            sourceXml = d;
         const char *replacement = mlt_properties_get(producer_properties, "templatetext");
         allowRichText = !replacement || replacement[0] == '\0';
         mlt_service_unlock(MLT_PRODUCER_SERVICE(producer));
-        if (sourceXml.empty()) return 0;
+        if (sourceXml.empty())
+            return 0;
         d = sourceXml.c_str();
 
         step_length = mlt_properties_get_int(filter_p, "step_length");
@@ -198,8 +200,11 @@ static int get_producer_data(mlt_properties filter_p, mlt_properties frame_p, Fi
     if (update_mask & 0x2) {
         for (size_t i = 0; i < cont->renders.size(); ++i) {
             if (cont->richSchedules[i]) {
-                cont->richSchedules[i]->reset(cont->originalText.at(int(i)), std::max(1, step_length),
-                                              macro, std::max(0, sigma), unsigned(seed));
+                cont->richSchedules[i]->reset(cont->originalText.at(int(i)),
+                                              std::max(1, step_length),
+                                              macro,
+                                              std::max(0, sigma),
+                                              unsigned(seed));
                 continue;
             }
             auto &render = cont->renders[i];
@@ -218,7 +223,8 @@ static int get_producer_data(mlt_properties filter_p, mlt_properties frame_p, Fi
 
 static int update_frame(mlt_frame frame, FilterContainer *cont)
 {
-    if (!cont->init) return 0;
+    if (!cont->init)
+        return 0;
     const mlt_position pos = mlt_frame_original_position(frame);
     const unsigned int n = cont->xp.getContentNodesNumber();
     assert(n == cont->renders.size());
@@ -231,7 +237,9 @@ static int update_frame(mlt_frame frame, FilterContainer *cont)
         }
     }
     const QByteArray xml = cont->xp.getDocument().toUtf8();
-    mlt_properties_set(MLT_FRAME_PROPERTIES(frame), "_kdenlivetitle_typewriter_xml", xml.constData());
+    mlt_properties_set(MLT_FRAME_PROPERTIES(frame),
+                       "_kdenlivetitle_typewriter_xml",
+                       xml.constData());
     cont->current_frame = pos;
     return 1;
 }
@@ -254,7 +262,8 @@ static int filter_get_image(mlt_frame frame,
     mlt_service_lock(MLT_FILTER_SERVICE(filter));
 
     int res = get_producer_data(properties, frame_properties, cont);
-    if (res != 0) update_frame(frame, cont);
+    if (res != 0)
+        update_frame(frame, cont);
     mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
     // Rendering reads its override from this frame, never shared source XML.
@@ -282,7 +291,8 @@ mlt_filter filter_typewriter_init(mlt_profile /*profile*/,
                                   char * /*arg*/)
 {
     mlt_filter filter = mlt_filter_new();
-    if (!filter) return nullptr;
+    if (!filter)
+        return nullptr;
     FilterContainer *cont = new FilterContainer;
     filter->process = filter_process;
     filter->child = cont;

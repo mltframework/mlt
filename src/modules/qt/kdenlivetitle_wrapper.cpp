@@ -20,11 +20,11 @@
  */
 
 #include "kdenlivetitle_wrapper.h"
-#include "richtextspacing.h"
-#include "richtextgradient.h"
 #include "kdenlivegraphics.h"
-#include "typewriter.h"
 #include "richtextanimation.h"
+#include "richtextgradient.h"
+#include "richtextspacing.h"
+#include "typewriter.h"
 #include <cstring>
 
 #include "common.h"
@@ -445,22 +445,22 @@ void loadFromXml(producer_ktitle self,
                     text = text.replace("%s", replacementText);
                 }
 
-                const QStringList typewriterParameters =
-                    txtProperties.namedItem("typewriter").nodeValue().split(";");
+                const QStringList typewriterParameters
+                    = txtProperties.namedItem("typewriter").nodeValue().split(";");
                 const bool typewriterEnabled = !typewriterParameters.isEmpty()
-                    && typewriterParameters.at(0).toInt() != 0;
+                                               && typewriterParameters.at(0).toInt() != 0;
                 const bool automaticTypewriter = typewriterParameters.size() >= 5
-                    && typewriterParameters.at(1).toInt() > 0
-                    && typewriterParameters.at(2).toInt() >= 1
-                    && typewriterParameters.at(2).toInt() <= 3
-                    && typewriterParameters.at(3).toInt() >= 0;
+                                                 && typewriterParameters.at(1).toInt() > 0
+                                                 && typewriterParameters.at(2).toInt() >= 1
+                                                 && typewriterParameters.at(2).toInt() <= 3
+                                                 && typewriterParameters.at(3).toInt() >= 0;
                 // Custom macro scripts and template substitution need an
                 // explicit source-to-output mapping. Keep their legacy path.
-                const bool useRichText = !richTextHtml.isEmpty()
-                    && replacementText.isEmpty()
-                    && !contentElement.hasAttribute("richtext-legacy-replacement")
-                    && (!typewriterEnabled || automaticTypewriter
-                        || contentElement.hasAttribute("richtext-visible-utf16"));
+                const bool useRichText
+                    = !richTextHtml.isEmpty() && replacementText.isEmpty()
+                      && !contentElement.hasAttribute("richtext-legacy-replacement")
+                      && (!typewriterEnabled || automaticTypewriter
+                          || contentElement.hasAttribute("richtext-visible-utf16"));
                 QColor outlineColor(
                     stringToColor(txtProperties.namedItem("font-outline-color").nodeValue()));
 
@@ -552,17 +552,15 @@ void loadFromXml(producer_ktitle self,
                         hasGlobalFormat = true;
                     }
 
-                    const double outlineWidth =
-                        txtProperties.namedItem("font-outline").nodeValue().toDouble();
+                    const double outlineWidth
+                        = txtProperties.namedItem("font-outline").nodeValue().toDouble();
 
                     if (outlineWidth > 0.0) {
-                        globalFormat.setTextOutline(
-                            QPen(
-                                outlineColor,
-                                outlineWidth,
-                                Qt::SolidLine,
-                                Qt::RoundCap,
-                                Qt::RoundJoin));
+                        globalFormat.setTextOutline(QPen(outlineColor,
+                                                         outlineWidth,
+                                                         Qt::SolidLine,
+                                                         Qt::RoundCap,
+                                                         Qt::RoundJoin));
                         hasGlobalFormat = true;
                     }
 
@@ -579,9 +577,10 @@ void loadFromXml(producer_ktitle self,
                     }
 
                     if (!txtProperties.namedItem("line-spacing").isNull()) {
-                        blockFormat.setLineHeight(
-                            txtProperties.namedItem("line-spacing").nodeValue().toInt(),
-                            QTextBlockFormat::LineDistanceHeight);
+                        blockFormat.setLineHeight(txtProperties.namedItem("line-spacing")
+                                                      .nodeValue()
+                                                      .toInt(),
+                                                  QTextBlockFormat::LineDistanceHeight);
                         hasBlockFormat = true;
                     }
 
@@ -597,16 +596,14 @@ void loadFromXml(producer_ktitle self,
                     }
 
                     if (!txtProperties.namedItem("shadow").isNull()) {
-                        const QStringList values =
-                            txtProperties.namedItem("shadow").nodeValue().split(";");
+                        const QStringList values
+                            = txtProperties.namedItem("shadow").nodeValue().split(";");
 
                         if (values.count() >= 5 && values.at(0).toInt() != 0) {
                             auto *shadow = new QGraphicsDropShadowEffect();
                             shadow->setColor(QColor(values.at(1)));
                             shadow->setBlurRadius(values.at(2).toDouble());
-                            shadow->setOffset(
-                                values.at(3).toDouble(),
-                                values.at(4).toDouble());
+                            shadow->setOffset(values.at(3).toDouble(), values.at(4).toDouble());
                             txt->setGraphicsEffect(shadow);
                         }
                     }
@@ -617,7 +614,8 @@ void loadFromXml(producer_ktitle self,
                     txt->configure(typewriterParameters, external);
                     if (external) {
                         bool ok = false;
-                        const int visible = contentElement.attribute("richtext-visible-utf16").toInt(&ok);
+                        const int visible
+                            = contentElement.attribute("richtext-visible-utf16").toInt(&ok);
                         txt->setVisibleCharacters(ok ? visible : 0);
                     }
                     if (txt->animated()) {
@@ -959,8 +957,10 @@ void drawKdenliveTitle(producer_ktitle self,
         || (!frameXml && cachedXml)) {
         force_refresh = 1;
     }
-    if (frameXml) mlt_properties_set(producer_props, "_typewriter_cached_xml", frameXml);
-    else mlt_properties_clear(producer_props, "_typewriter_cached_xml");
+    if (frameXml)
+        mlt_properties_set(producer_props, "_typewriter_cached_xml", frameXml);
+    else
+        mlt_properties_clear(producer_props, "_typewriter_cached_xml");
 
     // Check if user wants us to reload the image or if we need animation
     bool animated = mlt_properties_get(producer_props, "_endrect") != NULL;
@@ -994,10 +994,12 @@ void drawKdenliveTitle(producer_ktitle self,
                                 mlt_properties_get_int(properties, "width"),
                                 mlt_properties_get_int(properties, "height"));
             if (frameXml) {
-                loadFromXml(self, scene, frameXml,
+                loadFromXml(self,
+                            scene,
+                            frameXml,
                             mlt_properties_get(producer_props, "templatetext"));
             } else if (mlt_properties_get(producer_props, "resource")
-                && mlt_properties_get(producer_props, "resource")[0] != '\0') {
+                       && mlt_properties_get(producer_props, "resource")[0] != '\0') {
                 // The title has a resource property, so we read all properties from the resource.
                 // Do not serialize the xmldata
                 loadFromXml(self,
