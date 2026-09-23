@@ -91,6 +91,10 @@ extern mlt_filter filter_qtcrop_init(mlt_profile profile,
                                      mlt_service_type type,
                                      const char *id,
                                      char *arg);
+extern mlt_filter filter_transformblur_init(mlt_profile profile,
+                                            mlt_service_type type,
+                                            const char *id,
+                                            char *arg);
 extern mlt_filter filter_typewriter_init(mlt_profile profile,
                                          mlt_service_type type,
                                          const char *id,
@@ -136,6 +140,7 @@ MLT_QT_MODULE_EXPORT MLT_REPOSITORY
     MLT_REGISTER(mlt_service_filter_type, "qtblend_mode", filter_qtblend_mode_init);
     MLT_REGISTER(mlt_service_filter_type, "qtblend", filter_qtblend_init);
     MLT_REGISTER(mlt_service_filter_type, "qtcrop", filter_qtcrop_init);
+    MLT_REGISTER(mlt_service_filter_type, "transformblur", filter_transformblur_init);
     MLT_REGISTER(mlt_service_filter_type, "typewriter", filter_typewriter_init);
     MLT_REGISTER_METADATA(mlt_service_consumer_type, "qglsl", metadata, "consumer_qglsl.yml");
     MLT_REGISTER_METADATA(mlt_service_transition_type,
@@ -148,6 +153,10 @@ MLT_QT_MODULE_EXPORT MLT_REPOSITORY
                           "filter_qtblend_mode.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "qtblend", metadata, "filter_qtblend.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "qtcrop", metadata, "filter_qtcrop.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type,
+                          "transformblur",
+                          metadata,
+                          "filter_transformblur.yml");
 #ifdef USE_FFTW
     MLT_REGISTER(mlt_service_filter_type, "audiospectrum", filter_audiospectrum_init);
     MLT_REGISTER(mlt_service_filter_type, "lightshow", filter_lightshow_init);

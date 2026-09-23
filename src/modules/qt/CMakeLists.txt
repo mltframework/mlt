@@ -28,6 +28,7 @@ function(mlt_add_qt_module ARG_TARGET)
       filter_qtblend_mode.c
       filter_qtblend.cpp
       filter_qtcrop.cpp
+      filter_transformblur.cpp
       filter_typewriter.cpp
       gps_drawing.cpp
       gps_parser.cpp gps_parser.h
@@ -122,6 +123,7 @@ function(mlt_add_qt_module ARG_TARGET)
       filter_qtblend.yml
       filter_qtcrop.yml
       filter_qtext.yml
+      filter_transformblur.yml
       filter_typewriter.yml
       producer_kdenlivetitle.yml
       producer_qimage.yml
