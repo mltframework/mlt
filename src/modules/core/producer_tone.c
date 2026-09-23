@@ -23,11 +23,26 @@
 #include <stdlib.h>
 #include <string.h>
 
-static int32_t float_to_s32(float value)
+static inline int16_t f32_to_s16(float f)
 {
-    value = CLAMP(value, -1.0f, 1.0f);
-    int64_t pcm = (value > 0.0f ? INT32_MAX : -(int64_t) INT32_MIN) * value;
-    return CLAMP(pcm, INT32_MIN, INT32_MAX);
+    f = CLAMP(f, -1.0f, 1.0f);
+    long pcm = lrintf(f * 32768.0f);
+    return CLAMP(pcm, -32768, 32767);
+}
+
+static inline int32_t f32_to_s32(float f)
+{
+    /* float has a 24-bit mantissa, so scale in double to round correctly. */
+    f = CLAMP(f, -1.0f, 1.0f);
+    int64_t pcm = llrint((double) f * 2147483648.0);
+    return CLAMP(pcm, -2147483648LL, 2147483647LL);
+}
+
+static inline uint8_t f32_to_u8(float f)
+{
+    f = CLAMP(f, -1.0f, 1.0f);
+    long pcm = lrintf(f * 128.0f) + 128;
+    return CLAMP(pcm, 0, 255);
 }
 
 static int producer_get_audio(mlt_frame frame,
@@ -75,13 +90,13 @@ static int producer_get_audio(mlt_frame frame,
         case mlt_audio_s16: {
             int16_t *sample_ptr = (int16_t *) *buffer + s * *channels;
             for (c = 0; c < *channels; c++)
-                *sample_ptr++ = 32767 * CLAMP(value, -1.0f, 1.0f);
+                *sample_ptr++ = f32_to_s16(value);
             break;
         }
         case mlt_audio_s32: {
             int32_t *sample_ptr = (int32_t *) *buffer + s;
             for (c = 0; c < *channels; c++) {
-                *sample_ptr = float_to_s32(value);
+                *sample_ptr = f32_to_s32(value);
                 sample_ptr += *samples;
             }
             break;
@@ -96,7 +111,7 @@ static int producer_get_audio(mlt_frame frame,
         }
         case mlt_audio_s32le: {
             int32_t *sample_ptr = (int32_t *) *buffer + s * *channels;
-            int32_t pcm = float_to_s32(value);
+            int32_t pcm = f32_to_s32(value);
             for (c = 0; c < *channels; c++)
                 *sample_ptr++ = pcm;
             break;
@@ -109,7 +124,7 @@ static int producer_get_audio(mlt_frame frame,
         }
         case mlt_audio_u8: {
             uint8_t *sample_ptr = (uint8_t *) *buffer + s * *channels;
-            uint8_t pcm = (127 * CLAMP(value, -1.0f, 1.0f)) + 128;
+            uint8_t pcm = f32_to_u8(value);
             for (c = 0; c < *channels; c++)
                 *sample_ptr++ = pcm;
             break;
