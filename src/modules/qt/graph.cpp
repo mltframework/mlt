@@ -70,7 +70,7 @@ void setup_graph_painter(QPainter &p,
     p.setRenderHint(QPainter::Antialiasing);
 
     // Fill background
-    if (bg_color.r || bg_color.g || bg_color.g || bg_color.a) {
+    if (bg_color.r || bg_color.g || bg_color.b || bg_color.a) {
         QColor qbgcolor(bg_color.r, bg_color.g, bg_color.b, bg_color.a);
         p.fillRect(0, 0, p.device()->width(), p.device()->height(), qbgcolor);
     }
