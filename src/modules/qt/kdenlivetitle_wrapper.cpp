@@ -555,14 +555,10 @@ void loadFromXml(producer_ktitle self,
                     const double outlineWidth
                         = txtProperties.namedItem("font-outline").nodeValue().toDouble();
 
-                    if (outlineWidth > 0.0) {
-                        globalFormat.setTextOutline(QPen(outlineColor,
-                                                         outlineWidth,
-                                                         Qt::SolidLine,
-                                                         Qt::RoundCap,
-                                                         Qt::RoundJoin));
-                        hasGlobalFormat = true;
+                    if (!TitlerOutline::restore(contentElement, txt->document())) {
+                        qWarning() << "Ignoring invalid title rich-text outline metadata";
                     }
+                    txt->setOutline(outlineWidth, outlineColor);
 
                     if (hasGlobalFormat) {
                         richCursor.mergeCharFormat(globalFormat);
