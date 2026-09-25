@@ -21,7 +21,11 @@
 
 #include "kdenlivetitle_wrapper.h"
 #include "kdenlivegraphics.h"
+#include "richtextanimation.h"
+#include "richtextgradient.h"
+#include "richtextspacing.h"
 #include "typewriter.h"
+#include <cstring>
 
 #include "common.h"
 
@@ -38,8 +42,11 @@
 #include <QString>
 #include <QStyleOptionGraphicsItem>
 #include <QSvgRenderer>
+#include <QTextBlockFormat>
+#include <QTextCharFormat>
 #include <QTextCursor>
 #include <QTextDocument>
+#include <QTextOption>
 
 #include <framework/mlt_log.h>
 #include <QColor>
@@ -334,6 +341,8 @@ void loadFromXml(producer_ktitle self,
 {
     scene->clear();
     mlt_producer producer = &self->parent;
+    // Rich text: do not retain a stale animation flag after an edit.
+    mlt_properties_clear(MLT_PRODUCER_PROPERTIES(producer), "_animated");
     self->has_alpha = true;
     mlt_properties producer_props = MLT_PRODUCER_PROPERTIES(producer);
     QDomDocument doc;
@@ -419,10 +428,39 @@ void loadFromXml(producer_ktitle self,
                                               .toInt());
                 }
                 QColor col(stringToColor(txtProperties.namedItem("font-color").nodeValue()));
-                QString text = node.namedItem("content").firstChild().nodeValue();
+                QDomElement contentElement = node.namedItem("content").toElement();
+
+                // First child is deliberately still the legacy plain-text fallback.
+                QString text = contentElement.firstChild().nodeValue();
+
+                QDomElement richTextElement = contentElement.firstChildElement("richtext");
+                QString richTextHtml;
+
+                if (!richTextElement.isNull()
+                    && richTextElement.attribute("format") == "qt-html-v1") {
+                    richTextHtml = richTextElement.text();
+                }
+
                 if (!replacementText.isEmpty()) {
                     text = text.replace("%s", replacementText);
                 }
+
+                const QStringList typewriterParameters
+                    = txtProperties.namedItem("typewriter").nodeValue().split(";");
+                const bool typewriterEnabled = !typewriterParameters.isEmpty()
+                                               && typewriterParameters.at(0).toInt() != 0;
+                const bool automaticTypewriter = typewriterParameters.size() >= 5
+                                                 && typewriterParameters.at(1).toInt() > 0
+                                                 && typewriterParameters.at(2).toInt() >= 1
+                                                 && typewriterParameters.at(2).toInt() <= 3
+                                                 && typewriterParameters.at(3).toInt() >= 0;
+                // Custom macro scripts and template substitution need an
+                // explicit source-to-output mapping. Keep their legacy path.
+                const bool useRichText
+                    = !richTextHtml.isEmpty() && replacementText.isEmpty()
+                      && !contentElement.hasAttribute("richtext-legacy-replacement")
+                      && (!typewriterEnabled || automaticTypewriter
+                          || contentElement.hasAttribute("richtext-visible-utf16"));
                 QColor outlineColor(
                     stringToColor(txtProperties.namedItem("font-outline-color").nodeValue()));
 
@@ -480,7 +518,108 @@ void loadFromXml(producer_ktitle self,
                     brush = QBrush(col);
                 }
 
-                if (txtProperties.namedItem("compatibility").isNull()) {
+                if (useRichText) {
+                    // Rich text: QTextDocument performs the same per-character
+                    // font/weight/size/colour layout used by Kdenlive's editor.
+                    auto *txt = new RichTextReveal::Item();
+                    txt->setHtml(richTextHtml);
+                    // Rich text: same decoder as the editor.
+                    if (!TitlerSpacingV1::restore(contentElement, txt->document())) {
+                        qWarning() << "Ignoring invalid title rich-text spacing metadata";
+                    }
+                    if (!TitlerGradientV1::restore(contentElement, txt->document())) {
+                        qWarning() << "Ignoring invalid title rich-text gradient metadata";
+                    }
+                    txt->document()->setDocumentMargin(0);
+                    TitlerGradientV1::applyBrushes(txt->document(), int(boxWidth), int(boxHeight));
+
+                    QTextOption option = txt->document()->defaultTextOption();
+                    if (tabWidth > 0) {
+                        option.setTabStopDistance(tabWidth);
+                    }
+                    txt->document()->setDefaultTextOption(option);
+
+                    QTextCursor richCursor(txt->document());
+                    richCursor.select(QTextCursor::Document);
+
+                    QTextCharFormat globalFormat;
+                    bool hasGlobalFormat = false;
+
+                    // Existing gradient and outline remain object-level for
+                    // compatibility, but they no longer replace run fonts.
+                    if (!txtProperties.namedItem("gradient").isNull()) {
+                        globalFormat.setForeground(brush);
+                        hasGlobalFormat = true;
+                    }
+
+                    const double outlineWidth
+                        = txtProperties.namedItem("font-outline").nodeValue().toDouble();
+
+                    if (!TitlerOutline::restore(contentElement, txt->document())) {
+                        qWarning() << "Ignoring invalid title rich-text outline metadata";
+                    }
+                    txt->setOutline(outlineWidth, outlineColor);
+
+                    if (hasGlobalFormat) {
+                        richCursor.mergeCharFormat(globalFormat);
+                    }
+
+                    QTextBlockFormat blockFormat;
+                    bool hasBlockFormat = false;
+
+                    if (!txtProperties.namedItem("alignment").isNull()) {
+                        blockFormat.setAlignment(Qt::Alignment(align));
+                        hasBlockFormat = true;
+                    }
+
+                    if (!txtProperties.namedItem("line-spacing").isNull()) {
+                        blockFormat.setLineHeight(txtProperties.namedItem("line-spacing")
+                                                      .nodeValue()
+                                                      .toInt(),
+                                                  QTextBlockFormat::LineDistanceHeight);
+                        hasBlockFormat = true;
+                    }
+
+                    if (hasBlockFormat) {
+                        richCursor.mergeBlockFormat(blockFormat);
+                    }
+
+                    if (!txtProperties.namedItem("preferred-width").isNull()) {
+                        txt->setTextWidth(
+                            txtProperties.namedItem("preferred-width").nodeValue().toInt());
+                    } else if (boxWidth > 0) {
+                        txt->setTextWidth(boxWidth);
+                    }
+
+                    if (!txtProperties.namedItem("shadow").isNull()) {
+                        const QStringList values
+                            = txtProperties.namedItem("shadow").nodeValue().split(";");
+
+                        if (values.count() >= 5 && values.at(0).toInt() != 0) {
+                            auto *shadow = new QGraphicsDropShadowEffect();
+                            shadow->setColor(QColor(values.at(1)));
+                            shadow->setBlurRadius(values.at(2).toDouble());
+                            shadow->setOffset(values.at(3).toDouble(), values.at(4).toDouble());
+                            txt->setGraphicsEffect(shadow);
+                        }
+                    }
+
+                    // Rich text: preserve the rich document and only
+                    // change which characters are painted for this frame.
+                    const bool external = contentElement.hasAttribute("richtext-visible-utf16");
+                    txt->configure(typewriterParameters, external);
+                    if (external) {
+                        bool ok = false;
+                        const int visible
+                            = contentElement.attribute("richtext-visible-utf16").toInt(&ok);
+                        txt->setVisibleCharacters(ok ? visible : 0);
+                    }
+                    if (txt->animated()) {
+                        mlt_properties_set_int(producer_props, "_animated", 1);
+                    }
+                    scene->addItem(txt);
+                    gitem = txt;
+                } else if (txtProperties.namedItem("compatibility").isNull()) {
                     // Workaround Qt5 crash in threaded drawing of QGraphicsTextItem, paint by ourselves
                     PlainTextItem *txt = new PlainTextItem(
                         text,
@@ -503,7 +642,7 @@ void loadFromXml(producer_ktitle self,
 
                         const QStringList values
                             = txtProperties.namedItem("typewriter").nodeValue().split(";");
-                        int enabled = (static_cast<bool>(values.at(0).toInt()));
+                        const bool enabled = !values.isEmpty() && values.at(0).toInt() != 0;
 
                         if (enabled && values.count() >= 5) {
                             mlt_properties_set_int(producer_props, "_animated", 1);
@@ -806,6 +945,19 @@ void drawKdenliveTitle(producer_ktitle self,
 
     pthread_mutex_lock(&self->mutex);
 
+    // Rich text: an effect-stack typewriter supplies frame-local
+    // XML. The cached scene must also be replaced when an effect is removed.
+    const char *frameXml = mlt_properties_get(properties, "_kdenlivetitle_typewriter_xml");
+    const char *cachedXml = mlt_properties_get(producer_props, "_typewriter_cached_xml");
+    if ((frameXml && (!cachedXml || std::strcmp(frameXml, cachedXml) != 0))
+        || (!frameXml && cachedXml)) {
+        force_refresh = 1;
+    }
+    if (frameXml)
+        mlt_properties_set(producer_props, "_typewriter_cached_xml", frameXml);
+    else
+        mlt_properties_clear(producer_props, "_typewriter_cached_xml");
+
     // Check if user wants us to reload the image or if we need animation
     bool animated = mlt_properties_get(producer_props, "_endrect") != NULL;
 
@@ -837,8 +989,13 @@ void drawKdenliveTitle(producer_ktitle self,
                                 0,
                                 mlt_properties_get_int(properties, "width"),
                                 mlt_properties_get_int(properties, "height"));
-            if (mlt_properties_get(producer_props, "resource")
-                && mlt_properties_get(producer_props, "resource")[0] != '\0') {
+            if (frameXml) {
+                loadFromXml(self,
+                            scene,
+                            frameXml,
+                            mlt_properties_get(producer_props, "templatetext"));
+            } else if (mlt_properties_get(producer_props, "resource")
+                       && mlt_properties_get(producer_props, "resource")[0] != '\0') {
                 // The title has a resource property, so we read all properties from the resource.
                 // Do not serialize the xmldata
                 loadFromXml(self,
@@ -875,6 +1032,9 @@ void drawKdenliveTitle(producer_ktitle self,
         QList<QGraphicsItem *> items = scene->items();
         PlainTextItem *titem = NULL;
         for (int i = 0; i < items.count(); i++) {
+            if (auto *rich = dynamic_cast<RichTextReveal::Item *>(items.at(i))) {
+                rich->setFrame(qint64(position));
+            }
             titem = dynamic_cast<PlainTextItem *>(items.at(i));
             if (titem && !titem->data(0).isNull()) {
                 int itemId = titem->data(0).toInt();

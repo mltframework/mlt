@@ -129,7 +129,8 @@ public:
     uint getContentNodesNumber() const { return node_vec.size(); }
 
     QString getNodeContent(uint i) const;
-    void setNodeContent(uint i, const QString &content);
+    bool hasRichText(uint i) const;
+    void setNodeContent(uint i, const QString &content, bool preserveRichText = false);
 
     void clear();
 
