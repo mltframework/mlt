@@ -203,7 +203,6 @@ static void get_current_frame_time_ns_decimals_str(mlt_filter filter,
         fps = 30; //there's probably worse things happening if this returns 0
 
     int64_t frame_time_ns = frame_position * pdata->speed_multiplier * 1000000000LL / fps;
-    // mlt_log_info(NULL, "before ns: fps=%.9f, frame_time_ns=%lld", fps, frame_time_ns);
 
     if (pdata->updates_per_second > 0) {
         int64_t upd_every_ns = llround(1e9 * fabs(pdata->speed_multiplier)
@@ -240,7 +239,6 @@ static int64_t get_current_frame_time_ms(mlt_filter filter, mlt_frame frame)
         fps = 30;
 
     int64_t frame_time_ms = frame_position * pdata->speed_multiplier * 1000 / fps;
-    // mlt_log_info(NULL, "before ms : fps=%.9f, frame_time_ms=%lld", fps, frame_time_ms);
 
     if (pdata->updates_per_second > 0) {
         int64_t upd_every_ms = llround(1000.0 * fabs(pdata->speed_multiplier)
