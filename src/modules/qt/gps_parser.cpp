@@ -107,9 +107,9 @@ static int is_whitespace_string(char *str)
 }
 
 //Converts milliseconds to a date-time with optional format (no miliesconds in output)
-void mseconds_to_timestring(int64_t seconds, char *format, char *result)
+void mseconds_to_timestring(int64_t mseconds, char *format, char *result)
 {
-    time_t secs = llabs(seconds) / 1000;
+    time_t secs = llabs(mseconds) / 1000;
     struct tm *ptm = gmtime(&secs);
     if (!format || is_whitespace_string(format))
         strftime(result, 25, "%Y-%m-%d %H:%M:%S", ptm);

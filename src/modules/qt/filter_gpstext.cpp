@@ -57,7 +57,7 @@ static void default_priv_data(private_data *pdata)
             free(pdata->gps_points_p);
         memset(pdata, 0, sizeof(private_data));
         pdata->speed_multiplier = 1;
-        pdata->updates_per_second = 1;
+        pdata->updates_per_second = -1;
     }
 }
 
@@ -148,10 +148,148 @@ static int64_t extract_offset_time_ms_keyword(char *keyword)
     return val * 1000;
 }
 
+//process and remove the generic "decimals" extra-keyword from the string and read a single digit after it
+int extract_decimals_keyword (char* keyword) {
+    char *start=keyword, *end=NULL;
+    int req_decimals = -1;
+
+    if (keyword == NULL)
+        return -1;
+
+    char *ptr = NULL;
+    if ((ptr = strstr(keyword, "decimals"))) {
+        start = ptr;
+        
+        //eat one space before keyword for readability
+        if (start > keyword && isspace(*(start-1))){
+            start--;
+        }
+
+        ptr += strlen("decimals");
+        while (ptr && isspace(*ptr))
+            ptr++;
+        if (ptr && isdigit(*ptr))
+        {
+            req_decimals = *ptr - '0';
+            end = ptr;
+
+            if (strlen(end) == 0)
+                *start = '\0';
+            else
+                memmove(start, end+1, strlen(end) + 1);
+        }
+    }
+    return req_decimals;
+}
+
+// Returns the unix time (miliseconds) of "Media Created" metadata, or fallbacks to "Modified Time" from OS
+static int64_t get_original_video_file_time_mseconds(mlt_frame frame)
+{
+    mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
+    return mlt_producer_get_creation_time(producer);
+}
+
+/** like get_current_frame_time_ms but appends to output_text *only* the nanoseconds part after applying multipliers
+ *  (full timestamp + 9 digits would lose precision!) 
+ *  (original file creation + current timecode)
+ */
+static void get_current_frame_time_ns_decimals_str (mlt_filter filter, mlt_frame frame, int req_decimals, char* output_text)
+{    
+    if (req_decimals <= 0)
+        return;
+    
+    private_data *pdata = (private_data *) filter->child;
+    double file_time_just_ms = (get_original_video_file_time_mseconds(frame) % 1000) / 1000.0;
+    mlt_position frame_position = mlt_frame_original_position(frame);
+    mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+    double fps = mlt_profile_fps(profile);
+
+    double result_ns = file_time_just_ms + frame_position/fps*pdata->speed_multiplier;
+
+    char dec[17] = {0}; //17 is max double representation 
+    /* NOTE: we can't print directly req_decimals because a %.2f would round (so 3.99999 -> 4.00)
+             but because we're treating decimals separately from the integer part, this would 
+             actually be printed as 3.00 */
+    snprintf(dec, 17, "%.9f", result_ns);
+    char* dot = strchr(dec, '.');  //skip integer part and dot
+    if (dot && dot+1)
+        strncat (output_text, dot+1, req_decimals);
+}
+
+//Restricts how many updates per second are done (the searched gps - frame time is altered)
+static int64_t restrict_updates(int64_t fr, double upd_per_sec)
+{
+    if (upd_per_sec <= 0) // = disabled
+        return fr;
+    int64_t rez = fr - fr % (int) (1000.0 / upd_per_sec);
+    //mlt_log_info(NULL, "_time restrict: %d [%f x] -> %d\n", fr%100000, upd_per_sec, rez%100000);
+    return rez;
+}
+
+/** Returns absolute* current frame time in miliseconds
+ *  (original file creation + current timecode)
+ *  *also applies updates_per_second and speed_multiplier
+ */
+static int64_t get_current_frame_time_ms(mlt_filter filter, mlt_frame frame)
+{
+    mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
+    private_data *pdata = (private_data *) filter->child;
+    int64_t file_time = 0, fr_time = 0;
+
+    file_time = get_original_video_file_time_mseconds(frame);
+    mlt_position frame_position = mlt_frame_original_position(frame);
+
+    f_mutex.lock();
+    char *s = mlt_properties_frames_to_time(properties, frame_position, mlt_time_clock);
+    if (s) {
+        int h = 0, m = 0, sec = 0, msec = 0;
+        sscanf(s, "%d:%d:%d.%d", &h, &m, &sec, &msec);
+        fr_time = (h * 3600 + m * 60 + sec) * 1000 + msec;
+    } else
+        mlt_log_warning(filter,
+                        "get_current_frame_time_ms time string null, giving up "
+                        "[mlt_frame_original_position()=%d], retry result:%s\n",
+                        frame_position,
+                        mlt_properties_frames_to_time(properties, frame_position, mlt_time_clock));
+    f_mutex.unlock();
+
+    return file_time
+           + restrict_updates(fr_time, pdata->updates_per_second) * pdata->speed_multiplier;
+}
+
+/** Replaces file_datetime_now with absolute time-date string (video created + current timecode)
+ *  (time includes speed_multiplier and updates per second) */
+static void get_current_frame_time_str(char *keyword,
+                                       mlt_filter filter,
+                                       mlt_frame frame,
+                                       char *result,
+                                       int req_decimals)
+{
+    int64_t val = 0;
+    char *offset = NULL, *format = NULL;
+
+    //check for seconds offset
+    if ((offset = strstr(keyword, "+")) != NULL || (offset = strstr(keyword, "-")) != NULL)
+        val = extract_offset_time_ms_keyword(offset);
+
+    //check for time format
+    char text[MAX_TEXT_LEN];
+    if (strlen(keyword) > strlen("file_datetime_now"))
+        format = keyword + strlen("file_datetime_now");
+
+    int64_t ms = val + get_current_frame_time_ms(filter, frame);
+    mseconds_to_timestring(ms, format, text);
+
+    get_current_frame_time_ns_decimals_str(filter, frame, req_decimals, text);
+
+    strncat(result, text, MAX_TEXT_LEN - strlen(result) - 1);
+}
+
 /** Replaces the GPS keywords with actual values, also parses any keyword extra format.
  *  Returns "--" for keywords with no valid return.
 */
 static void gps_point_to_output(mlt_filter filter,
+                                mlt_frame frame,
                                 char *keyword,
                                 char *result_gps_text,
                                 int i_now,
@@ -162,6 +300,13 @@ static void gps_point_to_output(mlt_filter filter,
     char *format = NULL;
     char gps_text[MAX_TEXT_LEN];
     strcpy(gps_text, "--");
+    
+    int req_decimals = extract_decimals_keyword(keyword);
+
+    if (!strncmp(keyword, "file_datetime_now", strlen("file_datetime_now"))) {
+        get_current_frame_time_str(keyword, filter, frame, result_gps_text, req_decimals);
+        return;
+    }
 
     if (i_now == -1 || pdata->gps_points_r == NULL) {
         strncat(result_gps_text, gps_text, MAX_TEXT_LEN - strlen(result_gps_text) - 1);
@@ -193,16 +338,6 @@ static void gps_point_to_output(mlt_filter filter,
             crt_point = pdata->gps_points_p[i_now];
     }
 
-    //check for the generic "decimals" extra-keyword and if present read a single digit after it (+whitespace)
-    char *ptr = NULL;
-    int use_decimals = -1;
-    if ((ptr = strstr(keyword, "decimals"))) {
-        ptr += strlen("decimals");
-        while (ptr && isspace(*ptr))
-            ptr++;
-        if (ptr && isdigit(*ptr))
-            use_decimals = *ptr - '0';
-    }
     //check for generic "RAW" extra keyword
     bool use_raw = 0;
     if (strstr(keyword, "RAW"))
@@ -216,19 +351,19 @@ static void gps_point_to_output(mlt_filter filter,
         double val = use_raw ? raw.lat : crt_point.lat;
         if (val == GPS_UNINIT)
             return;
-        snprintf(gps_text, 15, "%3.*f", (use_decimals == -1 ? 6 : use_decimals), val);
+        snprintf(gps_text, 15, "%3.*f", (req_decimals == -1 ? 6 : req_decimals), val);
     } else if (!strncmp(keyword, "gps_lon", strlen("gps_lon")) && crt_point.lon != GPS_UNINIT) {
         double val = swap_180_if_needed(use_raw ? raw.lon : crt_point.lon);
         if (val == GPS_UNINIT)
             return;
-        snprintf(gps_text, 15, "%3.*f", (use_decimals == -1 ? 6 : use_decimals), val);
+        snprintf(gps_text, 15, "%3.*f", (req_decimals == -1 ? 6 : req_decimals), val);
     } else if (!strncmp(keyword, "gps_elev", strlen("gps_elev")) && crt_point.ele != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_elev"))
             format = keyword + strlen("gps_elev");
         double val = convert_distance_to_format((use_raw ? raw.ele : crt_point.ele), format);
         if (val == GPS_UNINIT)
             return;
-        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, req_decimals), val);
     } else if (!strncmp(keyword, "gps_speed", strlen("gps_speed"))
                && crt_point.speed != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_speed"))
@@ -241,18 +376,18 @@ static void gps_point_to_output(mlt_filter filter,
         if (val == GPS_UNINIT)
             return;
         val = convert_speed_to_format(val, format);
-        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, req_decimals), val);
     } else if (!strncmp(keyword, "gps_hr", strlen("gps_hr")) && crt_point.hr != GPS_UNINIT) {
         double val = use_raw ? raw.hr : crt_point.hr;
         if (val == GPS_UNINIT)
             return;
-        snprintf(gps_text, 15, "%.*f", (use_decimals == -1 ? 0 : use_decimals), val);
+        snprintf(gps_text, 15, "%.*f", (req_decimals == -1 ? 0 : req_decimals), val);
     } else if (!strncmp(keyword, "gps_bearing", strlen("gps_bearing"))
                && crt_point.bearing != GPS_UNINIT) {
         double val = use_raw ? raw.bearing : crt_point.bearing;
         if (val == GPS_UNINIT)
             return;
-        snprintf(gps_text, 15, "%.*f", (use_decimals == -1 ? 0 : use_decimals), val);
+        snprintf(gps_text, 15, "%.*f", (req_decimals == -1 ? 0 : req_decimals), val);
     } else if (!strncmp(keyword, "gps_compass", strlen("gps_compass"))
                && crt_point.bearing != GPS_UNINIT) {
         const char *val = (const char *) (bearing_to_compass(use_raw ? raw.bearing
@@ -263,7 +398,7 @@ static void gps_point_to_output(mlt_filter filter,
         double val = use_raw ? raw.cad : crt_point.cad;
         if (val == GPS_UNINIT)
             return;
-        snprintf(gps_text, 15, "%.*f", (use_decimals == -1 ? 0 : use_decimals), crt_point.cad);
+        snprintf(gps_text, 15, "%.*f", (req_decimals == -1 ? 0 : req_decimals), crt_point.cad);
     } else if (!strncmp(keyword, "gps_temperature", strlen("gps_temperature"))
                && crt_point.atemp != GPS_UNINIT) {
         double val = use_raw ? raw.atemp : crt_point.atemp;
@@ -273,43 +408,43 @@ static void gps_point_to_output(mlt_filter filter,
             val = val * 1.8 + 32;
         else if (strstr(keyword, "K"))
             val = val + 273.15;
-        snprintf(gps_text, 15, "%.*f", (use_decimals == -1 ? 0 : use_decimals), val);
+        snprintf(gps_text, 15, "%.*f", (req_decimals == -1 ? 0 : req_decimals), val);
     } else if (!strncmp(keyword, "gps_power", strlen("gps_power"))
                && crt_point.power != GPS_UNINIT) {
         double val = use_raw ? raw.power : crt_point.power;
         if (val == GPS_UNINIT)
             return;
-        snprintf(gps_text, 15, "%.*f", (use_decimals == -1 ? 0 : use_decimals), val);
+        snprintf(gps_text, 15, "%.*f", (req_decimals == -1 ? 0 : req_decimals), val);
     } else if (!strncmp(keyword, "gps_vdist_up", strlen("gps_vdist_up"))
                && crt_point.elev_up != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_vdist_up"))
             format = keyword + strlen("gps_vdist_up");
         double val = convert_distance_to_format(fabs(crt_point.elev_up), format);
-        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, req_decimals), val);
     } else if (!strncmp(keyword, "gps_vdist_down", strlen("gps_vdist_down"))
                && crt_point.elev_down != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_vdist_down"))
             format = keyword + strlen("gps_vdist_down");
         double val = convert_distance_to_format(fabs(crt_point.elev_down), format);
-        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, req_decimals), val);
     } else if (!strncmp(keyword, "gps_dist_uphill", strlen("gps_dist_uphill"))
                && crt_point.dist_up != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_dist_uphill"))
             format = keyword + strlen("gps_dist_uphill");
         double val = convert_distance_to_format(crt_point.dist_up, format);
-        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, req_decimals), val);
     } else if (!strncmp(keyword, "gps_dist_downhill", strlen("gps_dist_downhill"))
                && crt_point.dist_down != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_dist_downhill"))
             format = keyword + strlen("gps_dist_downhill");
         double val = convert_distance_to_format(crt_point.dist_down, format);
-        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, req_decimals), val);
     } else if (!strncmp(keyword, "gps_dist_flat", strlen("gps_dist_flat"))
                && crt_point.dist_flat != GPS_UNINIT) {
         if (strlen(keyword) > strlen("gps_dist_flat"))
             format = keyword + strlen("gps_dist_flat");
         double val = convert_distance_to_format(crt_point.dist_flat, format);
-        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, req_decimals), val);
     }
     //NOTE: gps_dist must be below gps_dist_up/down/flat or it'll match them
     else if (!strncmp(keyword, "gps_dist", strlen("gps_dist"))
@@ -320,15 +455,15 @@ static void gps_point_to_output(mlt_filter filter,
                                                 format);
         if (val == GPS_UNINIT)
             return;
-        snprintf(gps_text, 15, "%.*f", decimals_needed(val, use_decimals), val);
+        snprintf(gps_text, 15, "%.*f", decimals_needed(val, req_decimals), val);
     } else if (!strncmp(keyword, "gps_grade_percentage", strlen("gps_grade_percentage"))
                && crt_point.grade_p != GPS_UNINIT) {
         double val = crt_point.grade_p;
-        snprintf(gps_text, 15, "%+.*f", (use_decimals == -1 ? 0 : use_decimals), val);
+        snprintf(gps_text, 15, "%+.*f", (req_decimals == -1 ? 0 : req_decimals), val);
     } else if (!strncmp(keyword, "gps_grade_degrees", strlen("gps_grade_degrees"))
                && crt_point.grade_p != GPS_UNINIT) {
         double val = to_deg(atan(crt_point.grade_p / 100.0));
-        snprintf(gps_text, 15, "%+.*f", (use_decimals == -1 ? 0 : use_decimals), val);
+        snprintf(gps_text, 15, "%+.*f", (req_decimals == -1 ? 0 : req_decimals), val);
     } else if (!strncmp(keyword, "gps_datetime_now", strlen("gps_datetime_now"))
                && raw.time != GPS_UNINIT) {
         int64_t val = 0;
@@ -338,57 +473,17 @@ static void gps_point_to_output(mlt_filter filter,
         if (strlen(keyword) > strlen("gps_datetime_now"))
             format = keyword + strlen("gps_datetime_now");
         mseconds_to_timestring(raw.time + val, format, gps_text);
+        //GPS time is not interpolated and is stored in ms, so req_decimals > 3 is useless but we'll keep consistent
+        if (req_decimals > 0)  {
+            char dec[17] = {0};
+            snprintf(dec, 17, "%.9f", (raw.time+val)%1000/1000.0);
+            char* dot = strchr(dec, '.');
+            if (dot && dot+1)
+                strncat (gps_text, dot+1, req_decimals);
+        }
     }
     strncat(result_gps_text, gps_text, MAX_TEXT_LEN - strlen(result_gps_text) - 1);
     //	mlt_log_info(NULL, "filter_gps.c gps_point_to_output, keyword=%s, result_gps_text=%s\n", keyword, result_gps_text);
-}
-
-// Returns the unix time (milliseconds) of "Media Created" metadata, or fallbacks to "Modified Time" from OS
-static int64_t get_original_video_file_time_mseconds(mlt_frame frame)
-{
-    mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
-    return mlt_producer_get_creation_time(producer);
-}
-
-//Restricts how many updates per second are done (the searched gps - frame time is altered)
-static int64_t restrict_updates(int64_t fr, double upd_per_sec)
-{
-    if (upd_per_sec == 0) // = disabled
-        return fr;
-    int64_t rez = fr - fr % (int) (1000.0 / upd_per_sec);
-    //mlt_log_info(NULL, "_time restrict: %d [%f x] -> %d\n", fr%100000, upd_per_sec, rez%100000);
-    return rez;
-}
-
-/** Returns absolute* current frame time in milliseconds
- *  (original file creation + current timecode)
- *  *also applies updates_per_second and speed_multiplier
- */
-static int64_t get_current_frame_time_ms(mlt_filter filter, mlt_frame frame)
-{
-    mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
-    private_data *pdata = (private_data *) filter->child;
-    int64_t file_time = 0, fr_time = 0;
-
-    file_time = get_original_video_file_time_mseconds(frame);
-    mlt_position frame_position = mlt_frame_original_position(frame);
-
-    f_mutex.lock();
-    char *s = mlt_properties_frames_to_time(properties, frame_position, mlt_time_clock);
-    if (s) {
-        int h = 0, m = 0, sec = 0, msec = 0;
-        sscanf(s, "%d:%d:%d.%d", &h, &m, &sec, &msec);
-        fr_time = (h * 3600 + m * 60 + sec) * 1000 + msec;
-    } else
-        mlt_log_warning(filter,
-                        "get_current_frame_time_ms time string null, giving up "
-                        "[mlt_frame_original_position()=%d], retry result:%s\n",
-                        frame_position,
-                        mlt_properties_frames_to_time(properties, frame_position, mlt_time_clock));
-    f_mutex.unlock();
-
-    return file_time
-           + restrict_updates(fr_time, pdata->updates_per_second) * pdata->speed_multiplier;
 }
 
 /** Reads and updates all necessary filter properties, and processes the gps data if needed
@@ -462,33 +557,10 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
     mlt_properties_set(properties, "auto_gps_processing_start_now", gps_processing_start_now);
 }
 
-/** Replaces file_datetime_now with absolute time-date string (video created + current timecode)
- *  (time includes speed_multiplier and updates per second) */
-static void get_current_frame_time_str(char *keyword,
-                                       mlt_filter filter,
-                                       mlt_frame frame,
-                                       char *result)
-{
-    int64_t val = 0;
-    char *offset = NULL, *format = NULL;
-
-    //check for seconds offset
-    if ((offset = strstr(keyword, "+")) != NULL || (offset = strstr(keyword, "-")) != NULL)
-        val = extract_offset_time_ms_keyword(offset);
-
-    //check for time format
-    char text[MAX_TEXT_LEN];
-    if (strlen(keyword) > strlen("file_datetime_now"))
-        format = keyword + strlen("file_datetime_now");
-
-    mseconds_to_timestring(val + get_current_frame_time_ms(filter, frame), format, text);
-    strncat(result, text, MAX_TEXT_LEN - strlen(result) - 1);
-}
-
 /** Perform substitution for keywords that are enclosed in "# #".
  *  Also prepares [current] gps point
 */
-static void substitute_keywords(mlt_filter filter, char *result, char *value, mlt_frame frame)
+static void substitute_keywords(mlt_filter filter, char *result, char *argument_text, mlt_frame frame)
 {
     private_data *pdata = (private_data *) filter->child;
     char keyword[MAX_TEXT_LEN] = "";
@@ -511,13 +583,11 @@ static void substitute_keywords(mlt_filter filter, char *result, char *value, ml
                                                video_time_synced,
                                                max_gps_diff_ms);
 
-    while (get_next_token(value, &pos, keyword, &is_keyword)) {
+    while (get_next_token(argument_text, &pos, keyword, &is_keyword)) {
         if (!is_keyword) {
             strncat(result, keyword, MAX_TEXT_LEN - strlen(result) - 1);
-        } else if (!strncmp(keyword, "gps_", strlen("gps_"))) {
-            gps_point_to_output(filter, keyword, result, i_now, video_time_synced, crt_point);
-        } else if (!strncmp(keyword, "file_datetime_now", strlen("file_datetime_now"))) {
-            get_current_frame_time_str(keyword, filter, frame, result);
+        } else if (!strncmp(keyword, "gps_", strlen("gps_")) || !strncmp(keyword, "file_datetime_now", strlen("file_datetime_now"))) {
+            gps_point_to_output(filter, frame, keyword, result, i_now, video_time_synced, crt_point);
         } else {
             // replace keyword with property value from this frame
             mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
