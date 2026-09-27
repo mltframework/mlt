@@ -1,6 +1,6 @@
 /*
  * filter_jackrack.c -- filter audio through Jack and/or LADSPA plugins
- * Copyright (C) 2004-2021 Meltytech, LLC
+ * Copyright (C) 2004-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -468,7 +468,7 @@ mlt_filter filter_jackrack_init(mlt_profile profile,
             snprintf(name, sizeof(name), "mlt%d", getpid());
             src = arg;
         }
-        jack_client_t *jack_client = jack_client_open(arg, JackNullOption, &status, NULL);
+        jack_client_t *jack_client = jack_client_open(name, JackNullOption, &status, NULL);
         if (jack_client) {
             if (status & JackNameNotUnique) {
                 jack_client_name = jack_get_client_name(jack_client);
