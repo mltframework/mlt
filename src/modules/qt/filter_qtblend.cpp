@@ -28,6 +28,273 @@
 
 #define MLT_QTBLEND_MAX_DIMENSION (16000)
 
+// Motion blur sums samples with this format. 16 bits per channel leaves enough headroom for
+// color accuracy.
+static const QImage::Format MLT_QTBLEND_ACCUMULATION_FORMAT = QImage::Format_RGBA64_Premultiplied;
+
+// Animated destination geometry at one position, scaled to the output size.
+struct Geometry
+{
+    mlt_rect rect;
+    double rotation;
+};
+
+struct TransformContext
+{
+    mlt_properties properties;
+    mlt_position length;
+    int b_width;
+    int b_height;
+    double b_dar;
+    double consumer_ar;
+    bool distort;
+};
+
+/** Read the animated geometry for one position, in output coordinates.
+*/
+static Geometry get_geometry(mlt_properties properties,
+                             mlt_position position,
+                             mlt_position length,
+                             int normalized_width,
+                             int normalized_height,
+                             double scale_x,
+                             double scale_y)
+{
+    Geometry geometry;
+    geometry.rect = {0, 0, (double) normalized_width, (double) normalized_height, 1.0};
+    geometry.rotation = 0.0;
+
+    if (mlt_properties_get(properties, "rect")) {
+        geometry.rect = mlt_properties_anim_get_rect(properties, "rect", position, length);
+        if (::strchr(mlt_properties_get(properties, "rect"), '%')) {
+            geometry.rect.x *= normalized_width;
+            geometry.rect.y *= normalized_height;
+            geometry.rect.w *= normalized_width;
+            geometry.rect.h *= normalized_height;
+        }
+    }
+    geometry.rect.x *= scale_x;
+    geometry.rect.w *= scale_x;
+    geometry.rect.y *= scale_y;
+    geometry.rect.h *= scale_y;
+
+    if (mlt_properties_get(properties, "rotation")) {
+        geometry.rotation = mlt_properties_anim_get_double(properties, "rotation", position, length);
+    }
+    return geometry;
+}
+
+/** Build the source to destination transform for one geometry.
+*/
+static QTransform build_transform(const TransformContext &ctx,
+                                  mlt_position position,
+                                  const Geometry &geometry)
+{
+    const mlt_rect &rect = geometry.rect;
+    QTransform transform;
+    transform.translate(rect.x, rect.y);
+
+    if (geometry.rotation != 0.0) {
+        if (mlt_properties_get(ctx.properties, "rotate_anchor")) {
+            mlt_rect anchor = mlt_properties_anim_get_rect(ctx.properties,
+                                                           "rotate_anchor",
+                                                           position,
+                                                           ctx.length);
+            // Use custom anchor point (x,y are normalized 0-1 coordinates)
+            double anchor_x = anchor.x * rect.w;
+            double anchor_y = anchor.y * rect.h;
+            transform.translate(anchor_x, anchor_y);
+            transform.rotate(geometry.rotation);
+            transform.translate(-anchor_x, -anchor_y);
+        } else if (mlt_properties_get_int(ctx.properties, "rotate_center")) {
+            // old style rotation (from center) to keep compatibility, equivalent to rotate_anchor = 0.5, 0.5
+            transform.translate(rect.w / 2.0, rect.h / 2.0);
+            transform.rotate(geometry.rotation);
+            transform.translate(-rect.w / 2.0, -rect.h / 2.0);
+        } else {
+            // old style rotation (from top left corner) to keep compatibility, equivalent to rotate_anchor = 0, 0
+            transform.rotate(geometry.rotation);
+        }
+    }
+
+    // resize to rect
+    if (ctx.distort) {
+        if (rect.w != ctx.b_width || rect.h != ctx.b_height) {
+            transform.scale(rect.w / ctx.b_width, rect.h / ctx.b_height);
+        }
+    } else {
+        double scale;
+        double resize_dar = rect.w * ctx.consumer_ar / rect.h;
+        if (ctx.b_dar >= resize_dar) {
+            scale = rect.w / ctx.b_width;
+        } else {
+            scale = rect.h / ctx.b_height;
+        }
+        // Center image in rect
+        transform.translate((rect.w - (ctx.b_width * scale)) / 2.0,
+                            (rect.h - (ctx.b_height * scale)) / 2.0);
+        transform.scale(scale, scale);
+    }
+    return transform;
+}
+
+/** Geometry of blur sample \p index, walking back from the current frame
+ * towards the neighboring one over the fraction of the motion the shutter is
+ * open for.
+*/
+static Geometry sample_geometry(
+    const Geometry &current, const Geometry &delta, double shutter, int samples, int index)
+{
+    double t = samples > 1 ? shutter * index / (samples - 1) : 0.0;
+    Geometry geometry = current;
+    geometry.rect.x -= delta.rect.x * t;
+    geometry.rect.y -= delta.rect.y * t;
+    geometry.rect.w -= delta.rect.w * t;
+    geometry.rect.h -= delta.rect.h * t;
+    geometry.rotation -= delta.rotation * t;
+    return geometry;
+}
+
+struct WeightSlice
+{
+    uint8_t *bits;
+    qsizetype stride;
+    int components; // per row
+    int rows;
+    double weight;
+};
+
+static int weight_slice_proc(int id, int index, int jobs, void *cookie)
+{
+    (void) id;
+    WeightSlice *slice = (WeightSlice *) cookie;
+    int start = 0;
+    int height = mlt_slices_size_slice(jobs, index, slice->rows, &start);
+
+    for (int y = start; y < start + height; y++) {
+        quint16 *row = reinterpret_cast<quint16 *>(slice->bits + (size_t) y * slice->stride);
+        for (int i = 0; i < slice->components; i++) {
+            row[i] = (quint16) qBound(0.0, row[i] * slice->weight + 0.5, 65535.0);
+        }
+    }
+    return 0;
+}
+
+/** Premultiply the source into the accumulation format and scale it by
+ * \p weight, so that summing every sample with Plus cannot saturate.
+*/
+static QImage weight_source(const QImage &sourceImage, double weight)
+{
+    // The source is straight alpha and the accumulation format is premultiplied
+    QImage weighted = sourceImage.convertToFormat(MLT_QTBLEND_ACCUMULATION_FORMAT);
+    WeightSlice slice = {weighted.bits(),
+                         weighted.bytesPerLine(),
+                         weighted.width() * 4,
+                         weighted.height(),
+                         weight};
+    mlt_slices_run_normal(0, weight_slice_proc, &slice);
+    return weighted;
+}
+
+struct BlurSlice
+{
+    const TransformContext *ctx;
+    mlt_position position;
+    const QImage *source; // premultiplied and pre-scaled
+    const Geometry *current;
+    const Geometry *delta;
+    double shutter;
+    int samples;
+    bool hq;
+    // Accumulation buffer, covering origin..origin+size of the canvas.
+    uint8_t *bits;
+    qsizetype stride;
+    int width;
+    int rows;
+    QPoint origin;
+};
+
+static int blur_slice_proc(int id, int index, int jobs, void *cookie)
+{
+    (void) id;
+    BlurSlice *slice = (BlurSlice *) cookie;
+    int start = 0;
+    int height = mlt_slices_size_slice(jobs, index, slice->rows, &start);
+    if (height <= 0) {
+        return 0;
+    }
+
+    QImage strip(slice->bits + (size_t) start * slice->stride,
+                 slice->width,
+                 height,
+                 slice->stride,
+                 MLT_QTBLEND_ACCUMULATION_FORMAT);
+    QTransform toBox = QTransform::fromTranslate(-slice->origin.x(), -slice->origin.y() - start);
+
+    QPainter painter(&strip);
+    painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform, slice->hq);
+    painter.setCompositionMode(QPainter::CompositionMode_Plus);
+    for (int i = 0; i < slice->samples; i++) {
+        Geometry geometry
+            = sample_geometry(*slice->current, *slice->delta, slice->shutter, slice->samples, i);
+        painter.setTransform(build_transform(*slice->ctx, slice->position, geometry) * toBox);
+        painter.drawImage(0, 0, *slice->source);
+    }
+    painter.end();
+    return 0;
+}
+
+/** Sum every motion blur sample into one premultiplied image. Returns a null
+ * image, and leaves \p box empty, when the blur falls outside the canvas.
+*/
+static QImage accumulate_blur(const TransformContext &ctx,
+                              mlt_position position,
+                              const QImage &sourceImage,
+                              const Geometry &current,
+                              const Geometry &delta,
+                              double shutter,
+                              int samples,
+                              int canvas_width,
+                              int canvas_height,
+                              bool hq,
+                              QRect *box)
+{
+    // Region the source sweeps across all samples, with a small margin for the
+    // interpolation footprint at the edges.
+    QRectF sourceRect(0, 0, ctx.b_width, ctx.b_height);
+    QRectF swept;
+    for (int i = 0; i < samples; i++) {
+        Geometry geometry = sample_geometry(current, delta, shutter, samples, i);
+        QRectF mapped = build_transform(ctx, position, geometry).mapRect(sourceRect);
+        swept = i == 0 ? mapped : swept.united(mapped);
+    }
+    swept.adjust(-2, -2, 2, 2);
+    *box = swept.intersected(QRectF(0, 0, canvas_width, canvas_height)).toAlignedRect();
+    if (box->isEmpty()) {
+        return QImage();
+    }
+
+    QImage accumulation(box->size(), MLT_QTBLEND_ACCUMULATION_FORMAT);
+    accumulation.fill(Qt::transparent);
+    QImage weighted = weight_source(sourceImage, 1.0 / samples);
+
+    BlurSlice slice = {&ctx,
+                       position,
+                       &weighted,
+                       &current,
+                       &delta,
+                       shutter,
+                       samples,
+                       hq,
+                       accumulation.bits(),
+                       accumulation.bytesPerLine(),
+                       accumulation.width(),
+                       accumulation.height(),
+                       box->topLeft()};
+    mlt_slices_run_normal(0, blur_slice_proc, &slice);
+    return accumulation;
+}
+
 /** Get the image.
 */
 static int filter_get_image(mlt_frame frame,
@@ -55,7 +322,6 @@ static int filter_get_image(mlt_frame frame,
     mlt_service_unlock(MLT_FILTER_SERVICE(filter));
 
     // Check transform
-    QTransform transform;
     int normalized_width = profile->width;
     int normalized_height = profile->height;
     double consumer_ar = mlt_profile_sar(profile);
@@ -77,6 +343,11 @@ static int filter_get_image(mlt_frame frame,
     double b_ar = mlt_frame_get_aspect_ratio(frame);
     double b_dar = b_ar * b_width / b_height;
     double opacity = 1.0;
+
+    // Scaling applied to the rect below, so that motion blur can read the
+    // neighboring frame's geometry in the same coordinates.
+    double rect_scale_x = 1.0;
+    double rect_scale_y = 1.0;
 
     // If the _qtblend_scaled property is defined, a qtblend filter was already applied
     double qtblendScaleX = qMin(1., mlt_properties_get_double(frame_properties, "qtblend_scalingx"));
@@ -118,12 +389,14 @@ static int filter_get_image(mlt_frame frame,
             *width = qRound(*height * normalized_width / normalized_height / consumer_ar);
         }
         // Adjust rect to new scaling
-        double scale = (double) *width / normalized_width;
+        rect_scale_x = (double) *width / normalized_width;
+        rect_scale_y = (double) *height / normalized_height;
+        double scale = rect_scale_x;
         if (scale != 1.0) {
             rect.x *= scale;
             rect.w *= scale;
         }
-        scale = (double) *height / normalized_height;
+        scale = rect_scale_y;
         if (scale != 1.0) {
             rect.y *= scale;
             rect.h *= scale;
@@ -133,6 +406,8 @@ static int filter_get_image(mlt_frame frame,
         // Check if requested frame size is scaled
         double scalex = mlt_profile_scale_width(profile, *width);
         double scaley = mlt_profile_scale_height(profile, *height);
+        rect_scale_x = scalex;
+        rect_scale_y = scaley;
 
         // Store consumer scaling for further uses
         mlt_properties_set_double(frame_properties, "qtblend_scalingx", scalex);
@@ -180,39 +455,62 @@ static int filter_get_image(mlt_frame frame,
         adjust_mlt_mipmap_size(scaleTarget, &b_width, &b_height);
     }
 
-    transform.translate(rect.x, rect.y);
     opacity = rect.o;
     hasAlpha = rect.o < 1 || rect.x != 0 || rect.y != 0 || rect.w != *width || rect.h != *height
                || rect.w / b_dar < *height || rect.h * b_dar < *width || b_width != *width
                || b_height != *height;
 
+    double rotation = 0.0;
     if (mlt_properties_get(properties, "rotation")) {
-        double angle = mlt_properties_anim_get_double(properties, "rotation", position, length);
-        if (angle != 0.0) {
-            if (mlt_properties_get(properties, "rotate_anchor")) {
-                mlt_rect anchor
-                    = mlt_properties_anim_get_rect(properties, "rotate_anchor", position, length);
-                // Use custom anchor point (x,y are normalized 0-1 coordinates) where 0, 0 is top left and 1, 1 is bottom right
-                // negative values are allowed so its possible to rotate around a point outside the rectangle
-                double anchor_x = anchor.x * rect.w;
-                double anchor_y = anchor.y * rect.h;
-                transform.translate(anchor_x, anchor_y);
-                transform.rotate(angle);
-                transform.translate(-anchor_x, -anchor_y);
-            } else if (mlt_properties_get_int(properties, "rotate_center")) {
-                // old style rotation (from center) to keep compatibility, equivalent to rotate_anchor = 0.5, 0.5
-                transform.translate(rect.w / 2.0, rect.h / 2.0);
-                transform.rotate(angle);
-                transform.translate(-rect.w / 2.0, -rect.h / 2.0);
-            } else {
-                // old style rotation (from top left corner) to keep compatibility, equivalent to rotate_anchor = 0, 0
-                transform.rotate(angle);
-            }
+        rotation = mlt_properties_anim_get_double(properties, "rotation", position, length);
+        if (rotation != 0.0) {
             hasAlpha = true;
         }
     }
     if (!hasAlpha && mlt_properties_get_int(properties, "compositing") != 0) {
         hasAlpha = true;
+    }
+
+    // Motion blur, measured from the geometry change between this frame and its
+    // neighbor. Both samples and shutter_angle default to 0, so it is disabled
+    // unless a host asks for it.
+    Geometry current = {rect, rotation};
+    Geometry delta = {{0, 0, 0, 0, 0}, 0};
+    bool blur = false;
+    double shutter = 0.0;
+    int samples = 0;
+    if (mlt_properties_get(properties, "shutter_angle")) {
+        shutter = mlt_properties_anim_get_double(properties, "shutter_angle", position, length)
+                  / 360.0;
+    }
+    if (mlt_properties_exists(properties, "samples")) {
+        samples = mlt_properties_get_int(properties, "samples");
+    }
+    if (shutter > 0.0 && samples > 1) {
+        // The first frame has no predecessor, so measure forward instead.
+        bool forward = position <= 0;
+        Geometry neighbor = get_geometry(properties,
+                                         forward ? position + 1 : position - 1,
+                                         length,
+                                         normalized_width,
+                                         normalized_height,
+                                         rect_scale_x,
+                                         rect_scale_y);
+        const Geometry &to = forward ? neighbor : current;
+        const Geometry &from = forward ? current : neighbor;
+        delta.rect.x = to.rect.x - from.rect.x;
+        delta.rect.y = to.rect.y - from.rect.y;
+        delta.rect.w = to.rect.w - from.rect.w;
+        delta.rect.h = to.rect.h - from.rect.h;
+        delta.rotation = to.rotation - from.rotation;
+        blur = fabs(delta.rect.x) + fabs(delta.rect.y) + fabs(delta.rect.w) + fabs(delta.rect.h)
+                   + fabs(delta.rotation)
+               > 1e-3;
+        if (blur) {
+            // The blur spreads the source beyond the rect, so it always needs
+            // to be composited rather than passed through.
+            hasAlpha = true;
+        }
     }
 
     if (!hasAlpha) {
@@ -238,29 +536,14 @@ static int filter_get_image(mlt_frame frame,
     QImage sourceImage;
     convert_mlt_to_qimage(src_image, &sourceImage, b_width, b_height, *format);
 
-    int image_size = mlt_image_format_size(*format, *width, *height, NULL);
+    struct mlt_image_s image_desc;
+    mlt_image_set_values(&image_desc, NULL, *format, *width, *height);
+    int image_size = mlt_image_calculate_size(&image_desc);
 
     char *interps = mlt_properties_get(frame_properties, "consumer.rescale");
     bool hqPainting = interps && strcmp(interps, "nearest") && strcmp(interps, "neighbor");
 
-    // resize to rect
-    if (distort) {
-        if (rect.w != b_width || rect.h != b_height) {
-            transform.scale(rect.w / b_width, rect.h / b_height);
-        }
-    } else {
-        double scale;
-        double resize_dar = rect.w * consumer_ar / rect.h;
-        if (b_dar >= resize_dar) {
-            scale = rect.w / b_width;
-        } else {
-            scale = rect.h / b_height;
-        }
-        // Center image in rect
-        transform.translate((rect.w - (b_width * scale)) / 2.0, (rect.h - (b_height * scale)) / 2.0);
-        // Use QPainter scaling for everything
-        transform.scale(scale, scale);
-    }
+    TransformContext ctx = {properties, length, b_width, b_height, b_dar, consumer_ar, distort};
 
     uint8_t *dest_image = NULL;
     dest_image = (uint8_t *) mlt_pool_alloc(image_size);
@@ -272,17 +555,37 @@ static int filter_get_image(mlt_frame frame,
     QPainter painter(&destImage);
     painter.setCompositionMode(
         (QPainter::CompositionMode) mlt_properties_get_int(properties, "compositing"));
-    painter.setTransform(transform);
     painter.setOpacity(opacity);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform, hqPainting);
-    // Composite top frame
-    painter.drawImage(0, 0, sourceImage);
+    if (blur) {
+        // The samples are summed separately, then composited in one pass so
+        // that compositing mode, opacity and background behave as usual.
+        QRect box;
+        QImage blurred = accumulate_blur(ctx,
+                                         position,
+                                         sourceImage,
+                                         current,
+                                         delta,
+                                         shutter,
+                                         samples,
+                                         *width,
+                                         *height,
+                                         hqPainting,
+                                         &box);
+        if (!blurred.isNull()) {
+            painter.drawImage(box.topLeft(), blurred);
+        }
+    } else {
+        painter.setTransform(build_transform(ctx, position, current));
+        // Composite top frame
+        painter.drawImage(0, 0, sourceImage);
+    }
     // finish Qt drawing
     painter.end();
 
     convert_qimage_to_mlt(&destImage, dest_image, *width, *height);
     *image = dest_image;
-    mlt_frame_set_image(frame, *image, *width * *height * 4, mlt_pool_release);
+    mlt_frame_set_image(frame, *image, image_size, mlt_pool_release);
     return error;
 }
 
