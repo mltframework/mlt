@@ -8,6 +8,9 @@ license: LGPLv2.1
 language: en
 tags:
   - Video
+image_formats:
+  - rgba
+  - rgba64
 description: >
   Position, scale and rotation, with motion blur derived from the
   frame-to-frame change of all three. Renders several time-interpolated 
@@ -18,8 +21,7 @@ parameters:
     title: Rectangle
     type: rect
     description: >
-      Keyframable position, size and opacity (x/y/w/h/o). Opacity is
-      applied as a final pass.
+      Keyframable position, size and opacity (x/y/w/h/o).
     mutable: yes
     animation: yes
 

@@ -21,6 +21,7 @@
 #include <framework/mlt.h>
 #include <math.h>
 #include <string.h>
+#include <QColor>
 #include <QImage>
 #include <QPainter>
 #include <QPointF>
@@ -28,6 +29,8 @@
 #include <QTransform>
 
 namespace {
+
+constexpr QImage::Format ACCUMULATION_FORMAT = QImage::Format_RGBA64_Premultiplied;
 
 struct TransformState
 {
@@ -105,7 +108,7 @@ QRectF compute_swept_rect(const TransformState &current,
 // dest_image each one is allowed to write to.
 struct BlurSliceContext
 {
-    const QImage *weightedSource; // premultiplied, channels pre-scaled by 1/samples
+    const QImage *weightedSource; // premultiplied, already scaled by opacity/samples
     TransformState current;
     TransformState delta;
     double frac; // shutter angle
@@ -117,46 +120,10 @@ struct BlurSliceContext
     int subWidth, subHeight;
 
     uint8_t *dest_image;
-    int dest_stride; // bytes per row of dest_image (full canvas width * 4)
+    QImage::Format dest_format; // rgba8888 or rgba64, per the frame's format
+    int dest_stride;            // bytes per row of dest_image
+    int dest_bpp;               // bytes per pixel of dest_format
 };
-
-// mlt_slices worker: renders and accumulates every sample, but only for a
-// horizontal strip of the sub-canvas. Strips don't overlap, so each worker
-// owns an independent QImage and an independent region of dest_image --
-// no locking needed.
-int sliced_blur_proc(int id, int index, int jobs, void *cookie)
-{
-    (void) id;
-    const BlurSliceContext *ctx = static_cast<const BlurSliceContext *>(cookie);
-
-    int sliceStart = 0;
-    int sliceHeight = mlt_slices_size_slice(jobs, index, ctx->subHeight, &sliceStart);
-    if (sliceHeight <= 0)
-        return 0;
-
-    QImage stripAccum(ctx->subWidth, sliceHeight, QImage::Format_RGBA64_Premultiplied);
-    stripAccum.fill(0);
-
-    QPointF stripOffset(ctx->subX0, ctx->subY0 + sliceStart);
-
-    QPainter painter(&stripAccum);
-    painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
-    painter.setCompositionMode(QPainter::CompositionMode_Plus);
-    for (int s = 0; s < ctx->samples; s++) {
-        TransformState sampled = sample_params(ctx->current, ctx->delta, ctx->frac, ctx->samples, s);
-        painter.setTransform(build_transform(sampled, ctx->src_width, ctx->src_height, stripOffset));
-        painter.drawImage(0, 0, *ctx->weightedSource);
-    }
-    painter.end();
-
-    QImage stripStraight = stripAccum.convertToFormat(QImage::Format_RGBA8888);
-    for (int y = 0; y < sliceHeight; y++) {
-        uint8_t *dst = ctx->dest_image + (size_t) (ctx->subY0 + sliceStart + y) * ctx->dest_stride
-                       + (size_t) ctx->subX0 * 4;
-        memcpy(dst, stripStraight.constScanLine(y), (size_t) ctx->subWidth * 4);
-    }
-    return 0;
-}
 
 struct WeightSliceContext
 {
@@ -176,49 +143,88 @@ int sliced_weight_proc(int id, int index, int jobs, void *cookie)
     if (sliceHeight <= 0)
         return 0;
 
+    const int components = ctx->image->width() * 4;
     for (int y = sliceStart; y < sliceStart + sliceHeight; y++) {
         quint16 *row = reinterpret_cast<quint16 *>(ctx->image->scanLine(y));
-        for (int x = 0; x < ctx->image->width() * 4; x++) {
-            row[x] = (quint16) qBound(0.0, row[x] * ctx->weight + 0.5, 65535.0);
+        for (int i = 0; i < components; i++) {
+            row[i] = (quint16) qBound(0.0, row[i] * ctx->weight + 0.5, 65535.0);
         }
     }
     return 0;
 }
 
-// Builds the contribution of a single sample to the blurred image.
-//
-// This uses 16 bits/channel to preserve color accuracy even at higher sample counts
-QImage build_weighted_source(const QImage &sourceImage, int samples)
+QImage build_weighted_source(const QImage &sourceImage, double weight)
 {
-    QImage weighted = sourceImage.convertToFormat(QImage::Format_RGBA64_Premultiplied);
-    weighted.detach();
+    // The source is always straight-alpha (RGBA8888/RGBA64) and the
+    // accumulation format is premultiplied, so this never aliases the source.
+    QImage weighted = sourceImage.convertToFormat(ACCUMULATION_FORMAT);
 
     WeightSliceContext ctx;
     ctx.image = &weighted;
-    ctx.weight = 1.0 / samples;
+    ctx.weight = weight;
     mlt_slices_run_normal(0, sliced_weight_proc, &ctx);
 
     return weighted;
 }
 
-// Renders with motion blur using mlt_slices_run_normal
+// mlt_slices worker: renders and accumulates every sample, but only for a
+// horizontal strip of the sub-canvas. Strips don't overlap, so each worker
+// owns an independent QImage and an independent region of dest_image --
+// no locking needed.
+int sliced_blur_proc(int id, int index, int jobs, void *cookie)
+{
+    (void) id;
+    const BlurSliceContext *ctx = static_cast<const BlurSliceContext *>(cookie);
+
+    int sliceStart = 0;
+    int sliceHeight = mlt_slices_size_slice(jobs, index, ctx->subHeight, &sliceStart);
+    if (sliceHeight <= 0)
+        return 0;
+
+    QImage stripAccum(ctx->subWidth, sliceHeight, ACCUMULATION_FORMAT);
+    stripAccum.fill(Qt::transparent);
+
+    QPointF stripOffset(ctx->subX0, ctx->subY0 + sliceStart);
+
+    QPainter painter(&stripAccum);
+    painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+    painter.setCompositionMode(QPainter::CompositionMode_Plus);
+    for (int s = 0; s < ctx->samples; s++) {
+        TransformState sampled = sample_params(ctx->current, ctx->delta, ctx->frac, ctx->samples, s);
+        painter.setTransform(build_transform(sampled, ctx->src_width, ctx->src_height, stripOffset));
+        painter.drawImage(0, 0, *ctx->weightedSource);
+    }
+    painter.end();
+
+    // Down-convert to the frame's format and unpremultiply in one step.
+    QImage stripOut = stripAccum.convertToFormat(ctx->dest_format);
+    size_t rowBytes = (size_t) ctx->subWidth * ctx->dest_bpp;
+    for (int y = 0; y < sliceHeight; y++) {
+        uint8_t *dst = ctx->dest_image + (size_t) (ctx->subY0 + sliceStart + y) * ctx->dest_stride
+                       + (size_t) ctx->subX0 * ctx->dest_bpp;
+        memcpy(dst, stripOut.constScanLine(y), rowBytes);
+    }
+    return 0;
+}
+
 void render_motion_blur(const QImage &sourceImage,
                         uint8_t *dest_image,
-                        int dest_width,
-                        int dest_height,
+                        const QImage &destImage,
                         const TransformState &current,
                         const TransformState &delta,
                         double frac,
                         int samples,
+                        double opacity,
                         int src_width,
                         int src_height)
 {
     QRectF swept = compute_swept_rect(current, delta, frac, samples, src_width, src_height);
-    QRect clipped = swept.intersected(QRectF(0, 0, dest_width, dest_height)).toAlignedRect();
+    QRect clipped
+        = swept.intersected(QRectF(0, 0, destImage.width(), destImage.height())).toAlignedRect();
     if (clipped.isEmpty())
         return; // Content is entirely outside the frame; nothing to draw.
 
-    QImage weightedSource = build_weighted_source(sourceImage, samples);
+    QImage weightedSource = build_weighted_source(sourceImage, opacity / samples);
 
     BlurSliceContext ctx;
     ctx.weightedSource = &weightedSource;
@@ -233,7 +239,9 @@ void render_motion_blur(const QImage &sourceImage,
     ctx.subWidth = clipped.width();
     ctx.subHeight = clipped.height();
     ctx.dest_image = dest_image;
-    ctx.dest_stride = dest_width * 4;
+    ctx.dest_format = destImage.format();
+    ctx.dest_stride = destImage.bytesPerLine();
+    ctx.dest_bpp = destImage.depth() / 8;
 
     mlt_slices_run_normal(0, sliced_blur_proc, &ctx);
 }
@@ -242,36 +250,16 @@ void render_motion_blur(const QImage &sourceImage,
 void render_transform_only(const QImage &sourceImage,
                            QImage &destImage,
                            const TransformState &current,
+                           double opacity,
                            int src_width,
                            int src_height)
 {
     QPainter painter(&destImage);
     painter.setRenderHints(QPainter::Antialiasing | QPainter::SmoothPixmapTransform);
+    painter.setOpacity(opacity);
     painter.setTransform(build_transform(current, src_width, src_height));
     painter.drawImage(0, 0, sourceImage);
     painter.end();
-}
-
-void apply_opacity(
-    uint8_t *dest_image, int width, int height, mlt_image_format format, double opacity)
-{
-    if (opacity >= 0.999)
-        return;
-    if (opacity < 0.0)
-        opacity = 0.0;
-
-    int pixel_count = width * height;
-    if (format == mlt_image_rgba) {
-        uint8_t *p = dest_image + 3;
-        for (int i = 0; i < pixel_count; i++, p += 4) {
-            *p = (uint8_t) qBound(0.0, *p * opacity + 0.5, 255.0);
-        }
-    } else if (format == mlt_image_rgba64) {
-        uint16_t *p = reinterpret_cast<uint16_t *>(dest_image) + 3;
-        for (int i = 0; i < pixel_count; i++, p += 4) {
-            *p = (uint16_t) qBound(0.0, *p * opacity + 0.5, 65535.0);
-        }
-    }
 }
 
 } // namespace
@@ -328,6 +316,7 @@ static int filter_get_image(mlt_frame frame,
     if (mlt_properties_get(properties, "rect")) {
         opacity = mlt_properties_anim_get_rect(properties, "rect", position, length).o;
     }
+    opacity = qBound(0.0, opacity, 1.0);
 
     double shutter_angle
         = mlt_properties_exists(properties, "shutter_angle")
@@ -361,26 +350,24 @@ static int filter_get_image(mlt_frame frame,
 
     QImage destImage;
     convert_mlt_to_qimage(dest_image, &destImage, *width, *height, *format);
-    destImage.fill(0);
+    destImage.fill(Qt::transparent);
 
-    if (!do_blur || *format != mlt_image_rgba) {
-        // No blur requested or unsupported format
-        render_transform_only(sourceImage, destImage, current, b_width, b_height);
+    if (!do_blur) {
+        render_transform_only(sourceImage, destImage, current, opacity, b_width, b_height);
     } else {
         render_motion_blur(sourceImage,
                            dest_image,
-                           *width,
-                           *height,
+                           destImage,
                            current,
                            delta,
                            frac,
                            samples,
+                           opacity,
                            b_width,
                            b_height);
     }
 
     convert_qimage_to_mlt(&destImage, dest_image, *width, *height);
-    apply_opacity(dest_image, *width, *height, *format, opacity);
 
     *image = dest_image;
     mlt_frame_set_image(frame, *image, image_size, mlt_pool_release);
