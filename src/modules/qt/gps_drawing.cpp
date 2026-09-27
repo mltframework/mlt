@@ -264,7 +264,8 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
 
     int i_now = get_now_gpspoint_index(filter, frame);
     gps_point_proc gps_now = get_now_weighted_gpspoint(filter, frame);
-    point_2d crt_pt = {-1, -1}, next_pt = {-1, -1};
+    point_2d crt_pt = {-1, -1}, next_pt = {-1, -1}, last_drawn_pt = {-1, -1};
+    bool reset_last_drawn_pt = true;
 
     QPen pen_solid_color0;
     pen_solid_color0.setWidth(thickness);
@@ -296,158 +297,174 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
     //pen_dash.setStyle( Qt::DashLine );
 
     //go through the [start_index..end_index] interval of gps_points_p and draw each pair of valid points
-    for (int i = pdata->ui_crops.start_index; i < pdata->ui_crops.end_index; i++) {
-        int next_i = get_next_valid_gpspoint_index(filter, i);
-        if (i == next_i || get_crtval_bysrc(filter, i) == GPS_UNINIT
-            || get_crtval_bysrc(filter, next_i) == GPS_UNINIT) {
-            // mlt_log_info(filter, "incomplete pair (i=%d, %d) GPS_UNINIT, skipping drawing\n", i, next_i);
-            continue;
+    //optimization: instead of iterating the interval one by one, jump directly to the next valid index
+    for (int i = get_valid_gpspoint_index(filter, pdata->ui_crops.start_index);
+         i < pdata->ui_crops.end_index;
+         i = get_valid_gpspoint_index(filter, i+1)) {
+
+        int next_i = get_valid_gpspoint_index(filter, i+1);
+        if (i == next_i || next_i > pdata->ui_crops.end_index) {
+            mlt_log_info(filter, "invalid pair (i=%d, next_i=%d, end_index=%d), skipping drawing\n", i, next_i, pdata->ui_crops.end_index);
+            break;
         }
 
         crt_pt = get_gpspoint_to_rect(filter, frame, &pdata->gps_points_p[i], rect, used_crops);
         next_pt
             = get_gpspoint_to_rect(filter, frame, &pdata->gps_points_p[next_i], rect, used_crops);
 
+        if (reset_last_drawn_pt) {
+            last_drawn_pt = crt_pt;
+            reset_last_drawn_pt = false;
+        }
+
         //don't draw line at all if it is completely outside the rect
-        if (!rect_intersects_line(qrect, crt_pt, next_pt))
+        if (!rect_intersects_line(qrect, crt_pt, next_pt)) {
+            reset_last_drawn_pt = true;
             continue;
+        }
+
+        //Optimization: skip drawing if point hasn't moved at least 1 pixel
+        bool point_moved = (abs(next_pt.x - last_drawn_pt.x) > 1 || abs(next_pt.y - last_drawn_pt.y) > 1);
 
         //apply color style
-        if (color_style == gpsg_color_by_solid) {
-            p.setPen(pen_solid_color0);
-        } else if (color_style == gpsg_color_by_solid_past_future) {
-            if (i <= i_now)
+        if (point_moved) {
+            if (color_style == gpsg_color_by_solid) {
                 p.setPen(pen_solid_color0);
-            else if (i > i_now)
-                p.setPen(pen_solid_color1);
-        } else if ((color_style == gpsg_color_by_solid_past && i <= i_now)
-                   || (color_style == gpsg_color_by_solid_future && i > i_now)) {
-            p.setPen(pen_solid_color0);
-        } else if ((color_style == gpsg_color_by_solid_past && i > i_now)
-                   || (color_style == gpsg_color_by_solid_future && i <= i_now)) {
-            p.setPen(pen_thin_color1);
-        } else if (color_style == gpsg_color_by_vertical_gradient
-                   || color_style == gpsg_color_by_horizontal_gradient) {
-            QLinearGradient gradient;
-            gradient.setStart(rect.x, rect.y);
-            if (color_style == gpsg_color_by_vertical_gradient)
-                gradient.setFinalStop(rect.x, rect.y + rect.h);
-            else
-                gradient.setFinalStop(rect.x + rect.w, rect.y);
-            qreal step = 1.0 / (colors.size() - 1);
-            for (int i = 0; i < colors.size(); i++)
-                gradient.setColorAt((qreal) i * step, colors[i]);
-            pen_gradients.setBrush(gradient);
-            p.setPen(pen_gradients);
-        } else if (color_style >= gpsg_color_by_duration
-                   && color_style <= gpsg_color_by_grade_max20) {
-//compute current value as a percentage of min..max
-#define calc_perc(v, min, max) \
-    (double) (v - min) / ((max - min) != 0 ? (max - min) : ((v - min) ? (v - min) : 1))
-            double perc = 0;
-            if (color_style == gpsg_color_by_duration) {
-                //this one is relative to trim, not entire gps track
-                perc = calc_perc(pdata->gps_points_p[i].time,
-                                 pdata->ui_crops.min_crop_time,
-                                 pdata->ui_crops.max_crop_time);
-            } else if (color_style == gpsg_color_by_altitude) {
-                perc = calc_perc(pdata->gps_points_p[i].ele,
-                                 pdata->minmax.min_ele,
-                                 pdata->minmax.max_ele);
-            } else if (color_style == gpsg_color_by_hr) {
-                perc = calc_perc(pdata->gps_points_p[i].hr,
-                                 pdata->minmax.min_hr,
-                                 pdata->minmax.max_hr);
-            } else if (color_style == gpsg_color_by_speed
-                       || color_style == gpsg_color_by_speed_max100) {
-                //max 100km/h (27.777 m/s) variant to cover for bad GPS errors
-                double used_max_speed = pdata->minmax.max_speed;
-                if (color_style == gpsg_color_by_speed_max100 && used_max_speed > 27.777)
-                    used_max_speed = 27.777;
-                perc = calc_perc(pdata->gps_points_p[i].speed,
-                                 pdata->minmax.min_speed,
-                                 used_max_speed);
-            } else if (color_style == gpsg_color_by_grade_max90
-                       || color_style == gpsg_color_by_grade_max20) {
-                //limit to 90* (100%) or 20* (36.397%) - only if max is over this value
-                double max_allowed_percentage = MAX(abs(pdata->minmax.min_grade_p),
-                                                    abs(pdata->minmax.max_grade_p));
-                max_allowed_percentage = MIN(max_allowed_percentage,
-                                             (color_style == gpsg_color_by_grade_max20 ? 36.397
+            } else if (color_style == gpsg_color_by_solid_past_future) {
+                if (i <= i_now)
+                    p.setPen(pen_solid_color0);
+                else if (i > i_now)
+                    p.setPen(pen_solid_color1);
+            } else if ((color_style == gpsg_color_by_solid_past && i <= i_now)
+                       || (color_style == gpsg_color_by_solid_future && i > i_now)) {
+                p.setPen(pen_solid_color0);
+            } else if ((color_style == gpsg_color_by_solid_past && i > i_now)
+                       || (color_style == gpsg_color_by_solid_future && i <= i_now)) {
+                p.setPen(pen_thin_color1);
+            } else if (color_style == gpsg_color_by_vertical_gradient
+                       || color_style == gpsg_color_by_horizontal_gradient) {
+                QLinearGradient gradient;
+                gradient.setStart(rect.x, rect.y);
+                if (color_style == gpsg_color_by_vertical_gradient)
+                    gradient.setFinalStop(rect.x, rect.y + rect.h);
+                else
+                    gradient.setFinalStop(rect.x + rect.w, rect.y);
+                qreal step = 1.0 / (colors.size() - 1);
+                for (int j = 0; j < colors.size(); j++)
+                    gradient.setColorAt((qreal) j * step, colors[j]);
+                pen_gradients.setBrush(gradient);
+                p.setPen(pen_gradients);
+            } else if (color_style >= gpsg_color_by_duration
+                       && color_style <= gpsg_color_by_grade_max20) {
+                //compute current value as a percentage of min..max
+                #define calc_perc(v, min, max) \
+                    (double) (v - min) / ((max - min) != 0 ? (max - min) : ((v - min) ? (v - min) : 1))
+                double perc = 0;
+                if (color_style == gpsg_color_by_duration) {
+                    //this one is relative to trim, not entire gps track
+                    perc = calc_perc(pdata->gps_points_p[i].time,
+                                     pdata->ui_crops.min_crop_time,
+                                     pdata->ui_crops.max_crop_time);
+                } else if (color_style == gpsg_color_by_altitude) {
+                    perc = calc_perc(pdata->gps_points_p[i].ele,
+                                     pdata->minmax.min_ele,
+                                     pdata->minmax.max_ele);
+                } else if (color_style == gpsg_color_by_hr) {
+                    perc = calc_perc(pdata->gps_points_p[i].hr,
+                                     pdata->minmax.min_hr,
+                                     pdata->minmax.max_hr);
+                } else if (color_style == gpsg_color_by_speed
+                           || color_style == gpsg_color_by_speed_max100) {
+                    //max 100km/h (27.777 m/s) variant to cover for bad GPS errors
+                    double used_max_speed = pdata->minmax.max_speed;
+                    if (color_style == gpsg_color_by_speed_max100 && used_max_speed > 27.777)
+                        used_max_speed = 27.777;
+                    perc = calc_perc(pdata->gps_points_p[i].speed,
+                                     pdata->minmax.min_speed,
+                                     used_max_speed);
+                } else if (color_style == gpsg_color_by_grade_max90
+                           || color_style == gpsg_color_by_grade_max20) {
+                    //limit to 90* (100%) or 20* (36.397%) - only if max is over this value
+                    double max_allowed_percentage = MAX(abs(pdata->minmax.min_grade_p),
+                                                        abs(pdata->minmax.max_grade_p));
+                    max_allowed_percentage = MIN(max_allowed_percentage,
+                                                 (color_style == gpsg_color_by_grade_max20 ? 36.397
                                                                                        : 100));
-                double safe_grade_p = CLAMP(pdata->gps_points_p[i].grade_p,
-                                            -max_allowed_percentage,
-                                            max_allowed_percentage);
-                //this one is special because middle color is always for value 0;
-                if (pdata->gps_points_p[i].grade_p < 0)
-                    perc = calc_perc(safe_grade_p, -max_allowed_percentage, 0) / 2.0;
-                else
-                    perc = calc_perc(safe_grade_p, 0, max_allowed_percentage) / 2.0 + 0.5;
-            }
-            //assign the interpolated color at p% in the colors array
-            pen_gradients.setColor(interpolate_color_from_gradient(perc, colors));
-            p.setPen(pen_gradients);
-        } else {
-            p.setPen(pen_solid_color0);
-        }
-
-        if (i == i_now)
-            last_graph_pen = p.pen();
-
-        //for the past/future segment we need to split it exactly at the now point into 2 different colors or it will look horrible if zoomed in enough
-        if ((i == i_now)
-            && (color_style == gpsg_color_by_solid_past || color_style == gpsg_color_by_solid_future
-                || color_style == gpsg_color_by_solid_past_future)) {
-            point_2d now_pt = get_gpspoint_to_rect(filter, frame, &gps_now, rect, used_crops);
-
-            //if we got a valid intermediary point for the current location, we'll draw the past/future with different styles
-            if (get_crtval_bysrc(filter, 0, 0, &gps_now) != GPS_UNINIT) {
-                //"past" sub-segment
-                if (color_style == gpsg_color_by_solid_past
-                    || color_style == gpsg_color_by_solid_past_future)
-                    p.setPen(pen_solid_color0);
-                else if (color_style == gpsg_color_by_solid_future)
-                    p.setPen(pen_thin_color1);
-
-                if (dots_only)
-                    p.drawPoint(QPointF(crt_pt.x, crt_pt.y));
-                else
-                    p.drawLine(QPointF(crt_pt.x, crt_pt.y), QPointF(now_pt.x, now_pt.y));
-
-                //"future" sub-segment
-                if (color_style == gpsg_color_by_solid_past)
-                    p.setPen(pen_thin_color1);
-                else if (color_style == gpsg_color_by_solid_future)
-                    p.setPen(pen_solid_color0);
-                else if (color_style == gpsg_color_by_solid_past_future)
-                    p.setPen(pen_solid_color1);
-
-                if (!dots_only)
-                    p.drawLine(QPointF(now_pt.x, now_pt.y), QPointF(next_pt.x, next_pt.y));
+                    double safe_grade_p = CLAMP(pdata->gps_points_p[i].grade_p,
+                                                -max_allowed_percentage,
+                                                max_allowed_percentage);
+                    //this one is special because middle color is always for value 0;
+                    if (pdata->gps_points_p[i].grade_p < 0)
+                        perc = calc_perc(safe_grade_p, -max_allowed_percentage, 0) / 2.0;
+                    else
+                        perc = calc_perc(safe_grade_p, 0, max_allowed_percentage) / 2.0 + 0.5;
+                }
+                //assign the interpolated color at p% in the colors array
+                pen_gradients.setColor(interpolate_color_from_gradient(perc, colors));
+                p.setPen(pen_gradients);
             } else {
-                //if invalid point, consider the entire line "future"
-                if (color_style == gpsg_color_by_solid_past)
-                    p.setPen(pen_thin_color1);
-                else if (color_style == gpsg_color_by_solid_future)
-                    p.setPen(pen_solid_color0);
-                else if (color_style == gpsg_color_by_solid_past_future)
-                    p.setPen(pen_solid_color1);
+                p.setPen(pen_solid_color0);
+            }
 
+            if (i == i_now)
+                last_graph_pen = p.pen();
+
+            //for the past/future segment we need to split it exactly at the now point into 2 different colors or it will look horrible if zoomed in enough
+            if ((i == i_now)
+                && (color_style == gpsg_color_by_solid_past || color_style == gpsg_color_by_solid_future
+                    || color_style == gpsg_color_by_solid_past_future)) {
+                point_2d now_pt = get_gpspoint_to_rect(filter, frame, &gps_now, rect, used_crops);
+
+                //if we got a valid intermediary point for the current location, we'll draw the past/future with different styles
+                if (get_crtval_bysrc(filter, 0, 0, &gps_now) != GPS_UNINIT) {
+                    //"past" sub-segment
+                    if (color_style == gpsg_color_by_solid_past
+                        || color_style == gpsg_color_by_solid_past_future)
+                        p.setPen(pen_solid_color0);
+                    else if (color_style == gpsg_color_by_solid_future)
+                        p.setPen(pen_thin_color1);
+
+                    if (dots_only)
+                        p.drawPoint(QPointF(crt_pt.x, crt_pt.y));
+                    else
+                        p.drawLine(QPointF(last_drawn_pt.x, last_drawn_pt.y), QPointF(now_pt.x, now_pt.y));
+
+                    //"future" sub-segment
+                    if (color_style == gpsg_color_by_solid_past)
+                        p.setPen(pen_thin_color1);
+                    else if (color_style == gpsg_color_by_solid_future)
+                        p.setPen(pen_solid_color0);
+                    else if (color_style == gpsg_color_by_solid_past_future)
+                        p.setPen(pen_solid_color1);
+
+                    if (!dots_only)
+                        p.drawLine(QPointF(now_pt.x, now_pt.y), QPointF(next_pt.x, next_pt.y)); //no last_pt here
+                } else {
+                    //if invalid point, consider the entire line "future"
+                    if (color_style == gpsg_color_by_solid_past)
+                        p.setPen(pen_thin_color1);
+                    else if (color_style == gpsg_color_by_solid_future)
+                        p.setPen(pen_solid_color0);
+                    else if (color_style == gpsg_color_by_solid_past_future)
+                        p.setPen(pen_solid_color1);
+
+                    if (dots_only)
+                        p.drawPoint(QPointF(crt_pt.x, crt_pt.y));
+                    else
+                        p.drawLine(QPointF(last_drawn_pt.x, last_drawn_pt.y), QPointF(next_pt.x, next_pt.y));
+                }
+            } else //= full segment lines not intersecting now_dot
+            {
+                //IMPORTANT: the function call without QPointF() cast loses precision due to int!! fun times debugging the small random wiggles from this one
                 if (dots_only)
                     p.drawPoint(QPointF(crt_pt.x, crt_pt.y));
                 else
-                    p.drawLine(QPointF(crt_pt.x, crt_pt.y), QPointF(next_pt.x, next_pt.y));
+                    p.drawLine(QPointF(last_drawn_pt.x, last_drawn_pt.y), QPointF(next_pt.x, next_pt.y));
             }
-        } else //= full segment lines not intersecting now_dot
-        {
-            //IMPORTANT: the function call without QPointF() cast loses precision due to int!! fun times debugging the small random wiggles from this one
-            if (dots_only)
-                p.drawPoint(QPointF(crt_pt.x, crt_pt.y));
-            else
-                p.drawLine(QPointF(crt_pt.x, crt_pt.y), QPointF(next_pt.x, next_pt.y));
-        }
-    }
-
+            last_drawn_pt = next_pt;
+        } //end of if (point_moved)
+    }//end of the gps points drawing loop
+    
     //draw the current value in the bot-right corner, big bold white text
     if (mlt_properties_get_int(properties, "show_now_text")) {
         double now_val = get_crtval_bysrc(filter, 0, 0, &gps_now);

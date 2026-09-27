@@ -255,12 +255,12 @@ int get_now_gpspoint_index(mlt_filter filter, mlt_frame frame, bool force_result
     return binary_search_gps(filter_to_gps_data(filter), video_time_synced, force_result);
 }
 
-//returns the next gps point with a valid value for crt_source (starting with crt_i+1)
-int get_next_valid_gpspoint_index(mlt_filter filter, int crt_i)
+//returns gps point index with a valid value for crt_source (starts searching directly at crt_i)
+int get_valid_gpspoint_index(mlt_filter filter, int crt_i)
 {
     private_data *pdata = (private_data *) filter->child;
-    while (++crt_i < pdata->gps_points_size && get_crtval_bysrc(filter, crt_i) == GPS_UNINIT)
-        ;
+    while (crt_i < pdata->gps_points_size && get_crtval_bysrc(filter, crt_i) == GPS_UNINIT)
+        crt_i++;
     //maybe TODO: add restriction for MAX_GPS_TIME? and allow depending on force_result
     return CLAMP(crt_i, 0, pdata->gps_points_size - 1);
 }
@@ -284,7 +284,7 @@ gps_point_proc get_now_weighted_gpspoint(mlt_filter filter,
         return uninit_gps_proc_point;
 
     //interpolate if everything ok
-    int next_i = get_next_valid_gpspoint_index(filter, i_now);
+    int next_i = get_valid_gpspoint_index(filter, i_now + 1);
     if (non_forced_i != -1)
         crt = weighted_middle_point_proc(&pdata->gps_points_p[i_now],
                                          &pdata->gps_points_p[next_i],
