@@ -19,10 +19,6 @@
 
 #include "gps_parser.h"
 
-#include <climits>
-#include <QMutex>
-static QMutex f_mutex;
-
 #define MAX_TEXT_LEN 1024
 
 namespace {
@@ -201,10 +197,22 @@ static void get_current_frame_time_ns_decimals_str (mlt_filter filter, mlt_frame
     private_data *pdata = (private_data *) filter->child;
     double file_time_just_ms = (get_original_video_file_time_mseconds(frame) % 1000) / 1000.0;
     mlt_position frame_position = mlt_frame_original_position(frame);
+    
     mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
     double fps = mlt_profile_fps(profile);
+    if (fps == 0) 
+        fps = 30; //there's probably worse things happening if this returns 0
 
-    double result_ns = file_time_just_ms + frame_position/fps*pdata->speed_multiplier;
+    int64_t frame_time_ns = frame_position * pdata->speed_multiplier * 1000000000LL / fps;
+    // mlt_log_info(NULL, "before ns: fps=%.9f, frame_time_ns=%lld", fps, frame_time_ns);
+
+    if (pdata->updates_per_second > 0) {
+        int64_t upd_every_ns = llround(1e9 / pdata->updates_per_second);
+        if (upd_every_ns) //avoid division (modulo) by 0
+            frame_time_ns -= frame_time_ns % upd_every_ns;
+        // mlt_log_info(NULL, "after: upd_every_ns=%lld, frame_time_ns=%lld, result_ns:%.9f", upd_every_ns, frame_time_ns, (file_time_just_ms + frame_time_ns / 1e9));
+    }
+    double result_ns = file_time_just_ms + frame_time_ns / 1e9;
 
     char dec[17] = {0}; //17 is max double representation 
     /* NOTE: we can't print directly req_decimals because a %.2f would round (so 3.99999 -> 4.00)
@@ -212,18 +220,8 @@ static void get_current_frame_time_ns_decimals_str (mlt_filter filter, mlt_frame
              actually be printed as 3.00 */
     snprintf(dec, 17, "%.9f", result_ns);
     char* dot = strchr(dec, '.');  //skip integer part and dot
-    if (dot && dot+1)
+    if (dot)
         strncat (output_text, dot+1, req_decimals);
-}
-
-//Restricts how many updates per second are done (the searched gps - frame time is altered)
-static int64_t restrict_updates(int64_t fr, double upd_per_sec)
-{
-    if (upd_per_sec <= 0) // = disabled
-        return fr;
-    int64_t rez = fr - fr % (int) (1000.0 / upd_per_sec);
-    //mlt_log_info(NULL, "_time restrict: %d [%f x] -> %d\n", fr%100000, upd_per_sec, rez%100000);
-    return rez;
 }
 
 /** Returns absolute* current frame time in miliseconds
@@ -232,29 +230,27 @@ static int64_t restrict_updates(int64_t fr, double upd_per_sec)
  */
 static int64_t get_current_frame_time_ms(mlt_filter filter, mlt_frame frame)
 {
-    mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
     private_data *pdata = (private_data *) filter->child;
-    int64_t file_time = 0, fr_time = 0;
-
-    file_time = get_original_video_file_time_mseconds(frame);
+    int64_t file_time_ms = get_original_video_file_time_mseconds(frame);
     mlt_position frame_position = mlt_frame_original_position(frame);
+    
+    mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+    double fps = mlt_profile_fps(profile);
+    if (fps == 0) 
+        fps = 30;
+    
+    int64_t frame_time_ms = frame_position * pdata->speed_multiplier * 1000 / fps;
+    // mlt_log_info(NULL, "before ms : fps=%.9f, frame_time_ms=%lld", fps, frame_time_ms);
 
-    f_mutex.lock();
-    char *s = mlt_properties_frames_to_time(properties, frame_position, mlt_time_clock);
-    if (s) {
-        int h = 0, m = 0, sec = 0, msec = 0;
-        sscanf(s, "%d:%d:%d.%d", &h, &m, &sec, &msec);
-        fr_time = (h * 3600 + m * 60 + sec) * 1000 + msec;
-    } else
-        mlt_log_warning(filter,
-                        "get_current_frame_time_ms time string null, giving up "
-                        "[mlt_frame_original_position()=%d], retry result:%s\n",
-                        frame_position,
-                        mlt_properties_frames_to_time(properties, frame_position, mlt_time_clock));
-    f_mutex.unlock();
+    if (pdata->updates_per_second > 0) {
+        int64_t upd_every_ms = llround(1000.0 / pdata->updates_per_second); 
+        if (upd_every_ms)
+            frame_time_ms -= frame_time_ms % upd_every_ms;
+        // mlt_log_info(NULL, "after: upd_every_ms=%lld, frame_time_ms=%lld, result_ms:%lld", upd_every_ms, frame_time_ms, file_time_ms + frame_time_ms);
+    }
+    int64_t result_ms = file_time_ms + frame_time_ms;
 
-    return file_time
-           + restrict_updates(fr_time, pdata->updates_per_second) * pdata->speed_multiplier;
+    return result_ms;
 }
 
 /** Replaces file_datetime_now with absolute time-date string (video created + current timecode)
@@ -478,7 +474,7 @@ static void gps_point_to_output(mlt_filter filter,
             char dec[17] = {0};
             snprintf(dec, 17, "%.9f", (raw.time+val)%1000/1000.0);
             char* dot = strchr(dec, '.');
-            if (dot && dot+1)
+            if (dot)
                 strncat (gps_text, dot+1, req_decimals);
         }
     }
@@ -742,7 +738,7 @@ mlt_filter filter_gpstext_init(mlt_profile profile, mlt_service_type type, const
         mlt_properties_set_int(my_properties, "time_offset", 0);
         mlt_properties_set_int(my_properties, "smoothing_value", 5);
         mlt_properties_set_int(my_properties, "speed_multiplier", 1);
-        mlt_properties_set_int(my_properties, "updates_per_second", 1);
+        mlt_properties_set_int(my_properties, "updates_per_second", -1);
 
         filter->close = filter_close;
         filter->process = filter_process;
