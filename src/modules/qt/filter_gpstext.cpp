@@ -18,6 +18,7 @@
  */
 
 #include "gps_parser.h"
+#include <climits>
 
 #define MAX_TEXT_LEN 1024
 
