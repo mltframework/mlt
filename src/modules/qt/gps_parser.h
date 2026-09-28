@@ -107,8 +107,8 @@ typedef struct
 #define has_valid_location_ptr(x) ((x) && ((x)->lat) != GPS_UNINIT && ((x)->lon) != GPS_UNINIT)
 
 #define MATH_PI 3.14159265358979323846
-#define to_rad(x) ((x) *MATH_PI / 180.0)
-#define to_deg(x) ((x) *180.0 / MATH_PI)
+#define to_rad(x) ((x) * MATH_PI / 180.0)
+#define to_deg(x) ((x) * 180.0 / MATH_PI)
 
 int64_t datetimeXMLstring_to_mseconds(const char *text, char *format = NULL);
 void mseconds_to_timestring(int64_t seconds, char *format, char *result);
