@@ -261,11 +261,21 @@ static Effect *build_movit_chain(mlt_service service, mlt_frame frame, GlslChain
     return effect;
 }
 
+// An MltInput that no EffectChain took over still owns its movit::Input
+// (~MltInput() leaves it to the chain): delete both.
+static void delete_unchained_input(MltInput *input)
+{
+    if (input) {
+        delete input->get_input();
+        delete input;
+    }
+}
+
 static void dispose_movit_effects(mlt_service service, mlt_frame frame)
 {
     if (service == (mlt_service) -1) {
         mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
-        delete GlslManager::get_input(producer, frame);
+        delete_unchained_input(GlslManager::get_input(producer, frame));
         GlslManager::set_input(producer, frame, NULL);
         return;
     }
@@ -675,7 +685,8 @@ static int convert_image(mlt_frame frame,
 
         if (!img_copy) {
             mlt_log_error(nullptr, "filter movit.convert: make_input_copy failed\n");
-            delete input;
+            GlslManager::set_input(producer, frame, NULL);
+            delete_unchained_input(input);
             GlslManager::get_instance()->unlock_service(frame);
             return 1;
         }
@@ -703,7 +714,8 @@ static int convert_image(mlt_frame frame,
             }
             *image = GlslManager::get_input_pixel_pointer(producer, frame);
             *format = input->get_format();
-            delete input;
+            GlslManager::set_input(producer, frame, NULL);
+            delete_unchained_input(input);
             GlslManager::get_instance()->unlock_service(frame);
             return 1;
         }
