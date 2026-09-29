@@ -112,8 +112,7 @@
                 "CMAKE_INSTALL_PREFIX": "$env{HOME}/build/Shotcut",
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo",
                 "CMAKE_PREFIX_PATH": "C:/msys64/mingw64;C:/msys64/clangarm64",
-                "MOD_GLAXNIMATE_QT6": "ON",
-                "MOD_MOVIT": "OFF"
+                "MOD_GLAXNIMATE_QT6": "ON"
             },
             "generator": "Ninja"
         }
