@@ -32,7 +32,7 @@ parameters:
         * #gps_dist#          - total distance so far 
         * #gps_datetime_now#  - date and time of current gps point shown
         * #file_datetime_now# - date and time of current frame in video file
-        * #hr#                - heart rate (if present in gps file)
+        * #gps_hr#            - heart rate (if present in gps file)
         * #gps_bearing#       - current GPS bearing (degrees 0-360)
         * #gps_compass#       - current GPS direction (8 divisions: N, NE, E, etc)
         * #gps_vdist_up#      - total GPS altitude gain so far
