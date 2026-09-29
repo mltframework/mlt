@@ -85,11 +85,12 @@ Modules
   - Fixed subtitle filter rendering one frame past the end time, and
     `subtitle_feed` end-frame calculation.
   - Fixed file-name buffer overflows in `gpsgraphic` and `gpstext`.
+  - Fixed the `sdl2` consumer freezing on Windows after a few seconds.
 
 Other
   - `melt` prints progress at the end and exits non-zero when interrupted
     by a signal.
-  - Added an MSYS2 Windows CMake preset.
+  - Fixed `melt` on Windows ignoring window resize and keyboard transport.
 
 
 Version 7.40.0

@@ -1,6 +1,6 @@
 /*
  * io.c -- melt input/output
- * Copyright (C) 2002-2015 Meltytech, LLC
+ * Copyright (C) 2002-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -143,12 +143,11 @@ void term_init()
     tcsetattr(0, TCSANOW, &tty);
 #else
     HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
-    if (h) {
-        DWORD tty;
-        GetConsoleMode(h, &tty);
-        oldtty = tty;
-        SetConsoleMode(h, mode & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT));
-    }
+    DWORD tty = 0;
+    if (!h || h == INVALID_HANDLE_VALUE || !GetConsoleMode(h, &tty))
+        return;
+    oldtty = tty;
+    SetConsoleMode(h, tty & ~(ENABLE_LINE_INPUT | ENABLE_ECHO_INPUT));
 #endif
 
     mode = 1;
@@ -182,16 +181,29 @@ int term_read()
     }
 #else
     HANDLE h = GetStdHandle(STD_INPUT_HANDLE);
-    if (h && WaitForSingleObject(h, 0) == WAIT_OBJECT_0) {
-        DWORD count;
-        TCHAR c = 0;
-        ReadConsole(h, &c, 1, &count, NULL);
-        return (int) c;
-    } else {
+    INPUT_RECORD rec;
+    DWORD count = 0;
+
+    /* ReadConsole blocks while the handle is signaled for a non-key record
+       (focus, mouse, menu). melt then never reaches its SDL event loop, so
+       playback-window resize and keyboard transport run only in the progress
+       paths, which skip this read. Poll and return -1 when no key is waiting. */
+    if (h && h != INVALID_HANDLE_VALUE && GetFileType(h) == FILE_TYPE_CHAR) {
+        while (PeekConsoleInput(h, &rec, 1, &count) && count > 0) {
+            if (!ReadConsoleInput(h, &rec, 1, &count) || count == 0)
+                break;
+            if (rec.EventType == KEY_EVENT && rec.Event.KeyEvent.bKeyDown) {
+                unsigned char ch = rec.Event.KeyEvent.uChar.AsciiChar;
+                if (ch)
+                    return ch;
+            }
+        }
+    }
+    {
         struct timespec tm = {0, 40000000};
         nanosleep(&tm, NULL);
-        return 0;
     }
+    return -1;
 #endif
     return -1;
 }

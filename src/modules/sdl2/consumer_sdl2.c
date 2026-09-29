@@ -767,6 +767,14 @@ static void *video_thread(void *arg)
             break;
         }
 
+#ifdef _WIN32
+        // The playback window is created on this thread. Windows ghosts it unless
+        // this thread pumps its messages. Leave the events queued for the host.
+        // An embedded window already has its owner's message loop.
+        if (self->sdl_window && !mlt_properties_get_int(self->properties, "window_id"))
+            SDL_PumpEvents();
+#endif
+
         // Get the properties
         properties = MLT_FRAME_PROPERTIES(next);
 
