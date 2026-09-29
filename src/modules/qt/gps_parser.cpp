@@ -111,9 +111,11 @@ void mseconds_to_timestring(int64_t mseconds, char *format, char *result)
 {
     time_t secs = llabs(mseconds) / 1000;
     struct tm *ptm = gmtime(&secs);
-    if (!format || is_whitespace_string(format))
+    if (!format || is_whitespace_string(format) || !strchr(format, '%')) {
         strftime(result, 25, "%Y-%m-%d %H:%M:%S", ptm);
-    else
+        if (format)
+            strncat(result, format, 100);
+    } else
         strftime(result, 50, format, ptm);
 }
 
