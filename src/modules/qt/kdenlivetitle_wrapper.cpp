@@ -33,12 +33,15 @@
 #include <QDebug>
 #include <QDir>
 #include <QFileInfo>
+#include <QGlyphRun>
+#include <QGraphicsBlurEffect>
 #include <QGraphicsScene>
 #include <QGraphicsSvgItem>
 #include <QGraphicsTextItem>
 #include <QImage>
 #include <QMutex>
 #include <QPainter>
+#include <QRawFont>
 #include <QString>
 #include <QStyleOptionGraphicsItem>
 #include <QSvgRenderer>
@@ -46,6 +49,7 @@
 #include <QTextCharFormat>
 #include <QTextCursor>
 #include <QTextDocument>
+#include <QTextLayout>
 #include <QTextOption>
 
 #include <framework/mlt_log.h>
@@ -145,6 +149,60 @@ void blur(QImage &image, int radius)
     }
 }
 
+void appendShapedText(QPainterPath &path, const QPointF &pos, const QFont &font, const QString &text)
+{
+    if (text.isEmpty()) {
+        return;
+    }
+    QFont shapedFont(font);
+    shapedFont.setHintingPreference(QFont::PreferFullHinting);
+
+    QTextLayout layout(text, shapedFont);
+    QTextOption opt = layout.textOption();
+    opt.setTextDirection(Qt::LayoutDirectionAuto);
+    layout.setTextOption(opt);
+    layout.beginLayout();
+    while (true) {
+        QTextLine textLine = layout.createLine();
+        if (!textLine.isValid()) {
+            break;
+        }
+    }
+    layout.endLayout();
+
+    for (int i = 0; i < layout.lineCount(); ++i) {
+        QTextLine textLine = layout.lineAt(i);
+        const auto glyphRuns = textLine.glyphRuns();
+        for (const QGlyphRun &run : glyphRuns) {
+            const auto glyphIndexes = run.glyphIndexes();
+            const auto positions = run.positions();
+            const QRawFont rawFont = run.rawFont();
+            for (int g = 0; g < glyphIndexes.size(); ++g) {
+                QPainterPath glyphPath = rawFont.pathForGlyph(glyphIndexes[g]);
+                QPointF glyphPos = pos + positions[g] - QPointF(0, textLine.ascent());
+                glyphPath.translate(glyphPos);
+                path.addPath(glyphPath);
+            }
+        }
+    }
+
+    // Same decoration geometry as QPainterPath::addText().
+    if (font.underline() || font.overline() || font.strikeOut()) {
+        const QFontMetricsF metrics(font);
+        const qreal lineWidth = metrics.lineWidth();
+        const qreal textWidth = layout.maximumWidth();
+        if (font.underline()) {
+            path.addRect(QRectF(pos.x(), pos.y() + metrics.underlinePos(), textWidth, lineWidth));
+        }
+        if (font.overline()) {
+            path.addRect(QRectF(pos.x(), pos.y() - metrics.overlinePos(), textWidth, lineWidth));
+        }
+        if (font.strikeOut()) {
+            path.addRect(QRectF(pos.x(), pos.y() - metrics.strikeOutPos(), textWidth, lineWidth));
+        }
+    }
+}
+
 class PlainTextItem : public QGraphicsItem
 {
 public:
@@ -167,6 +225,7 @@ public:
         m_pen.setWidthF(outline);
         m_pen.setJoinStyle(Qt::RoundJoin);
         m_font = font;
+        m_font.setHintingPreference(QFont::PreferFullHinting);
         m_lineSpacing = lineSpacing + m_metrics.lineSpacing();
         m_align = align;
         m_width = width;
@@ -176,11 +235,12 @@ public:
 
     void updateText(const QString text)
     {
-        m_path.clear();
-        // Calculate line width
-        const QStringList lines = text.split('\n');
+        const QStringList lines = text.split(QLatin1Char('\n'));
         double linePos = m_metrics.ascent();
-        foreach (const QString &line, lines) {
+        m_path.clear();
+        m_path.setFillRule(Qt::WindingFill);
+
+        for (const QString &line : lines) {
             QPainterPath linePath;
             const QStringList tabLines = line.split(QLatin1Char('\t'));
             if (m_tabWidth > 0 && tabLines.count() > 1) {
@@ -189,18 +249,17 @@ public:
                 for (const QString &tline : tabLines) {
                     QPainterPath tabPath;
                     if (!tline.isEmpty()) {
-                        tabPath.addText(pos, linePos, m_font, tline);
+                        appendShapedText(tabPath, QPointF(pos, linePos), m_font, tline);
                         linePath.addPath(tabPath);
                         currentPos = pos + tabPath.boundingRect().width();
                     } else {
-                        // Several chained tabs
                         currentPos = pos + m_tabWidth / 2;
                     }
                     int tabsCount = ceil(currentPos / m_tabWidth);
                     pos = tabsCount * m_tabWidth;
                 }
             } else {
-                linePath.addText(0, linePos, m_font, line);
+                appendShapedText(linePath, QPointF(0, linePos), m_font, line);
             }
             linePos += m_lineSpacing;
             if (m_align == Qt::AlignHCenter) {
@@ -212,7 +271,7 @@ public:
             }
             m_path.addPath(linePath);
         }
-        m_path.setFillRule(Qt::WindingFill);
+
         if (!m_path.isEmpty()) {
             int minWidth = m_path.boundingRect().width();
             int minHeight = m_lineSpacing * lines.size();
@@ -223,6 +282,7 @@ public:
                 m_boundingRect.setHeight(minHeight);
             }
         }
+        updateShadows();
     }
 
     virtual QRectF boundingRect() const { return m_boundingRect; }
@@ -247,10 +307,8 @@ public:
     void updateShadows()
     {
         if (m_params.count() < 5 || m_params.at(0).toInt() == false) {
-            // Invalid or no shadow wanted
             return;
         }
-        // Build shadow image
         QColor shadowColor = QColor(m_params.at(1));
         int blurRadius = m_params.at(2).toInt();
         int offsetX = m_params.at(3).toInt();
@@ -396,6 +454,7 @@ void loadFromXml(producer_ktitle self,
             if (nodeAttributes.namedItem("type").nodeValue() == "QGraphicsTextItem") {
                 QDomNamedNodeMap txtProperties = node.namedItem("content").attributes();
                 QFont font(txtProperties.namedItem("font").nodeValue());
+                font.setHintingPreference(QFont::PreferFullHinting);
                 QDomNode propsNode = txtProperties.namedItem("font-bold");
                 if (!propsNode.isNull()) {
                     // Old: Bold/Not bold.
@@ -687,6 +746,10 @@ void loadFromXml(producer_ktitle self,
                     gitem = txt;
                 } else {
                     QGraphicsTextItem *txt = scene->addText(text, font);
+                    txt->document()->setDefaultFont(font);
+                    QTextOption opt = txt->document()->defaultTextOption();
+                    opt.setTextDirection(Qt::LayoutDirectionAuto);
+                    txt->document()->setDefaultTextOption(opt);
                     gitem = txt;
                     if (txtProperties.namedItem("font-outline").nodeValue().toDouble() > 0.0) {
                         QTextDocument *doc = txt->document();

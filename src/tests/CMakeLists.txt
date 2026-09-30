@@ -63,6 +63,55 @@ if(MOD_QT6)
       "${CMAKE_SOURCE_DIR}/src/modules/qt/gps_parser.h"
       "${CMAKE_SOURCE_DIR}/src/modules/qt/gps_parser.cpp"
   )
+  add_qt_test(
+    TEST_NAME kdenlivetitle
+    LINK_LIBRARIES Qt${QT_MAJOR_VERSION}::Gui Qt${QT_MAJOR_VERSION}::Widgets Qt${QT_MAJOR_VERSION}::Xml Qt${QT_MAJOR_VERSION}::SvgWidgets
+    SOURCE_FILES
+      "${CMAKE_SOURCE_DIR}/src/modules/qt/kdenlivetitle_wrapper.cpp"
+      "${CMAKE_SOURCE_DIR}/src/modules/qt/kdenlivegraphics.cpp"
+      "${CMAKE_SOURCE_DIR}/src/modules/qt/typewriter.cpp"
+      "${CMAKE_SOURCE_DIR}/src/modules/qt/common.cpp"
+  )
+
+  # A/B visual regression harness for the kdenlivetitle renderer.
+  set(KDENLIVETITLE_BASELINE_REV "2ac487b5" CACHE STRING "git revision used as kdenlivetitle rendering baseline")
+  find_package(Git QUIET)
+  if(GIT_FOUND)
+    set(_baseline_dir "${CMAKE_CURRENT_BINARY_DIR}/kdenlivetitle_baseline")
+    file(MAKE_DIRECTORY "${_baseline_dir}")
+    execute_process(
+      COMMAND ${GIT_EXECUTABLE} show "${KDENLIVETITLE_BASELINE_REV}:src/modules/qt/kdenlivetitle_wrapper.cpp"
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      OUTPUT_FILE "${_baseline_dir}/kdenlivetitle_wrapper_baseline.cpp"
+      RESULT_VARIABLE _git_res
+    )
+    if(_git_res EQUAL 0)
+      foreach(_variant baseline new)
+        if(_variant STREQUAL "baseline")
+          set(_wrapper "${_baseline_dir}/kdenlivetitle_wrapper_baseline.cpp")
+        else()
+          set(_wrapper "${CMAKE_SOURCE_DIR}/src/modules/qt/kdenlivetitle_wrapper.cpp")
+        endif()
+        add_executable(kdenlivetitle_regress_${_variant}
+          kdenlivetitle_regress/kdenlivetitle_regress.cpp
+          ${_wrapper}
+          "${CMAKE_SOURCE_DIR}/src/modules/qt/kdenlivegraphics.cpp"
+          "${CMAKE_SOURCE_DIR}/src/modules/qt/typewriter.cpp"
+          "${CMAKE_SOURCE_DIR}/src/modules/qt/common.cpp"
+        )
+        target_include_directories(kdenlivetitle_regress_${_variant} PRIVATE "${CMAKE_SOURCE_DIR}/src/modules/qt")
+        if(_variant STREQUAL "new")
+          target_compile_definitions(kdenlivetitle_regress_new PRIVATE KDT_NEW)
+        endif()
+        target_link_libraries(kdenlivetitle_regress_${_variant} PRIVATE
+          Qt${QT_MAJOR_VERSION}::Core Qt${QT_MAJOR_VERSION}::Gui Qt${QT_MAJOR_VERSION}::Widgets
+          Qt${QT_MAJOR_VERSION}::Xml Qt${QT_MAJOR_VERSION}::SvgWidgets mlt mlt++)
+        if(MSVC)
+          target_link_libraries(kdenlivetitle_regress_${_variant} PRIVATE PThreads4W::PThreads4W)
+        endif()
+      endforeach()
+    endif()
+  endif()
 endif()
 
 if(Kwalify_FOUND)
