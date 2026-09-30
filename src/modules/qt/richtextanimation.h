@@ -7,18 +7,18 @@
 #include <cmath>
 #include <random>
 #include <QAbstractTextDocumentLayout>
+#include <QFontMetricsF>
+#include <QGlyphRun>
 #include <QGraphicsTextItem>
 #include <QPainter>
 #include <QPen>
-#include <QGlyphRun>
-#include <QFontMetricsF>
 #include <QRawFont>
 #include <QTextBlock>
-#include <QTextFragment>
-#include <QTextLayout>
 #include <QTextBoundaryFinder>
 #include <QTextCursor>
 #include <QTextDocument>
+#include <QTextFragment>
+#include <QTextLayout>
 #include <QVector>
 
 // Rich text: immutable text plus a frame-to-visible-range schedule.
@@ -107,8 +107,11 @@ public:
     {
         width = std::isfinite(width) ? std::max(qreal(0), width) : qreal(0);
         prepareGeometryChange();
-        m_outlinePen = QPen(color.isValid() ? color : QColor(Qt::black), width,
-                            width > 0 ? Qt::SolidLine : Qt::NoPen, Qt::RoundCap, Qt::RoundJoin);
+        m_outlinePen = QPen(color.isValid() ? color : QColor(Qt::black),
+                            width,
+                            width > 0 ? Qt::SolidLine : Qt::NoPen,
+                            Qt::RoundCap,
+                            Qt::RoundJoin);
         QTextCursor cursor(document());
         cursor.select(QTextCursor::Document);
         QTextCharFormat fillOnly;
@@ -119,7 +122,9 @@ public:
     QRectF boundingRect() const override
     {
         const qreal margin = m_outlineMargin;
-        return QGraphicsTextItem::boundingRect().united(m_inkBounds).adjusted(-margin, -margin, margin, margin);
+        return QGraphicsTextItem::boundingRect()
+            .united(m_inkBounds)
+            .adjusted(-margin, -margin, margin, margin);
     }
     void configure(const QStringList &parameters, bool externallyDriven)
     {
@@ -162,7 +167,8 @@ public:
     }
 
 protected:
-    struct VisualCell {
+    struct VisualCell
+    {
         QRectF rect;
         QRectF visibleRect;
         qreal baseline;
@@ -184,7 +190,8 @@ protected:
             const QString text = block.text();
             QTextBoundaryFinder finder(QTextBoundaryFinder::Grapheme, text);
             int start = 0;
-            for (int end = finder.toNextBoundary(); end >= 0; start = end, end = finder.toNextBoundary()) {
+            for (int end = finder.toNextBoundary(); end >= 0;
+                 start = end, end = finder.toNextBoundary()) {
                 const QTextLine line = layout->lineForTextPosition(start);
                 if (!line.isValid() || end <= start) {
                     continue;
@@ -215,16 +222,22 @@ protected:
                 }
                 if (!physicalFont.isValid()) {
                     // Tabs and other advance-only cells can have no glyph run.
-                    physicalFont = QRawFont::fromFont(format.font().resolve(document()->defaultFont()));
+                    physicalFont = QRawFont::fromFont(
+                        format.font().resolve(document()->defaultFont()));
                 }
                 const qreal a = line.cursorToX(start);
                 const qreal z = line.cursorToX(end);
                 const QPointF origin = layout->position();
-                const QRectF rect(origin.x() + std::min(a, z), origin.y() + line.y(),
-                                  std::abs(z - a), line.height());
-                cells.append({rect, block.position() + end <= m_visible ? rect : QRectF(),
-                              origin.y() + line.y() + line.ascent(), block.position() + line.textStart(),
-                              format, physicalFont});
+                const QRectF rect(origin.x() + std::min(a, z),
+                                  origin.y() + line.y(),
+                                  std::abs(z - a),
+                                  line.height());
+                cells.append({rect,
+                              block.position() + end <= m_visible ? rect : QRectF(),
+                              origin.y() + line.y() + line.ascent(),
+                              block.position() + line.textStart(),
+                              format,
+                              physicalFont});
             }
         }
         std::sort(cells.begin(), cells.end(), [](const VisualCell &a, const VisualCell &b) {
@@ -246,7 +259,9 @@ protected:
                 merged.last().rect = merged.last().rect.united(cell.rect);
                 if (!cell.visibleRect.isEmpty()) {
                     merged.last().visibleRect = merged.last().visibleRect.isEmpty()
-                        ? cell.visibleRect : merged.last().visibleRect.united(cell.visibleRect);
+                                                    ? cell.visibleRect
+                                                    : merged.last().visibleRect.united(
+                                                        cell.visibleRect);
                 }
             } else {
                 merged.append(cell);
@@ -269,7 +284,8 @@ protected:
 
     void paintDecorations(QPainter *painter, const QVector<VisualCell> &cells) const
     {
-        struct Decoration {
+        struct Decoration
+        {
             int lineId;
             qreal fullLeft;
             qreal fullRight;
@@ -289,19 +305,23 @@ protected:
                 continue;
             }
             const QBrush brush = format.foreground().style() == Qt::NoBrush
-                ? QBrush(defaultTextColor()) : format.foreground();
-            const QFontMetricsF fallback(format.font().resolve(document()->defaultFont()), painter->device());
+                                     ? QBrush(defaultTextColor())
+                                     : format.foreground();
+            const QFontMetricsF fallback(format.font().resolve(document()->defaultFont()),
+                                         painter->device());
             const bool raw = cell.physicalFont.isValid();
             const qreal ascent = raw ? cell.physicalFont.ascent() : fallback.ascent();
             const qreal descent = raw ? cell.physicalFont.descent() : fallback.descent();
             const qreal thickness = raw ? cell.physicalFont.lineThickness() : fallback.lineWidth();
-            const qreal underlinePosition = raw ? cell.physicalFont.underlinePosition() : fallback.underlinePos();
+            const qreal underlinePosition = raw ? cell.physicalFont.underlinePosition()
+                                                : fallback.underlinePos();
             QPen pen(brush, thickness, Qt::SolidLine, Qt::FlatCap);
             if (format.underlineColor().isValid()) {
                 pen.setColor(format.underlineColor());
             }
             const bool visible = !cell.visibleRect.isEmpty()
-                && !(pen.brush().style() == Qt::SolidPattern && pen.color().alpha() == 0);
+                                 && !(pen.brush().style() == Qt::SolidPattern
+                                      && pen.color().alpha() == 0);
             const qreal left = visible ? std::floor(cell.visibleRect.left()) : 0;
             const qreal right = visible ? std::floor(cell.visibleRect.right()) : 0;
             const qreal fullLeft = std::floor(cell.rect.left());
@@ -318,19 +338,25 @@ protected:
                     offset = std::min(offset, descent - underlinePen.widthF() / 2);
                 }
                 const auto style = format.underlineStyle();
-                if (style >= QTextCharFormat::SingleUnderline && style <= QTextCharFormat::DashDotDotLine) {
+                if (style >= QTextCharFormat::SingleUnderline
+                    && style <= QTextCharFormat::DashDotDotLine) {
                     underlinePen.setStyle(static_cast<Qt::PenStyle>(style));
                 }
-                underlines.append({cell.lineId, fullLeft, fullRight, left, right,
-                                   cell.baseline + offset, underlinePen});
+                underlines.append({cell.lineId,
+                                   fullLeft,
+                                   fullRight,
+                                   left,
+                                   right,
+                                   cell.baseline + offset,
+                                   underlinePen});
             }
             if (format.fontStrikeOut()) {
-                strikes.append({cell.lineId, fullLeft, fullRight, left, right,
-                                cell.baseline - ascent / 3, pen});
+                strikes.append(
+                    {cell.lineId, fullLeft, fullRight, left, right, cell.baseline - ascent / 3, pen});
             }
             if (format.fontOverline()) {
-                overlines.append({cell.lineId, fullLeft, fullRight, left, right,
-                                  cell.baseline - ascent, pen});
+                overlines.append(
+                    {cell.lineId, fullLeft, fullRight, left, right, cell.baseline - ascent, pen});
             }
         }
         for (qsizetype start = 0; start < underlines.size();) {
@@ -375,7 +401,9 @@ protected:
             const auto cells = visibleCells();
             paintBackgrounds(painter, cells);
             // Draw glyphs at their full-layout positions; decorations use line cells.
-            for (QTextBlock block = document()->begin(); block.isValid() && block.position() < m_visible; block = block.next()) {
+            for (QTextBlock block = document()->begin();
+                 block.isValid() && block.position() < m_visible;
+                 block = block.next()) {
                 const QTextLayout *layout = block.layout();
                 for (auto it = block.begin(); !it.atEnd(); ++it) {
                     const QTextFragment fragment = it.fragment();
@@ -385,14 +413,17 @@ protected:
                     const int count = std::min(fragment.length(), m_visible - fragment.position());
                     const QTextCharFormat format = fragment.charFormat();
                     const QBrush brush = format.foreground().style() == Qt::NoBrush
-                        ? QBrush(defaultTextColor()) : format.foreground();
-                    const auto runs = layout->glyphRuns(fragment.position() - block.position(), count);
+                                             ? QBrush(defaultTextColor())
+                                             : format.foreground();
+                    const auto runs = layout->glyphRuns(fragment.position() - block.position(),
+                                                        count);
                     for (const QGlyphRun &run : runs) {
                         painter->save();
                         if (run.flags().testFlag(QGlyphRun::SplitLigature)) {
                             // Qt explicitly marks ranges representing only part
                             // of a shared glyph. Retain that case's own clip.
-                            painter->setClipRect(run.boundingRect().translated(layout->position()), Qt::IntersectClip);
+                            painter->setClipRect(run.boundingRect().translated(layout->position()),
+                                                 Qt::IntersectClip);
                         }
                         // A zero-alpha solid foreground must hide bitmap glyphs too.
                         if (brush.style() != Qt::SolidPattern || brush.color().alpha() != 0) {
