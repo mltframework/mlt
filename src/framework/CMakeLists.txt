@@ -76,6 +76,28 @@ add_custom_target("Other_mlt_Files" SOURCES
 
 add_library(Mlt${MLT_VERSION_MAJOR}::mlt ALIAS mlt)
 
+include(CheckFunctionExists)
+check_function_exists(vsnprintf_l HAVE_VSNPRINTF_L)
+check_function_exists(newlocale HAVE_NEWLOCALE)
+check_function_exists(uselocale HAVE_USELOCALE)
+if(WIN32)
+  check_function_exists(_strtod_l HAVE__STRTOD_L)
+  check_function_exists(_vsnprintf_l HAVE__VSNPRINTF_L)
+  check_function_exists(_create_locale HAVE__CREATE_LOCALE)
+endif()
+
+# check_function_exists only sets cache variables. The sources test these with #if.
+foreach(_mlt_have
+        HAVE_VSNPRINTF_L
+        HAVE_NEWLOCALE
+        HAVE_USELOCALE
+        HAVE__STRTOD_L
+        HAVE__VSNPRINTF_L
+        HAVE__CREATE_LOCALE)
+  if(${_mlt_have})
+    target_compile_definitions(mlt PRIVATE ${_mlt_have}=1)
+  endif()
+endforeach()
 
 include(GenerateExportHeader)
 generate_export_header(mlt)

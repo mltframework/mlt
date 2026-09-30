@@ -33,9 +33,12 @@
 
 #if defined(__GLIBC__)
 #include <locale.h>
+/* mlt_locale_t is a locale object from mlt_properties_set_lcnumeric, or NULL. */
+#define MLT_LOCALE_OBJECT 1
 typedef locale_t mlt_locale_t;
 #elif defined(__APPLE__) || (defined(__FreeBSD_version) && __FreeBSD_version >= 900506)
 #include <xlocale.h>
+#define MLT_LOCALE_OBJECT 1
 typedef locale_t mlt_locale_t;
 #elif defined(__OpenBSD__)
 /* XXX matches __nop_locale glue in libc++ */
