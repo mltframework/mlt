@@ -2204,20 +2204,13 @@ static void strbuf_write_fixed_point(strbuf output, const char *value)
 #if defined(HAVE_NEWLOCALE) && defined(HAVE_USELOCALE)
     locale_t c_locale = newlocale(LC_NUMERIC_MASK, "C", (locale_t) 0);
     locale_t orig_locale = c_locale ? uselocale(c_locale) : (locale_t) 0;
+#endif
     d = strtod(value, NULL);
     snprintf(buf, sizeof(buf), "%.*f", prec, d);
+#if defined(HAVE_NEWLOCALE) && defined(HAVE_USELOCALE)
     if (c_locale) {
         uselocale(orig_locale);
         freelocale(c_locale);
-    }
-#else
-    char *orig_localename = strdup(setlocale(LC_NUMERIC, NULL));
-    setlocale(LC_NUMERIC, "C");
-    d = strtod(value, NULL);
-    snprintf(buf, sizeof(buf), "%.*f", prec, d);
-    if (orig_localename) {
-        setlocale(LC_NUMERIC, orig_localename);
-        free(orig_localename);
     }
 #endif
 
