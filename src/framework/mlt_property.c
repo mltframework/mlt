@@ -34,20 +34,116 @@
 #include <locale.h>
 #include <math.h>
 #include <pthread.h>
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-// Platforms with native strtod_l support
-#if defined(__GLIBC__) || defined(__APPLE__) || (defined(HAVE_STRTOD_L) && !defined(__OpenBSD__))
-#define HAVE_LOCALE_STRTOD_L 1
+// mlt_locale_t is a locale object where MLT_LOCALE_OBJECT is set. Elsewhere it
+// is a locale name, or unusable, and callers often pass NULL.
+
+#if defined(_WIN32) && defined(HAVE__CREATE_LOCALE) \
+    && (defined(HAVE__STRTOD_L) || defined(HAVE__VSNPRINTF_L))
+static _locale_t mlt_win_locale(mlt_locale_t locale)
+{
+    if (!locale || !locale[0])
+        return NULL;
+    return _create_locale(LC_NUMERIC, locale);
+}
 #endif
 
-// Platforms requiring manual locale handling (excluding Windows)
-#if !defined(__GLIBC__) && !defined(__APPLE__) && !defined(_WIN32) && !defined(HAVE_STRTOD_L) \
-    && !defined(__OpenBSD__)
-#define NEED_LOCALE_SAVE_RESTORE 1
+#if !defined(MLT_LOCALE_OBJECT) && !defined(__OpenBSD__) && !defined(_WIN32)
+static pthread_mutex_t mlt_locale_mutex = PTHREAD_MUTEX_INITIALIZER;
+
+static char *mlt_locale_push(const char *name)
+{
+    const char *current;
+    char *saved;
+
+    pthread_mutex_lock(&mlt_locale_mutex);
+    current = setlocale(LC_NUMERIC, NULL);
+    saved = current ? strdup(current) : NULL;
+    setlocale(LC_NUMERIC, name);
+    return saved;
+}
+
+static void mlt_locale_pop(char *saved)
+{
+    if (saved) {
+        setlocale(LC_NUMERIC, saved);
+        free(saved);
+    }
+    pthread_mutex_unlock(&mlt_locale_mutex);
+}
 #endif
+
+static double mlt_locale_strtod(const char *nptr, char **endptr, mlt_locale_t locale)
+{
+#if defined(MLT_LOCALE_OBJECT)
+    if (locale)
+        return strtod_l(nptr, endptr, locale);
+#elif defined(_WIN32) && defined(HAVE__STRTOD_L) && defined(HAVE__CREATE_LOCALE)
+    {
+        _locale_t loc = mlt_win_locale(locale);
+        if (loc) {
+            double result = _strtod_l(nptr, endptr, loc);
+            _free_locale(loc);
+            return result;
+        }
+    }
+#elif !defined(__OpenBSD__) && !defined(_WIN32)
+    if (locale && locale[0]) {
+        char *saved = mlt_locale_push(locale);
+        double result = strtod(nptr, endptr);
+        mlt_locale_pop(saved);
+        return result;
+    }
+#endif
+    return strtod(nptr, endptr);
+}
+
+static int mlt_locale_vsnprintf(
+    char *str, size_t size, mlt_locale_t locale, const char *format, va_list ap)
+{
+#if defined(MLT_LOCALE_OBJECT)
+    if (locale) {
+#if defined(HAVE_VSNPRINTF_L)
+        return vsnprintf_l(str, size, locale, format, ap);
+#else
+        locale_t old = uselocale(locale);
+        int result = vsnprintf(str, size, format, ap);
+        uselocale(old);
+        return result;
+#endif
+    }
+#elif defined(_WIN32) && defined(HAVE__VSNPRINTF_L) && defined(HAVE__CREATE_LOCALE)
+    {
+        _locale_t loc = mlt_win_locale(locale);
+        if (loc) {
+            int result = _vsnprintf_l(str, size, format, loc, ap);
+            _free_locale(loc);
+            return result;
+        }
+    }
+#elif !defined(__OpenBSD__) && !defined(_WIN32)
+    if (locale && locale[0]) {
+        char *saved = mlt_locale_push(locale);
+        int result = vsnprintf(str, size, format, ap);
+        mlt_locale_pop(saved);
+        return result;
+    }
+#endif
+    return vsnprintf(str, size, format, ap);
+}
+
+static int mlt_locale_snprintf(char *str, size_t size, mlt_locale_t locale, const char *format, ...)
+{
+    va_list ap;
+    va_start(ap, format);
+    int result = mlt_locale_vsnprintf(str, size, locale, format, ap);
+    va_end(ap);
+    return result;
+}
 
 /** Maximum size, in bytes, of a formatted SMPTE timecode or SMIL clock value
  * string, including the terminating NUL.
@@ -336,27 +432,8 @@ static int time_clock_to_frames(mlt_property self, const char *s, double fps, ml
     s = copy;
     pos = strrchr(s, ':');
 
-#ifdef NEED_LOCALE_SAVE_RESTORE
-    char *orig_localename = NULL;
-    if (locale) {
-        // Protect damaging the global locale from a temporary locale on another thread.
-        pthread_mutex_lock(&self->mutex);
-
-        // Get the current locale
-        orig_localename = strdup(setlocale(LC_NUMERIC, NULL));
-
-        // Set the new locale
-        setlocale(LC_NUMERIC, locale);
-    }
-#endif
-
     if (pos) {
-#ifdef HAVE_LOCALE_STRTOD_L
-        if (locale)
-            seconds = strtod_l(pos + 1, NULL, locale);
-        else
-#endif
-            seconds = strtod(pos + 1, NULL);
+        seconds = mlt_locale_strtod(pos + 1, NULL, locale);
         *pos = 0;
         pos = strrchr(s, ':');
         if (pos) {
@@ -367,22 +444,8 @@ static int time_clock_to_frames(mlt_property self, const char *s, double fps, ml
             minutes = atoi(s);
         }
     } else {
-#ifdef HAVE_LOCALE_STRTOD_L
-        if (locale)
-            seconds = strtod_l(s, NULL, locale);
-        else
-#endif
-            seconds = strtod(s, NULL);
+        seconds = mlt_locale_strtod(s, NULL, locale);
     }
-
-#ifdef NEED_LOCALE_SAVE_RESTORE
-    if (locale) {
-        // Restore the current locale
-        setlocale(LC_NUMERIC, orig_localename);
-        free(orig_localename);
-        pthread_mutex_unlock(&self->mutex);
-    }
-#endif
 
     free(copy);
 
@@ -529,72 +592,19 @@ int mlt_property_get_int(mlt_property self, double fps, mlt_locale_t locale)
 static double mlt_property_atof(mlt_property self, double fps, mlt_locale_t locale)
 {
     const char *value = self->prop_string;
-#ifdef NEED_LOCALE_SAVE_RESTORE
-    char *orig_localename = NULL;
-#endif
 
     if (fps > 0 && strchr(value, ':')) {
-#ifdef NEED_LOCALE_SAVE_RESTORE
-        if (locale) {
-            // Protect damaging the global locale from a temporary locale on another thread.
-            pthread_mutex_lock(&self->mutex);
-
-            // Get the current locale
-            orig_localename = strdup(setlocale(LC_NUMERIC, NULL));
-
-            // Set the new locale
-            setlocale(LC_NUMERIC, locale);
-        }
-#endif
         double result;
         if (strchr(value, '.') || strchr(value, ','))
             result = time_clock_to_frames(self, value, fps, locale);
         else
             result = time_code_to_frames(self, value, fps);
-
-#ifdef NEED_LOCALE_SAVE_RESTORE
-        if (locale) {
-            // Restore the current locale
-            setlocale(LC_NUMERIC, orig_localename);
-            free(orig_localename);
-            pthread_mutex_unlock(&self->mutex);
-        }
-#endif
         return result;
     } else {
         char *end = NULL;
-        double result;
-
-#ifdef HAVE_LOCALE_STRTOD_L
-        if (locale)
-            result = strtod_l(value, &end, locale);
-        else
-#elif !defined(_WIN32)
-        if (locale) {
-            // Protect damaging the global locale from a temporary locale on another thread.
-            pthread_mutex_lock(&self->mutex);
-
-            // Get the current locale
-            orig_localename = strdup(setlocale(LC_NUMERIC, NULL));
-
-            // Set the new locale
-            setlocale(LC_NUMERIC, locale);
-        }
-#endif
-
-            result = strtod(value, &end);
+        double result = mlt_locale_strtod(value, &end, locale);
         if (end && end[0] == '%')
             result /= 100.0;
-
-#ifdef NEED_LOCALE_SAVE_RESTORE
-        if (locale) {
-            // Restore the current locale
-            setlocale(LC_NUMERIC, orig_localename);
-            free(orig_localename);
-            pthread_mutex_unlock(&self->mutex);
-        }
-#endif
-
         return result;
     }
 }
@@ -820,45 +830,28 @@ char *mlt_property_get_string_l_tf(mlt_property self,
         free(self->prop_string);
         self->prop_string = self->serialiser(self->animation, time_format);
     } else if (!(self->types & mlt_prop_string)) {
-#if !defined(_WIN32)
-        // TODO: when glibc gets sprintf_l, start using it! For now, hack on setlocale.
-        // Save the current locale
-#if defined(__APPLE__)
-        const char *localename = querylocale(LC_NUMERIC_MASK, locale);
-#elif defined(__GLIBC__)
-        const char *localename = locale->__names[LC_NUMERIC];
-#else
-        const char *localename = locale;
-#endif
-        // Get the current locale
-        char *orig_localename = strdup(setlocale(LC_NUMERIC, NULL));
-
-        // Set the new locale
-        setlocale(LC_NUMERIC, localename);
-#endif // _WIN32
-
         if (self->types & mlt_prop_int) {
             self->types |= mlt_prop_string;
             self->prop_string = malloc(32);
-            sprintf(self->prop_string, "%d", self->prop_int);
+            mlt_locale_snprintf(self->prop_string, 32, locale, "%d", self->prop_int);
         } else if (self->types & mlt_prop_color) {
             self->types |= mlt_prop_string;
             self->prop_string = malloc(10);
             uint32_t int_value = ((self->prop_int & 0xff) << 24)
                                  | ((self->prop_int >> 8) & 0xffffff);
-            sprintf(self->prop_string, "#%08x", int_value);
+            mlt_locale_snprintf(self->prop_string, 10, locale, "#%08x", int_value);
         } else if (self->types & mlt_prop_double) {
             self->types |= mlt_prop_string;
             self->prop_string = malloc(32);
-            sprintf(self->prop_string, "%g", self->prop_double);
+            mlt_locale_snprintf(self->prop_string, 32, locale, "%g", self->prop_double);
         } else if (self->types & mlt_prop_position) {
             self->types |= mlt_prop_string;
             self->prop_string = malloc(32);
-            sprintf(self->prop_string, "%d", (int) self->prop_position);
+            mlt_locale_snprintf(self->prop_string, 32, locale, "%d", (int) self->prop_position);
         } else if (self->types & mlt_prop_int64) {
             self->types |= mlt_prop_string;
             self->prop_string = malloc(32);
-            sprintf(self->prop_string, "%" PRId64, self->prop_int64);
+            mlt_locale_snprintf(self->prop_string, 32, locale, "%" PRId64, self->prop_int64);
         } else if (self->types & mlt_prop_data && self->data && self->serialiser) {
             self->types |= mlt_prop_string;
             self->prop_string = self->serialiser(self->data, self->length);
@@ -866,11 +859,6 @@ char *mlt_property_get_string_l_tf(mlt_property self,
             self->types |= mlt_prop_string;
             self->prop_string = self->serialiser(self->data, self->length);
         }
-#if !defined(_WIN32)
-        // Restore the current locale
-        setlocale(LC_NUMERIC, orig_localename);
-        free(orig_localename);
-#endif
     }
     pthread_mutex_unlock(&self->mutex);
 
@@ -1072,7 +1060,7 @@ static void time_smpte_from_frames(int frames, double fps, char *s, int drop)
  * \param[out] s the string to write into - must be at least MLT_TIME_STRING_MAX bytes
  */
 
-static void time_clock_from_frames(int frames, double fps, char *s)
+static void time_clock_from_frames(int frames, double fps, char *s, mlt_locale_t locale)
 {
     int hours, mins;
     double secs;
@@ -1101,7 +1089,7 @@ static void time_clock_from_frames(int frames, double fps, char *s)
         secs = frames / fps;
     }
 
-    snprintf(s, MLT_TIME_STRING_MAX, "%02d:%02d:%06.3f", hours, mins, secs);
+    mlt_locale_snprintf(s, MLT_TIME_STRING_MAX, locale, "%02d:%02d:%06.3f", hours, mins, secs);
 }
 
 /** Get the property as a time string.
@@ -1122,9 +1110,6 @@ char *mlt_property_get_time(mlt_property self,
                             double fps,
                             mlt_locale_t locale)
 {
-#if !defined(_WIN32)
-    char *orig_localename = NULL;
-#endif
     int frames = 0;
 
     // Remove existing string
@@ -1135,34 +1120,9 @@ char *mlt_property_get_time(mlt_property self,
     if (format == mlt_time_frames)
         return mlt_property_get_string_l(self, locale);
 
-#if !defined(_WIN32)
-    // Use the specified locale
-    if (locale) {
-        // TODO: when glibc gets sprintf_l, start using it! For now, hack on setlocale.
-        // Save the current locale
-#if defined(__APPLE__)
-        const char *localename = querylocale(LC_NUMERIC_MASK, locale);
-#elif defined(__GLIBC__)
-        const char *localename = locale->__names[LC_NUMERIC];
-#else
-        // TODO: not yet sure what to do on other platforms
-        const char *localename = locale;
-#endif // _WIN32
-
-        // Protect damaging the global locale from a temporary locale on another thread.
-        pthread_mutex_lock(&self->mutex);
-
-        // Get the current locale
-        orig_localename = strdup(setlocale(LC_NUMERIC, NULL));
-
-        // Set the new locale
-        setlocale(LC_NUMERIC, localename);
-    } else
-#endif // _WIN32
-    {
-        // Make sure we have a lock before accessing self->types
-        pthread_mutex_lock(&self->mutex);
-    }
+    // set_int/get_int above take the mutex themselves. Lock here before
+    // reading types and publishing prop_string.
+    pthread_mutex_lock(&self->mutex);
 
     // Convert number to string
     if (self->types & mlt_prop_int) {
@@ -1178,25 +1138,16 @@ char *mlt_property_get_time(mlt_property self,
     self->types |= mlt_prop_string;
     self->prop_string = malloc(MLT_TIME_STRING_MAX);
 
-    if (format == mlt_time_clock)
-        time_clock_from_frames(frames, fps, self->prop_string);
-    else if (format == mlt_time_smpte_ndf)
-        time_smpte_from_frames(frames, fps, self->prop_string, 0);
-    else // Use smpte drop frame by default
-        time_smpte_from_frames(frames, fps, self->prop_string, 1);
-
-#if !defined(_WIN32)
-    // Restore the current locale
-    if (locale) {
-        setlocale(LC_NUMERIC, orig_localename);
-        free(orig_localename);
-        pthread_mutex_unlock(&self->mutex);
-    } else
-#endif // _WIN32
-    {
-        // Make sure we have a lock before accessing self->types
-        pthread_mutex_unlock(&self->mutex);
+    if (self->prop_string) {
+        if (format == mlt_time_clock)
+            time_clock_from_frames(frames, fps, self->prop_string, locale);
+        else if (format == mlt_time_smpte_ndf)
+            time_smpte_from_frames(frames, fps, self->prop_string, 0);
+        else // Use smpte drop frame by default
+            time_smpte_from_frames(frames, fps, self->prop_string, 1);
     }
+
+    pthread_mutex_unlock(&self->mutex);
 
     // Return the string (may be NULL)
     return self->prop_string;
@@ -1219,38 +1170,7 @@ int mlt_property_is_numeric(mlt_property self, mlt_locale_t locale)
     // If not already numeric but string is numeric.
     if ((!result && self->types & mlt_prop_string) && self->prop_string) {
         char *p = NULL;
-#ifdef NEED_LOCALE_SAVE_RESTORE
-        char *orig_localename = NULL;
-#endif
-
-#ifdef HAVE_LOCALE_STRTOD_L
-        if (locale)
-            strtod_l(self->prop_string, &p, locale);
-        else
-#elif !defined(_WIN32)
-        if (locale) {
-            // Protect damaging the global locale from a temporary locale on another thread.
-            pthread_mutex_lock(&self->mutex);
-
-            // Get the current locale
-            orig_localename = strdup(setlocale(LC_NUMERIC, NULL));
-
-            // Set the new locale
-            setlocale(LC_NUMERIC, locale);
-        }
-#endif
-
-            strtod(self->prop_string, &p);
-
-#ifdef NEED_LOCALE_SAVE_RESTORE
-        if (locale) {
-            // Restore the current locale
-            setlocale(LC_NUMERIC, orig_localename);
-            free(orig_localename);
-            pthread_mutex_unlock(&self->mutex);
-        }
-#endif
-
+        mlt_locale_strtod(self->prop_string, &p, locale);
         result = (p != self->prop_string);
     }
     return result;
@@ -1978,28 +1898,8 @@ mlt_rect mlt_property_get_rect(mlt_property self, mlt_locale_t locale)
         char *p = NULL;
         int count = 0;
 
-#ifdef NEED_LOCALE_SAVE_RESTORE
-        char *orig_localename = NULL;
-        if (locale) {
-            // Protect damaging the global locale from a temporary locale on another thread.
-            pthread_mutex_lock(&self->mutex);
-
-            // Get the current locale
-            orig_localename = strdup(setlocale(LC_NUMERIC, NULL));
-
-            // Set the new locale
-            setlocale(LC_NUMERIC, locale);
-        }
-#endif
-
         while (*value) {
-            double temp;
-#ifdef HAVE_LOCALE_STRTOD_L
-            if (locale)
-                temp = strtod_l(value, &p, locale);
-            else
-#endif
-                temp = strtod(value, &p);
+            double temp = mlt_locale_strtod(value, &p, locale);
             if (p != value) {
                 if (p[0] == '%') {
                     temp /= 100.0;
@@ -2034,15 +1934,6 @@ mlt_rect mlt_property_get_rect(mlt_property self, mlt_locale_t locale)
             value = p;
             count++;
         }
-
-#ifdef NEED_LOCALE_SAVE_RESTORE
-        if (locale) {
-            // Restore the current locale
-            setlocale(LC_NUMERIC, orig_localename);
-            free(orig_localename);
-            pthread_mutex_unlock(&self->mutex);
-        }
-#endif
     }
     return rect;
 }

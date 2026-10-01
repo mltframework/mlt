@@ -152,12 +152,11 @@ int mlt_properties_set_lcnumeric(mlt_properties self, const char *locale)
     if (self && locale) {
         property_list *list = self->local;
 
-#if defined(__GLIBC__) || defined(__APPLE__)
+#if defined(MLT_LOCALE_OBJECT)
         if (list->locale)
             freelocale(list->locale);
-        list->locale = newlocale(LC_NUMERIC_MASK, locale, NULL);
+        list->locale = newlocale(LC_NUMERIC_MASK, locale, (locale_t) 0);
 #else
-
         free(list->locale);
         list->locale = strdup(locale);
 #endif
@@ -186,10 +185,10 @@ const char *mlt_properties_get_lcnumeric(mlt_properties self)
 #if !defined(_WIN32)
     property_list *list = self->local;
     if (list->locale) {
-#if defined(__APPLE__)
-        result = querylocale(LC_NUMERIC_MASK, list->locale);
-#elif defined(__GLIBC__)
+#if defined(__GLIBC__)
         result = list->locale->__names[LC_NUMERIC];
+#elif defined(MLT_LOCALE_OBJECT)
+        result = querylocale(LC_NUMERIC_MASK, list->locale);
 #else
         result = list->locale;
 #endif
@@ -877,7 +876,7 @@ int mlt_properties_set(mlt_properties self, const char *name, const char *value)
 
             // Determine the value
             if (isdigit(id[0])) {
-#if defined(__GLIBC__) || defined(__APPLE__) || HAVE_STRTOD_L && !defined(__OpenBSD__)
+#if defined(MLT_LOCALE_OBJECT)
                 property_list *list = self->local;
                 if (list->locale)
                     current = strtod_l(id, NULL, list->locale);
@@ -1638,12 +1637,10 @@ void mlt_properties_close(mlt_properties self)
                 free(list->name[index]);
             }
 
-#if defined(__GLIBC__) || defined(__APPLE__)
-            // Cleanup locale
+#if defined(MLT_LOCALE_OBJECT)
             if (list->locale)
                 freelocale(list->locale);
 #else
-
             free(list->locale);
 #endif
 
@@ -2204,24 +2201,16 @@ static void strbuf_write_fixed_point(strbuf output, const char *value)
     int prec = (exp < 0 ? -exp : 0) + 7;
     char buf[64];
 
-#if defined(__GLIBC__) || defined(__APPLE__) \
-    || (defined(__FreeBSD_version) && __FreeBSD_version >= 900506)
-    mlt_locale_t c_locale = newlocale(LC_NUMERIC_MASK, "C", NULL);
-    mlt_locale_t orig_locale = c_locale ? uselocale(c_locale) : (mlt_locale_t) 0;
+#if defined(HAVE_NEWLOCALE) && defined(HAVE_USELOCALE)
+    locale_t c_locale = newlocale(LC_NUMERIC_MASK, "C", (locale_t) 0);
+    locale_t orig_locale = c_locale ? uselocale(c_locale) : (locale_t) 0;
+#endif
     d = strtod(value, NULL);
     snprintf(buf, sizeof(buf), "%.*f", prec, d);
+#if defined(HAVE_NEWLOCALE) && defined(HAVE_USELOCALE)
     if (c_locale) {
         uselocale(orig_locale);
         freelocale(c_locale);
-    }
-#else
-    char *orig_localename = strdup(setlocale(LC_NUMERIC, NULL));
-    setlocale(LC_NUMERIC, "C");
-    d = strtod(value, NULL);
-    snprintf(buf, sizeof(buf), "%.*f", prec, d);
-    if (orig_localename) {
-        setlocale(LC_NUMERIC, orig_localename);
-        free(orig_localename);
     }
 #endif
 
