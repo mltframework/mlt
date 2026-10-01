@@ -52,24 +52,26 @@ extern mlt_link link_swresample_init(mlt_profile profile, mlt_service_type, cons
 #include <libavformat/avformat.h>
 #include <libavutil/opt.h>
 
-// A static flag used to determine if avformat has been initialised
-static int avformat_initialised = 0;
+// Used to initialise avformat once, even if services are created on several threads at once
+static pthread_once_t avformat_init_once = PTHREAD_ONCE_INIT;
+
+static void avformat_do_init(void)
+{
+#ifdef USE_AVDEVICE
+    avdevice_register_all();
+#endif
+    avformat_network_init();
+    av_log_set_level(mlt_log_get_level());
+    if (getenv("MLT_AVFORMAT_PRODUCER_CACHE")) {
+        int n = atoi(getenv("MLT_AVFORMAT_PRODUCER_CACHE"));
+        mlt_service_cache_set_size(NULL, "producer_avformat", n);
+    }
+}
 
 static void avformat_init()
 {
     // Initialise avformat if necessary
-    if (avformat_initialised == 0) {
-        avformat_initialised = 1;
-#ifdef USE_AVDEVICE
-        avdevice_register_all();
-#endif
-        avformat_network_init();
-        av_log_set_level(mlt_log_get_level());
-        if (getenv("MLT_AVFORMAT_PRODUCER_CACHE")) {
-            int n = atoi(getenv("MLT_AVFORMAT_PRODUCER_CACHE"));
-            mlt_service_cache_set_size(NULL, "producer_avformat", n);
-        }
-    }
+    pthread_once(&avformat_init_once, avformat_do_init);
 }
 
 static void *create_service(mlt_profile profile, mlt_service_type type, const char *id, void *arg)
