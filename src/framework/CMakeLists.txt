@@ -77,12 +77,17 @@ add_custom_target("Other_mlt_Files" SOURCES
 add_library(Mlt${MLT_VERSION_MAJOR}::mlt ALIAS mlt)
 
 include(CheckFunctionExists)
+include(CheckSymbolExists)
 check_function_exists(vsnprintf_l HAVE_VSNPRINTF_L)
 check_function_exists(newlocale HAVE_NEWLOCALE)
 check_function_exists(uselocale HAVE_USELOCALE)
 if(WIN32)
   check_function_exists(_strtod_l HAVE__STRTOD_L)
-  check_function_exists(_vsnprintf_l HAVE__VSNPRINTF_L)
+  # UCRT (e.g. MSYS2 ucrt64/clang64/clangarm64) defines _vsnprintf_l as an
+  # inline wrapper in stdio.h rather than an exported symbol, so the
+  # link-only check_function_exists test fails to find it. check_symbol_exists
+  # includes the header first, so it detects the inline definition too.
+  check_symbol_exists(_vsnprintf_l "stdio.h" HAVE__VSNPRINTF_L)
   check_function_exists(_create_locale HAVE__CREATE_LOCALE)
 endif()
 
