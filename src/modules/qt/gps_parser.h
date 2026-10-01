@@ -31,11 +31,15 @@
 #define GPS_UNINIT -9999
 #define MAX_PRINT_TIMESTAMP_NS 32
 
-typedef struct
+struct gps_point_raw
 {
     double lat, lon, lat_projected, speed, total_dist, ele, hr, bearing, cad, atemp, power;
     int64_t time; //epoch milliseconds
-} gps_point_raw;
+    bool operator<(const gps_point_raw& pt2) const 
+    {
+        return time < pt2.time;
+    }
+};
 
 typedef struct gps_point_raw_list
 {
@@ -43,13 +47,13 @@ typedef struct gps_point_raw_list
     struct gps_point_raw_list *next;
 } gps_point_ll;
 
-typedef struct
+struct gps_point_proc
 {
     double lat, lon, lat_projected, speed, speed_vertical, speed_3d, total_dist, ele, hr, bearing,
         cad, atemp, power;
     int64_t time;
     double d_elev, elev_up, elev_down, dist_up, dist_down, dist_flat, grade_p;
-} gps_point_proc;
+};
 
 //0 is a valid value for many fields, use GPS_UNINIT (-9999) to differentiate missing values
 static const gps_point_raw uninit_gps_raw_point = {.lat = GPS_UNINIT,
@@ -88,7 +92,7 @@ static const gps_point_proc uninit_gps_proc_point = {.lat = GPS_UNINIT,
                                                      .grade_p = GPS_UNINIT};
 
 //structure used to ease argument passing between filter and GPS parser api
-typedef struct
+struct gps_private_data
 {
     gps_point_raw *gps_points_r;         //raw gps data from file
     gps_point_proc *gps_points_p;        //processed gps data
@@ -105,7 +109,7 @@ typedef struct
     int last_smooth_lvl;
     char *last_filename; //gps file fullpath
     mlt_filter filter;
-} gps_private_data;
+} ;
 
 #define has_valid_location(x) (((x).lat) != GPS_UNINIT && ((x).lon) != GPS_UNINIT)
 #define has_valid_location_ptr(x) ((x) && ((x)->lat) != GPS_UNINIT && ((x)->lon) != GPS_UNINIT)

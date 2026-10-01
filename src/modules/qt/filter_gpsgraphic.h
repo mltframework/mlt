@@ -33,7 +33,7 @@ struct s_gps_data_bounds
 
 namespace {
 
-typedef struct
+struct private_data
 {
     gps_point_raw *gps_points_r;  //raw gps data from file
     gps_point_proc *gps_points_p; //processed gps data
@@ -55,31 +55,31 @@ typedef struct
     double bg_img_scaled_width, bg_img_scaled_height;
     QRectF bg_img_matched_rect;
     int swap_180;
-} private_data;
+};
 
 } // namespace
 
-typedef enum {
+enum gpsg_data_sources {
     gspg_location_src = 0,
     gpsg_altitude_src,
     gpsg_hr_src,
     gpsg_speed_src
-} gpsg_data_sources;
+};
 
-typedef enum {
+enum gpsg_data_subids {
     gpsg_latitude_id = gspg_location_src,
     gpsg_longitude_id = gpsg_latitude_id + 100
-} gpsg_data_subids;
+};
 
-typedef enum {
+enum gpsg_graph_types {
     gpsg_2d_map_graph = 0,
     gpsg_crop_center_graph,
     gpsg_speedometer_graph
     //gpsg_ladder_graph, 	//was thinking a vertical ruler/gauge thing for altitude, couldn't design something that actually looks good
     //gpsg_compass_graph  	//probably easy to adapt from speedometer but not really that important to be worth the extra code
-} gpsg_graph_types;
+};
 
-typedef enum {
+enum gpsg_color_styles {
     gpsg_color_by_solid = 0,
     gpsg_color_by_solid_past_future,
     gpsg_color_by_solid_past,
@@ -93,7 +93,7 @@ typedef enum {
     gpsg_color_by_speed_max100,
     gpsg_color_by_grade_max90,
     gpsg_color_by_grade_max20
-} gpsg_color_styles;
+};
 
 struct s_base_crops
 {

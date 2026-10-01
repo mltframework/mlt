@@ -100,7 +100,7 @@ int64_t datetimeXMLstring_to_mseconds(const char *text, const char *format /* = 
     if (!datetime.isValid()) {
         mlt_log_warning(NULL,
                         "datetimeXMLstring_to_mseconds - QDateTime::fromString failed on string: "
-                        "'%.25s' with format: '%s'\n",
+                        "'%.25s' with format: '%s'; returning 0.",
                         text,
                         (format ? format : "NULL"));
         return 0;
@@ -1345,13 +1345,8 @@ void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *coun
 
 //tries to parse a .txt file containing GPS data; returns 0 for failure, 1 success
 //first line of the file must contain a format helper that starts with #delimiter=
-int q_parse_txt(QTextStream &reader, gps_point_ll **gps_list, int *count_pts)
+int q_parse_txt(QTextStream &reader, QVector <gps_point_raw>& gps_points_file, int64_t& last_time, bool& all_sorted, int& no_time_count, int&eq_time_count)
 {
-    int64_t last_time = -1;
-    //support no time in file because many services (Strava included) do this for exported routes
-    gps_point_ll *no_time_head = NULL, *no_time_prev = NULL;
-    int no_time_count = 0;
-
     //example from my dashcam (added extra spaces for readability):
     //2025/06/12 02:45:01 N:45.123456 E:26.123456 0.0   km/h   0.00    72.50    10           x:-4.13 y:0.27 z:0.49
     //date       time     lat         lon         speed (unit) heading altitude satelites    xyz_gravity_sensor
@@ -1489,65 +1484,20 @@ int q_parse_txt(QTextStream &reader, gps_point_ll **gps_list, int *count_pts)
         //              crt_point.atemp,
         //              crt_point.power);
 
-        //we parsed a line, now add it to our valid list
-        if (crt_point.time != GPS_UNINIT && crt_point.time > last_time) {
-            *gps_list = (gps_point_ll *) calloc(1, sizeof(gps_point_ll));
-            if (*gps_list == NULL)
-                return 0;
-            *count_pts += 1;
-            (*gps_list)->gp = crt_point;
-            (*gps_list)->next = NULL;
-            gps_list = &(*gps_list)->next;
+        //we parsed a line, check the time and store it in the array
+        if (crt_point.time != GPS_UNINIT && crt_point.time != 0) {
+            if (crt_point.time < last_time)
+                all_sorted = false;
+            else if (crt_point.time == last_time)
+                eq_time_count +=1;
             last_time = crt_point.time;
-        } else if (crt_point.time == GPS_UNINIT) {
-            //if no time is stored, we make it up starting from 1
-            gps_point_ll *tmp = (gps_point_ll *) calloc(1, sizeof(gps_point_ll));
-            if (tmp == NULL)
-                return 0;
-            if (no_time_head == NULL) {
-                no_time_head = tmp;
-                no_time_prev = tmp;
-            } else {
-                no_time_prev->next = tmp;
-                no_time_prev = tmp;
-            }
+        } else if (crt_point.time == GPS_UNINIT || crt_point.time == 0) {
+            //if no time is read (or bad format), we make it up starting from 1
             no_time_count += 1;
             crt_point.time = no_time_count * 1000;
-            tmp->gp = crt_point;
-            tmp->next = NULL;
-        } else
-            mlt_log_info(NULL,
-                         "qxml_parse_tcx: skipping point due to time [%d] %f,%f - crt:%u.%u, "
-                         "last:%u.%u\n",
-                         *count_pts,
-                         crt_point.lat,
-                         crt_point.lon,
-                         (unsigned) (crt_point.time / 1000),
-                         (unsigned) (crt_point.time % 1000),
-                         (unsigned) (last_time / 1000),
-                         (unsigned) (last_time % 1000));
-    } //end of while reader.atEnd()
-
-    //if no points had time, we replace the real list with the no_time one
-    if (*count_pts == 0 && no_time_count > 0) {
-        mlt_log_info(NULL,
-                     "qxml_parse_gpx: all GPS points are missing time values, inserting each "
-                     "point at 1 second interval!\n");
-        *gps_list = no_time_head;
-        *count_pts = no_time_count;
-    } else if (*count_pts > 0 && no_time_count > 0) {
-        //cleanup the no_time list as we're not using it
-        mlt_log_info(NULL,
-                     "qxml_parse_gpx: %d GPS points have no time in original file and have been "
-                     "discarded (total valid points kept: %d)!\n",
-                     no_time_count,
-                     *count_pts);
-        while (no_time_head) {
-            gps_point_ll *tmp = no_time_head;
-            no_time_head = no_time_head->next;
-            free(tmp);
         }
-    }
+        gps_points_file.append(crt_point);
+    } //end of while reader.atEnd()
 
     return 1;
 }
@@ -1559,13 +1509,19 @@ int q_parse_txt(QTextStream &reader, gps_point_ll **gps_list, int *count_pts)
  */
 int qxml_parse_file(gps_private_data gdata)
 {
-    gps_point_ll *gps_list_head = NULL, *tmp = NULL;
-    int count_pts = 0, nr = 0;
+    QVector <gps_point_raw> gps_points_array;
+    int64_t last_time = -1; //used to check if points are read already ordered
+    int no_time_count = 0;  //for gps tracks without time, used for ordering
+    int eq_time_count = 0;  //we only support unique times
+    bool all_sorted = true; //skip the sorting at the end
+
+    // gps_point_ll *gps_list_head = NULL, *tmp = NULL;
+    // int count_pts = 0, nr = 0;
     QString filename = gdata.last_filename;
-    gps_point_raw *gps_array = NULL;
+    // gps_point_raw *gps_array = NULL;
     int &swap_to_180 = *gdata.swap180;
 
-    // mlt_log_info(gdata.filter, "in qxml_parse_file, filename: %s, swap_to_180=%d\n", filename, swap_to_180);
+    // mlt_log_info(gdata.filter, "in qxml_parse_file, filename: %s\n", filename);
 
     QFile gps_file(filename);
 
@@ -1578,74 +1534,104 @@ int qxml_parse_file(gps_private_data gdata)
 
     if (filename.endsWith(".txt", Qt::CaseInsensitive)) {
         QTextStream qin(&gps_file);
-        if (q_parse_txt(qin, &gps_list_head, &count_pts) == 0) {
+        if (q_parse_txt(qin, gps_points_array, last_time, all_sorted, no_time_count, eq_time_count) == 0) {
             mlt_log_error(NULL,
-                          "txt file (%s) does not start with a recognised format line, can't process!\n\
+                          "txt file (%s) processing failed. Make sure it starts with a recognised format line!\n\
                 \tsample format line: \n#delimiter=\" \" timestamp=\"yyyy/MM/dd\" timestamp=\"hh:mm:ss\" latitude longitude speed skip heading altitude",
                           qUtf8Printable(filename));
             return 0;
         }
-    } else {
-        QXmlStreamReader qxml_reader(&gps_file);
-        qxml_reader.setNamespaceProcessing(false);
-        while (!qxml_reader.atEnd() && !qxml_reader.hasError()) {
-            qxml_reader.readNextStartElement();
-            if (qxml_reader.isStartDocument()) {
-                mlt_log_info(NULL,
-                             "qxml_parse_file: StartDocument found. Encoding=%s\n",
-                             qUtf8Printable(qxml_reader.documentEncoding().toString()));
-                continue;
-            }
-            // mlt_log_info(NULL, " readNext element tag: %s, type=%d\n", qUtf8Printable(qxml_reader.name().toString()), qxml_reader.tokenType());
-            if (qxml_reader.name() == QStringLiteral("TrainingCenterDatabase")) {
-                qxml_parse_tcx(qxml_reader, &gps_list_head, &count_pts);
-            } else if (qxml_reader.name() == QStringLiteral("gpx")) {
-                qxml_parse_gpx(qxml_reader, &gps_list_head, &count_pts);
-            } else {
-                mlt_log_warning(gdata.filter,
-                                "qxml_parse_file: fail to parse file: %s, unknown root element: "
-                                "%s. Aborting.\n",
-                                qUtf8Printable(filename),
-                                qUtf8Printable(qxml_reader.name().toString()));
-                return 0;
-            }
+        mlt_log_info(NULL, "printing the read array, size=%lld", gps_points_array.size());
+        for (auto pt : gps_points_array) {
+            mlt_log_info(NULL, ".time:%lld, lat:%f, lon:%f, speed:%f, distance:%f, ele:%f, hr:%f, bearing:%f, cadence:%f, temp:%f, power:%f\n",
+                pt.time, pt.lat, pt.lon, pt.speed, pt.total_dist, pt.ele, pt.hr, pt.bearing, pt.cad, pt.atemp, pt.power);
         }
-        if (qxml_reader.hasError()) {
-            mlt_log_info(NULL,
-                         "qxml_reader.hasError! line:%u, errString:%s\n",
-                         (unsigned) qxml_reader.lineNumber(),
-                         qUtf8Printable(qxml_reader.errorString()));
-            return 0;
-        }
+    } 
+    // else {
+    //     QXmlStreamReader qxml_reader(&gps_file);
+    //     qxml_reader.setNamespaceProcessing(false);
+    //     while (!qxml_reader.atEnd() && !qxml_reader.hasError()) {
+    //         qxml_reader.readNextStartElement();
+    //         if (qxml_reader.isStartDocument()) {
+    //             mlt_log_info(NULL,
+    //                          "qxml_parse_file: StartDocument found. Encoding=%s\n",
+    //                          qUtf8Printable(qxml_reader.documentEncoding().toString()));
+    //             continue;
+    //         }
+    //         // mlt_log_info(NULL, " readNext element tag: %s, type=%d\n", qUtf8Printable(qxml_reader.name().toString()), qxml_reader.tokenType());
+    //         if (qxml_reader.name() == QStringLiteral("TrainingCenterDatabase")) {
+    //             qxml_parse_tcx(qxml_reader, &gps_list_head, &count_pts);
+    //         } else if (qxml_reader.name() == QStringLiteral("gpx")) {
+    //             qxml_parse_gpx(qxml_reader, &gps_list_head, &count_pts);
+    //         } else {
+    //             mlt_log_warning(gdata.filter,
+    //                             "qxml_parse_file: fail to parse file: %s, unknown root element: "
+    //                             "%s. Aborting.\n",
+    //                             qUtf8Printable(filename),
+    //                             qUtf8Printable(qxml_reader.name().toString()));
+    //             return 0;
+    //         }
+    //     }
+    //     if (qxml_reader.hasError()) {
+    //         mlt_log_info(NULL,
+    //                      "qxml_reader.hasError! line:%u, errString:%s\n",
+    //                      (unsigned) qxml_reader.lineNumber(),
+    //                      qUtf8Printable(qxml_reader.errorString()));
+    //         return 0;
+    //     }
 
-        qxml_reader.clear(); //not sure if really needed if not reused
-    }
+    //     qxml_reader.clear(); //not sure if really needed if not reused
+    // }
 
-    if (count_pts < 2) {
+    int gps_pt_count = gps_points_array.size();
+    mlt_log_info(NULL, "back from parsing the file(s) '%s', gps_points_array.size()=%d, last_time=%lld, all_sorted=%d, no_time_count=%d, eq_time_count=%d",
+        qPrintable(filename), gps_pt_count, last_time, all_sorted, no_time_count, eq_time_count);
+
+    if (gps_pt_count < 2) {
         mlt_log_warning(gdata.filter,
-                        "qxml_parse_file: less than 2 gps points read (%d). Aborting.\n",
-                        count_pts);
+                        "qxml_parse_file: less than 2 gps points read (%lld). Aborting.\n",
+                        gps_points_array.size());
         return 0;
     }
 
-    *gdata.ptr_to_gps_points_r = (gps_point_raw *) calloc(count_pts, sizeof(gps_point_raw));
-    gps_array = *gdata.ptr_to_gps_points_r; //just an alias
+    //sort if needed
+    if (!all_sorted)
+        std::sort(gps_points_array.begin(), gps_points_array.end());
+
+    //deal with entries without time
+    bool skip_notimes = false;
+    if (no_time_count > 0 && no_time_count < gps_pt_count) {
+        skip_notimes = true;
+        gps_pt_count -= no_time_count;
+        mlt_log_info (NULL, "qxml_parse_file: will skip %d/%lld points without valid time", no_time_count, gps_points_array.size());
+    }
+    if (eq_time_count) {
+        gps_pt_count -= eq_time_count;
+        mlt_log_info (NULL, "qxml_parse_file: will skip %d/%lld points with duplicate time", eq_time_count, gps_points_array.size());
+    }
+
+    //allocate C style array
+    *gdata.ptr_to_gps_points_r = (gps_point_raw *) calloc(gps_pt_count, sizeof(gps_point_raw));
+    gps_point_raw* gps_array = *gdata.ptr_to_gps_points_r; //just an alias
     if (gps_array == NULL) {
         mlt_log_error(gdata.filter,
                       "malloc error (size=%u)\n",
-                      (unsigned) (count_pts * sizeof(gps_point_raw)));
+                      (unsigned) (gps_pt_count * sizeof(gps_point_raw)));
     }
-    *gdata.gps_points_size = count_pts;
+    *gdata.gps_points_size = gps_pt_count;
 
-    //copy points to private array and free list
-    while (gps_list_head) {
-        gps_array[nr++] = gps_list_head->gp;
-        tmp = gps_list_head;
-        gps_list_head = gps_list_head->next;
-        free(tmp);
+    //copy points to private array (skip pts if needed)
+    int nr = 0;
+    for (auto pt : gps_points_array) {
+        if (skip_notimes && pt.time <= no_time_count*1000)
+            continue;
+        if (eq_time_count > 0 && nr-1 >= 0 && pt.time == gps_points_array[nr-1].time)
+            continue;
+        gps_array[nr++] = pt;
     }
 
     //search to find if we cross the 180 and/or the 0 meridian
+    //TODO: move this logic inside the array copy above and don't just check crt to next, but [next which has valid .lon]
     bool crosses0 = false, crosses180 = false;
     for (int i = 0; i < *gdata.gps_points_size - 1; i++) {
         double crt = gps_array[i].lon;
@@ -1673,25 +1659,25 @@ int qxml_parse_file(gps_private_data gdata)
     } else
         swap_to_180 = 0;
 
-    // //debug result:
-    // for (int i = 0; i < *gdata.gps_points_size; i += 100) {
-    //     gps_point_raw *crt_point = &gps_array[i];
-    //     mlt_log_info(NULL,
-    //                  "_xml_parse_file read point[%d]: time:%d, lat:%f, lon:%f, speed:%f, "
-    //                  "distance:%f, ele:%f, hr:%f, bearing:%f, cadence:%f, temp:%f, power:%f\n",
-    //                  i,
-    //                  crt_point->time / 1000,
-    //                  crt_point->lat,
-    //                  crt_point->lon,
-    //                  crt_point->speed,
-    //                  crt_point->total_dist,
-    //                  crt_point->ele,
-    //                  crt_point->hr,
-    //                  crt_point->bearing,
-    //                  crt_point->cad,
-    //                  crt_point->atemp,
-    //                  crt_point->power);
-    //}
+    //debug result:
+    for (int i = 0; i < *gdata.gps_points_size; i += 100) {
+        gps_point_raw *crt_point = &gps_array[i];
+        mlt_log_info(NULL,
+                     "_xml_parse_file read point[%d]: time:%lld, lat:%f, lon:%f, speed:%f, "
+                     "distance:%f, ele:%f, hr:%f, bearing:%f, cadence:%f, temp:%f, power:%f\n",
+                     i,
+                     crt_point->time,
+                     crt_point->lat,
+                     crt_point->lon,
+                     crt_point->speed,
+                     crt_point->total_dist,
+                     crt_point->ele,
+                     crt_point->hr,
+                     crt_point->bearing,
+                     crt_point->cad,
+                     crt_point->atemp,
+                     crt_point->power);
+    }
 
     return 1;
 }
