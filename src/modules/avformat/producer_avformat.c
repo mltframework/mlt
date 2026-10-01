@@ -4455,15 +4455,21 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
     producer_avformat self = mlt_cache_item_data(cache_item, NULL);
 
     // If cache miss
-    if (!self) {
-        self = calloc(1, sizeof(struct producer_avformat_s));
-        self->parent = producer;
+    while (!self) {
+        producer_avformat created = calloc(1, sizeof(struct producer_avformat_s));
+        created->parent = producer;
         mlt_service_cache_put(service,
                               "producer_avformat",
-                              self,
+                              created,
                               0,
                               (mlt_destructor) producer_avformat_close);
+        // Take our reference right away and use what the cache returns, not
+        // the pointer put: with many producers on many threads, another
+        // thread's put can evict the new entry before we get it, and since
+        // nobody held a reference yet, its data has already been destroyed.
+        // Then try again.
         cache_item = mlt_service_cache_get(service, "producer_avformat");
+        self = mlt_cache_item_data(cache_item, NULL);
     }
 
     // Create an empty frame
