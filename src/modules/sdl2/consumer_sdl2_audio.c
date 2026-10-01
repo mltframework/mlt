@@ -643,7 +643,9 @@ static void *consumer_thread(void *arg)
                 mlt_frame_close(frame);
                 frame = NULL;
                 self->refresh_count--;
-                if (self->refresh_count <= 0) {
+                // Wait for a refresh, but not past a stop: consumer_stop() clears
+                // running and broadcasts, which is lost if it lands before this wait.
+                while (self->running && self->refresh_count <= 0) {
                     pthread_cond_wait(&self->refresh_cond, &self->refresh_mutex);
                 }
                 pthread_mutex_unlock(&self->refresh_mutex);
