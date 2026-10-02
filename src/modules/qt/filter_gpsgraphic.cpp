@@ -633,7 +633,7 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
                                / 1000);
 }
 
-//checks if a new file is selected and if so, does private_data cleanup and calls qxml_parse_file
+//checks if a new file is selected and if so, does private_data cleanup and calls q_parse_file
 //+ computes some one time pdata values
 static void process_file(mlt_filter filter, mlt_frame frame)
 {
@@ -652,7 +652,7 @@ static void process_file(mlt_filter filter, mlt_frame frame)
         strncpy(pdata->last_filename, filename, sizeof(pdata->last_filename) - 1);
         pdata->last_filename[sizeof(pdata->last_filename) - 1] = '\0';
 
-        if (qxml_parse_file(filter_to_gps_data(filter)) == 1) {
+        if (q_parse_file(filter_to_gps_data(filter)) == 1) {
             get_first_gps_time(filter_to_gps_data(filter));
             get_last_gps_time(filter_to_gps_data(filter));
 
