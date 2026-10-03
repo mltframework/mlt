@@ -50,13 +50,17 @@ std::string null_string;
 TypeWriter::TypeWriter()
     : frame_rate(25)
     , frame_step(1)
+    , step_sigma(0)
+    , step_seed(0)
     , parsing_err(0)
+    , previous_total_frame(-1)
     , last_used_idx(-1)
 {}
 
 void TypeWriter::clear()
 {
     frames.clear();
+    last_used_idx = -1;
 }
 
 void TypeWriter::setPattern(const std::string &str)
@@ -91,7 +95,7 @@ void TypeWriter::printParseResult()
 
 uint TypeWriter::count() const
 {
-    return frames.back().frame;
+    return frames.empty() ? 0 : frames.back().frame;
 }
 
 uint TypeWriter::getOrInsertFrame(uint frame)
@@ -651,12 +655,35 @@ QString XmlParser::getNodeContent(uint i) const
     return node_vec[i].nodeValue();
 }
 
-void XmlParser::setNodeContent(uint i, const QString &content)
+bool XmlParser::hasRichText(uint i) const
+{
+    if (i >= node_vec.size())
+        return false;
+    const QDomElement rich = node_vec[i].parentNode().firstChildElement("richtext");
+    return rich.attribute("format") == "qt-html-v1" && !rich.text().isEmpty();
+}
+
+void XmlParser::setNodeContent(uint i, const QString &content, bool preserveRichText)
 {
     if (i >= node_vec.size())
         return;
 
-    node_vec[i].setNodeValue(content);
+    // Rich text: the full rich document remains immutable. The
+    // automatic filter changes visibility, not text or range coordinates.
+    QDomElement element = node_vec[i].parentNode().toElement();
+    if (hasRichText(i)) {
+        if (preserveRichText && node_vec[i].nodeValue().startsWith(content)) {
+            element.setAttribute("richtext-visible-utf16", content.size());
+            element.removeAttribute("richtext-legacy-replacement");
+        } else {
+            // Custom scripts may delete/reorder text. Do not show stale HTML.
+            element.setAttribute("richtext-legacy-replacement", 1);
+            element.removeAttribute("richtext-visible-utf16");
+            node_vec[i].setNodeValue(content);
+        }
+    } else {
+        node_vec[i].setNodeValue(content);
+    }
 }
 
 QString XmlParser::getDocument() const

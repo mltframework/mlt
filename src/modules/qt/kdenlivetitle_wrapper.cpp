@@ -21,7 +21,11 @@
 
 #include "kdenlivetitle_wrapper.h"
 #include "kdenlivegraphics.h"
+#include "richtextanimation.h"
+#include "richtextgradient.h"
+#include "richtextspacing.h"
 #include "typewriter.h"
+#include <cstring>
 
 #include "common.h"
 
@@ -29,17 +33,24 @@
 #include <QDebug>
 #include <QDir>
 #include <QFileInfo>
+#include <QGlyphRun>
+#include <QGraphicsBlurEffect>
 #include <QGraphicsScene>
 #include <QGraphicsSvgItem>
 #include <QGraphicsTextItem>
 #include <QImage>
 #include <QMutex>
 #include <QPainter>
+#include <QRawFont>
 #include <QString>
 #include <QStyleOptionGraphicsItem>
 #include <QSvgRenderer>
+#include <QTextBlockFormat>
+#include <QTextCharFormat>
 #include <QTextCursor>
 #include <QTextDocument>
+#include <QTextLayout>
+#include <QTextOption>
 
 #include <framework/mlt_log.h>
 #include <QColor>
@@ -138,6 +149,55 @@ void blur(QImage &image, int radius)
     }
 }
 
+static void appendShapedText(QPainterPath &path,
+                             const QPointF &pos,
+                             const QFont &font,
+                             const QString &text)
+{
+    if (text.isEmpty()) {
+        return;
+    }
+    QFont shapedFont(font);
+    shapedFont.setHintingPreference(QFont::PreferFullHinting);
+    QStringList families = font.families();
+    if (families.isEmpty() && !font.family().isEmpty()) {
+        families.append(font.family());
+    }
+    families.append(QStringLiteral("Noto Sans Sinhala"));
+    families.append(QStringLiteral("Iskoola Pota"));
+    families.append(QStringLiteral("Segoe UI Historic"));
+    families.append(QStringLiteral("Arial Unicode MS"));
+    shapedFont.setFamilies(families);
+
+    QTextLayout layout(text, shapedFont);
+    QTextOption opt = layout.textOption();
+    opt.setTextDirection(Qt::LayoutDirectionAuto);
+    layout.setTextOption(opt);
+    layout.beginLayout();
+    while (true) {
+        QTextLine textLine = layout.createLine();
+        if (!textLine.isValid()) {
+            break;
+        }
+    }
+    layout.endLayout();
+
+    for (int i = 0; i < layout.lineCount(); ++i) {
+        QTextLine textLine = layout.lineAt(i);
+        const auto glyphRuns = textLine.glyphRuns();
+        for (const QGlyphRun &run : glyphRuns) {
+            const auto glyphIndexes = run.glyphIndexes();
+            const auto positions = run.positions();
+            const QRawFont rawFont = run.rawFont();
+            for (int g = 0; g < glyphIndexes.size(); ++g) {
+                QPainterPath glyphPath = rawFont.pathForGlyph(glyphIndexes[g]);
+                glyphPath.translate(pos + positions[g]);
+                path.addPath(glyphPath);
+            }
+        }
+    }
+}
+
 class PlainTextItem : public QGraphicsItem
 {
 public:
@@ -160,6 +220,7 @@ public:
         m_pen.setWidthF(outline);
         m_pen.setJoinStyle(Qt::RoundJoin);
         m_font = font;
+        m_font.setHintingPreference(QFont::PreferFullHinting);
         m_lineSpacing = lineSpacing + m_metrics.lineSpacing();
         m_align = align;
         m_width = width;
@@ -169,52 +230,89 @@ public:
 
     void updateText(const QString text)
     {
-        m_path.clear();
-        // Calculate line width
-        const QStringList lines = text.split('\n');
-        double linePos = m_metrics.ascent();
-        foreach (const QString &line, lines) {
-            QPainterPath linePath;
-            const QStringList tabLines = line.split(QLatin1Char('\t'));
-            if (m_tabWidth > 0 && tabLines.count() > 1) {
-                qreal pos = 0;
-                qreal currentPos = 0;
-                for (const QString &tline : tabLines) {
-                    QPainterPath tabPath;
-                    if (!tline.isEmpty()) {
-                        tabPath.addText(pos, linePos, m_font, tline);
-                        linePath.addPath(tabPath);
-                        currentPos = pos + tabPath.boundingRect().width();
-                    } else {
-                        // Several chained tabs
-                        currentPos = pos + m_tabWidth / 2;
-                    }
-                    int tabsCount = ceil(currentPos / m_tabWidth);
-                    pos = tabsCount * m_tabWidth;
-                }
-            } else {
-                linePath.addText(0, linePos, m_font, line);
+        // Pre-bake text rendering into a QImage using QTextLayout::draw().
+        // QTextLayout::draw() executes the full HarfBuzz GSUB+GPOS pipeline,
+        // which correctly positions combining marks (e.g. Sinhala Rakaransaya).
+        // This is thread-safe: the QImage is fully constructed here and only
+        // read (never written) in paint().
+
+        const QStringList lines = text.split(QLatin1Char('\n'));
+
+        // Pass 1: measure dimensions and create layouts
+        double totalHeight = 0;
+        double maxWidth = m_width > 0 ? m_width : 0;
+        QVector<QTextLayout *> layouts;
+
+        for (const QString &line : lines) {
+            QTextLayout *layout = new QTextLayout(line.isEmpty() ? QStringLiteral(" ") : line,
+                                                  m_font);
+            QTextOption opt;
+            opt.setTextDirection(Qt::LayoutDirectionAuto);
+            opt.setWrapMode(QTextOption::NoWrap);
+            if (m_align == Qt::AlignHCenter)
+                opt.setAlignment(Qt::AlignHCenter);
+            else if (m_align == Qt::AlignRight)
+                opt.setAlignment(Qt::AlignRight);
+            else
+                opt.setAlignment(Qt::AlignLeft);
+            layout->setTextOption(opt);
+            layout->beginLayout();
+            QTextLine tline = layout->createLine();
+            if (tline.isValid()) {
+                tline.setLineWidth(m_width > 0 ? m_width : 9999);
+                tline.setPosition(QPointF(0, totalHeight));
+                if (tline.naturalTextWidth() > maxWidth)
+                    maxWidth = tline.naturalTextWidth();
             }
-            linePos += m_lineSpacing;
-            if (m_align == Qt::AlignHCenter) {
-                double offset = (m_width - m_metrics.horizontalAdvance(line)) / 2;
-                linePath.translate(offset, 0);
-            } else if (m_align == Qt::AlignRight) {
-                double offset = (m_width - m_metrics.horizontalAdvance(line));
-                linePath.translate(offset, 0);
-            }
-            m_path.addPath(linePath);
+            layout->endLayout();
+            totalHeight += m_lineSpacing;
+            layouts.append(layout);
         }
+
+        if (m_boundingRect.width() < maxWidth)
+            m_boundingRect.setWidth(maxWidth);
+        if (m_boundingRect.height() < totalHeight)
+            m_boundingRect.setHeight(totalHeight);
+
+        // Pass 2: render to a pre-baked QImage
+        // Note: no padding/offset tricks — draw at (0,0) to fit bounding rect exactly.
+        int imgW = qMax(1, (int) m_boundingRect.width());
+        int imgH = qMax(1, (int) m_boundingRect.height());
+        m_image = QImage(imgW, imgH, QImage::Format_ARGB32_Premultiplied);
+        m_image.fill(Qt::transparent);
+        m_imageOffset = QPointF(0, 0);
+
+        QPainter imgPainter(&m_image);
+        imgPainter.setRenderHint(QPainter::Antialiasing);
+        imgPainter.setRenderHint(QPainter::TextAntialiasing);
+
+        // Outline pass: draw text with a thick outline pen
+        if (m_outline > 0) {
+            QPen outlinePen(m_pen.color());
+            outlinePen.setWidthF(m_outline * 2.0);
+            outlinePen.setJoinStyle(Qt::RoundJoin);
+            imgPainter.setPen(outlinePen);
+            for (QTextLayout *layout : layouts) {
+                layout->draw(&imgPainter, QPointF(0, 0));
+            }
+        }
+
+        // Fill pass: draw text in the fill color
+        imgPainter.setPen(QPen(m_brush.color()));
+        for (QTextLayout *layout : layouts) {
+            layout->draw(&imgPainter, QPointF(0, 0));
+        }
+        imgPainter.end();
+
+        qDeleteAll(layouts);
+
+        // Rebuild path for shadow support (shadow still uses QPainterPath approach)
+        m_path.clear();
         m_path.setFillRule(Qt::WindingFill);
-        if (!m_path.isEmpty()) {
-            int minWidth = m_path.boundingRect().width();
-            int minHeight = m_lineSpacing * lines.size();
-            if (m_boundingRect.width() < minWidth) {
-                m_boundingRect.setWidth(minWidth);
-            }
-            if (m_boundingRect.height() < minHeight) {
-                m_boundingRect.setHeight(minHeight);
-            }
+        double linePos = m_metrics.ascent();
+        for (const QString &line : lines) {
+            appendShapedText(m_path, QPointF(0, linePos), m_font, line);
+            linePos += m_lineSpacing;
         }
     }
 
@@ -225,10 +323,13 @@ public:
         if (!m_shadow.isNull()) {
             painter->drawImage(m_shadowOffset, m_shadow);
         }
-        if (m_outline > 0) {
-            painter->strokePath(m_path.simplified(), m_pen);
+        if (!m_image.isNull()) {
+            painter->drawImage(m_imageOffset, m_image);
+        } else {
+            if (m_outline > 0)
+                painter->strokePath(m_path.simplified(), m_pen);
+            painter->fillPath(m_path, m_brush);
         }
-        painter->fillPath(m_path, m_brush);
     }
 
     void addShadow(QStringList params)
@@ -240,10 +341,8 @@ public:
     void updateShadows()
     {
         if (m_params.count() < 5 || m_params.at(0).toInt() == false) {
-            // Invalid or no shadow wanted
             return;
         }
-        // Build shadow image
         QColor shadowColor = QColor(m_params.at(1));
         int blurRadius = m_params.at(2).toInt();
         int offsetX = m_params.at(3).toInt();
@@ -273,6 +372,8 @@ public:
 private:
     QRectF m_boundingRect;
     QImage m_shadow;
+    QImage m_image;
+    QPointF m_imageOffset;
     QPoint m_shadowOffset;
     QPainterPath m_path;
     QBrush m_brush;
@@ -334,6 +435,8 @@ void loadFromXml(producer_ktitle self,
 {
     scene->clear();
     mlt_producer producer = &self->parent;
+    // Rich text: do not retain a stale animation flag after an edit.
+    mlt_properties_clear(MLT_PRODUCER_PROPERTIES(producer), "_animated");
     self->has_alpha = true;
     mlt_properties producer_props = MLT_PRODUCER_PROPERTIES(producer);
     QDomDocument doc;
@@ -387,6 +490,7 @@ void loadFromXml(producer_ktitle self,
             if (nodeAttributes.namedItem("type").nodeValue() == "QGraphicsTextItem") {
                 QDomNamedNodeMap txtProperties = node.namedItem("content").attributes();
                 QFont font(txtProperties.namedItem("font").nodeValue());
+                font.setHintingPreference(QFont::PreferFullHinting);
                 QDomNode propsNode = txtProperties.namedItem("font-bold");
                 if (!propsNode.isNull()) {
                     // Old: Bold/Not bold.
@@ -419,10 +523,39 @@ void loadFromXml(producer_ktitle self,
                                               .toInt());
                 }
                 QColor col(stringToColor(txtProperties.namedItem("font-color").nodeValue()));
-                QString text = node.namedItem("content").firstChild().nodeValue();
+                QDomElement contentElement = node.namedItem("content").toElement();
+
+                // First child is deliberately still the legacy plain-text fallback.
+                QString text = contentElement.firstChild().nodeValue();
+
+                QDomElement richTextElement = contentElement.firstChildElement("richtext");
+                QString richTextHtml;
+
+                if (!richTextElement.isNull()
+                    && richTextElement.attribute("format") == "qt-html-v1") {
+                    richTextHtml = richTextElement.text();
+                }
+
                 if (!replacementText.isEmpty()) {
                     text = text.replace("%s", replacementText);
                 }
+
+                const QStringList typewriterParameters
+                    = txtProperties.namedItem("typewriter").nodeValue().split(";");
+                const bool typewriterEnabled = !typewriterParameters.isEmpty()
+                                               && typewriterParameters.at(0).toInt() != 0;
+                const bool automaticTypewriter = typewriterParameters.size() >= 5
+                                                 && typewriterParameters.at(1).toInt() > 0
+                                                 && typewriterParameters.at(2).toInt() >= 1
+                                                 && typewriterParameters.at(2).toInt() <= 3
+                                                 && typewriterParameters.at(3).toInt() >= 0;
+                // Custom macro scripts and template substitution need an
+                // explicit source-to-output mapping. Keep their legacy path.
+                const bool useRichText
+                    = !richTextHtml.isEmpty() && replacementText.isEmpty()
+                      && !contentElement.hasAttribute("richtext-legacy-replacement")
+                      && (!typewriterEnabled || automaticTypewriter
+                          || contentElement.hasAttribute("richtext-visible-utf16"));
                 QColor outlineColor(
                     stringToColor(txtProperties.namedItem("font-outline-color").nodeValue()));
 
@@ -480,7 +613,108 @@ void loadFromXml(producer_ktitle self,
                     brush = QBrush(col);
                 }
 
-                if (txtProperties.namedItem("compatibility").isNull()) {
+                if (useRichText) {
+                    // Rich text: QTextDocument performs the same per-character
+                    // font/weight/size/colour layout used by Kdenlive's editor.
+                    auto *txt = new RichTextReveal::Item();
+                    txt->setHtml(richTextHtml);
+                    // Rich text: same decoder as the editor.
+                    if (!TitlerSpacingV1::restore(contentElement, txt->document())) {
+                        qWarning() << "Ignoring invalid title rich-text spacing metadata";
+                    }
+                    if (!TitlerGradientV1::restore(contentElement, txt->document())) {
+                        qWarning() << "Ignoring invalid title rich-text gradient metadata";
+                    }
+                    txt->document()->setDocumentMargin(0);
+                    TitlerGradientV1::applyBrushes(txt->document(), int(boxWidth), int(boxHeight));
+
+                    QTextOption option = txt->document()->defaultTextOption();
+                    if (tabWidth > 0) {
+                        option.setTabStopDistance(tabWidth);
+                    }
+                    txt->document()->setDefaultTextOption(option);
+
+                    QTextCursor richCursor(txt->document());
+                    richCursor.select(QTextCursor::Document);
+
+                    QTextCharFormat globalFormat;
+                    bool hasGlobalFormat = false;
+
+                    // Existing gradient and outline remain object-level for
+                    // compatibility, but they no longer replace run fonts.
+                    if (!txtProperties.namedItem("gradient").isNull()) {
+                        globalFormat.setForeground(brush);
+                        hasGlobalFormat = true;
+                    }
+
+                    const double outlineWidth
+                        = txtProperties.namedItem("font-outline").nodeValue().toDouble();
+
+                    if (!TitlerOutline::restore(contentElement, txt->document())) {
+                        qWarning() << "Ignoring invalid title rich-text outline metadata";
+                    }
+                    txt->setOutline(outlineWidth, outlineColor);
+
+                    if (hasGlobalFormat) {
+                        richCursor.mergeCharFormat(globalFormat);
+                    }
+
+                    QTextBlockFormat blockFormat;
+                    bool hasBlockFormat = false;
+
+                    if (!txtProperties.namedItem("alignment").isNull()) {
+                        blockFormat.setAlignment(Qt::Alignment(align));
+                        hasBlockFormat = true;
+                    }
+
+                    if (!txtProperties.namedItem("line-spacing").isNull()) {
+                        blockFormat.setLineHeight(txtProperties.namedItem("line-spacing")
+                                                      .nodeValue()
+                                                      .toInt(),
+                                                  QTextBlockFormat::LineDistanceHeight);
+                        hasBlockFormat = true;
+                    }
+
+                    if (hasBlockFormat) {
+                        richCursor.mergeBlockFormat(blockFormat);
+                    }
+
+                    if (!txtProperties.namedItem("preferred-width").isNull()) {
+                        txt->setTextWidth(
+                            txtProperties.namedItem("preferred-width").nodeValue().toInt());
+                    } else if (boxWidth > 0) {
+                        txt->setTextWidth(boxWidth);
+                    }
+
+                    if (!txtProperties.namedItem("shadow").isNull()) {
+                        const QStringList values
+                            = txtProperties.namedItem("shadow").nodeValue().split(";");
+
+                        if (values.count() >= 5 && values.at(0).toInt() != 0) {
+                            auto *shadow = new QGraphicsDropShadowEffect();
+                            shadow->setColor(QColor(values.at(1)));
+                            shadow->setBlurRadius(values.at(2).toDouble());
+                            shadow->setOffset(values.at(3).toDouble(), values.at(4).toDouble());
+                            txt->setGraphicsEffect(shadow);
+                        }
+                    }
+
+                    // Rich text: preserve the rich document and only
+                    // change which characters are painted for this frame.
+                    const bool external = contentElement.hasAttribute("richtext-visible-utf16");
+                    txt->configure(typewriterParameters, external);
+                    if (external) {
+                        bool ok = false;
+                        const int visible
+                            = contentElement.attribute("richtext-visible-utf16").toInt(&ok);
+                        txt->setVisibleCharacters(ok ? visible : 0);
+                    }
+                    if (txt->animated()) {
+                        mlt_properties_set_int(producer_props, "_animated", 1);
+                    }
+                    scene->addItem(txt);
+                    gitem = txt;
+                } else if (txtProperties.namedItem("compatibility").isNull()) {
                     // Workaround Qt5 crash in threaded drawing of QGraphicsTextItem, paint by ourselves
                     PlainTextItem *txt = new PlainTextItem(
                         text,
@@ -503,7 +737,7 @@ void loadFromXml(producer_ktitle self,
 
                         const QStringList values
                             = txtProperties.namedItem("typewriter").nodeValue().split(";");
-                        int enabled = (static_cast<bool>(values.at(0).toInt()));
+                        const bool enabled = !values.isEmpty() && values.at(0).toInt() != 0;
 
                         if (enabled && values.count() >= 5) {
                             mlt_properties_set_int(producer_props, "_animated", 1);
@@ -548,6 +782,10 @@ void loadFromXml(producer_ktitle self,
                     gitem = txt;
                 } else {
                     QGraphicsTextItem *txt = scene->addText(text, font);
+                    txt->document()->setDefaultFont(font);
+                    QTextOption opt = txt->document()->defaultTextOption();
+                    opt.setTextDirection(Qt::LayoutDirectionAuto);
+                    txt->document()->setDefaultTextOption(opt);
                     gitem = txt;
                     if (txtProperties.namedItem("font-outline").nodeValue().toDouble() > 0.0) {
                         QTextDocument *doc = txt->document();
@@ -806,6 +1044,19 @@ void drawKdenliveTitle(producer_ktitle self,
 
     pthread_mutex_lock(&self->mutex);
 
+    // Rich text: an effect-stack typewriter supplies frame-local
+    // XML. The cached scene must also be replaced when an effect is removed.
+    const char *frameXml = mlt_properties_get(properties, "_kdenlivetitle_typewriter_xml");
+    const char *cachedXml = mlt_properties_get(producer_props, "_typewriter_cached_xml");
+    if ((frameXml && (!cachedXml || std::strcmp(frameXml, cachedXml) != 0))
+        || (!frameXml && cachedXml)) {
+        force_refresh = 1;
+    }
+    if (frameXml)
+        mlt_properties_set(producer_props, "_typewriter_cached_xml", frameXml);
+    else
+        mlt_properties_clear(producer_props, "_typewriter_cached_xml");
+
     // Check if user wants us to reload the image or if we need animation
     bool animated = mlt_properties_get(producer_props, "_endrect") != NULL;
 
@@ -837,8 +1088,13 @@ void drawKdenliveTitle(producer_ktitle self,
                                 0,
                                 mlt_properties_get_int(properties, "width"),
                                 mlt_properties_get_int(properties, "height"));
-            if (mlt_properties_get(producer_props, "resource")
-                && mlt_properties_get(producer_props, "resource")[0] != '\0') {
+            if (frameXml) {
+                loadFromXml(self,
+                            scene,
+                            frameXml,
+                            mlt_properties_get(producer_props, "templatetext"));
+            } else if (mlt_properties_get(producer_props, "resource")
+                       && mlt_properties_get(producer_props, "resource")[0] != '\0') {
                 // The title has a resource property, so we read all properties from the resource.
                 // Do not serialize the xmldata
                 loadFromXml(self,
@@ -875,6 +1131,9 @@ void drawKdenliveTitle(producer_ktitle self,
         QList<QGraphicsItem *> items = scene->items();
         PlainTextItem *titem = NULL;
         for (int i = 0; i < items.count(); i++) {
+            if (auto *rich = dynamic_cast<RichTextReveal::Item *>(items.at(i))) {
+                rich->setFrame(qint64(position));
+            }
             titem = dynamic_cast<PlainTextItem *>(items.at(i));
             if (titem && !titem->data(0).isNull()) {
                 int itemId = titem->data(0).toInt();
