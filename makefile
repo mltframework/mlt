@@ -32,3 +32,6 @@ cppcheck:
 		--suppress=ctuOneDefinitionRuleViolation \
 		--suppress=syntaxError:src/modules/xml/common.c \
     --suppress=syntaxError:src/modules/placebo/*.c
+
+docker: Dockerfile
+	docker build -t melt .

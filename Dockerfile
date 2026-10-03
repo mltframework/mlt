@@ -10,7 +10,7 @@ FROM base AS build
 # Install packages for building
 RUN apt-get install -yqq wget git automake autoconf libtool intltool g++ yasm nasm \
   swig libgavl-dev libsamplerate0-dev libxml2-dev ladspa-sdk libjack-dev \
-  libsox-dev libsdl2-dev libgtk2.0-dev libsoup2.4-dev \
+  libsox-dev libsdl2-dev libgtk2.0-dev libsoup2.4-dev liblilv-dev \
   qt6-base-dev qt6-svg-dev libarchive-dev libmp3lame-dev \
   libexif-dev libtheora-dev libvorbis-dev python3-dev cmake xutils-dev \
   libegl1-mesa-dev libeigen3-dev libfftw3-dev libvdpau-dev meson ninja-build
@@ -33,12 +33,12 @@ RUN apt-get install -yqq dumb-init \
   libtheora0 libvorbis0a python3 \
   libegl1 libfftw3-double3 libvdpau1 \
   # Additional runtime libs \
-  libgavl2 libsox3 libexif12 xvfb libxkbcommon-x11-0 libhyphen0 libwebp7 \
-  # LADSPA plugins \
-  amb-plugins ambdec autotalent blepvco blop bs2b-ladspa caps cmt \
+  libgavl2 libsox3 libexif12 xvfb libxkbcommon-x11-0 libhyphen0 libwebp7 liblilv-0-0 \
+  # Audio plugins \
+  blepvco blop bs2b-ladspa caps cmt \
   csladspa fil-plugins invada-studio-plugins-ladspa mcp-plugins \
   omins rev-plugins ste-plugins swh-plugins tap-plugins vco-plugins wah-plugins \
-  lsp-plugins-ladspa dpf-plugins-ladspa \
+  lsp-plugins-ladspa dpf-plugins-ladspa ubuntustudio-audio-plugins dpf-plugins-vst lsp-plugins-vst \
   # Fonts \
   fonts-liberation 'ttf-.+'
 

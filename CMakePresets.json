@@ -77,7 +77,8 @@
             "cacheVariables": {
                 "BUILD_DOCS": "ON",
                 "BUILD_TESTING": "ON",
-                "SWIG_PYTHON": "ON"
+                "SWIG_PYTHON": "ON",
+                "SWIG_RUBY": "ON"
             }
         },
         {
