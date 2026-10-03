@@ -47,6 +47,8 @@ Framework
   - Fixed signed integer overflow in `mlt_luma_map_from_pgm`.
   - Fixed `fx_cut` in-point handling in `mlt_transition`.
   - Fixed Android `mlt++` builds by disabling ELF symbol versioning.
+  - Fixed a macOS crash in numeric property conversion caused by `setlocale`.
+    Parsing and formatting no longer change the process `LC_NUMERIC`.
 
 Modules
   - Image converters (`movit.convert`, `avcolor_space`, `imageconvert`) are
@@ -86,6 +88,16 @@ Modules
     `subtitle_feed` end-frame calculation.
   - Fixed file-name buffer overflows in `gpsgraphic` and `gpstext`.
   - Fixed the `sdl2` consumer freezing on Windows after a few seconds.
+  - Fixed `sdl2_audio` hanging in `consumer_stop()` when stopped while paused.
+  - Added `s32`, `float`, `s32le`, `f32le`, and `u8` to the `noise` producer,
+    and `s16`, `s32`, `s32le`, `f32le`, and `u8` to `tone`. Fixed `tone`
+    integer conversion to match `audioconvert`.
+  - Fixed a double-free in the `xml` producer when a filter, transition,
+    link, or producer fails to load.
+  - Fixed `movit.convert` leaking a Movit input on every frame when an
+    effect chain is reused.
+  - Fixed the heart-rate keyword in `gpstext` (`#gps_hr#`).
+  - `gpsgraphic` no longer sets `time_offset` when a GPS file is first loaded.
 
 Other
   - `melt` prints progress at the end and exits non-zero when interrupted
