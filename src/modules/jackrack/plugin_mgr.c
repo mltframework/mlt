@@ -51,7 +51,7 @@
 
 #include <lv2.h>
 
-/* lv2 extenstions */
+/* lv2 extensions */
 #include "lv2/buf-size/buf-size.h"
 #include "lv2/parameters/parameters.h"
 #include <lv2/atom/atom.h>

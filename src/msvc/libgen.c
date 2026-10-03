@@ -17,7 +17,7 @@
  * functions as a directory separator.
  *
  * A 'path' comprises an optional DOS drive letter with a colon, and then an
- * arbitrary number of possibily empty components, separated by non-empty
+ * arbitrary number of possibly empty components, separated by non-empty
  * sequences of directory separators (in other words, consecutive directory
  * separators are treated as a single one). A path that comprises an empty
  * component denotes the current working directory.
@@ -120,7 +120,7 @@ do_get_path_info(struct path_info* info, char* path)
         /* The path contains a DOS drive letter in the beginning.  */
         pos += 2;
 
-    /* The DOS drive prefix terminates here. Unlike UNC paths, the remaing
+    /* The DOS drive prefix terminates here. Unlike UNC paths, the remaining
      * part can be relative. For example, `C:foo` denotes `foo` in the
      * working directory of drive `C:`.  */
     info->prefix_end = pos;

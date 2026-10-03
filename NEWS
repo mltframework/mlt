@@ -91,6 +91,7 @@ Other
   - `melt` prints progress at the end and exits non-zero when interrupted
     by a signal.
   - Fixed `melt` on Windows ignoring window resize and keyboard transport.
+  - Fixed melt `-jack` option not working with PipeWire.
 
 
 Version 7.40.0
@@ -157,7 +158,7 @@ Framework
 Modules
   - Added `hwaccel_scale` filter with preview scaling (scale_vaapi, scale_vulkan, scale_d3d11, scale_vt (macOS)).
     This adds an environment variable `MLT_AVFORMAT_HWACCEL_PPS` to provide a
-    limiter to hwaccel because transfering uncompressed video between memory
+    limiter to hwaccel because transferring uncompressed video between memory
     CPU and GPU memory is heavy.
     PPS = maximum pixels per second. Anything over it skips hwaccel. 
   - Added *basic* support for **OpenFX** *filter* plugins.
@@ -212,7 +213,7 @@ Other
 
 
 Version 7.36.1
-  - Fixed construcing a new producer with a null profile.
+  - Fixed constructing a new producer with a null profile.
   - Fixed constructing a `xml-clip` profile.
 
 
@@ -421,7 +422,7 @@ Framework
     but 24000/1001 is especially important as well.
   * Added support for MLT XML embedded in chains.
     This, along with `xml-clip` producer handles mismatching frame rate
-    between parent and child producers and facilites time-affecting links on
+    between parent and child producers and facilities time-affecting links on
     the child.
   * Added `mlt_image_full_range(const char *color_range)` where any of the
     following strings return true (1): `full`, `jpeg`, `pc`.
@@ -497,7 +498,7 @@ Modules
     - Fixed `variable_frame_rate` incorrectly set true on 59.94 fps in Matroska.
     - Improved performance with intra-only video and reducing the frame rate.
     - Fixed mono audio handling regression on FFmpeg 7.
-    - Fixed audio samples may be dropped unexpectly esp. with uncompressed.
+    - Fixed audio samples may be dropped unexpectedly esp. with uncompressed.
   * Fixed `movit` transitions with a non-movit filter on one of its inputs.
   * Fixed duration in the `glaxnimate` producer off by one frame.
   * Added `dropshadow` filter to the `qt` module.
@@ -603,7 +604,7 @@ Modules
   * Fixed crashed due to `qtblend` transition requesting an image of 0 width or
     height.
   * Added support for RtAudio 6 in the `rtaudio` consumer.
-  * Fixed `createdate` keyword deletes preceeding text in `dynamictext` filter.
+  * Fixed `createdate` keyword deletes preceding text in `dynamictext` filter.
   * Added `opacity` property to filters that use `qtext`:
     - `dynamictext`
     - `gpstext`
@@ -1287,7 +1288,7 @@ Modules
   * Added support for PNG and GIF as album art in the `avformat` producer.
   * Added BT.2020 color space metadata to the `avformat` producer.
   * Resolved many FFmpeg deprecations in the `avformat` producer making it possible to support AV1 decoding.
-  * Added a `strobe` fitler that periodically makes the alpha channel transparent.
+  * Added a `strobe` filter that periodically makes the alpha channel transparent.
   * Added a new `typewriter` text filter (currently only works with the
     kdenlivetitle producer).
   * Improved sound quality for lower pitch shifts in `rbpitch`.
@@ -1320,7 +1321,7 @@ Modules
 Other
   * CMake:
     - Fixed building without SWIG.
-    - Added many "MOD_..." options to explictly disable modules.
+    - Added many "MOD_..." options to explicitly disable modules.
     - Added src/tests and the option `BUILD_TESTING`, which defaults off.
     - All dependency checks moved to top level CMakeLists.txt.
     - Install melt man page.
@@ -1360,7 +1361,7 @@ Modules
   * Fixed a white video frame appearing on threaded rendering in `freeze` filter.
   * Fixed MLT XML DRD to permit empty playlists, which may occur on empty tracks in a multitrack.
   * Fixed initializing QApplication in the `qimage` producer.
-  * Fixed interpolation when scaling with the `affine` rect and geomety properties.
+  * Fixed interpolation when scaling with the `affine` rect and geometry properties.
   * Fixed high memory usage with high factors of pitch shifting in the `rbpitch` filter.
   * Fixed a crash on files with more than 32 streams in the `avformat` producer.
 
@@ -1477,7 +1478,7 @@ Modules
 Other
   * Fixed melt option "-group" applies to an implicit consumer.
   * Added "-quiet" option to melt (implies -silent but more so).
-  * CMake build improvments adding modules:
+  * CMake build improvements adding modules:
     - gdk
 	- jackrack
 	- lumas
@@ -1641,7 +1642,7 @@ Other
   * Fixed returning image data for Python 3.
   * Switch to python3 by default.
   * Updated the prores encoding presets to set vendor ID and colr atom.
-  * Added a CMake build system. This is not yet prefered over the existing
+  * Added a CMake build system. This is not yet preferred over the existing
     configure script and Makefiles and has less flexibility. It is a start and
     has limited support.
 
@@ -1755,7 +1756,7 @@ Framework
   * Fixed a_track of transitions matching deleted track in
     mlt_tractor_remove_track().
   * Fixed multi-thread race crash in mlt_properties_clear().
-  * Fixed possiblle null pointer crash in mlt_property_get_rect() and
+  * Fixed possible null pointer crash in mlt_property_get_rect() and
     mlt_property_get_time().
   * Fixed non-animated strings containing ';' or '=' in mlt_animation_parse().
   * Fixed crash in clear_property() with mlt_animation.
@@ -2063,7 +2064,7 @@ There are no framework changes in this release. The major announcement is the
 introduction of support for libavfilter! This is still a work-in-progress.
 It is limited to FFmpeg 2.3 and up, and there are a number of filters that
 are black-listed because they are known to not integrate with MLT, which is
-not a full libav* environment or simple wrapper for it. There are likey
+not a full libav* environment or simple wrapper for it. There are likely
 avfilters that are not yet black-listed but might not work because they
 have not been completely tested. Also, they do not support MLT's keyframable
 property animation nor its frame-threaded parallelism due to architectural

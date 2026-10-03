@@ -195,7 +195,7 @@ static int load_svg(producer_pixbuf self, mlt_properties properties, const char 
 
             mlt_properties_set(self->filenames, "0", fullname);
 
-            // Teehe - when the producer closes, delete the temp file and the space allo
+            // Teehe - when the producer closes, delete the temp file and the space allow
             mlt_properties_set_data(properties,
                                     "__temporary_file__",
                                     fullname,

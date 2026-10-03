@@ -1338,7 +1338,7 @@ mlt_properties mlt_frame_get_unique_properties(mlt_frame self, mlt_service servi
  * \param is_deep a boolean to indicate whether to make a deep copy of the audio
  * and video data chunks or to make a shallow copy by pointing to the supplied frame
  * \return a almost-complete copy of the frame
- * \todo copy the processing deques
+ * \todo copy the processing dequeues
  */
 
 mlt_frame mlt_frame_clone(mlt_frame self, int is_deep)
@@ -1428,7 +1428,7 @@ mlt_frame mlt_frame_clone(mlt_frame self, int is_deep)
  * \param is_deep a boolean to indicate whether to make a deep copy of the audio
  * data chunks or to make a shallow copy by pointing to the supplied frame
  * \return a almost-complete copy of the frame
- * \todo copy the processing deques
+ * \todo copy the processing dequeues
  */
 
 mlt_frame mlt_frame_clone_audio(mlt_frame self, int is_deep)
@@ -1489,7 +1489,7 @@ mlt_frame mlt_frame_clone_audio(mlt_frame self, int is_deep)
  * \param is_deep a boolean to indicate whether to make a deep copy of the
  * video data chunks or to make a shallow copy by pointing to the supplied frame
  * \return a almost-complete copy of the frame
- * \todo copy the processing deques
+ * \todo copy the processing dequeues
  */
 
 mlt_frame mlt_frame_clone_image(mlt_frame self, int is_deep)

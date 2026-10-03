@@ -13,8 +13,9 @@ validate-yml:
 
 codespell:
 	codespell -w -q 3 \
-	-L amin,boun,boundry,childs,hsi,indx,ith,mis,nast,parms,percentil,readded,sav,seeked,shotcut,sinc,slin,uint,writen \
-	-S ChangeLog,cJSON.c,cJSON.h,RtAudio.cpp,RtAudio.h,*.rej,mlt_wrap.*
+	-L amin,boun,boundry,childs,deques,hsi,indx,ith,mis,nast,parms,percentil,readded,sav,seeked,shotcut,sinc,slin,uint,writen \
+	-S ChangeLog,cJSON.c,cJSON.h,RtAudio.cpp,RtAudio.h,*.rej,mlt_wrap.*,blacklist.txt,filter_info.yml,generate_filter_info.py,\
+	./build/*,./docs/html/*,./src/modules/decklink/darwin/*,./src/modules/decklink/linux/*,./src/modules/decklink/win/*,./src/modules/glaxnimate/glaxnimate/*,./src/modules/openfx/openfx/*,./src/swig/ruby/markdown/*
 
 cppcheck:
 	cppcheck src/ --force --quiet --inline-suppr --library=qt --error-exitcode=1 \

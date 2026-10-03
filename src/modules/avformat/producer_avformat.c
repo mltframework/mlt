@@ -534,7 +534,7 @@ static mlt_properties find_default_streams(producer_avformat self)
         }
         if (switch_to_vpx) {
             // Use a temporary format context to get the real pixel format with the libvpx decoder,
-            // since the native decoder incorreclty detects yuva420p as yuv420p
+            // since the native decoder incorrectly detects yuva420p as yuv420p
             int error = avformat_open_input(&vpx_context,
                                             mlt_properties_get(meta_media, "resource"),
                                             NULL,

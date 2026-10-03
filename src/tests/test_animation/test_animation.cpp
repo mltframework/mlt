@@ -666,7 +666,7 @@ private Q_SLOTS:
         // This sequence of keyframes has abrupt changes. For some interpolation algorithms, this
         // can result in values changing direction along the interpolation path (cusp or
         // overshoot).
-        // The purpose of this test is to ensure that values do not reverse direction (exept as
+        // The purpose of this test is to ensure that values do not reverse direction (except as
         // expected at keyframes if the user specified a direction change).
         p.set("foo",
               "50=0; 60=100; 100=110; 150=200; 200=110; 240=100; 260=50; 300=200; 301=10; 350=11");
@@ -769,7 +769,7 @@ private Q_SLOTS:
         // This sequence of keyframes has abrupt changes. For some interpolation algorithms, this
         // can result in values changing direction along the interpolation path (cusp or
         // overshoot).
-        // The purpose of this test is to ensure that values do not reverse direction (exept as
+        // The purpose of this test is to ensure that values do not reverse direction (except as
         // expected at keyframes if the user specified a direction change).
         p.set("foo",
               "50$=0; 60$=100; 100$=110; 150$=200; 200$=110; 240$=100; 260$=50; 300$=200; 301$=10; "
@@ -828,7 +828,7 @@ private Q_SLOTS:
         // This sequence of keyframes has abrupt changes. For some interpolation algorithms, this
         // can result in values changing direction along the interpolation path (cusp or
         // overshoot).
-        // The purpose of this test is to ensure that values do not reverse direction (exept as
+        // The purpose of this test is to ensure that values do not reverse direction (except as
         // expected at keyframes if the user specified a direction change).
         p.set("foo",
               "50-=0; 60-=100; 100-=110; 150-=200; 200-=110; 240-=100; 260-=50; 300-=200; 301-=10; "

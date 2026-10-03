@@ -211,14 +211,14 @@ double get_crtval_bysrc(mlt_filter filter,
     return get_by_src(filter, 0, i_gps, subtype, gps_p);
 }
 
-// Returns the unix time (miliseconds) of "Media Created" metadata, or fallbacks to "Modified Time" from OS
+// Returns the unix time (milliseconds) of "Media Created" metadata, or fallbacks to "Modified Time" from OS
 static int64_t get_original_video_file_time_mseconds(mlt_frame frame)
 {
     mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
     return mlt_producer_get_creation_time(producer);
 }
 
-/** Returns absolute* current frame time in miliseconds (original file creation + current timecode)
+/** Returns absolute* current frame time in milliseconds (original file creation + current timecode)
  *  *also applies speed_multiplier
  */
 static int64_t get_current_frame_time_ms(mlt_filter filter, mlt_frame frame)

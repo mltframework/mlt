@@ -37,7 +37,7 @@ typedef struct
     int64_t first_gps_time;
     int64_t last_gps_time;
     int64_t gps_offset;
-    int64_t gps_proc_start_t; //process only points after this time (epoch miliseconds)
+    int64_t gps_proc_start_t; //process only points after this time (epoch milliseconds)
     double speed_multiplier;
     double updates_per_second;
     char last_filename[PATH_MAX]; //gps file fullpath
@@ -343,7 +343,7 @@ static void gps_point_to_output(mlt_filter filter,
     //	mlt_log_info(NULL, "filter_gps.c gps_point_to_output, keyword=%s, result_gps_text=%s\n", keyword, result_gps_text);
 }
 
-// Returns the unix time (miliseconds) of "Media Created" metadata, or fallbacks to "Modified Time" from OS
+// Returns the unix time (milliseconds) of "Media Created" metadata, or fallbacks to "Modified Time" from OS
 static int64_t get_original_video_file_time_mseconds(mlt_frame frame)
 {
     mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
@@ -360,7 +360,7 @@ static int64_t restrict_updates(int64_t fr, double upd_per_sec)
     return rez;
 }
 
-/** Returns absolute* current frame time in miliseconds
+/** Returns absolute* current frame time in milliseconds
  *  (original file creation + current timecode)
  *  *also applies updates_per_second and speed_multiplier
  */

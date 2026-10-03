@@ -1,4 +1,4 @@
-# For FFTW3 pkg-config is the most reliable option on most plattforms except MSVC
+# For FFTW3 pkg-config is the most reliable option on most platforms except MSVC
 if(NOT MSVC)
     find_package(PkgConfig)
 

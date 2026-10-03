@@ -18,7 +18,7 @@ The following components are available::
   AVUTIL   SWRESAMPLE  SWSCALE   POSTPROCESS
 
 If no components are specified in the find_module call, the following ones
-will be choosen as default::
+will be chosen as default::
 
   AVFORMAT AVUTIL AVCODEC
 
@@ -37,7 +37,7 @@ Once done this will define
     Compiler switches required for using the required ffmpeg components.
 
 
-Additonally for each of the components, the following variables will be defined:
+Additionally for each of the components, the following variables will be defined:
 
 ``<component>_FOUND``
     True if (the requestion version of) <component> is available

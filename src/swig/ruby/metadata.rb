@@ -96,7 +96,7 @@ values:
 % end
 }
 
-$processor = ERB.new(template, 0, "%<>")
+$processor = ERB.new(template, trim_mode: "%<>")
 
 
 def output(mlt_type, services, type_title)

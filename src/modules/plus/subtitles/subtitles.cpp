@@ -118,9 +118,9 @@ static std::string msToSrtTime(int64_t ms)
     int hours = std::floor(ms / 1000.0 / 60.0 / 60.0);
     int minutes = std::floor((ms - (hours * 60 * 60 * 1000)) / 1000.0 / 60.0);
     int seconds = std::floor((ms - ((hours * 60 + minutes) * 60 * 1000)) / 1000.0);
-    int miliseconds = ms - (((hours * 60 + minutes) * 60 + seconds) * 1000);
+    int milliseconds = ms - (((hours * 60 + minutes) * 60 + seconds) * 1000);
     char buff[13];
-    std::snprintf(buff, sizeof(buff), "%02d:%02d:%02d,%03d", hours, minutes, seconds, miliseconds);
+    std::snprintf(buff, sizeof(buff), "%02d:%02d:%02d,%03d", hours, minutes, seconds, milliseconds);
     return std::string(buff);
 }
 

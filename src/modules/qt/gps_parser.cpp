@@ -106,7 +106,7 @@ static int is_whitespace_string(char *str)
     return 1;
 }
 
-//Converts miliseconds to a date-time with optional format (no miliesconds in output)
+//Converts milliseconds to a date-time with optional format (no miliesconds in output)
 void mseconds_to_timestring(int64_t seconds, char *format, char *result)
 {
     time_t secs = llabs(seconds) / 1000;
@@ -471,7 +471,7 @@ void recalculate_gps_data(gps_private_data gdata)
     memset(&grade_bucket, 0, 100 * sizeof(int));
 
     for (i = 0; i < gps_points_size; i++) {
-        //store values at processing_start_time to substract them at the end
+        //store values at processing_start_time to subtract them at the end
         if (i - 1 == offset_start) {
             start_dist = total_dist;
             start_d_elev = total_d_elev;
@@ -670,7 +670,7 @@ void recalculate_gps_data(gps_private_data gdata)
             crt_point->dist_flat = 0;
         }
         //remove the distances from before
-        //mlt_log_info(gdata.filter, "recalculate_gps_data: substracting values at start time! (start_dist=%f @ start index=%d)\n", start_dist, offset_start);
+        //mlt_log_info(gdata.filter, "recalculate_gps_data: subtracting values at start time! (start_dist=%f @ start index=%d)\n", start_dist, offset_start);
         for (i = offset_start; i < gps_points_size; i++) {
             gps_point_proc *crt_point = &(gdata.gps_points_p[i]);
             crt_point->total_dist -= start_dist;

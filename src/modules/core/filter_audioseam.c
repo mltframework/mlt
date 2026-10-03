@@ -89,8 +89,8 @@ static int filter_get_audio(mlt_frame frame,
                                                                        "discontinuity_threshold");
             if (fabs(level_delta) > discontinuity_threshold) {
                 // We have decided to create a transition with the previous frame.
-                // Reverse the prevous frame and use the reversed samples as faux
-                // data that is continuous from the prevous frame.
+                // Reverse the previous frame and use the reversed samples as faux
+                // data that is continuous from the previous frame.
                 // Mix/fade the reversed previous samples with the new samples to create a transition.
                 mlt_audio_reverse(&pdata->prev_audio);
                 int fade_samples = 1000;
