@@ -55,7 +55,7 @@ jobs:
           sudo make install
           popd
           sudo apt-get -yqq install cmake ninja-build kwalify
-          cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_TESTING=ON -D SWIG_PYTHON=ON -S . -B build -G Ninja
+          cmake -D CMAKE_BUILD_TYPE=Debug -D BUILD_TESTING=ON -D BUILD_WITH_ASAN=ON -D SWIG_PYTHON=ON -S . -B build -G Ninja
           cmake --build build
           sudo cmake --install build
 
