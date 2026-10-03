@@ -158,11 +158,6 @@ int extract_decimals_keyword(char *keyword)
     if ((ptr = strstr(keyword, "decimals"))) {
         start = ptr;
 
-        //eat one space before keyword for readability
-        if (start > keyword && isspace(*(start - 1))) {
-            start--;
-        }
-
         ptr += strlen("decimals");
         while (ptr && isspace(*ptr))
             ptr++;
