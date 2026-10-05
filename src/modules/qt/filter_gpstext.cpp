@@ -36,11 +36,13 @@ typedef struct
     int64_t gps_offset;
     int64_t gps_proc_start_t; //process only points after this time (epoch milliseconds)
     char last_read_gps_processing_start_time[20];
+    char last_read_gps_processing_start_time[20];
     double speed_multiplier;
     double updates_per_second;
     char last_filename[PATH_MAX]; //gps file fullpath
     char interpolated;
     int swap_180;
+    bool checked_gps_companion;
 } private_data;
 
 } // namespace
@@ -129,7 +131,6 @@ static int get_next_token(char *str, int *pos, char *token, int *is_keyword)
 */
 static int64_t extract_offset_time_ms_keyword(char *keyword)
 {
-    //mlt_log_info(NULL, "extract_offset_time_keyword: in keyword: %s\n", keyword);
     char *end = NULL;
     if (keyword == NULL)
         return 0;
@@ -601,22 +602,42 @@ static void process_file(mlt_filter filter, mlt_frame frame)
     private_data *pdata = (private_data *) filter->child;
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
     char *filename = mlt_properties_get(properties, "resource");
+    char auto_filename[PATH_MAX] = {0};
+    bool try_auto_filename = false;
+
     if (filename == NULL)
         filename = mlt_properties_get(properties,
                                       "gps.file"); /* for backwards compatibility with v1 */
 
-    //if there's no file selected just return
-    if (!filename || !strcmp(filename, ""))
-        return;
+    //if there's no file selected, try to find one, and just return if failure or already tried
+    if (!filename || !strcmp(filename, "")) {
+        if (pdata->checked_gps_companion)
+            return;
+
+        //get the parent clip's path
+        mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
+        char *clip_path = mlt_properties_get(MLT_PRODUCER_PROPERTIES(producer), "resource");
+        bool ret = q_auto_gps_file(clip_path, auto_filename);
+        pdata->checked_gps_companion = true;
+
+        if (ret) {
+            filename = auto_filename;
+            try_auto_filename = true;
+        } else
+            return;
+    }
+    //TODO: fix Ui with valid file from autoload
 
     //check if the file has been changed, if not, current data is ok, do nothing
     if (strcmp(pdata->last_filename, filename)) {
-        // mlt_log_info(filter, "Reading new file: last_filename (%s) != entered_filename (%s), swap_180 = %d\n", pdata->last_filename, filename, swap);
         default_priv_data(pdata);
+
         strncpy(pdata->last_filename, filename, sizeof(pdata->last_filename) - 1);
         pdata->last_filename[sizeof(pdata->last_filename) - 1] = '\0';
 
         if (q_parse_file(filter_to_gps_data(filter)) == 1) {
+            if (try_auto_filename)
+                mlt_properties_set_string(properties, "resource", filename);
             get_first_gps_time(filter_to_gps_data(filter));
             get_last_gps_time(filter_to_gps_data(filter));
 
@@ -628,6 +649,8 @@ static void process_file(mlt_filter filter, mlt_frame frame)
             //store name in pdata or it'll retry reading every frame if bad file
             strncpy(pdata->last_filename, filename, sizeof(pdata->last_filename) - 1);
             pdata->last_filename[sizeof(pdata->last_filename) - 1] = '\0';
+            if (try_auto_filename)
+                pdata->checked_gps_companion = true;
         }
     }
 }

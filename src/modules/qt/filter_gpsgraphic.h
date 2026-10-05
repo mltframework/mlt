@@ -55,6 +55,7 @@ struct private_data
     double bg_img_scaled_width, bg_img_scaled_height;
     QRectF bg_img_matched_rect;
     int swap_180;
+    bool checked_gps_companion;
 };
 
 } // namespace

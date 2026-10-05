@@ -19,6 +19,7 @@
 #ifndef GPS_PARSER_H
 #define GPS_PARSER_H
 
+#include <chrono>
 #include <cmath>
 #include <framework/mlt.h>
 #include <QFile>
@@ -151,6 +152,7 @@ gps_point_proc weighted_middle_point_proc(gps_point_proc *p1,
 
 void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *count_pts);
 void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *count_pts);
+int q_auto_gps_file(const char *clip_path, char *auto_filename);
 int q_parse_file(gps_private_data gdata);
 
 #define swap_180_if_needed(lon) (pdata->swap_180 ? get_180_swapped(lon) : lon)

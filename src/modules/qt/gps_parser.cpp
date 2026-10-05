@@ -23,6 +23,8 @@
 #endif
 #include "gps_parser.h"
 #include <QDateTime>
+#include <QDir>
+#include <QFileInfo>
 #include <QRegularExpression>
 #include <QTimeZone>
 
@@ -83,6 +85,29 @@ double get_180_swapped(double lon)
     if (lon == GPS_UNINIT)
         return lon;
     return lon + (lon > 0 ? -180 : 180);
+}
+
+inline void _mlt_log_gps_point(const int i, const gps_point_raw &crt_point)
+{
+    char str_time[25] = {0};
+    mseconds_to_timestring(crt_point.time, NULL, str_time);
+    mlt_log_info(NULL,
+                 "gps_point[%d]: time:%lld (%s), lat:%f, lon:%f, lat_projected:%f, speed:%f, "
+                 "distance:%f, ele:%f, hr:%f, bearing:%f, cadence:%f, temp:%f, power:%f\n",
+                 i,
+                 crt_point.time,
+                 str_time,
+                 crt_point.lat,
+                 crt_point.lon,
+                 crt_point.lat_projected,
+                 crt_point.speed,
+                 crt_point.total_dist,
+                 crt_point.ele,
+                 crt_point.hr,
+                 crt_point.bearing,
+                 crt_point.cad,
+                 crt_point.atemp,
+                 crt_point.power);
 }
 
 //testing max valid time between 2 points = 10 * avg_gps_time, better option would be a user entered value
@@ -1119,7 +1144,7 @@ void qxml_parse_gpx(QXmlStreamReader &reader,
     </trkpt>
     */
 
-    int nr_pt = 0;
+    int nr_pt = 0, print5 = 0;
     while (!reader.atEnd() && !reader.hasError()) {
         reader.readNext();
         // mlt_log_info(NULL, " readNext tag: %s type = %d\n", qUtf8Printable(reader.name()), reader.tokenType());
@@ -1190,11 +1215,16 @@ void qxml_parse_gpx(QXmlStreamReader &reader,
 
             bool valid_pt = (valid_datetime && got_other) || (got_latlon == 2);
             if (!valid_pt) {
-                mlt_log_info(
-                    NULL,
-                    "qxlm_parse_gpx: skipping read point[%d], minimum condition: (datetime + "
-                    "something) or (location)",
-                    nr_pt);
+                if (print5++ < 5) {
+                    mlt_log_info(
+                        NULL,
+                        "qxlm_parse_gpx: skipping read point[%d], minimum condition: (datetime + "
+                        "something) or (location)",
+                        nr_pt);
+                    _mlt_log_gps_point(nr_pt, crt_point);
+                    if (print5 == 5)
+                        mlt_log_info(NULL, "(will stop printing skipped points)");
+                }
                 continue;
             }
 
@@ -1207,6 +1237,8 @@ void qxml_parse_gpx(QXmlStreamReader &reader,
             gps_points_file.append(crt_point);
         }
     }
+    if (print5 > 5)
+        mlt_log_info(NULL, "qxml_parse_tcx: skipped %d points (out of %d)", print5, nr_pt);
 }
 
 // Parses a .tcx file into a gps_point_raw linked list
@@ -1238,7 +1270,7 @@ void qxml_parse_tcx(QXmlStreamReader &reader,
     </Trackpoint>
     */
 
-    int nr_pt = 0;
+    int nr_pt = 0, print5 = 0;
     while (!reader.atEnd() && !reader.hasError()) {
         reader.readNext();
         // mlt_log_info(NULL, " readNextStartElement tag: %s\n", qUtf8Printable(reader.name()));
@@ -1310,11 +1342,16 @@ void qxml_parse_tcx(QXmlStreamReader &reader,
 
             bool valid_pt = (valid_datetime && got_other) || (got_latlon == 2);
             if (!valid_pt) {
-                mlt_log_info(
-                    NULL,
-                    "qxlm_parse_tcx: skipping read point[%d], minimum condition: (datetime + "
-                    "something) or (location)",
-                    nr_pt);
+                if (print5++ < 5) {
+                    mlt_log_info(
+                        NULL,
+                        "qxlm_parse_gpx: skipping read point[%d], minimum condition: (datetime + "
+                        "something) or (location)",
+                        nr_pt);
+                    _mlt_log_gps_point(nr_pt, crt_point);
+                    if (print5 == 5)
+                        mlt_log_info(NULL, "(will stop printing skipped points)");
+                }
                 continue;
             }
 
@@ -1327,6 +1364,8 @@ void qxml_parse_tcx(QXmlStreamReader &reader,
             gps_points_file.append(crt_point);
         }
     }
+    if (print5 > 5)
+        mlt_log_info(NULL, "qxml_parse_tcx: skipped %d points (out of %d)", print5, nr_pt);
 }
 
 //tries to parse a .txt file containing GPS data; returns 0 for failure, 1 success
@@ -1428,7 +1467,9 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                 int second = m.captured(6).toInt();
                 int msec = m.captured(7).isEmpty() ? 0
                                                    : m.captured(7).leftJustified(3, '0').toInt();
-                QDateTime dt(QDate(year, month, day), QTime(hour, minute, second, msec), Qt::UTC);
+                QDateTime dt(QDate(year, month, day),
+                             QTime(hour, minute, second, msec),
+                             QTimeZone::UTC);
                 if (dt.isValid()) {
                     crt_point.time = dt.toMSecsSinceEpoch();
                     valid_datetime = (crt_point.time != 0);
@@ -1477,6 +1518,7 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                     datetime_assembled.append(delimiter);
                     datetime_format_assembled.append(format_tokens_arguments[i]);
                     datetime_format_assembled.append(delimiter);
+//TODO: is this check necessary? we already know from before if this matches or not but could there be a valid case where we have both this and the other time token?
                     format_date_time_separated = true;
                 } else if (format_tokens[i].contains("datetimeiso", Qt::CaseInsensitive)) {
                     //exact ISO format
@@ -1497,7 +1539,7 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                                        : m.captured(7).leftJustified(3, '0').toInt();
                         QDateTime dt(QDate(year, month, day),
                                      QTime(hour, minute, second, msec),
-                                     Qt::UTC);
+                                     QTimeZone::UTC);
                         if (dt.isValid()) {
                             crt_point.time = dt.toMSecsSinceEpoch();
                             valid_datetime = (crt_point.time != 0);
@@ -1610,22 +1652,6 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                 //              crt_point.time);
             }
         } //end regex_mode / format_mode
-
-        // mlt_log_info(NULL,
-        //              "crt_point parsed txt: time:%lld, lat:%f, lon:%f, speed:%f, "
-        //              "distance:%f, ele:%f, hr:%f, bearing:%f, cadence:%f, temp:%f, power:%f\n",
-        //              crt_point.time,
-        //              crt_point.lat,
-        //              crt_point.lon,
-        //              crt_point.speed,
-        //              crt_point.total_dist,
-        //              crt_point.ele,
-        //              crt_point.hr,
-        //              crt_point.bearing,
-        //              crt_point.cad,
-        //              crt_point.atemp,
-        //              crt_point.power);
-
         bool valid_pt = (valid_datetime && got_other) || (got_latlon == 2);
         if (!valid_pt) {
             mlt_log_info(NULL, "q_parse_txt: skipping invalid line: '%s'\n", qUtf8Printable(line));
@@ -1649,6 +1675,29 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
     return 1;
 }
 
+//checks if there's a file with the same base name as original clip + extension of supported gps
+//returns 0 on failure, 1 on success (and fills in auto_filename)
+//TODO: maybe also q_parse_file() here - but cache the result so we don't read twice
+int q_auto_gps_file(const char *clip_path, char *auto_filename)
+{
+    // mlt_log_info(NULL,
+    //              "q_auto_gps_file: checking for GPS file near '%s'",
+    //              (clip_path ? clip_path : "NULL"));
+    if (clip_path) {
+        QFileInfo clip(QString::fromUtf8(clip_path));
+        QStringList exentsions_to_check = {".gpx", ".tcx", ".txt"};
+        for (auto ext : exentsions_to_check) {
+            QString guess = clip.dir().filePath(clip.completeBaseName() + ext);
+            // mlt_log_info(NULL, "q_auto_gps_file: checking for '%s'", qPrintable(guess));
+            if (QFile::exists(guess)) {
+                strncat(auto_filename, guess.toUtf8(), PATH_MAX);
+                return 1;
+            }
+        }
+    }
+    return 0;
+}
+
 /* Reads file, parses it and stores the gps values in a gps_point_raw array (allocated inside) 
  * and its size in gps_points_size.
  * swap_to_180 -> shifts all longitudes around with 180 becoming 0, only use it if user requests it
@@ -1658,11 +1707,7 @@ int q_parse_file(gps_private_data gdata)
 {
     QVector<gps_point_raw> gps_points_array;
     int no_time_count = 0; //for gps tracks without time, used for ordering
-
-    // gps_point_ll *gps_list_head = NULL, *tmp = NULL;
-    // int count_pts = 0, nr = 0;
     QString filename = gdata.last_filename;
-    // gps_point_raw *gps_array = NULL;
     int &swap_to_180 = *gdata.swap180;
 
     // mlt_log_info(gdata.filter, "in q_parse_file, filename: %s\n", filename);
@@ -1711,7 +1756,6 @@ int q_parse_file(gps_private_data gdata)
 
         qxml_reader.clear();
     } else {
-        //if (filename.endsWith(".txt", Qt::CaseInsensitive)) {
         QTextStream qin(&gps_file);
         if (q_parse_txt(qin, gps_points_array, no_time_count) == 0) {
             mlt_log_error(NULL,
@@ -1722,31 +1766,17 @@ int q_parse_file(gps_private_data gdata)
             return 0;
         }
         // mlt_log_info(NULL, "printing the read array, size=%lld", gps_points_array.size());
-        // for (auto &pt : gps_points_array) {
-        //     mlt_log_info(NULL,
-        //                  ".time:%lld, lat:%f, lon:%f, speed:%f, distance:%f, ele:%f, hr:%f, "
-        //                  "bearing:%f, cadence:%f, temp:%f, power:%f\n",
-        //                  pt.time,
-        //                  pt.lat,
-        //                  pt.lon,
-        //                  pt.speed,
-        //                  pt.total_dist,
-        //                  pt.ele,
-        //                  pt.hr,
-        //                  pt.bearing,
-        //                  pt.cad,
-        //                  pt.atemp,
-        //                  pt.power);
-        // }
+        // for (int i=0; i< gps_points_array.size(); i++)
+        //     _mlt_log_gps_point(i, gps_points_array[i]);
     }
 
     const int gps_pt_count = gps_points_array.size();
-    mlt_log_info(NULL,
-                 "back from parsing the file(s) '%s', gps_points_array.size()=%d, "
-                 "no_time_count=%d",
-                 qPrintable(filename),
-                 gps_pt_count,
-                 no_time_count);
+    // mlt_log_info(NULL,
+    //              "back from parsing the file(s) '%s', gps_points_array.size()=%d, "
+    //              "no_time_count=%d",
+    //              qPrintable(filename),
+    //              gps_pt_count,
+    //              no_time_count);
 
     if (gps_pt_count < 2) {
         mlt_log_warning(gdata.filter,
@@ -1755,10 +1785,11 @@ int q_parse_file(gps_private_data gdata)
         return 0;
     }
 
-    //make sure points are in chronological order
-    std::sort(gps_points_array.begin(), gps_points_array.end());
+    //make sure points are in chronological order (they usually are)
+    if (!std::is_sorted(gps_points_array.begin(), gps_points_array.end()))
+        std::sort(gps_points_array.begin(), gps_points_array.end());
 
-    //if there are entries with and without time, drop the ones without - unless all of them
+    //if there are entries with and without time, drop the ones without valid time
     bool skip_notimes = false;
     if (no_time_count > 0 && no_time_count < gps_pt_count) {
         skip_notimes = true;
@@ -1781,13 +1812,29 @@ int q_parse_file(gps_private_data gdata)
 
     //copy points to private array (and skip pts if needed)
     int nr = 0;
+    //also do the 180 crossing check
+    bool crosses0 = false, crosses180 = false;
+    double last_lon = GPS_UNINIT;
     for (auto &pt : gps_points_array) {
         if (skip_notimes && pt.time <= no_time_count * 1000)
             continue;
         if (nr - 1 >= 0 && pt.time == gps_array[nr - 1].time)
             continue;
         gps_array[nr++] = pt;
+
+        //180 crossing logic here
+        if (last_lon != GPS_UNINIT && pt.lon != GPS_UNINIT) {
+            if ((last_lon < 0 && pt.lon > 0) || (pt.lon < 0 && last_lon > 0)) {
+                if (fabs(last_lon - pt.lon) > 180)
+                    crosses180 = true;
+                else
+                    crosses0 = true;
+            }
+        }
+        if (pt.lon != GPS_UNINIT)
+            last_lon = pt.lon;
     }
+
     if (nr >= 2) {
         gps_point_raw *tmp = (gps_point_raw *) realloc(gps_array, nr * sizeof(gps_point_raw));
         if (tmp != NULL) {
@@ -1810,27 +1857,13 @@ int q_parse_file(gps_private_data gdata)
         return 0;
     }
 
-    //search to find if we cross the 180 and/or the 0 meridian
-    //TODO: move this logic inside the array copy above and don't just check crt to next, but [next which has valid .lon]
-    bool crosses0 = false, crosses180 = false;
-    for (int i = 0; i < *gdata.gps_points_size - 1; i++) {
-        double crt = gps_array[i].lon;
-        double next = gps_array[i + 1].lon;
-        if (crt == GPS_UNINIT || next == GPS_UNINIT)
-            continue;
-        if ((crt < 0 && next > 0) || (crt > 0 && next < 0)) {
-            if (crt - next > 180 || next - crt > 180)
-                crosses180 = true;
-            else
-                crosses0 = true;
-        }
-    }
-    mlt_log_info(
-        NULL,
-        "_automatic 180 meridian detection: crosses180=%d, crosses0=%d --> swapping180=%d\n",
-        crosses180,
-        crosses0,
-        (crosses180 && !crosses0));
+    // mlt_log_info(
+    //     NULL,
+    //     "_automatic 180 meridian detection: crosses180=%d, crosses0=%d --> swapping180=%d\n",
+    //     crosses180,
+    //     crosses0,
+    //     (crosses180 && !crosses0));
+
     //if only 180 is crossed, we swap, otherswise we don't do anything
     if (crosses180 && !crosses0) {
         swap_to_180 = 1;
@@ -1840,24 +1873,8 @@ int q_parse_file(gps_private_data gdata)
         swap_to_180 = 0;
 
     // //debug result:
-    // for (int i = 0; i < *gdata.gps_points_size; i += 100) {
-    //     gps_point_raw *crt_point = &gps_array[i];
-    //     mlt_log_info(NULL,
-    //                  "_xml_parse_file read point[%d]: time:%lld, lat:%f, lon:%f, speed:%f, "
-    //                  "distance:%f, ele:%f, hr:%f, bearing:%f, cadence:%f, temp:%f, power:%f\n",
-    //                  i,
-    //                  crt_point->time,
-    //                  crt_point->lat,
-    //                  crt_point->lon,
-    //                  crt_point->speed,
-    //                  crt_point->total_dist,
-    //                  crt_point->ele,
-    //                  crt_point->hr,
-    //                  crt_point->bearing,
-    //                  crt_point->cad,
-    //                  crt_point->atemp,
-    //                  crt_point->power);
-    // }
+    // for (int i = 0; i < *gdata.gps_points_size; i += 100)
+    //     _mlt_log_gps_point(i, gps_array[i]);
 
     return 1;
 }
