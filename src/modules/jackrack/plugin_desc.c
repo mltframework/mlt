@@ -756,6 +756,7 @@ static void vst2_plugin_desc_init(vst2_plugin_desc_t *pd)
     pd->name = NULL;
     pd->maker = NULL;
     pd->properties = 0;
+    pd->def_values = NULL;
     pd->channels = 0;
     pd->port_count = 0;
     pd->port_descriptors = NULL;
@@ -802,6 +803,8 @@ static void vst2_plugin_desc_free(vst2_plugin_desc_t *pd)
     vst2_plugin_desc_set_name(pd, NULL);
     vst2_plugin_desc_set_maker(pd, NULL);
     vst2_plugin_desc_free_ports(pd);
+    g_free(pd->def_values);
+    pd->def_values = NULL;
 }
 
 vst2_plugin_desc_t *vst2_plugin_desc_new()
@@ -876,8 +879,14 @@ vst2_plugin_desc_t *vst2_plugin_desc_new_with_descriptor(const char *object_file
 			       port_descriptors,
 			       PortRangeHints,
 			       (const char *const *) PortNames);
-       
-    pd->effect = effect;
+
+    if (pd->def_values && effect->getParameter && effect->numParams > 0) {
+        int param;
+
+        for (param = 0; param < effect->numParams && param < PortCount; param++)
+            pd->def_values[param] = effect->getParameter(effect, param);
+    }
+
     pd->rt = TRUE;
 
     return pd;
@@ -1041,7 +1050,10 @@ LADSPA_Data vst2_plugin_desc_get_default_control_value(vst2_plugin_desc_t *pd,
                                                   unsigned long port_index,
                                                   guint32 sample_rate)
 {
-  return pd->effect->getParameter(pd->effect, port_index);
+    if (!pd->def_values || port_index >= pd->control_port_count)
+        return 0.f;
+
+    return pd->def_values[port_index];
 }
 
 LADSPA_Data vst2_plugin_desc_change_control_value(vst2_plugin_desc_t *pd,

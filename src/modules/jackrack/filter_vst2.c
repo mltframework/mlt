@@ -84,7 +84,7 @@ static vst2_context_t *initialise_vst2_context(mlt_properties properties, int ch
                         "Not compatible with %d channels. Requesting %d channels instead.\n",
                         channels,
                         request_channels);
-                    vst2context = initialise_vst2_context(properties, request_channels);
+                    return initialise_vst2_context(properties, request_channels);
                 } else {
                     mlt_log_error(properties, "Invalid plugin configuration: %lu\n", id);
                     return vst2context;

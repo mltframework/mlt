@@ -101,7 +101,10 @@ void vst2_mgr_destroy(vst2_mgr_t *plugin_mgr);
 void vst2_mgr_set_plugins(vst2_mgr_t *vst2_mgr, unsigned long rack_channels);
 
 vst2_plugin_desc_t *vst2_mgr_get_desc(vst2_mgr_t *vst2_mgr, unsigned long id);
-vst2_plugin_desc_t *vst2_mgr_get_any_desc(vst2_mgr_t *vst2_mgr, unsigned long id);;
+vst2_plugin_desc_t *vst2_mgr_get_any_desc(vst2_mgr_t *vst2_mgr, unsigned long id);
+
+int vst2_effect_open(const char *filename, void **handle, AEffect **effect);
+void vst2_effect_close(AEffect *effect, void *handle);
 #endif
 
 #endif /* __JR_PLUGIN_MANAGER_H__ */
