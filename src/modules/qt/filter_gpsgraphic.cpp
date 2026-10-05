@@ -223,28 +223,17 @@ static int64_t get_original_video_file_time_mseconds(mlt_frame frame)
  */
 static int64_t get_current_frame_time_ms(mlt_filter filter, mlt_frame frame)
 {
-    mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
     private_data *pdata = (private_data *) filter->child;
-    int64_t file_time = 0, fr_time = 0;
-
-    file_time = get_original_video_file_time_mseconds(frame);
+    int64_t file_time_ms = get_original_video_file_time_mseconds(frame);
     mlt_position frame_position = mlt_frame_original_position(frame);
-    // mlt_log_info(filter, "frame_pos=%d, frame_orig_pos=%d; file_time=%d\n", mlt_frame_get_position(frame), mlt_frame_original_position(frame), file_time/1000);
-    f_mutex.lock();
-    char *s = mlt_properties_frames_to_time(properties, frame_position, mlt_time_clock);
-    if (s) {
-        int h = 0, m = 0, sec = 0, msec = 0;
-        sscanf(s, "%d:%d:%d.%d", &h, &m, &sec, &msec);
-        fr_time = (h * 3600 + m * 60 + sec) * 1000 + msec;
-    } else
-        mlt_log_warning(filter,
-                        "get_current_frame_time_ms time string null, giving up "
-                        "[mlt_frame_original_position()=%d], retry result:%s\n",
-                        frame_position,
-                        mlt_properties_frames_to_time(properties, frame_position, mlt_time_clock));
-    f_mutex.unlock();
 
-    return file_time + fr_time * pdata->speed_multiplier;
+    double fps = mlt_profile_fps(mlt_service_profile(MLT_FILTER_SERVICE(filter)));
+    if (fps == 0)
+        fps = 30;
+        
+    int64_t frame_time_ms = frame_position * pdata->speed_multiplier * 1000 / fps;
+
+    return file_time_ms + frame_time_ms;
 }
 
 //gets the nearest gps point [index] according to video time + input offset
