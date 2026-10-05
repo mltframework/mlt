@@ -22,7 +22,7 @@
 
 #include <SDL.h>
 
-#define SDL_AUDIO_BUFFER_MIN_BYTES (2048 * 2 * (int) sizeof(float) * 2)
+#define SDL_AUDIO_BUFFER_MIN_BYTES (2048 * 5 * (int) sizeof(float) * 2)
 
 SDL_AudioDeviceID sdl2_open_audio(const SDL_AudioSpec *desired, SDL_AudioSpec *obtained);
 int sdl2_ensure_buffer_capacity(uint8_t **buffer, int *capacity, int minimum);

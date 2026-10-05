@@ -36,7 +36,7 @@
 #define RTAUDIO_VERSION_6
 #endif
 
-#define RTAUDIO_AUDIO_BUFFER_MIN_BYTES (2048 * 2 * (int) sizeof(float) * 2)
+#define RTAUDIO_AUDIO_BUFFER_MIN_BYTES (2048 * 5 * (int) sizeof(float) * 2)
 
 static void consumer_refresh_cb(mlt_consumer sdl, mlt_consumer consumer, mlt_event_data);
 static int rtaudio_callback(void *outputBuffer,
