@@ -23,7 +23,6 @@
  */
 
 #include <ctype.h>
-#include <dlfcn.h>
 #include <ladspa.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -272,65 +271,6 @@ vst2_plugin_t *vst2_process_change_plugin(vst2_process_info_t *procinfo,
  ************* non RT stuff ***************
  ******************************************/
 
-static int vst2_plugin_open_plugin(vst2_plugin_desc_t *desc,
-                                   void **dl_handle_ptr,
-                                   const AEffect **effect_ptr)
-{
-    /* void * dl_handle; */
-    /* const char * dlerr; */
-    //LADSPA_Descriptor_Function get_descriptor;
-
-    /* clear the error report */
-    //dlerror ();
-
-    /* open the object file */
-    //dl_handle = dlopen (desc->object_file, RTLD_NOW);
-    /* dlerr = dlerror ();
-     if (!dl_handle || dlerr)
-       {
-         if (!dlerr)
-             dlerr = "unknown error";
-         mlt_log_warning( NULL, "%s: error opening shared object file '%s': %s\n",
-                  __FUNCTION__, desc->object_file, dlerr);
-         return 1;
-       } */
-
-    /* get the get_descriptor function */
-    /* get_descriptor = (LADSPA_Descriptor_Function)
-       dlsym (dl_handle, "ladspa_descriptor");
-     dlerr = dlerror();
-     if (dlerr)
-       {
-         if (!dlerr)
-             dlerr = "unknown error";
-         mlt_log_warning( NULL, "%s: error finding descriptor symbol in object file '%s': %s\n",
-                  __FUNCTION__, desc->object_file, dlerr);
-         dlclose (dl_handle);
-         return 1;
-       } */
-
-    /* #ifdef __APPLE__
-     if (!get_descriptor (desc->index)) {
-       void (*constructor)(void) = dlsym (dl_handle, "_init");
-       if (constructor) constructor();
-     }
-   #endif */
-
-    *effect_ptr = desc->effect;
-    if (!*effect_ptr) {
-        mlt_log_warning(NULL,
-                        "%s: error finding index %lu in object file '%s'\n",
-                        __FUNCTION__,
-                        desc->index,
-                        desc->object_file);
-        /* dlclose (dl_handle); */
-        return 1;
-    }
-    /* *dl_handle_ptr = dl_handle; */
-
-    return 0;
-}
-
 static int vst2_plugin_instantiate(AEffect *effect,
                                    unsigned long vst2_plugin_index,
                                    gint copies,
@@ -449,14 +389,10 @@ static void vst2_plugin_init_holder(vst2_plugin_t *plugin,
 
     for (i = 0; i < desc->control_port_count; i++) {
         lff_init(holder->ui_control_fifos + i, CONTROL_FIFO_SIZE, sizeof(LADSPA_Data));
-        holder->control_memory[i]
-            = vst2_plugin_desc_get_default_control_value(desc,
-                                                         desc->control_port_indicies[i],
-                                                         vst2_sample_rate);
-        holder->effect->setParameter(holder->effect,
-                                     desc->control_port_indicies[i]
-                                         - (holder->effect->numInputs + holder->effect->numOutputs),
-                                     *(holder->control_memory + i));
+        holder->control_memory[i] = vst2_plugin_desc_get_default_control_value(desc,
+                                                                               i,
+                                                                               vst2_sample_rate);
+        holder->effect->setParameter(holder->effect, i, *(holder->control_memory + i));
     }
 
     if (desc->status_port_count > 0) {
@@ -488,7 +424,7 @@ vst2_plugin_t *vst2_plugin_new(vst2_plugin_desc_t *desc, vst2_context_t *vst2_co
 {
     void *dl_handle;
     //const LADSPA_Descriptor * descriptor;
-    const AEffect *effect;
+    AEffect *effect;
     AEffect **effects;
     gint copies;
     unsigned long i;
@@ -496,7 +432,7 @@ vst2_plugin_t *vst2_plugin_new(vst2_plugin_desc_t *desc, vst2_context_t *vst2_co
     vst2_plugin_t *plugin;
 
     /* open the plugin */
-    err = vst2_plugin_open_plugin(desc, &dl_handle, &effect);
+    err = vst2_effect_open(desc->object_file, &dl_handle, &effect);
     if (err)
         return NULL;
 
@@ -504,15 +440,16 @@ vst2_plugin_t *vst2_plugin_new(vst2_plugin_desc_t *desc, vst2_context_t *vst2_co
     copies = vst2_plugin_desc_get_copies(desc, vst2_context->channels);
     effects = g_malloc(sizeof(AEffect) * copies);
 
-    err = vst2_plugin_instantiate(desc->effect, desc->index, copies, effects);
+    err = vst2_plugin_instantiate(effect, desc->index, copies, effects);
     if (err) {
         g_free(effects);
-        dlclose(dl_handle);
+        vst2_effect_close(effect, dl_handle);
         return NULL;
     }
 
     plugin = g_malloc(sizeof(vst2_plugin_t));
 
+    plugin->effect = effect;
     plugin->dl_handle = dl_handle;
     plugin->desc = desc;
     plugin->copies = copies;
@@ -538,13 +475,18 @@ vst2_plugin_t *vst2_plugin_new(vst2_plugin_desc_t *desc, vst2_context_t *vst2_co
     for (i = 0; i < copies; i++)
         vst2_plugin_init_holder(plugin, i, effects[i], vst2_context);
 
+    g_free(effects);
     return plugin;
 }
 
 void vst2_plugin_destroy(vst2_plugin_t *plugin)
 {
     unsigned long i, j;
-    int err;
+    AEffect *effect = plugin->effect;
+    void *handle = plugin->dl_handle;
+
+    plugin->effect = NULL;
+    plugin->dl_handle = NULL;
 
     /* destroy holders */
     for (i = 0; i < plugin->copies; i++) {
@@ -563,6 +505,8 @@ void vst2_plugin_destroy(vst2_plugin_t *plugin)
 #ifdef WITH_JACK
         /* aux ports */
         if (plugin->vst2_context->procinfo->jack_client && plugin->desc->aux_channels > 0) {
+            int err;
+
             for (j = 0; j < plugin->desc->aux_channels; j++) {
                 err = jack_port_unregister(plugin->vst2_context->procinfo->jack_client,
                                            plugin->holders[i].aux_ports[j]);
@@ -587,15 +531,7 @@ void vst2_plugin_destroy(vst2_plugin_t *plugin)
     g_free(plugin->wet_dry_fifos);
     g_free(plugin->wet_dry_values);
 
-    err = dlclose(plugin->dl_handle);
-    if (err) {
-        mlt_log_warning(NULL,
-                        "%s: error closing shared object '%s': %s\n",
-                        __FUNCTION__,
-                        plugin->desc->object_file,
-                        dlerror());
-    }
-
+    vst2_effect_close(effect, handle);
     g_free(plugin);
 }
 

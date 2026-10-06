@@ -186,7 +186,6 @@ struct _vst2_plugin_desc
     char *name;
     char *maker;
     LADSPA_Properties properties;
-    AEffect *effect;
     gboolean rt;
 
     unsigned long channels;

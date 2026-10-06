@@ -71,7 +71,7 @@ struct _vst2_plugin
     vst2_plugin_t *prev;
 
     //const LADSPA_Descriptor *  descriptor;
-    //const AEffect *  effect;
+    AEffect *effect;
     void *dl_handle;
     struct _vst2_context *vst2_context;
 };

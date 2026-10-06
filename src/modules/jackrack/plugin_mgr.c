@@ -46,6 +46,9 @@
 #include "framework/mlt_log.h"
 #include "plugin_desc.h"
 #include "plugin_mgr.h"
+#ifdef WITH_VST2
+#include "vst2_process.h"
+#endif
 
 #ifdef WITH_LV2
 
@@ -721,16 +724,13 @@ lv2_plugin_desc_t *lv2_mgr_get_any_desc(lv2_mgr_t *plugin_mgr, char *id)
 
 static gboolean vst2_is_valid(const AEffect *effect)
 {
-    /* unsigned long icount = 0; */
-    unsigned long ocount = 0;
-
-    /* icount = effect->numInputs; */
-    ocount = effect->numOutputs;
-
-    if (effect->magic == kEffectMagic)
+    if (!effect || !effect->dispatcher)
         return FALSE;
 
-    if (ocount == 0)
+    if (effect->magic != kEffectMagic)
+        return FALSE;
+
+    if (effect->numOutputs == 0)
         return FALSE;
 
     return TRUE;
@@ -738,7 +738,7 @@ static gboolean vst2_is_valid(const AEffect *effect)
 
 static intptr_t mlt_vst_hostCanDo(const char* const feature)
 {
-  mlt_log_info(NULL, "mlt_vst_hostCanDo(\"%s\")", feature);
+  mlt_log_info(NULL, "mlt_vst_hostCanDo(\"%s\")\n", feature);
       
   if (strcmp(feature, "supplyIdle") == 0)
     return 1;
@@ -778,7 +778,7 @@ static intptr_t mlt_vst_hostCanDo(const char* const feature)
     return -1;
       
   // unimplemented
-  mlt_log_error(NULL, "mlt_vst_hostCanDo(\"%s\") - unknown feature", feature);
+  mlt_log_error(NULL, "mlt_vst_hostCanDo(\"%s\") - unknown feature\n", feature);
   return 0;
 }
       
@@ -797,124 +797,153 @@ mlt_vst_audioMasterCallback(AEffect* effect, int32_t opcode, int32_t index, intp
       return 0;
       
     case audioMasterGetVendorString:
-      strcpy((char*)ptr, "MRF");
-      return 1;
-      
+        if (!ptr)
+            return 0;
+        strncpy((char *) ptr, "MRF", 63);
+        ((char *) ptr)[63] = '\0';
+        return 1;
+
     case audioMasterGetProductString:
-      strcpy((char*)ptr, "No Organization");
-      return 1;
-      
+        if (!ptr)
+            return 0;
+        strncpy((char *) ptr, "No Organization", 63);
+        ((char *) ptr)[63] = '\0';
+        return 1;
+
     case audioMasterGetVendorVersion:
-      return 0x01;
-      
+        return 0x01;
+
     case audioMasterCanDo:
-      return mlt_vst_hostCanDo((const char*)ptr);
-      
+        if (!ptr)
+            return 0;
+        return mlt_vst_hostCanDo((const char *) ptr);
+
     case audioMasterGetLanguage:
-      return kVstLangEnglish;
+        return kVstLangEnglish;
+
+    case audioMasterGetSampleRate:
+        return vst2_sample_rate ? vst2_sample_rate : 48000;
+
+    case audioMasterGetBlockSize:
+        return vst2_buffer_size ? vst2_buffer_size : 4096;
+
+    case audioMasterGetCurrentProcessLevel:
+        return kVstProcessLevelUser;
+
+    case audioMasterGetAutomationState:
+        return kVstAutomationOff;
     }
       
   return 0;
 }
 
+/* effOpen runs in vst2_effect_open. Reaktor pins its module unless effClose
+ * runs before dlclose. */
+void vst2_effect_close(AEffect *effect, void *handle)
+{
+    if (effect && effect->magic == kEffectMagic && effect->dispatcher)
+        effect->dispatcher(effect, effClose, 0, 0, NULL, 0.f);
+    if (handle)
+        dlclose(handle);
+}
+
+int vst2_effect_open(const char *filename, void **handle, AEffect **effect)
+{
+    void *dl_handle;
+    const char *dlerr;
+    VST_Function vstFn;
+    AEffect *fx;
+
+    *handle = NULL;
+    *effect = NULL;
+
+    dlerror();
+    dl_handle = dlopen(filename, RTLD_LAZY);
+    if (!dl_handle) {
+        dlerr = dlerror();
+        if (!dlerr)
+            dlerr = "unknown error";
+        mlt_log_info(NULL,
+                     "%s: error opening shared object file '%s': %s\n",
+                     __FUNCTION__,
+                     filename,
+                     dlerr);
+        return 1;
+    }
+
+    dlerror();
+    vstFn = (VST_Function) dlsym(dl_handle, "VSTPluginMain");
+    if (!vstFn)
+        vstFn = (VST_Function) dlsym(dl_handle, "main_macho");
+    if (!vstFn)
+        vstFn = (VST_Function) dlsym(dl_handle, "main");
+    if (!vstFn) {
+        dlerr = dlerror();
+        if (!dlerr)
+            dlerr = "unknown error";
+        mlt_log_info(NULL,
+                     "%s: error finding {VSTPluginMain, main_macho, main} symbol in object file "
+                     "'%s': %s\n",
+                     __FUNCTION__,
+                     filename,
+                     dlerr);
+        dlclose(dl_handle);
+        return 1;
+    }
+
+    fx = vstFn(mlt_vst_audioMasterCallback);
+    if (fx && fx->magic == kEffectMagic && fx->dispatcher)
+        fx->dispatcher(fx, effOpen, 0, 0, NULL, 0.f);
+    if (!vst2_is_valid(fx)) {
+        vst2_effect_close(fx, dl_handle);
+        return 1;
+    }
+
+    *handle = dl_handle;
+    *effect = fx;
+    return 0;
+}
+
 static void vst2_mgr_get_object_file_plugins(vst2_mgr_t *vst2_mgr, const char *filename)
 {
-    const char *dlerr;
     void *dl_handle;
-    VST_Function vstFn = NULL;
     AEffect *effect = NULL;
     unsigned long vst2_index;
     vst2_plugin_desc_t *desc, *other_desc = NULL;
     GSList *list;
     gboolean exists;
-    /* int err; */
 
-    /* open the object file */
-    dl_handle = dlopen(filename, RTLD_LAZY);
-    if (!dl_handle) {
-        mlt_log_info(NULL,
-                     "%s: error opening shared object file '%s': %s\n",
-                     __FUNCTION__,
-                     filename,
-                     dlerror());
+    if (vst2_effect_open(filename, &dl_handle, &effect))
         return;
-    }
-
-    /* get the get_descriptor function */
-    dlerror(); /* clear the error report */
-
-    vstFn = (VST_Function) dlsym (dl_handle, "VSTPluginMain");       
-    if (vstFn == NULL)
-      vstFn = (VST_Function) dlsym (dl_handle, "main_macho");
-    if (vstFn == NULL)
-      vstFn = (VST_Function) dlsym (dl_handle, "main");
-
-    if (vstFn == NULL)
-      return;
-
-    effect = vstFn(mlt_vst_audioMasterCallback);
-
-    dlerr = dlerror();
-    if (dlerr) {
-        mlt_log_info(NULL,
-                     "%s: error finding {VSTPluginMain, main_macho, main} symbol in object file '%s': %s\n",
-                     __FUNCTION__,
-                     filename,
-                     dlerr);
-        dlclose(dl_handle);
-        return;
-    }
-
 
     vst2_index = 0;
-    /* while ((descriptor = get_descriptor(vst2_index))) */
-    if (effect != NULL)
-    {
-      if (!vst2_is_valid(effect)) {
-	vst2_index++;
-	//continue;
-      }
 
-      /* check it doesn't already exist */
-      exists = FALSE;
-      for (list = vst2_mgr->all_plugins; list; list = g_slist_next(list)) {
-	other_desc = (vst2_plugin_desc_t *) list->data;
-       
-	if (other_desc->id == effect->uniqueID) {
-	  exists = TRUE;
-	  break;
-	}
-      }
-       
-      if (exists) {
-	mlt_log_info(NULL,
-		     "Plugin %d exists in both '%s' and '%s'; using version in '%s'\n",
-		     effect->uniqueID,
-		     other_desc->object_file,
-		     filename,
-		     other_desc->object_file);
-	vst2_index++;
-	//continue;
-      }
+    /* check it doesn't already exist */
+    exists = FALSE;
+    for (list = vst2_mgr->all_plugins; list; list = g_slist_next(list)) {
+        other_desc = (vst2_plugin_desc_t *) list->data;
 
-      desc = vst2_plugin_desc_new_with_descriptor(filename, vst2_index, effect);
-      vst2_mgr->all_plugins = g_slist_append(vst2_mgr->all_plugins, desc);
-      vst2_index++;
-      vst2_mgr->plugin_count++;
-     
-      /* print in the splash screen */
-      /* mlt_log_verbose( NULL, "Loaded plugin '%s'\n", desc->name); */
+        if (other_desc->id == (unsigned long) effect->uniqueID) {
+            exists = TRUE;
+            break;
+        }
     }
 
-    /* WIP temporarily disabled */
-    /* err = dlclose(dl_handle); */
-    /* if (err) {
-              mlt_log_warning(NULL,
-                              "%s: error closing object file '%s': %s\n",
-                              __FUNCTION__,
-                              filename,
-                              dlerror());
-          } */
+    if (exists) {
+        mlt_log_info(NULL,
+                     "Plugin %d exists in both '%s' and '%s'; using version in '%s'\n",
+                     effect->uniqueID,
+                     other_desc->object_file,
+                     filename,
+                     other_desc->object_file);
+        vst2_effect_close(effect, dl_handle);
+        return;
+    }
+
+    desc = vst2_plugin_desc_new_with_descriptor(filename, vst2_index, effect);
+    vst2_effect_close(effect, dl_handle);
+    vst2_mgr->all_plugins = g_slist_append(vst2_mgr->all_plugins, desc);
+    vst2_mgr->plugin_count++;
 }
 
 
@@ -1054,7 +1083,7 @@ void vst2_mgr_destroy(vst2_mgr_t *vst2_mgr)
     GSList *list;
 
     for (list = vst2_mgr->all_plugins; list; list = g_slist_next(list))
-              vst2_plugin_desc_destroy((vst2_plugin_desc_t *) list->data);
+        vst2_plugin_desc_destroy((vst2_plugin_desc_t *) list->data);
 
     g_slist_free(vst2_mgr->plugins);
     g_slist_free(vst2_mgr->all_plugins);

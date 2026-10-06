@@ -507,7 +507,10 @@ static mlt_properties lv2_metadata(mlt_service_type type, const char *id, char *
 
 #ifdef WITH_VST2
 
-static void vst2_add_port_to_metadata(mlt_properties p, vst2_plugin_desc_t *desc, int j)
+static void vst2_add_port_to_metadata(mlt_properties p,
+                                      vst2_plugin_desc_t *desc,
+                                      int j,
+                                      unsigned long param)
 {
     LADSPA_Data sample_rate = 48000;
     LADSPA_PortRangeHintDescriptor hint_descriptor = desc->port_range_hints[j].HintDescriptor;
@@ -517,26 +520,19 @@ static void vst2_add_port_to_metadata(mlt_properties p, vst2_plugin_desc_t *desc
         mlt_properties_set(p, "type", "integer");
         mlt_properties_set_int(p,
                                "default",
-                               vst2_plugin_desc_get_default_control_value(
-                                   desc,
-                                   j - (desc->effect->numInputs + desc->effect->numOutputs),
-                                   sample_rate));
+                               vst2_plugin_desc_get_default_control_value(desc, param, sample_rate));
     } else if (LADSPA_IS_HINT_TOGGLED(hint_descriptor)) {
         mlt_properties_set(p, "type", "boolean");
         mlt_properties_set_int(p,
                                "default",
-                               vst2_plugin_desc_get_default_control_value(
-                                   desc,
-                                   j - (desc->effect->numInputs + desc->effect->numOutputs),
-                                   sample_rate));
+                               vst2_plugin_desc_get_default_control_value(desc, param, sample_rate));
     } else {
         mlt_properties_set(p, "type", "float");
         mlt_properties_set_double(p,
                                   "default",
-                                  vst2_plugin_desc_get_default_control_value(
-                                      desc,
-                                      j - (desc->effect->numInputs + desc->effect->numOutputs),
-                                      sample_rate));
+                                  vst2_plugin_desc_get_default_control_value(desc,
+                                                                             param,
+                                                                             sample_rate));
         mlt_properties_set_double(p, "minimum", 0.0);
         mlt_properties_set_double(p, "maximum", 1.0);
     }
@@ -613,12 +609,9 @@ static mlt_properties vst2_metadata(mlt_service_type type, const char *id, char 
                                         0,
                                         (mlt_destructor) mlt_properties_close,
                                         NULL);
-                snprintf(key,
-                         sizeof(key),
-                         "%d",
-                         j - (desc->effect->numInputs + desc->effect->numOutputs));
+                snprintf(key, sizeof(key), "%d", i);
                 mlt_properties_set(p, "identifier", key);
-                vst2_add_port_to_metadata(p, desc, j);
+                vst2_add_port_to_metadata(p, desc, j, i);
                 mlt_properties_set(p, "mutable", "yes");
             }
             /* for (i = 0; i < desc->status_port_count; i++) {

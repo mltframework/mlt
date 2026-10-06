@@ -63,18 +63,19 @@ vst2_context_t *vst2_context_new(const char *client_name, unsigned long channels
     return rack;
 }
 
-#include <dlfcn.h>
-extern vst2_plugin_t *vst2_get_first_enabled_plugin(vst2_process_info_t *procinfo);
-extern vst2_plugin_t *vst2_get_last_enabled_plugin(vst2_process_info_t *procinfo);
-
 void vst2_context_destroy(vst2_context_t *vst2_context)
 {
-    vst2_plugin_t *first_enabled = vst2_get_first_enabled_plugin(vst2_context->procinfo);
-    vst2_plugin_t *last_enabled = vst2_get_last_enabled_plugin(vst2_context->procinfo);
-    vst2_plugin_t *plugin = first_enabled;
-    do {
-        dlclose(plugin->dl_handle);
-    } while ((plugin != last_enabled) && (plugin = plugin->next));
+    vst2_plugin_t *plugin;
+    vst2_plugin_t *next;
+
+    if (vst2_context->procinfo) {
+        for (plugin = vst2_context->procinfo->chain; plugin; plugin = next) {
+            next = plugin->next;
+            vst2_plugin_destroy(plugin);
+        }
+        vst2_context->procinfo->chain = NULL;
+        vst2_context->procinfo->chain_end = NULL;
+    }
 
     vst2_process_quit(vst2_context->procinfo);
     vst2_process_info_destroy(vst2_context->procinfo);
