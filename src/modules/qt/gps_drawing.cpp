@@ -302,7 +302,8 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
          i < pdata->ui_crops.end_index;
          i = get_valid_gpspoint_index(filter, i + 1)) {
         int next_i = get_valid_gpspoint_index(filter, i + 1);
-        if (i == next_i || next_i > pdata->ui_crops.end_index) {
+        if (i == next_i || next_i > pdata->ui_crops.end_index
+            || get_crtval_bysrc(filter, next_i) == GPS_UNINIT) {
             mlt_log_info(filter,
                          "invalid pair (i=%d, next_i=%d, end_index=%d), skipping drawing\n",
                          i,
