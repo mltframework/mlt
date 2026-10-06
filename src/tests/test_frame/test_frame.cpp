@@ -17,6 +17,7 @@
  */
 
 #include <framework/mlt.h>
+#include <memory>
 #include <mlt++/Mlt.h>
 #include <QtTest>
 using namespace Mlt;
@@ -60,6 +61,85 @@ public:
     TestFrame() {}
 
 private Q_SLOTS:
+    void SharedImagePrivateType_data()
+    {
+        QTest::addColumn<int>("imageFormat");
+        QTest::addColumn<QByteArray>("sourceType");
+        QTest::addColumn<QByteArray>("destinationType");
+        QTest::addColumn<bool>("nested");
+        const int formats[] = {mlt_image_private, mlt_image_rgb, mlt_image_rgba, mlt_image_yuv422};
+        const QByteArray types[] = {QByteArray(), QByteArray("alpha"), QByteArray("beta")};
+        const QByteArray stale[] = {QByteArray(), QByteArray("stale"), QByteArray("alpha")};
+        for (int format : formats) {
+            for (int source = 0; source < 3; ++source) {
+                for (int destination = 0; destination < 3; ++destination) {
+                    for (bool nested : {false, true}) {
+                        const QByteArray name = QByteArray::number(format) + '-'
+                                                + QByteArray::number(source) + '-'
+                                                + QByteArray::number(destination) + '-'
+                                                + QByteArray::number(nested);
+                        QTest::newRow(name.constData())
+                            << format << types[source] << stale[destination] << nested;
+                    }
+                }
+            }
+        }
+    }
+
+    void SharedImagePrivateType()
+    {
+        QFETCH(int, imageFormat);
+        QFETCH(QByteArray, sourceType);
+        QFETCH(QByteArray, destinationType);
+        QFETCH(bool, nested);
+        using FrameOwner = std::unique_ptr<mlt_frame_s, decltype(&mlt_frame_close)>;
+        FrameOwner source(mlt_frame_init(nullptr), mlt_frame_close);
+        FrameOwner middle(mlt_frame_init(nullptr), mlt_frame_close);
+        FrameOwner destination(mlt_frame_init(nullptr), mlt_frame_close);
+        QVERIFY(source && middle && destination);
+        uint8_t payload[64] = {};
+        const auto sourceProperties = MLT_FRAME_PROPERTIES(source.get());
+        const auto destinationProperties = MLT_FRAME_PROPERTIES(destination.get());
+        mlt_frame_set_image(source.get(), payload, sizeof(payload), nullptr);
+        mlt_properties_set_int(sourceProperties, "format", imageFormat);
+        mlt_properties_set_int(sourceProperties, "width", 4);
+        mlt_properties_set_int(sourceProperties, "height", 4);
+        mlt_properties_set(sourceProperties,
+                           "mlt_image_private",
+                           sourceType.isNull() ? nullptr : sourceType.constData());
+        mlt_properties_set(destinationProperties,
+                           "mlt_image_private",
+                           destinationType.isNull() ? nullptr : destinationType.constData());
+        mlt_properties_set(MLT_FRAME_PROPERTIES(middle.get()),
+                           "mlt_image_private",
+                           "intermediate-stale");
+        if (nested) {
+            QCOMPARE(mlt_frame_prepend_image_from_service(middle.get(), source.get()), 0);
+            QCOMPARE(mlt_frame_prepend_image_from_service(destination.get(), middle.get()), 0);
+        } else {
+            QCOMPARE(mlt_frame_prepend_image_from_service(destination.get(), source.get()), 0);
+        }
+        auto format = static_cast<mlt_image_format>(imageFormat);
+        uint8_t *image = nullptr;
+        int width = 0, height = 0;
+        QCOMPARE(mlt_frame_get_image(destination.get(), &image, &format, &width, &height, 0), 0);
+        QVERIFY(image == payload);
+        QCOMPARE(int(format), imageFormat);
+        QCOMPARE(width, 4);
+        QCOMPARE(height, 4);
+        const QByteArray expected = format == mlt_image_private ? sourceType : QByteArray();
+        const char *actual = mlt_properties_get(destinationProperties, "mlt_image_private");
+        QCOMPARE(actual == nullptr, expected.isNull());
+        if (actual)
+            QCOMPARE(QByteArray(actual), expected);
+        QCOMPARE(QByteArray(mlt_properties_get(sourceProperties, "mlt_image_private")), sourceType);
+        mlt_properties_set(sourceProperties, "mlt_image_private", "changed-after-share");
+        actual = mlt_properties_get(destinationProperties, "mlt_image_private");
+        QCOMPARE(actual == nullptr, expected.isNull());
+        if (actual)
+            QCOMPARE(QByteArray(actual), expected);
+    }
+
     void FrameConstructorAddsReference()
     {
         mlt_frame frame = mlt_frame_init(NULL);

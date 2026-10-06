@@ -1105,6 +1105,12 @@ static void copy_image_state(mlt_frame dst, mlt_frame src)
     mlt_properties_set_int(dst_properties,
                            "format",
                            mlt_properties_get_int(src_properties, "format"));
+    // Preserve the type of an opaque image and clear stale types for other images.
+    mlt_properties_set(dst_properties,
+                       "mlt_image_private",
+                       mlt_properties_get_int(src_properties, "format") == mlt_image_private
+                           ? mlt_properties_get(src_properties, "mlt_image_private")
+                           : NULL);
     mlt_properties_set_double(dst_properties, "aspect_ratio", mlt_frame_get_aspect_ratio(src));
     mlt_properties_pass_list(
         dst_properties,
