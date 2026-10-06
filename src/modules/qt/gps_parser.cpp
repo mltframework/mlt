@@ -70,7 +70,7 @@ double get_avg_gps_time_ms(gps_private_data gdata)
 /* Converts the datetime string from gps file into seconds since epoch
  * Note: assumes UTC
  */
-int64_t datetimeXMLstring_to_mseconds(const char *text, char *format /* = NULL*/)
+int64_t datetimeXMLstring_to_mseconds(const char *text, const char *format /* = NULL*/)
 {
     int64_t ret = 0;
 
