@@ -300,11 +300,14 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
     //optimization: instead of iterating the interval one by one, jump directly to the next valid index
     for (int i = get_valid_gpspoint_index(filter, pdata->ui_crops.start_index);
          i < pdata->ui_crops.end_index;
-         i = get_valid_gpspoint_index(filter, i+1)) {
-
-        int next_i = get_valid_gpspoint_index(filter, i+1);
+         i = get_valid_gpspoint_index(filter, i + 1)) {
+        int next_i = get_valid_gpspoint_index(filter, i + 1);
         if (i == next_i || next_i > pdata->ui_crops.end_index) {
-            mlt_log_info(filter, "invalid pair (i=%d, next_i=%d, end_index=%d), skipping drawing\n", i, next_i, pdata->ui_crops.end_index);
+            mlt_log_info(filter,
+                         "invalid pair (i=%d, next_i=%d, end_index=%d), skipping drawing\n",
+                         i,
+                         next_i,
+                         pdata->ui_crops.end_index);
             break;
         }
 
@@ -324,7 +327,8 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
         }
 
         //Optimization: skip drawing if point hasn't moved at least 1 pixel
-        bool point_moved = (abs(next_pt.x - last_drawn_pt.x) > 1 || abs(next_pt.y - last_drawn_pt.y) > 1);
+        bool point_moved = (abs(next_pt.x - last_drawn_pt.x) > 1
+                            || abs(next_pt.y - last_drawn_pt.y) > 1);
 
         //apply color style
         if (point_moved) {
@@ -356,9 +360,9 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
                 p.setPen(pen_gradients);
             } else if (color_style >= gpsg_color_by_duration
                        && color_style <= gpsg_color_by_grade_max20) {
-                //compute current value as a percentage of min..max
-                #define calc_perc(v, min, max) \
-                    (double) (v - min) / ((max - min) != 0 ? (max - min) : ((v - min) ? (v - min) : 1))
+//compute current value as a percentage of min..max
+#define calc_perc(v, min, max) \
+    (double) (v - min) / ((max - min) != 0 ? (max - min) : ((v - min) ? (v - min) : 1))
                 double perc = 0;
                 if (color_style == gpsg_color_by_duration) {
                     //this one is relative to trim, not entire gps track
@@ -389,7 +393,7 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
                                                         abs(pdata->minmax.max_grade_p));
                     max_allowed_percentage = MIN(max_allowed_percentage,
                                                  (color_style == gpsg_color_by_grade_max20 ? 36.397
-                                                                                       : 100));
+                                                                                           : 100));
                     double safe_grade_p = CLAMP(pdata->gps_points_p[i].grade_p,
                                                 -max_allowed_percentage,
                                                 max_allowed_percentage);
@@ -411,7 +415,8 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
 
             //for the past/future segment we need to split it exactly at the now point into 2 different colors or it will look horrible if zoomed in enough
             if ((i == i_now)
-                && (color_style == gpsg_color_by_solid_past || color_style == gpsg_color_by_solid_future
+                && (color_style == gpsg_color_by_solid_past
+                    || color_style == gpsg_color_by_solid_future
                     || color_style == gpsg_color_by_solid_past_future)) {
                 point_2d now_pt = get_gpspoint_to_rect(filter, frame, &gps_now, rect, used_crops);
 
@@ -427,7 +432,8 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
                     if (dots_only)
                         p.drawPoint(QPointF(crt_pt.x, crt_pt.y));
                     else
-                        p.drawLine(QPointF(last_drawn_pt.x, last_drawn_pt.y), QPointF(now_pt.x, now_pt.y));
+                        p.drawLine(QPointF(last_drawn_pt.x, last_drawn_pt.y),
+                                   QPointF(now_pt.x, now_pt.y));
 
                     //"future" sub-segment
                     if (color_style == gpsg_color_by_solid_past)
@@ -438,7 +444,8 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
                         p.setPen(pen_solid_color1);
 
                     if (!dots_only)
-                        p.drawLine(QPointF(now_pt.x, now_pt.y), QPointF(next_pt.x, next_pt.y)); //no last_pt here
+                        p.drawLine(QPointF(now_pt.x, now_pt.y),
+                                   QPointF(next_pt.x, next_pt.y)); //no last_pt here
                 } else {
                     //if invalid point, consider the entire line "future"
                     if (color_style == gpsg_color_by_solid_past)
@@ -451,7 +458,8 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
                     if (dots_only)
                         p.drawPoint(QPointF(crt_pt.x, crt_pt.y));
                     else
-                        p.drawLine(QPointF(last_drawn_pt.x, last_drawn_pt.y), QPointF(next_pt.x, next_pt.y));
+                        p.drawLine(QPointF(last_drawn_pt.x, last_drawn_pt.y),
+                                   QPointF(next_pt.x, next_pt.y));
                 }
             } else //= full segment lines not intersecting now_dot
             {
@@ -459,12 +467,13 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
                 if (dots_only)
                     p.drawPoint(QPointF(crt_pt.x, crt_pt.y));
                 else
-                    p.drawLine(QPointF(last_drawn_pt.x, last_drawn_pt.y), QPointF(next_pt.x, next_pt.y));
+                    p.drawLine(QPointF(last_drawn_pt.x, last_drawn_pt.y),
+                               QPointF(next_pt.x, next_pt.y));
             }
             last_drawn_pt = next_pt;
         } //end of if (point_moved)
-    }//end of the gps points drawing loop
-    
+    }     //end of the gps points drawing loop
+
     //draw the current value in the bot-right corner, big bold white text
     if (mlt_properties_get_int(properties, "show_now_text")) {
         double now_val = get_crtval_bysrc(filter, 0, 0, &gps_now);

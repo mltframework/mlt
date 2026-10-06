@@ -198,7 +198,6 @@ static void get_current_frame_time_ns_decimals_str(mlt_filter filter,
     double file_time_just_ms = (get_original_video_file_time_mseconds(frame) % 1000) / 1000.0;
     mlt_position frame_position = mlt_frame_original_position(frame);
 
-
     double fps = mlt_profile_fps(mlt_service_profile(MLT_FILTER_SERVICE(filter)));
     if (fps == 0)
         fps = 30; //there's probably worse things happening if this returns 0
@@ -236,7 +235,7 @@ static int64_t get_current_frame_time_ms(mlt_filter filter, mlt_frame frame)
     double fps = mlt_profile_fps(mlt_service_profile(MLT_FILTER_SERVICE(filter)));
     if (fps == 0)
         fps = 30;
-        
+
     int64_t frame_time_ms = frame_position * pdata->speed_multiplier * 1000 / fps;
 
     if (pdata->updates_per_second > 0) {

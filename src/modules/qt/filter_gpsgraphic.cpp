@@ -230,7 +230,7 @@ static int64_t get_current_frame_time_ms(mlt_filter filter, mlt_frame frame)
     double fps = mlt_profile_fps(mlt_service_profile(MLT_FILTER_SERVICE(filter)));
     if (fps == 0)
         fps = 30;
-        
+
     int64_t frame_time_ms = frame_position * pdata->speed_multiplier * 1000 / fps;
 
     return file_time_ms + frame_time_ms;
