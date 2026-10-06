@@ -214,11 +214,11 @@ static void get_current_frame_time_ns_decimals_str(mlt_filter filter,
     }
     double result_ns = file_time_just_ms + frame_time_ns / 1e9;
 
-    char dec[17] = {0}; //17 is max double representation
+    char dec[MAX_PRINT_TIMESTAMP_NS] = {0};
     /* NOTE: we can't print directly req_decimals because a %.2f would round (so 3.99999 -> 4.00)
              but because we're treating decimals separately from the integer part, this would 
              actually be printed as 3.00 */
-    snprintf(dec, 17, "%.9f", result_ns);
+    snprintf(dec, MAX_PRINT_TIMESTAMP_NS, "%.9f", result_ns);
     char *dot = strchr(dec, '.'); //skip integer part and dot
     if (dot)
         strncat(output_text, dot + 1, req_decimals);
@@ -469,8 +469,8 @@ static void gps_point_to_output(mlt_filter filter,
         mseconds_to_timestring(raw.time + val, format, gps_text);
         //GPS time is not interpolated and is stored in ms, so req_decimals > 3 is useless but we'll keep consistent
         if (req_decimals > 0) {
-            char dec[17] = {0};
-            snprintf(dec, 17, "%.9f", (raw.time + val) % 1000 / 1000.0);
+            char dec[MAX_PRINT_TIMESTAMP_NS] = {0};
+            snprintf(dec, MAX_PRINT_TIMESTAMP_NS, "%.9f", (raw.time + val) % 1000 / 1000.0);
             char *dot = strchr(dec, '.');
             if (dot)
                 strncat(gps_text, dot + 1, req_decimals);

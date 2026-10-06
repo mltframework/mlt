@@ -56,7 +56,7 @@ parameters:
       only the time in 12-hour format, offset by 1 hour. 
       Decimals keyword can also be used with date_time formats, file_datetime_now computes
       up to 9 decimals (=nanoseconds), but gps_datetime_now only processes 3 from file 
-      (miliseconds).
+      (milliseconds).
       The speed keyword can have an extra "vertical" or "3D" word as a format to show
       vertical speed, and 3D speed (takes into account altitude).
       Speed and distance keywords may include an extra format keyword to convert 

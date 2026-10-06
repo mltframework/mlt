@@ -1,6 +1,6 @@
 /*
  * gps_parser.h -- Contains gps parsing (.gpx and .tcx) and processing code
- * Copyright (C) 2011-2025 Meltytech, LLC
+ * Copyright (C) 2011-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

@@ -1,6 +1,6 @@
 /*
  * gps_parser.h -- Header for gps parsing (.gpx and .tcx) and processing
- * Copyright (C) 2011-2021 Meltytech, LLC
+ * Copyright (C) 2011-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,7 @@
 #include <QXmlStreamReader>
 
 #define GPS_UNINIT -9999
+#define MAX_PRINT_TIMESTAMP_NS 32
 
 typedef struct
 {
