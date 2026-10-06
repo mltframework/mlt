@@ -1,6 +1,6 @@
 /*
  * gps_parser.h -- Contains gps parsing (.gpx and .tcx) and processing code
- * Copyright (C) 2011-2025 Meltytech, LLC
+ * Copyright (C) 2011-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -107,13 +107,15 @@ static int is_whitespace_string(char *str)
 }
 
 //Converts milliseconds to a date-time with optional format (no miliesconds in output)
-void mseconds_to_timestring(int64_t seconds, char *format, char *result)
+void mseconds_to_timestring(int64_t mseconds, char *format, char *result)
 {
-    time_t secs = llabs(seconds) / 1000;
+    time_t secs = llabs(mseconds) / 1000;
     struct tm *ptm = gmtime(&secs);
-    if (!format || is_whitespace_string(format))
+    if (!format || is_whitespace_string(format) || !strchr(format, '%')) {
         strftime(result, 25, "%Y-%m-%d %H:%M:%S", ptm);
-    else
+        if (format)
+            strncat(result, format, 100);
+    } else
         strftime(result, 50, format, ptm);
 }
 
