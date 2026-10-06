@@ -647,7 +647,6 @@ static void process_file(mlt_filter filter, mlt_frame frame)
     if (!filename || !strcmp(filename, "")) {
         if (pdata->checked_gps_companion)
             return;
-        mlt_log_info(NULL, "checking for gps companion");
 
         //get the parent clip's path
         mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
@@ -762,7 +761,7 @@ mlt_filter filter_gpsgraphic_init(mlt_profile profile,
         mlt_properties_set_int(properties, "show_now_text", 1);
         mlt_properties_set_double(properties, "angle", 0);
         mlt_properties_set_int(properties, "thickness", 5);
-        mlt_properties_set(properties, "rect", "10% 10% 30% 30%");
+        mlt_properties_set(properties, "rect", "70% 70% 25% 25%");
         mlt_properties_set_int(properties, "show_grid", 0);
         mlt_properties_set(properties, "legend_unit", "");
         mlt_properties_set_int(properties, "draw_individual_dots", 0);

@@ -741,7 +741,7 @@ mlt_filter filter_gpstext_init(mlt_profile profile, mlt_service_type type, const
                                         "Altitude: #gps_elev#m\n\n"
                                         "GPS time: #gps_datetime_now# UTC\n"
                                         "GPS location: #gps_lat#, #gps_lon#");
-        mlt_properties_set_string(my_properties, "geometry", "10%/10%:80%x80%:100%");
+        mlt_properties_set_string(my_properties, "geometry", "10%/55%:80%x35%:100%");
         mlt_properties_set_string(my_properties, "family", "Sans");
         mlt_properties_set_string(my_properties, "size", "26");
         mlt_properties_set_string(my_properties, "weight", "400");
