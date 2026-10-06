@@ -1,6 +1,6 @@
 /*
  * filter_drawing.cpp -- draws gps related graphics 
- * Copyright (c) 2015-2025 Meltytech, LLC
+ * Copyright (c) 2015-2026 Meltytech, LLC
  * Original author: Daniel F
  *
  * This library is free software; you can redistribute it and/or
@@ -326,9 +326,10 @@ void draw_main_line_graph(mlt_filter filter, mlt_frame frame, QPainter &p, s_bas
             continue;
         }
 
-        //Optimization: skip drawing if point hasn't moved at least 1 pixel
-        bool point_moved = (abs(next_pt.x - last_drawn_pt.x) > 1
-                            || abs(next_pt.y - last_drawn_pt.y) > 1);
+        //Optimization: skip drawing if point hasn't moved at least 1 pixel;
+        //i_now is a special case where we split so never skip it
+        bool point_moved = i == i_now || abs(next_pt.x - last_drawn_pt.x) > 1
+                           || abs(next_pt.y - last_drawn_pt.y) > 1;
 
         //apply color style
         if (point_moved) {

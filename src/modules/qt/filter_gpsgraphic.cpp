@@ -20,9 +20,6 @@
 #include "filter_gpsgraphic.h"
 #include "common.h"
 
-#include <QMutex>
-static QMutex f_mutex;
-
 // Sets the private data to default values and frees gps points array
 static void default_priv_data(private_data *pdata)
 {

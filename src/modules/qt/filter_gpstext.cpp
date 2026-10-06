@@ -502,23 +502,24 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
         do_smoothing = 1;
     }
 
-    if (read_gps_processing_start_time != NULL
-        && strcmp(read_gps_processing_start_time, pdata->last_read_gps_processing_start_time) != 0) {
-        strncpy(pdata->last_read_gps_processing_start_time,
-                read_gps_processing_start_time,
-                sizeof(pdata->last_read_gps_processing_start_time));
-        int64_t gps_proc_t = 0;
-        if (strlen(read_gps_processing_start_time) != 0
-            && strcmp(read_gps_processing_start_time, "yyyy-MM-dd hh:mm:ss")) {
-            gps_proc_t = datetimeXMLstring_to_mseconds(read_gps_processing_start_time,
-                                                       "yyyy-MM-dd hh:mm:ss");
-        }
-        if (gps_proc_t != pdata->gps_proc_start_t) {
-            pdata->gps_proc_start_t = gps_proc_t;
-            do_processing = 1;
+    //only update the processing start time if the new read datetime value is valid and different from last frame
+    if (read_gps_processing_start_time != NULL && strlen(read_gps_processing_start_time) == 19
+        && strcmp(read_gps_processing_start_time, "yyyy-MM-dd hh:mm:ss")) {
+        if (strcmp(read_gps_processing_start_time, pdata->last_read_gps_processing_start_time)) {
+            strncpy(pdata->last_read_gps_processing_start_time,
+                    read_gps_processing_start_time,
+                    sizeof(pdata->last_read_gps_processing_start_time));
+
+            int64_t gps_proc_t = datetimeXMLstring_to_mseconds(read_gps_processing_start_time,
+                                                               "yyyy-MM-dd hh:mm:ss");
+            if (gps_proc_t != pdata->gps_proc_start_t) {
+                pdata->gps_proc_start_t = gps_proc_t;
+                do_processing = 1;
+            }
         }
     } else if (pdata->gps_proc_start_t != 0) {
         pdata->gps_proc_start_t = 0;
+        pdata->last_read_gps_processing_start_time[0] = 0;
         do_processing = 1;
     }
 
