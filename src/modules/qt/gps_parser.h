@@ -24,6 +24,10 @@
 #include <QFile>
 #include <QXmlStreamReader>
 
+// #include <chrono>
+// #define chrono_diff(a, b) (std::chrono::duration<double, std::milli>(b - a).count())
+//     auto start = std::chrono::high_resolution_clock::now();
+
 #define GPS_UNINIT -9999
 #define MAX_PRINT_TIMESTAMP_NS 32
 
@@ -110,7 +114,7 @@ typedef struct
 #define to_rad(x) ((x) *MATH_PI / 180.0)
 #define to_deg(x) ((x) *180.0 / MATH_PI)
 
-int64_t datetimeXMLstring_to_mseconds(const char *text, char *format = NULL);
+int64_t datetimeXMLstring_to_mseconds(const char *text, const char *format = NULL);
 void mseconds_to_timestring(int64_t seconds, char *format, char *result);
 double distance_haversine_2p(double p1_lat, double p1_lon, double p2_lat, double p2_lon);
 double distance_equirectangular_2p(double p1_lat, double p1_lon, double p2_lat, double p2_lon);

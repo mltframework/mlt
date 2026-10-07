@@ -20,7 +20,7 @@
 
 #include <modules/qt/gps_parser.h>
 
-extern int64_t datetimeXMLstring_to_mseconds(const char *text, char *format);
+extern int64_t datetimeXMLstring_to_mseconds(const char *text, char const *format);
 
 class TestModQt : public QObject
 {

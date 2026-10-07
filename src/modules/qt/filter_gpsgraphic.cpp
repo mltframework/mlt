@@ -20,9 +20,6 @@
 #include "filter_gpsgraphic.h"
 #include "common.h"
 
-#include <QMutex>
-static QMutex f_mutex;
-
 // Sets the private data to default values and frees gps points array
 static void default_priv_data(private_data *pdata)
 {
@@ -223,28 +220,17 @@ static int64_t get_original_video_file_time_mseconds(mlt_frame frame)
  */
 static int64_t get_current_frame_time_ms(mlt_filter filter, mlt_frame frame)
 {
-    mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
     private_data *pdata = (private_data *) filter->child;
-    int64_t file_time = 0, fr_time = 0;
-
-    file_time = get_original_video_file_time_mseconds(frame);
+    int64_t file_time_ms = get_original_video_file_time_mseconds(frame);
     mlt_position frame_position = mlt_frame_original_position(frame);
-    // mlt_log_info(filter, "frame_pos=%d, frame_orig_pos=%d; file_time=%d\n", mlt_frame_get_position(frame), mlt_frame_original_position(frame), file_time/1000);
-    f_mutex.lock();
-    char *s = mlt_properties_frames_to_time(properties, frame_position, mlt_time_clock);
-    if (s) {
-        int h = 0, m = 0, sec = 0, msec = 0;
-        sscanf(s, "%d:%d:%d.%d", &h, &m, &sec, &msec);
-        fr_time = (h * 3600 + m * 60 + sec) * 1000 + msec;
-    } else
-        mlt_log_warning(filter,
-                        "get_current_frame_time_ms time string null, giving up "
-                        "[mlt_frame_original_position()=%d], retry result:%s\n",
-                        frame_position,
-                        mlt_properties_frames_to_time(properties, frame_position, mlt_time_clock));
-    f_mutex.unlock();
 
-    return file_time + fr_time * pdata->speed_multiplier;
+    double fps = mlt_profile_fps(mlt_service_profile(MLT_FILTER_SERVICE(filter)));
+    if (fps == 0)
+        fps = 30;
+
+    int64_t frame_time_ms = frame_position * pdata->speed_multiplier * 1000 / fps;
+
+    return file_time_ms + frame_time_ms;
 }
 
 //gets the nearest gps point [index] according to video time + input offset
@@ -255,12 +241,12 @@ int get_now_gpspoint_index(mlt_filter filter, mlt_frame frame, bool force_result
     return binary_search_gps(filter_to_gps_data(filter), video_time_synced, force_result);
 }
 
-//returns the next gps point with a valid value for crt_source (starting with crt_i+1)
-int get_next_valid_gpspoint_index(mlt_filter filter, int crt_i)
+//returns gps point index with a valid value for crt_source (starts searching directly at crt_i)
+int get_valid_gpspoint_index(mlt_filter filter, int crt_i)
 {
     private_data *pdata = (private_data *) filter->child;
-    while (++crt_i < pdata->gps_points_size && get_crtval_bysrc(filter, crt_i) == GPS_UNINIT)
-        ;
+    while (crt_i < pdata->gps_points_size && get_crtval_bysrc(filter, crt_i) == GPS_UNINIT)
+        crt_i++;
     //maybe TODO: add restriction for MAX_GPS_TIME? and allow depending on force_result
     return CLAMP(crt_i, 0, pdata->gps_points_size - 1);
 }
@@ -284,7 +270,7 @@ gps_point_proc get_now_weighted_gpspoint(mlt_filter filter,
         return uninit_gps_proc_point;
 
     //interpolate if everything ok
-    int next_i = get_next_valid_gpspoint_index(filter, i_now);
+    int next_i = get_valid_gpspoint_index(filter, i_now + 1);
     if (non_forced_i != -1)
         crt = weighted_middle_point_proc(&pdata->gps_points_p[i_now],
                                          &pdata->gps_points_p[next_i],

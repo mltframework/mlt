@@ -35,6 +35,7 @@ typedef struct
     int64_t last_gps_time;
     int64_t gps_offset;
     int64_t gps_proc_start_t; //process only points after this time (epoch milliseconds)
+    char last_read_gps_processing_start_time[20];
     double speed_multiplier;
     double updates_per_second;
     char last_filename[PATH_MAX]; //gps file fullpath
@@ -197,20 +198,17 @@ static void get_current_frame_time_ns_decimals_str(mlt_filter filter,
     double file_time_just_ms = (get_original_video_file_time_mseconds(frame) % 1000) / 1000.0;
     mlt_position frame_position = mlt_frame_original_position(frame);
 
-    mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
-    double fps = mlt_profile_fps(profile);
+    double fps = mlt_profile_fps(mlt_service_profile(MLT_FILTER_SERVICE(filter)));
     if (fps == 0)
         fps = 30; //there's probably worse things happening if this returns 0
 
     int64_t frame_time_ns = frame_position * pdata->speed_multiplier * 1000000000LL / fps;
-    // mlt_log_info(NULL, "before ns: fps=%.9f, frame_time_ns=%lld", fps, frame_time_ns);
 
     if (pdata->updates_per_second > 0) {
         int64_t upd_every_ns = llround(1e9 * fabs(pdata->speed_multiplier)
                                        / pdata->updates_per_second);
         if (upd_every_ns) //avoid division (modulo) by 0
             frame_time_ns -= frame_time_ns % upd_every_ns;
-        // mlt_log_info(NULL, "after: upd_every_ns=%lld, frame_time_ns=%lld, result_ns:%.9f", upd_every_ns, frame_time_ns, (file_time_just_ms + frame_time_ns / 1e9));
     }
     double result_ns = file_time_just_ms + frame_time_ns / 1e9;
 
@@ -234,24 +232,19 @@ static int64_t get_current_frame_time_ms(mlt_filter filter, mlt_frame frame)
     int64_t file_time_ms = get_original_video_file_time_mseconds(frame);
     mlt_position frame_position = mlt_frame_original_position(frame);
 
-    mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
-    double fps = mlt_profile_fps(profile);
+    double fps = mlt_profile_fps(mlt_service_profile(MLT_FILTER_SERVICE(filter)));
     if (fps == 0)
         fps = 30;
 
     int64_t frame_time_ms = frame_position * pdata->speed_multiplier * 1000 / fps;
-    // mlt_log_info(NULL, "before ms : fps=%.9f, frame_time_ms=%lld", fps, frame_time_ms);
 
     if (pdata->updates_per_second > 0) {
         int64_t upd_every_ms = llround(1000.0 * fabs(pdata->speed_multiplier)
                                        / pdata->updates_per_second);
         if (upd_every_ms)
             frame_time_ms -= frame_time_ms % upd_every_ms;
-        // mlt_log_info(NULL, "after: upd_every_ms=%lld, frame_time_ms=%lld, result_ms:%lld", upd_every_ms, frame_time_ms, file_time_ms + frame_time_ms);
     }
-    int64_t result_ms = file_time_ms + frame_time_ms;
-
-    return result_ms;
+    return file_time_ms + frame_time_ms;
 }
 
 /** Replaces file_datetime_now with absolute time-date string (video created + current timecode)
@@ -477,7 +470,6 @@ static void gps_point_to_output(mlt_filter filter,
         }
     }
     strncat(result_gps_text, gps_text, MAX_TEXT_LEN - strlen(result_gps_text) - 1);
-    //	mlt_log_info(NULL, "filter_gps.c gps_point_to_output, keyword=%s, result_gps_text=%s\n", keyword, result_gps_text);
 }
 
 /** Reads and updates all necessary filter properties, and processes the gps data if needed
@@ -510,18 +502,24 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
         do_smoothing = 1;
     }
 
-    if (read_gps_processing_start_time != NULL) {
-        int64_t gps_proc_t = 0;
-        if (strlen(read_gps_processing_start_time) != 0
-            && strcmp(read_gps_processing_start_time, "yyyy-MM-dd hh:mm:ss"))
-            gps_proc_t = datetimeXMLstring_to_mseconds(read_gps_processing_start_time,
-                                                       (char *) "yyyy-MM-dd hh:mm:ss");
-        if (gps_proc_t != pdata->gps_proc_start_t) {
-            pdata->gps_proc_start_t = gps_proc_t;
-            do_processing = 1;
+    //only update the processing start time if the new read datetime value is valid and different from last frame
+    if (read_gps_processing_start_time != NULL && strlen(read_gps_processing_start_time) == 19
+        && strcmp(read_gps_processing_start_time, "yyyy-MM-dd hh:mm:ss")) {
+        if (strcmp(read_gps_processing_start_time, pdata->last_read_gps_processing_start_time)) {
+            strncpy(pdata->last_read_gps_processing_start_time,
+                    read_gps_processing_start_time,
+                    sizeof(pdata->last_read_gps_processing_start_time));
+
+            int64_t gps_proc_t = datetimeXMLstring_to_mseconds(read_gps_processing_start_time,
+                                                               "yyyy-MM-dd hh:mm:ss");
+            if (gps_proc_t != pdata->gps_proc_start_t) {
+                pdata->gps_proc_start_t = gps_proc_t;
+                do_processing = 1;
+            }
         }
     } else if (pdata->gps_proc_start_t != 0) {
         pdata->gps_proc_start_t = 0;
+        pdata->last_read_gps_processing_start_time[0] = 0;
         do_processing = 1;
     }
 
