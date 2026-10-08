@@ -181,6 +181,15 @@ static void build_fingerprint(mlt_service service, mlt_frame frame, std::string 
     if (service == (mlt_service) -1) {
         mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
         append_unique_id(fingerprint, producer ? MLT_PRODUCER_SERVICE(producer) : nullptr);
+        // The producer may change the image size or format on the fly, e.g. when
+        // hardware decoding starts scaling to the preview size. The chain's MltInput
+        // keeps the size it was created with, so the chain must be rebuilt then.
+        MltInput *input = producer ? GlslManager::get_input(producer, frame) : nullptr;
+        if (input) {
+            fingerprint->append("[" + std::to_string(input->get_width()) + "x"
+                                + std::to_string(input->get_height()) + ":"
+                                + std::to_string(input->get_format()) + "]");
+        }
         return;
     }
 
