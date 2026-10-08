@@ -44,6 +44,8 @@ public:
     // The original pixel format that was used to create this MltInput,
     // in case we change our mind later and want to convert on the CPU instead.
     mlt_image_format get_format() const { return m_format; }
+    unsigned get_width() const { return m_width; }
+    unsigned get_height() const { return m_height; }
 
 private:
     mlt_image_format m_format;
