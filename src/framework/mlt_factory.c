@@ -23,6 +23,7 @@
 #include "mlt_repository.h"
 
 #include <libgen.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -73,8 +74,7 @@ static mlt_repository repository = NULL;
 /** the events object for the factory events */
 static mlt_properties event_object = NULL;
 /** for tracking the unique_id set on each constructed service */
-static int unique_id = 0;
-static pthread_mutex_t unique_id_mutex = PTHREAD_MUTEX_INITIALIZER;
+static atomic_int unique_id = 0;
 
 #if defined(_WIN32) || defined(RELOCATABLE)
 // Replacement for buggy dirname() on some systems.
@@ -304,11 +304,7 @@ static void set_common_properties(mlt_properties properties,
                                   const char *type,
                                   const char *service)
 {
-    // Services can be constructed on several threads at once.
-    pthread_mutex_lock(&unique_id_mutex);
-    int id = ++unique_id;
-    pthread_mutex_unlock(&unique_id_mutex);
-    mlt_properties_set_int(properties, "_unique_id", id);
+    mlt_properties_set_int(properties, "_unique_id", ++unique_id);
     mlt_properties_set(properties, "mlt_type", type);
     if (mlt_properties_get_int(properties, "_mlt_service_hidden") == 0)
         mlt_properties_set(properties, "mlt_service", service);
