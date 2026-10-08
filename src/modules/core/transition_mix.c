@@ -62,7 +62,7 @@ static int reserve_buffer(float **buffer, size_t *buffer_floats, size_t floats)
     if (floats <= *buffer_floats)
         return 0;
 
-    size_t new_floats = MIN(MAX(floats, *buffer_floats * 2), MAX_FLOATS);
+    size_t new_floats = CLAMP(*buffer_floats * 2, floats, MAX_FLOATS);
     float *new_buffer = mlt_pool_alloc((int) (new_floats * sizeof(float)));
     if (!new_buffer)
         return 1;
