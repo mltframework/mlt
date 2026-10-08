@@ -170,6 +170,22 @@ static mlt_audio_format pick_audio_format(int sample_fmt);
 static int pick_av_pixel_format(int *pix_fmt, int full_range);
 static void property_changed(mlt_service owner, producer_avformat self, char *name);
 
+static void init_mutexes(producer_avformat self)
+{
+    if (self->is_mutex_init)
+        return;
+    pthread_mutexattr_t attr;
+    pthread_mutexattr_init(&attr);
+    pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
+    pthread_mutex_init(&self->audio_mutex, &attr);
+    pthread_mutex_init(&self->video_mutex, &attr);
+    pthread_mutex_init(&self->packets_mutex, &attr);
+    pthread_mutex_init(&self->open_mutex, &attr);
+    pthread_mutex_init(&self->close_mutex, &attr);
+    pthread_mutexattr_destroy(&attr);
+    self->is_mutex_init = 1;
+}
+
 static int absolute_stream_index(AVFormatContext *context, enum AVMediaType media_type, int relative)
 {
     if (context) {
@@ -254,16 +270,8 @@ mlt_producer producer_avformat_init(mlt_profile profile, const char *service, ch
                     if (self->video_format)
                         avformat_close_input(&self->video_format);
                 }
-            } else if (!self->is_mutex_init) {
-                pthread_mutexattr_t attr;
-                pthread_mutexattr_init(&attr);
-                pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-                pthread_mutex_init(&self->audio_mutex, &attr);
-                pthread_mutex_init(&self->video_mutex, &attr);
-                pthread_mutex_init(&self->packets_mutex, &attr);
-                pthread_mutex_init(&self->open_mutex, &attr);
-                pthread_mutex_init(&self->close_mutex, &attr);
-                self->is_mutex_init = 1;
+            } else {
+                init_mutexes(self);
             }
 
             if (producer) {
@@ -1492,17 +1500,7 @@ static int producer_open(
     int error = 0;
     mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
 
-    if (!self->is_mutex_init) {
-        pthread_mutexattr_t attr;
-        pthread_mutexattr_init(&attr);
-        pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-        pthread_mutex_init(&self->audio_mutex, &attr);
-        pthread_mutex_init(&self->video_mutex, &attr);
-        pthread_mutex_init(&self->packets_mutex, &attr);
-        pthread_mutex_init(&self->open_mutex, &attr);
-        pthread_mutex_init(&self->close_mutex, &attr);
-        self->is_mutex_init = 1;
-    }
+    init_mutexes(self);
 
     // Lock the service
     if (take_lock) {
@@ -4455,9 +4453,14 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
     producer_avformat self = mlt_cache_item_data(cache_item, NULL);
 
     // If cache miss
-    while (!self) {
+    for (int attempt = 0; !self && attempt < 10; attempt++) {
         producer_avformat created = calloc(1, sizeof(struct producer_avformat_s));
+        if (!created)
+            break;
         created->parent = producer;
+        // The mutexes must exist before the state is visible to anyone else: it can
+        // be evicted and destroyed, or used by the code below, right away.
+        init_mutexes(created);
         mlt_service_cache_put(service,
                               "producer_avformat",
                               created,
@@ -4470,6 +4473,12 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
         // Then try again.
         cache_item = mlt_service_cache_get(service, "producer_avformat");
         self = mlt_cache_item_data(cache_item, NULL);
+    }
+    if (!self) {
+        // The cache would not keep the state (a cache size of 0, or no memory).
+        // The caller expects a frame even on failure.
+        *frame = mlt_frame_init(service);
+        return 1;
     }
 
     // Create an empty frame
