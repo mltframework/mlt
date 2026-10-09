@@ -36,6 +36,7 @@
 typedef struct
 {
     mlt_position expected_frame;
+    mlt_position expected_source_frame;
     mlt_position continuity_frame;
     mlt_deinterlacer method;
     int format;
@@ -397,11 +398,14 @@ static int link_get_image(mlt_frame frame,
 
     mlt_service_lock(MLT_LINK_SERVICE(self));
 
-    if (pdata->method != method || pdata->expected_frame != mlt_frame_get_position(frame)) {
+    // A playlist can rewind a shared source while timeline positions remain continuous.
+    if (pdata->method != method || pdata->expected_frame != mlt_frame_get_position(frame)
+        || pdata->expected_source_frame != mlt_frame_original_position(frame)) {
         mlt_log_debug(MLT_LINK_SERVICE(self), "Reset: %s\n", mlt_deinterlacer_name(method));
         pdata->reset = 1;
         pdata->continuity_frame = mlt_frame_get_position(frame);
         pdata->expected_frame = mlt_frame_get_position(frame);
+        pdata->expected_source_frame = mlt_frame_original_position(frame);
         pdata->method = method;
     }
 
@@ -409,6 +413,7 @@ static int link_get_image(mlt_frame frame,
     mlt_cache_item cache_item = NULL;
 
     pdata->expected_frame++;
+    pdata->expected_source_frame++;
 
     while (1) {
         mlt_frame src_frame = NULL;
@@ -630,6 +635,7 @@ mlt_link link_avdeinterlace_init(mlt_profile profile,
     if (self && pdata) {
         pdata->continuity_frame = -1;
         pdata->expected_frame = -1;
+        pdata->expected_source_frame = -1;
         pdata->reset = 1;
         pdata->method = mlt_deinterlacer_linearblend;
         self->child = pdata;

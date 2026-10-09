@@ -89,6 +89,50 @@ private Q_SLOTS:
         mlt_frame_close(frame);
         mlt_producer_close(raw);
     }
+
+    void DeinterlacerSourceDiscontinuity()
+    {
+        Profile profile;
+        profile.set_width(32);
+        profile.set_height(16);
+        Producer source(profile, "color:white");
+        source.set("meta.media.progressive", 0);
+        source.set("progressive", 0);
+        Filter brightness(profile, "brightness");
+        brightness.set("level", "0=0;1=1");
+        source.attach(brightness);
+        mlt_filter raw = mlt_filter_new();
+        raw->process = [](mlt_filter, mlt_frame frame) {
+            mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
+            mlt_properties_set_int(properties, "progressive", 0);
+            mlt_properties_set(properties, "color_trc", "bt709");
+            return frame;
+        };
+        Filter interlaced(raw);
+        mlt_filter_close(raw);
+        source.attach(interlaced);
+        Chain chain(profile);
+        chain.set_source(source);
+        Link deinterlacer("avdeinterlace");
+        QVERIFY(deinterlacer.is_valid());
+        chain.attach(deinterlacer);
+        Playlist playlist(profile);
+        // Repeat the black source frame; stale look-ahead would return the white frame.
+        playlist.append(chain, 0, 0);
+        playlist.append(chain, 0, 0);
+        for (int position = 0; position < 2; position++) {
+            playlist.seek(position);
+            QScopedPointer<Frame> frame(playlist.get_frame());
+            frame->set("consumer.progressive", 1);
+            frame->set("consumer.deinterlacer", "yadif");
+            mlt_image_format format = mlt_image_yuv422;
+            int width = 32;
+            int height = 16;
+            uint8_t *image = frame->get_image(format, width, height);
+            QVERIFY(image != nullptr);
+            QCOMPARE(image[0], uint8_t(16));
+        }
+    }
 };
 
 QTEST_APPLESS_MAIN(TestModAvformat)
