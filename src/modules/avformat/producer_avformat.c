@@ -925,8 +925,13 @@ static int get_basic_info(producer_avformat self, mlt_profile profile, const cha
         mlt_properties_set_int(properties, "seekable", self->seekable);
         self->dummy_context = format;
         self->video_format = NULL;
-        avformat_open_input(&self->video_format, filename, NULL, NULL);
-        avformat_find_stream_info(self->video_format, NULL);
+        if (avformat_open_input(&self->video_format, filename, NULL, NULL) < 0) {
+            // Reopen failed: keep the already probed context
+            self->video_format = self->dummy_context;
+            self->dummy_context = NULL;
+        } else {
+            avformat_find_stream_info(self->video_format, NULL);
+        }
         format = self->video_format;
     }
     self->video_seekable = self->seekable;
@@ -1632,9 +1637,13 @@ static int producer_open(
                 // to support independent seeking of audio from video.
                 // TODO: Is this really necessary?
                 if (self->audio_index != -1 && self->video_index != -1) {
-                    if (self->seekable) {
+                    if (self->seekable
+                        && avformat_open_input(&self->audio_format, filename, NULL, NULL) < 0) {
+                        // Reopen failed: fail like the first open
+                        avformat_close_input(&self->video_format);
+                        error = 1;
+                    } else if (self->seekable) {
                         // And open again for our audio context
-                        avformat_open_input(&self->audio_format, filename, NULL, NULL);
                         apply_properties(self->audio_format, properties, AV_OPT_FLAG_DECODING_PARAM);
                         if (self->audio_format->iformat && self->audio_format->iformat->priv_class
                             && self->audio_format->priv_data)
@@ -1656,7 +1665,7 @@ static int producer_open(
                 if (self->audio_format && !self->audio_streams)
                     get_audio_streams_info(self);
 
-                if (!test_open) {
+                if (!error && !test_open) {
                     self->autorotate = !mlt_properties_get(properties, "autorotate")
                                        || mlt_properties_get_int(properties, "autorotate");
 
