@@ -95,34 +95,39 @@ private Q_SLOTS:
         Profile profile;
         profile.set_width(32);
         profile.set_height(16);
+        profile.set_frame_rate(25, 1);
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        const QByteArray path = dir.filePath("interlaced.mkv").toUtf8();
+        {
+            // Encode an interlaced clip: black, except a white flash at frame 25
+            Producer blipflash(profile, "blipflash");
+            if (!blipflash.is_valid())
+                QSKIP("blipflash producer not available");
+            blipflash.set_in_and_out(0, 29);
+            Consumer encoder(profile, "avformat", path.constData());
+            encoder.set("vcodec", "mpeg2video");
+            encoder.set("an", 1);
+            encoder.set("progressive", 0);
+            encoder.set("top_field_first", 1);
+            encoder.set("real_time", 0);
+            encoder.set("terminate_on_pause", 1);
+            encoder.connect(blipflash);
+            encoder.run();
+        }
         // Loader constructor: avdeinterlace is attached as a normalizer link
-        Chain chain(profile, "color:white");
+        Chain chain(profile, path.constData());
+        QVERIFY(chain.is_valid());
         bool hasDeinterlacer = false;
         for (int i = 0; i < chain.link_count(); i++) {
             QScopedPointer<Link> link(chain.link(i));
             hasDeinterlacer |= qstrcmp(link->get("mlt_service"), "avdeinterlace") == 0;
         }
         QVERIFY(hasDeinterlacer);
-        Producer source = chain.get_source();
-        source.set("meta.media.progressive", 0);
-        source.set("progressive", 0);
-        Filter brightness(profile, "brightness");
-        brightness.set("level", "0=0;1=1");
-        source.attach(brightness);
-        mlt_filter raw = mlt_filter_new();
-        raw->process = [](mlt_filter, mlt_frame frame) {
-            mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
-            mlt_properties_set_int(properties, "progressive", 0);
-            mlt_properties_set(properties, "color_trc", "bt709");
-            return frame;
-        };
-        Filter interlaced(raw);
-        mlt_filter_close(raw);
-        source.attach(interlaced);
         Playlist playlist(profile);
-        // Repeat the black source frame; stale look-ahead would return the white frame.
-        playlist.append(chain, 0, 0);
-        playlist.append(chain, 0, 0);
+        // Two cuts of the same chain on black frame 24; stale look-ahead would return frame 25.
+        playlist.append(chain, 24, 24);
+        playlist.append(chain, 24, 24);
         for (int position = 0; position < 2; position++) {
             playlist.seek(position);
             QScopedPointer<Frame> frame(playlist.get_frame());
