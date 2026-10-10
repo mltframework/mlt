@@ -95,7 +95,15 @@ private Q_SLOTS:
         Profile profile;
         profile.set_width(32);
         profile.set_height(16);
-        Producer source(profile, "color:white");
+        // Loader constructor: avdeinterlace is attached as a normalizer link
+        Chain chain(profile, "color:white");
+        bool hasDeinterlacer = false;
+        for (int i = 0; i < chain.link_count(); i++) {
+            QScopedPointer<Link> link(chain.link(i));
+            hasDeinterlacer |= qstrcmp(link->get("mlt_service"), "avdeinterlace") == 0;
+        }
+        QVERIFY(hasDeinterlacer);
+        Producer source = chain.get_source();
         source.set("meta.media.progressive", 0);
         source.set("progressive", 0);
         Filter brightness(profile, "brightness");
@@ -111,11 +119,6 @@ private Q_SLOTS:
         Filter interlaced(raw);
         mlt_filter_close(raw);
         source.attach(interlaced);
-        Chain chain(profile);
-        chain.set_source(source);
-        Link deinterlacer("avdeinterlace");
-        QVERIFY(deinterlacer.is_valid());
-        chain.attach(deinterlacer);
         Playlist playlist(profile);
         // Repeat the black source frame; stale look-ahead would return the white frame.
         playlist.append(chain, 0, 0);
