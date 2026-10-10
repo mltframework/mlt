@@ -89,6 +89,58 @@ private Q_SLOTS:
         mlt_frame_close(frame);
         mlt_producer_close(raw);
     }
+
+    void DeinterlacerSourceDiscontinuity()
+    {
+        Profile profile;
+        profile.set_width(32);
+        profile.set_height(16);
+        profile.set_frame_rate(25, 1);
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+        const QByteArray path = dir.filePath("interlaced.mkv").toUtf8();
+        {
+            // Encode an interlaced clip: black, except a white flash at frame 25
+            Producer blipflash(profile, "blipflash");
+            if (!blipflash.is_valid())
+                QSKIP("blipflash producer not available");
+            blipflash.set_in_and_out(0, 29);
+            Consumer encoder(profile, "avformat", path.constData());
+            encoder.set("vcodec", "mpeg2video");
+            encoder.set("an", 1);
+            encoder.set("progressive", 0);
+            encoder.set("top_field_first", 1);
+            encoder.set("real_time", 0);
+            encoder.set("terminate_on_pause", 1);
+            encoder.connect(blipflash);
+            encoder.run();
+        }
+        // Loader constructor: avdeinterlace is attached as a normalizer link
+        Chain chain(profile, path.constData());
+        QVERIFY(chain.is_valid());
+        bool hasDeinterlacer = false;
+        for (int i = 0; i < chain.link_count(); i++) {
+            QScopedPointer<Link> link(chain.link(i));
+            hasDeinterlacer |= qstrcmp(link->get("mlt_service"), "avdeinterlace") == 0;
+        }
+        QVERIFY(hasDeinterlacer);
+        Playlist playlist(profile);
+        // Two cuts of the same chain on black frame 24; stale look-ahead would return frame 25.
+        playlist.append(chain, 24, 24);
+        playlist.append(chain, 24, 24);
+        for (int position = 0; position < 2; position++) {
+            playlist.seek(position);
+            QScopedPointer<Frame> frame(playlist.get_frame());
+            frame->set("consumer.progressive", 1);
+            frame->set("consumer.deinterlacer", "yadif");
+            mlt_image_format format = mlt_image_yuv422;
+            int width = 32;
+            int height = 16;
+            uint8_t *image = frame->get_image(format, width, height);
+            QVERIFY(image != nullptr);
+            QCOMPARE(image[0], uint8_t(16));
+        }
+    }
 };
 
 QTEST_APPLESS_MAIN(TestModAvformat)
