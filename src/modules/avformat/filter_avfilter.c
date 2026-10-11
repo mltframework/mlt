@@ -1,6 +1,6 @@
 /*
  * filter_avfilter.c -- provide various filters based on libavfilter
- * Copyright (C) 2016-2025 Meltytech, LLC
+ * Copyright (C) 2016-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -433,8 +433,6 @@ static void init_image_filtergraph(mlt_filter filter,
     AVRational sar = (AVRational){profile->sample_aspect_num, profile->sample_aspect_den};
     AVRational timebase = (AVRational){profile->frame_rate_den, profile->frame_rate_num};
     AVRational framerate = (AVRational){profile->frame_rate_num, profile->frame_rate_den};
-    int avcolorspace = mlt_to_av_colorspace(colorspace, pdata->height);
-    int color_range = mlt_to_av_color_range(full_range);
     int ret;
 
     pdata->format = format;
@@ -504,6 +502,9 @@ static void init_image_filtergraph(mlt_filter filter,
         mlt_log_error(filter, "Cannot set src frame_rate %d/%d\n", framerate.num, framerate.den);
         goto fail;
     }
+#if LIBAVFILTER_VERSION_INT >= ((9 << 16) + (16 << 8) + 100)
+    int avcolorspace = mlt_to_av_colorspace(colorspace, height);
+    int color_range = mlt_to_av_color_range(full_range);
     ret = av_opt_set_int(pdata->avbuffsrc_ctx, "colorspace", avcolorspace, AV_OPT_SEARCH_CHILDREN);
     if (ret < 0) {
         mlt_log_error(filter, "Cannot set src colorspace %d\n", avcolorspace);
@@ -514,6 +515,7 @@ static void init_image_filtergraph(mlt_filter filter,
         mlt_log_error(filter, "Cannot set src range %d\n", color_range);
         goto fail;
     }
+#endif
     ret = avfilter_init_str(pdata->avbuffsrc_ctx, NULL);
     if (ret < 0) {
         mlt_log_error(filter, "Cannot init buffer source\n");

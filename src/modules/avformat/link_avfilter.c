@@ -449,8 +449,6 @@ static void init_image_filtergraph(mlt_link self,
     AVRational sar = (AVRational){profile->sample_aspect_num, profile->sample_aspect_den};
     AVRational timebase = (AVRational){profile->frame_rate_den, profile->frame_rate_num};
     AVRational framerate = (AVRational){profile->frame_rate_num, profile->frame_rate_den};
-    int avcolorspace = mlt_to_av_colorspace(colorspace, height);
-    int color_range = mlt_to_av_color_range(full_range);
     int ret;
 
     pdata->format = format;
@@ -520,6 +518,9 @@ static void init_image_filtergraph(mlt_link self,
         mlt_log_error(self, "Cannot set src frame_rate %d/%d\n", framerate.num, framerate.den);
         goto fail;
     }
+#if LIBAVFILTER_VERSION_INT >= ((9 << 16) + (16 << 8) + 100)
+    int avcolorspace = mlt_to_av_colorspace(colorspace, height);
+    int color_range = mlt_to_av_color_range(full_range);
     ret = av_opt_set_int(pdata->avbuffsrc_ctx, "colorspace", avcolorspace, AV_OPT_SEARCH_CHILDREN);
     if (ret < 0) {
         mlt_log_error(self, "Cannot set src colorspace %d\n", avcolorspace);
@@ -530,6 +531,7 @@ static void init_image_filtergraph(mlt_link self,
         mlt_log_error(self, "Cannot set src range %d\n", color_range);
         goto fail;
     }
+#endif
     ret = avfilter_init_str(pdata->avbuffsrc_ctx, NULL);
     if (ret < 0) {
         mlt_log_error(self, "Cannot init buffer source\n");
