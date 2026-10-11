@@ -63,6 +63,15 @@ if(MOD_QT6)
       "${CMAKE_SOURCE_DIR}/src/modules/qt/gps_parser.h"
       "${CMAKE_SOURCE_DIR}/src/modules/qt/gps_parser.cpp"
   )
+  add_qt_test(
+    TEST_NAME kdenlivetitle
+    LINK_LIBRARIES Qt${QT_MAJOR_VERSION}::Gui Qt${QT_MAJOR_VERSION}::Widgets Qt${QT_MAJOR_VERSION}::Xml Qt${QT_MAJOR_VERSION}::SvgWidgets
+    SOURCE_FILES
+      "${CMAKE_SOURCE_DIR}/src/modules/qt/kdenlivetitle_wrapper.cpp"
+      "${CMAKE_SOURCE_DIR}/src/modules/qt/kdenlivegraphics.cpp"
+      "${CMAKE_SOURCE_DIR}/src/modules/qt/typewriter.cpp"
+      "${CMAKE_SOURCE_DIR}/src/modules/qt/common.cpp"
+  )
 endif()
 
 if(Kwalify_FOUND)
