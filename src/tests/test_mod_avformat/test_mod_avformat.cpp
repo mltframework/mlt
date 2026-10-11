@@ -128,7 +128,10 @@ private Q_SLOTS:
         // Two cuts of the same chain on black frame 24; stale look-ahead would return frame 25.
         playlist.append(chain, 24, 24);
         playlist.append(chain, 24, 24);
-        for (int position = 0; position < 2; position++) {
+        // After a gap, continue the source at the flash frame 25: timeline jumps, source does not.
+        playlist.blank(4);
+        playlist.append(chain, 25, 26);
+        for (int position : {0, 1, 7, 8}) {
             playlist.seek(position);
             QScopedPointer<Frame> frame(playlist.get_frame());
             frame->set("consumer.progressive", 1);
@@ -138,7 +141,7 @@ private Q_SLOTS:
             int height = 16;
             uint8_t *image = frame->get_image(format, width, height);
             QVERIFY(image != nullptr);
-            QCOMPARE(image[0], uint8_t(16));
+            QCOMPARE(image[0] > 128, position == 7);
         }
     }
 };
