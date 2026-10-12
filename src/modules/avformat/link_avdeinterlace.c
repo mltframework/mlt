@@ -399,11 +399,13 @@ static int link_get_image(mlt_frame frame,
 
     mlt_service_lock(MLT_LINK_SERVICE(self));
 
-    if (pdata->method != method || pdata->expected_frame != mlt_frame_get_position(frame)) {
+    // Track continuity in source positions: cuts of a shared chain can rewind or jump the source
+    // while the timeline position stays continuous.
+    if (pdata->method != method || pdata->expected_frame != mlt_frame_original_position(frame)) {
         mlt_log_debug(MLT_LINK_SERVICE(self), "Reset: %s\n", mlt_deinterlacer_name(method));
         pdata->reset = 1;
-        pdata->continuity_frame = mlt_frame_get_position(frame);
-        pdata->expected_frame = mlt_frame_get_position(frame);
+        pdata->continuity_frame = mlt_frame_original_position(frame);
+        pdata->expected_frame = mlt_frame_original_position(frame);
         pdata->method = method;
     }
 
@@ -415,7 +417,7 @@ static int link_get_image(mlt_frame frame,
     while (1) {
         mlt_frame src_frame = NULL;
 
-        if (pdata->continuity_frame == mlt_frame_get_position(frame)) {
+        if (pdata->continuity_frame == mlt_frame_original_position(frame)) {
             src_frame = frame;
             pdata->continuity_frame++;
         } else {
@@ -424,8 +426,7 @@ static int link_get_image(mlt_frame frame,
                 break;
             }
             char key[19];
-            int frame_delta = mlt_frame_get_position(frame) - mlt_frame_original_position(frame);
-            sprintf(key, "%d", pdata->continuity_frame - frame_delta);
+            sprintf(key, "%d", pdata->continuity_frame);
             src_frame = (mlt_frame) mlt_properties_get_data(unique_properties, key, NULL);
             if (!src_frame) {
                 mlt_log_error(MLT_LINK_SERVICE(self), "Frame not found: %s\n", key);
