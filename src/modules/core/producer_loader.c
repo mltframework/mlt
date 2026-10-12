@@ -21,6 +21,7 @@
 #include <ctype.h>
 #include <fnmatch.h>
 #include <limits.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -29,6 +30,9 @@
 
 static mlt_properties dictionary = NULL;
 static mlt_properties normalizers = NULL;
+// Guards the one-time loading of the two above, which producers created on
+// several threads at once can race to do.
+static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static mlt_producer create_from(mlt_profile profile, char *file, char *services)
 {
@@ -84,12 +88,14 @@ static mlt_producer create_producer(mlt_profile profile, char *file)
         mlt_profile backup_profile = mlt_profile_clone(profile);
 
         // We only need to load the dictionary once
+        pthread_mutex_lock(&init_mutex);
         if (dictionary == NULL) {
             char temp[PATH_MAX];
             snprintf(temp, sizeof(temp), "%s/core/loader.dict", mlt_environment("MLT_DATA"));
             dictionary = mlt_properties_load(temp);
             mlt_factory_register_for_clean_up(dictionary, (mlt_destructor) mlt_properties_close);
         }
+        pthread_mutex_unlock(&init_mutex);
 
         // Convert the lookup string to lower case
         while (*p) {
@@ -197,12 +203,14 @@ static void create_filter(mlt_profile profile,
 
 static void ensure_normalizers_loaded(void)
 {
+    pthread_mutex_lock(&init_mutex);
     if (normalizers == NULL) {
         char temp[PATH_MAX];
         snprintf(temp, sizeof(temp), "%s/core/loader.ini", mlt_environment("MLT_DATA"));
         normalizers = mlt_properties_load(temp);
         mlt_factory_register_for_clean_up(normalizers, (mlt_destructor) mlt_properties_close);
     }
+    pthread_mutex_unlock(&init_mutex);
 }
 
 static void attach_normalizers(mlt_profile profile, mlt_producer producer, int nogl)

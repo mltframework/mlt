@@ -928,23 +928,41 @@ void mlt_service_cache_purge(mlt_service self)
 
 static mlt_cache get_cache(mlt_service self, const char *name)
 {
+    // Caches are created on first use, possibly on several threads at once.
+    // mlt_properties_get_data() is itself locked, so only the creation needs this.
+    static pthread_mutex_t create_mutex = PTHREAD_MUTEX_INITIALIZER;
     mlt_cache result = NULL;
     mlt_properties caches = mlt_properties_get_data(mlt_global_properties(), "caches", NULL);
 
     if (!caches) {
-        caches = mlt_properties_new();
-        mlt_properties_set_data(mlt_global_properties(),
-                                "caches",
-                                caches,
-                                0,
-                                (mlt_destructor) mlt_properties_close,
-                                NULL);
+        pthread_mutex_lock(&create_mutex);
+        caches = mlt_properties_get_data(mlt_global_properties(), "caches", NULL);
+        if (!caches) {
+            caches = mlt_properties_new();
+            mlt_properties_set_data(mlt_global_properties(),
+                                    "caches",
+                                    caches,
+                                    0,
+                                    (mlt_destructor) mlt_properties_close,
+                                    NULL);
+        }
+        pthread_mutex_unlock(&create_mutex);
     }
     if (caches) {
         result = mlt_properties_get_data(caches, name, NULL);
         if (!result) {
-            result = mlt_cache_init();
-            mlt_properties_set_data(caches, name, result, 0, (mlt_destructor) mlt_cache_close, NULL);
+            pthread_mutex_lock(&create_mutex);
+            result = mlt_properties_get_data(caches, name, NULL);
+            if (!result) {
+                result = mlt_cache_init();
+                mlt_properties_set_data(caches,
+                                        name,
+                                        result,
+                                        0,
+                                        (mlt_destructor) mlt_cache_close,
+                                        NULL);
+            }
+            pthread_mutex_unlock(&create_mutex);
         }
     }
 
