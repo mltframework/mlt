@@ -1,4 +1,4 @@
-name: build-test-msys2-mingw64-on-push
+name: build-test-msys2-ucrt64-on-push
 
 on:
   push:
@@ -20,69 +20,64 @@ jobs:
       - name: Setup MSYS2
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: UCRT64
           update: true
           install: >-
             autotools base-devel bzip2 coreutils git gzip tar xz zip
             perl-List-MoreUtils perl-XML-Parser
-            mingw-w64-x86_64-toolchain
-            mingw-w64-x86_64-cmake
-            mingw-w64-x86_64-meson
-            mingw-w64-x86_64-nasm
-            mingw-w64-x86_64-ninja
-            mingw-w64-x86_64-osslsigncode
-            mingw-w64-x86_64-yasm
-            mingw-w64-x86_64-cairo
-            mingw-w64-x86_64-eigen3
-            mingw-w64-x86_64-dlfcn
-            mingw-w64-x86_64-ffmpeg
-            mingw-w64-x86_64-fftw
-            mingw-w64-x86_64-gcc-fortran
-            mingw-w64-x86_64-gettext-tools
-            mingw-w64-x86_64-harfbuzz
-            mingw-w64-x86_64-lame
-            mingw-w64-x86_64-libarchive
-            mingw-w64-x86_64-libepoxy
-            mingw-w64-x86_64-libexif
-            mingw-w64-x86_64-libimagequant
-            mingw-w64-x86_64-libsamplerate
-            mingw-w64-x86_64-libtheora
-            mingw-w64-x86_64-libvorbis
-            mingw-w64-x86_64-libvpx
-            mingw-w64-x86_64-libwebp
-            mingw-w64-x86_64-libxml2
-            mingw-w64-x86_64-lilv
-            mingw-w64-x86_64-onevpl
-            mingw-w64-x86_64-openblas
-            mingw-w64-x86_64-openssl
-            mingw-w64-x86_64-opus
-            mingw-w64-x86_64-potrace
-            mingw-w64-x86_64-python-pip
-            mingw-w64-x86_64-qt5-base
-            mingw-w64-x86_64-qt6-base
-            mingw-w64-x86_64-qt6-svg
-            mingw-w64-x86_64-rubberband
-            mingw-w64-x86_64-sox
-            mingw-w64-x86_64-swig
-            mingw-w64-x86_64-svt-av1
-            mingw-w64-x86_64-vid.stab
-            mingw-w64-x86_64-x264
-            mingw-w64-x86_64-x265
-            mingw-w64-x86_64-zimg
-            mingw-w64-x86_64-libplacebo
+            mingw-w64-ucrt-x86_64-toolchain
+            mingw-w64-ucrt-x86_64-cmake
+            mingw-w64-ucrt-x86_64-meson
+            mingw-w64-ucrt-x86_64-nasm
+            mingw-w64-ucrt-x86_64-ninja
+            mingw-w64-ucrt-x86_64-osslsigncode
+            mingw-w64-ucrt-x86_64-yasm
+            mingw-w64-ucrt-x86_64-cairo
+            mingw-w64-ucrt-x86_64-eigen3
+            mingw-w64-ucrt-x86_64-dlfcn
+            mingw-w64-ucrt-x86_64-ffmpeg
+            mingw-w64-ucrt-x86_64-fftw
+            mingw-w64-ucrt-x86_64-gcc-fortran
+            mingw-w64-ucrt-x86_64-gettext-tools
+            mingw-w64-ucrt-x86_64-harfbuzz
+            mingw-w64-ucrt-x86_64-ladspa-sdk
+            mingw-w64-ucrt-x86_64-lame
+            mingw-w64-ucrt-x86_64-libarchive
+            mingw-w64-ucrt-x86_64-libepoxy
+            mingw-w64-ucrt-x86_64-libexif
+            mingw-w64-ucrt-x86_64-libimagequant
+            mingw-w64-ucrt-x86_64-libsamplerate
+            mingw-w64-ucrt-x86_64-libtheora
+            mingw-w64-ucrt-x86_64-libvorbis
+            mingw-w64-ucrt-x86_64-libvpx
+            mingw-w64-ucrt-x86_64-libwebp
+            mingw-w64-ucrt-x86_64-libxml2
+            mingw-w64-ucrt-x86_64-lilv
+            mingw-w64-ucrt-x86_64-onevpl
+            mingw-w64-ucrt-x86_64-openblas
+            mingw-w64-ucrt-x86_64-openssl
+            mingw-w64-ucrt-x86_64-opus
+            mingw-w64-ucrt-x86_64-potrace
+            mingw-w64-ucrt-x86_64-python-pip
+            mingw-w64-ucrt-x86_64-qt5-base
+            mingw-w64-ucrt-x86_64-qt6-base
+            mingw-w64-ucrt-x86_64-qt6-svg
+            mingw-w64-ucrt-x86_64-rnnoise
+            mingw-w64-ucrt-x86_64-rubberband
+            mingw-w64-ucrt-x86_64-sox
+            mingw-w64-ucrt-x86_64-swig
+            mingw-w64-ucrt-x86_64-svt-av1
+            mingw-w64-ucrt-x86_64-vid.stab
+            mingw-w64-ucrt-x86_64-x264
+            mingw-w64-ucrt-x86_64-x265
+            mingw-w64-ucrt-x86_64-zimg
+            mingw-w64-ucrt-x86_64-libplacebo
 
       - uses: actions/checkout@v4
 
       - name: Build C/C++ with CMake
         shell: msys2 {0}
         run: |
-          git clone --depth 1 --branch v0.2 https://github.com/xiph/rnnoise.git /tmp/rnnoise
-          pushd /tmp/rnnoise
-          ./autogen.sh
-          ./configure --prefix=/mingw64 --enable-shared --disable-static
-          make -j"$(nproc)"
-          make install
-          popd
           cmake -D CMAKE_BUILD_TYPE=Debug -D MOD_MOVIT=OFF -D SWIG_PYTHON=ON -S . -B build -G Ninja
           cmake --build build
           cmake --install build
