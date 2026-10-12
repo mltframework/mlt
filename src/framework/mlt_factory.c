@@ -23,6 +23,7 @@
 #include "mlt_repository.h"
 
 #include <libgen.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -73,7 +74,7 @@ static mlt_repository repository = NULL;
 /** the events object for the factory events */
 static mlt_properties event_object = NULL;
 /** for tracking the unique_id set on each constructed service */
-static int unique_id = 0;
+static atomic_int unique_id = 0;
 
 #if defined(_WIN32) || defined(RELOCATABLE)
 // Replacement for buggy dirname() on some systems.
