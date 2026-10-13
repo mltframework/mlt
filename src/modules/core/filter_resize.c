@@ -176,6 +176,17 @@ static uint8_t *frame_resize_image(mlt_frame frame, int owidth, int oheight, mlt
         // Now update the frame
         mlt_frame_set_image(frame, output, owidth * (oheight + 1) * bpp, mlt_pool_release);
 
+        // An opaque image without an alpha mask gets one, so that the padding can be
+        // transparent. This gives the same result as padding an rgba image, without
+        // converting the image to rgba and back.
+        if (format == mlt_image_yuv422 && !alpha
+            && mlt_properties_get_int(properties, "fix_background_alpha")) {
+            alpha_size = iwidth * iheight;
+            alpha = mlt_pool_alloc(alpha_size);
+            memset(alpha, 255, alpha_size);
+            mlt_frame_set_alpha(frame, alpha, alpha_size, mlt_pool_release);
+        }
+
         // We should resize the alpha too
         if (format != mlt_image_rgba && alpha && alpha_size >= iwidth * iheight) {
             alpha = resize_alpha(alpha, owidth, oheight, iwidth, iheight, alpha_value);

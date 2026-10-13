@@ -128,6 +128,16 @@ static int dissolve_slice_yuv422(int id, int index, int count, void *context)
     return 0;
 }
 
+// Gives a frame an opaque alpha mask, as converting it to rgba and back does.
+static uint8_t *add_opaque_alpha(mlt_frame frame, int width, int height)
+{
+    int size = width * height;
+    uint8_t *alpha = mlt_pool_alloc(size);
+    memset(alpha, 255, size);
+    mlt_frame_set_alpha(frame, alpha, size, mlt_pool_release);
+    return alpha;
+}
+
 static inline int dissolve_yuv422(mlt_frame frame,
                                   mlt_frame that,
                                   float weight,
@@ -140,26 +150,34 @@ static inline int dissolve_yuv422(mlt_frame frame,
     int ret = 0;
     int i = height + 1;
     int width_src = width, height_src = height;
-    mlt_image_format format = (fix_background_alpha && mlt_frame_has_convert_image(frame))
-                                  ? mlt_image_rgba
-                                  : mlt_image_yuv422;
+    mlt_image_format format = mlt_image_yuv422;
     uint8_t *p_src, *p_dest;
     uint8_t *alpha_src;
     uint8_t *alpha_dst;
     int mix = weight * (1 << 16);
 
+    if (fix_background_alpha) {
+        // Tell filter_resize to make the padding transparent (see filter_resize.c).
+        mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "fix_background_alpha", 1);
+        mlt_properties_set_int(MLT_FRAME_PROPERTIES(that), "fix_background_alpha", 1);
+    }
+
     mlt_frame_get_image(frame, &p_dest, &format, &width, &height, 1);
-    if (fix_background_alpha && mlt_frame_has_convert_image(frame))
-        mlt_frame_convert_image(frame, &p_dest, &format, mlt_image_yuv422);
     alpha_dst = mlt_frame_get_alpha(frame);
-    if (fix_background_alpha && mlt_frame_has_convert_image(that))
-        format = mlt_image_rgba;
+    format = mlt_image_yuv422;
     mlt_frame_get_image(that, &p_src, &format, &width_src, &height_src, 0);
-    if (mlt_frame_has_convert_image(that))
-        mlt_frame_convert_image(that, &p_src, &format, mlt_image_yuv422);
     alpha_src = mlt_frame_get_alpha(that);
     int is_translucent = (alpha_dst && !is_opaque(alpha_dst, width, height))
                          || (alpha_src && !is_opaque(alpha_src, width_src, height_src));
+
+    // An opaque frame without an alpha mask must get one when the other frame is
+    // translucent, so that the alpha of the result is computed (see alpha_over).
+    if (fix_background_alpha && is_translucent) {
+        if (!alpha_dst)
+            alpha_dst = add_opaque_alpha(frame, width, height);
+        if (!alpha_src)
+            alpha_src = add_opaque_alpha(that, width_src, height_src);
+    }
 
     // Pick the lesser of two evils ;-)
     width_src = width_src > width ? width : width_src;
@@ -341,29 +359,27 @@ static void luma_composite_yuv422(mlt_frame a_frame,
 {
     int width_src = *width, height_src = *height;
     int width_dest = *width, height_dest = *height;
-    mlt_image_format format_src = (fix_background_alpha && mlt_frame_has_convert_image(a_frame))
-                                      ? mlt_image_rgba
-                                      : mlt_image_yuv422;
-    mlt_image_format format_dest = (fix_background_alpha && mlt_frame_has_convert_image(b_frame))
-                                       ? mlt_image_rgba
-                                       : mlt_image_yuv422;
+    mlt_image_format format_src = mlt_image_yuv422;
+    mlt_image_format format_dest = mlt_image_yuv422;
     uint8_t *p_src, *p_dest;
     uint8_t *alpha_src, *alpha_dest;
     int i, j;
     int stride_src;
     int stride_dest;
 
+    if (fix_background_alpha) {
+        // Tell filter_resize to make the padding transparent (see filter_resize.c).
+        mlt_properties_set_int(MLT_FRAME_PROPERTIES(a_frame), "fix_background_alpha", 1);
+        mlt_properties_set_int(MLT_FRAME_PROPERTIES(b_frame), "fix_background_alpha", 1);
+    }
+
     if (mlt_properties_get(&a_frame->parent, "distort"))
         mlt_properties_set(&b_frame->parent,
                            "distort",
                            mlt_properties_get(&a_frame->parent, "distort"));
     mlt_frame_get_image(a_frame, &p_dest, &format_dest, &width_dest, &height_dest, 1);
-    if (fix_background_alpha && mlt_frame_has_convert_image(a_frame))
-        mlt_frame_convert_image(a_frame, &p_dest, &format_dest, mlt_image_yuv422);
     alpha_dest = mlt_frame_get_alpha(a_frame);
     mlt_frame_get_image(b_frame, &p_src, &format_src, &width_src, &height_src, 0);
-    if (fix_background_alpha && mlt_frame_has_convert_image(b_frame))
-        mlt_frame_convert_image(b_frame, &p_src, &format_src, mlt_image_yuv422);
     alpha_src = mlt_frame_get_alpha(b_frame);
 
     if (*width == 0 || *height == 0)
@@ -371,6 +387,15 @@ static void luma_composite_yuv422(mlt_frame a_frame,
 
     int is_translucent = (alpha_dest && !is_opaque(alpha_dest, width_dest, height_dest))
                          || (alpha_src && !is_opaque(alpha_src, width_src, height_src));
+
+    // An opaque frame without an alpha mask must get one when the other frame is
+    // translucent, so that the alpha of the result is computed (see alpha_over).
+    if (fix_background_alpha && is_translucent) {
+        if (!alpha_dest)
+            alpha_dest = add_opaque_alpha(a_frame, width_dest, height_dest);
+        if (!alpha_src)
+            alpha_src = add_opaque_alpha(b_frame, width_src, height_src);
+    }
 
     // Pick the lesser of two evils ;-)
     width_src = width_src > width_dest ? width_dest : width_src;
