@@ -239,60 +239,41 @@ mlt_channel_layout mlt_get_channel_layout_or_default(const char *name, int chann
     return layout;
 }
 
+const int *mlt_get_sws_coefficients(mlt_colorspace colorspace)
+{
+    switch (colorspace) {
+    case mlt_colorspace_smpte170m:
+    case mlt_colorspace_bt470bg:
+    case mlt_colorspace_bt601:
+        return sws_getCoefficients(SWS_CS_ITU601);
+    case mlt_colorspace_smpte240m:
+        return sws_getCoefficients(SWS_CS_SMPTE240M);
+    case mlt_colorspace_bt709:
+        return sws_getCoefficients(SWS_CS_ITU709);
+    case mlt_colorspace_bt2020_ncl:
+    case mlt_colorspace_bt2020_cl:
+        return sws_getCoefficients(SWS_CS_BT2020);
+    default:
+        return sws_getCoefficients(SWS_CS_DEFAULT);
+    }
+}
+
 int mlt_set_luma_transfer(struct SwsContext *context,
                           mlt_colorspace src_colorspace,
                           mlt_colorspace dst_colorspace,
                           int src_full_range,
                           int dst_full_range)
 {
-    const int *src_coefficients = sws_getCoefficients(SWS_CS_DEFAULT);
-    const int *dst_coefficients = sws_getCoefficients(SWS_CS_DEFAULT);
     int brightness = 0;
     int contrast = 1 << 16;
     int saturation = 1 << 16;
     int src_range = src_full_range ? 1 : 0;
     int dst_range = dst_full_range ? 1 : 0;
 
-    switch (src_colorspace) {
-    case mlt_colorspace_smpte170m:
-    case mlt_colorspace_bt470bg:
-    case mlt_colorspace_bt601:
-        src_coefficients = sws_getCoefficients(SWS_CS_ITU601);
-        break;
-    case mlt_colorspace_smpte240m:
-        src_coefficients = sws_getCoefficients(SWS_CS_SMPTE240M);
-        break;
-    case mlt_colorspace_bt709:
-        src_coefficients = sws_getCoefficients(SWS_CS_ITU709);
-        break;
-    case mlt_colorspace_bt2020_ncl:
-    case mlt_colorspace_bt2020_cl:
-        src_coefficients = sws_getCoefficients(SWS_CS_BT2020);
-    default:
-        break;
-    }
-    switch (dst_colorspace) {
-    case mlt_colorspace_smpte170m:
-    case mlt_colorspace_bt470bg:
-    case mlt_colorspace_bt601:
-        dst_coefficients = sws_getCoefficients(SWS_CS_ITU601);
-        break;
-    case mlt_colorspace_smpte240m:
-        dst_coefficients = sws_getCoefficients(SWS_CS_SMPTE240M);
-        break;
-    case mlt_colorspace_bt709:
-        dst_coefficients = sws_getCoefficients(SWS_CS_ITU709);
-        break;
-    case mlt_colorspace_bt2020_ncl:
-    case mlt_colorspace_bt2020_cl:
-        dst_coefficients = sws_getCoefficients(SWS_CS_BT2020);
-    default:
-        break;
-    }
     return sws_setColorspaceDetails(context,
-                                    src_coefficients,
+                                    mlt_get_sws_coefficients(src_colorspace),
                                     src_range,
-                                    dst_coefficients,
+                                    mlt_get_sws_coefficients(dst_colorspace),
                                     dst_range,
                                     brightness,
                                     contrast,

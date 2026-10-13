@@ -59,6 +59,9 @@
 
 // System header files
 #include <limits.h>
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
 #include <math.h>
 #include <pthread.h>
 #include <stdatomic.h>
@@ -2241,6 +2244,72 @@ static int sliced_h_pix_fmt_conv_proc(int id, int idx, int jobs, void *cookie)
     return 0;
 }
 
+/** Convert progressive 8-bit 4:2:0 to packed 4:2:2 without libswscale.
+ *
+ * In 4:2:0 video such as H.264 and MPEG-2, each chroma line lies between two luma
+ * lines, so each output line mixes the nearest chroma line (3/4) and the next nearest
+ * one (1/4). For this conversion, libswscale runs its general scaler, which is much
+ * slower than this loop, and it places the chroma half a line too low.
+ */
+static int sliced_yuv420p_to_yuyv422_proc(int id, int idx, int jobs, void *cookie)
+{
+    struct sliced_pix_fmt_conv_t *ctx = (struct sliced_pix_fmt_conv_t *) cookie;
+    AVFrame *frame = ctx->frame;
+    int half_width = ctx->width / 2;
+    int chroma_height = (ctx->height + 1) / 2;
+    int start;
+    int lines = mlt_slices_size_slice(jobs, idx, ctx->height, &start);
+
+    for (int y = start; y < start + lines; y++) {
+        int near_line = y / 2;
+        int far_line = (y & 1) ? FFMIN(near_line + 1, chroma_height - 1) : FFMAX(near_line - 1, 0);
+        const uint8_t *restrict luma = frame->data[0] + y * frame->linesize[0];
+        const uint8_t *restrict u_near = frame->data[1] + near_line * frame->linesize[1];
+        const uint8_t *restrict u_far = frame->data[1] + far_line * frame->linesize[1];
+        const uint8_t *restrict v_near = frame->data[2] + near_line * frame->linesize[2];
+        const uint8_t *restrict v_far = frame->data[2] + far_line * frame->linesize[2];
+        uint8_t *restrict out = ctx->out_data[0] + y * ctx->out_stride[0];
+
+        int x = 0;
+#ifdef __SSE2__
+        // 32 pixels at a time: mix 16 chroma samples of each plane in 16 bits,
+        // then interleave them with the luma.
+        const __m128i zero = _mm_setzero_si128();
+        const __m128i two = _mm_set1_epi16(2);
+        for (; x + 16 <= half_width; x += 16) {
+            __m128i un = _mm_loadu_si128((const __m128i *) (u_near + x));
+            __m128i uf = _mm_loadu_si128((const __m128i *) (u_far + x));
+            __m128i vn = _mm_loadu_si128((const __m128i *) (v_near + x));
+            __m128i vf = _mm_loadu_si128((const __m128i *) (v_far + x));
+#define MIX(n, f) \
+    _mm_srli_epi16(_mm_add_epi16(_mm_add_epi16(_mm_add_epi16(n, n), n), _mm_add_epi16(f, two)), 2)
+            __m128i u
+                = _mm_packus_epi16(MIX(_mm_unpacklo_epi8(un, zero), _mm_unpacklo_epi8(uf, zero)),
+                                   MIX(_mm_unpackhi_epi8(un, zero), _mm_unpackhi_epi8(uf, zero)));
+            __m128i v
+                = _mm_packus_epi16(MIX(_mm_unpacklo_epi8(vn, zero), _mm_unpacklo_epi8(vf, zero)),
+                                   MIX(_mm_unpackhi_epi8(vn, zero), _mm_unpackhi_epi8(vf, zero)));
+#undef MIX
+            __m128i uv_lo = _mm_unpacklo_epi8(u, v);
+            __m128i uv_hi = _mm_unpackhi_epi8(u, v);
+            __m128i y_lo = _mm_loadu_si128((const __m128i *) (luma + 2 * x));
+            __m128i y_hi = _mm_loadu_si128((const __m128i *) (luma + 2 * x + 16));
+            _mm_storeu_si128((__m128i *) (out + 4 * x), _mm_unpacklo_epi8(y_lo, uv_lo));
+            _mm_storeu_si128((__m128i *) (out + 4 * x + 16), _mm_unpackhi_epi8(y_lo, uv_lo));
+            _mm_storeu_si128((__m128i *) (out + 4 * x + 32), _mm_unpacklo_epi8(y_hi, uv_hi));
+            _mm_storeu_si128((__m128i *) (out + 4 * x + 48), _mm_unpackhi_epi8(y_hi, uv_hi));
+        }
+#endif
+        for (; x < half_width; x++) {
+            out[4 * x] = luma[2 * x];
+            out[4 * x + 1] = (3 * u_near[x] + u_far[x] + 2) >> 2;
+            out[4 * x + 2] = luma[2 * x + 1];
+            out[4 * x + 3] = (3 * v_near[x] + v_far[x] + 2) >> 2;
+        }
+    }
+    return 0;
+}
+
 static mlt_colorspace convert_image_yuvp(producer_avformat self,
                                          mlt_profile profile,
                                          AVFrame *frame,
@@ -2598,8 +2667,19 @@ static void convert_image(producer_avformat self,
         c = (width + ctx.slice_w - 1) / ctx.slice_w;
         int last_slice_w = width - ctx.slice_w * (c - 1);
 
-        if (sliced && (last_slice_w % 8) == 0
-            && !(ctx.src_format == AV_PIX_FMT_YUV422P && last_slice_w % 16)) {
+#if LIBAVUTIL_VERSION_INT >= ((58 << 16) + (7 << 8) + 100)
+        int interlaced = frame->flags & AV_FRAME_FLAG_INTERLACED;
+#else
+        int interlaced = frame->interlaced_frame;
+#endif
+        if (sliced && !interlaced && width % 2 == 0
+            && (src_pix_fmt == AV_PIX_FMT_YUV420P || src_pix_fmt == AV_PIX_FMT_YUVJ420P)
+            && self->full_range == dst_full_range
+            && mlt_get_sws_coefficients(ctx.src_colorspace)
+                   == mlt_get_sws_coefficients(ctx.dst_colorspace)) {
+            mlt_slices_run_normal(0, sliced_yuv420p_to_yuyv422_proc, &ctx);
+        } else if (sliced && (last_slice_w % 8) == 0
+                   && !(ctx.src_format == AV_PIX_FMT_YUV422P && last_slice_w % 16)) {
 #if LIBAVUTIL_VERSION_INT >= ((58 << 16) + (7 << 8) + 100)
             c *= (frame->flags & AV_FRAME_FLAG_INTERLACED) ? 2 : 1;
 #else
