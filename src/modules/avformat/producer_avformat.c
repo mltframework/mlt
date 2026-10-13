@@ -131,6 +131,8 @@ struct producer_avformat_s
     AVRational video_time_base;
     mlt_frame last_good_frame; // for video error concealment
     int last_good_position;    // for video error concealment
+    // Image cache key of the last good frame when last_good_frame is NULL.
+    mlt_position last_good_cache_position;
     AVFilterGraph *vfilter_graph;
     AVFilterContext *vfilter_in;
     AVFilterContext *vfilter_out;
@@ -230,6 +232,7 @@ mlt_producer producer_avformat_init(mlt_profile profile, const char *service, ch
     if (file) {
         // Construct the producer
         producer_avformat self = calloc(1, sizeof(struct producer_avformat_s));
+        self->last_good_cache_position = POSITION_INVALID;
         producer = calloc(1, sizeof(struct mlt_producer_s));
 
         // Initialise it
@@ -2755,6 +2758,15 @@ static void init_cache(mlt_properties properties, mlt_cache *cache)
         mlt_cache_set_size(*cache, cache_size);
 }
 
+// Copy the last good frame out of the image cache before the cache can lose it.
+static void keep_last_good_frame(producer_avformat self)
+{
+    if (!self->last_good_frame && self->image_cache
+        && self->last_good_cache_position != POSITION_INVALID)
+        self->last_good_frame = mlt_cache_get_frame(self->image_cache,
+                                                    self->last_good_cache_position);
+}
+
 /** Get an image from a frame.
 */
 
@@ -2801,6 +2813,7 @@ static int producer_get_image(mlt_frame frame,
 
     if (self->reset_image_cache) {
         self->reset_image_cache = 0;
+        keep_last_good_frame(self);
         mlt_cache_close(self->image_cache);
         self->image_cache = NULL;
         av_frame_free(&self->video_frame);
@@ -3240,6 +3253,9 @@ static int producer_get_image(mlt_frame frame,
 
     if (image_size > 0) {
         mlt_properties_set_int(frame_properties, "format", *format);
+        // An earlier frame does not become the last good one, but caching it may evict that.
+        if (self->current_position < self->last_good_position)
+            keep_last_good_frame(self);
         // Cache the image for rapid repeated access.
         if (self->image_cache) {
             if (is_album_art(self)) {
@@ -3251,33 +3267,40 @@ static int producer_get_image(mlt_frame frame,
                 mlt_cache_put_frame_image(self->image_cache, frame);
             }
         }
-        // Clone frame for error concealment.
+        // For error concealment; avoid a second copy when the image cache already has one.
         if (self->current_position >= self->last_good_position) {
             self->last_good_position = self->current_position;
             if (self->last_good_frame)
                 mlt_frame_close(self->last_good_frame);
-            self->last_good_frame = mlt_frame_clone(frame, 1);
+            self->last_good_frame = self->image_cache ? NULL : mlt_frame_clone(frame, 1);
+            self->last_good_cache_position = self->image_cache ? position : POSITION_INVALID;
         }
-    } else if (self->last_good_frame) {
+    } else {
         // Use last known good frame if there was a decoding failure.
-        mlt_frame original = mlt_frame_clone(self->last_good_frame, 1);
-        mlt_properties orig_props = MLT_FRAME_PROPERTIES(original);
-        int size = 0;
+        mlt_frame original = NULL;
+        if (self->last_good_frame)
+            original = mlt_frame_clone(self->last_good_frame, 1);
+        else if (self->image_cache && self->last_good_cache_position != POSITION_INVALID)
+            original = mlt_cache_get_frame(self->image_cache, self->last_good_cache_position);
+        if (original) {
+            mlt_properties orig_props = MLT_FRAME_PROPERTIES(original);
+            int size = 0;
 
-        *buffer = mlt_frame_get_alpha_size(original, &size);
-        if (*buffer)
-            mlt_frame_set_alpha(frame, *buffer, size, NULL);
-        *buffer = mlt_properties_get_data(orig_props, "image", &size);
-        mlt_frame_set_image(frame, *buffer, size, NULL);
-        mlt_properties_set_data(frame_properties,
-                                "avformat.conceal_error",
-                                original,
-                                0,
-                                (mlt_destructor) mlt_frame_close,
-                                NULL);
-        *format = mlt_properties_get_int(orig_props, "format");
-        set_image_size(self, width, height);
-        got_picture = 1;
+            *buffer = mlt_frame_get_alpha_size(original, &size);
+            if (*buffer)
+                mlt_frame_set_alpha(frame, *buffer, size, NULL);
+            *buffer = mlt_properties_get_data(orig_props, "image", &size);
+            mlt_frame_set_image(frame, *buffer, size, NULL);
+            mlt_properties_set_data(frame_properties,
+                                    "avformat.conceal_error",
+                                    original,
+                                    0,
+                                    (mlt_destructor) mlt_frame_close,
+                                    NULL);
+            *format = mlt_properties_get_int(orig_props, "format");
+            set_image_size(self, width, height);
+            got_picture = 1;
+        }
     }
 
     // Regardless of speed, we expect to get the next frame (cos we ain't too bright)
@@ -4476,6 +4499,7 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
         producer_avformat created = calloc(1, sizeof(struct producer_avformat_s));
         if (!created)
             break;
+        created->last_good_cache_position = POSITION_INVALID;
         created->parent = producer;
         // The mutexes must exist before the state is visible to anyone else: it can
         // be evicted and destroyed, or used by the code below, right away.
