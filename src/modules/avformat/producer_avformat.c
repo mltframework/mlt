@@ -875,6 +875,35 @@ static mlt_image_format pick_image_format(enum AVPixelFormat pix_fmt,
     return current_format;
 }
 
+/** Get the stream information of a context that has the same file open as an
+ * already probed context.
+ *
+ * Probing decodes video frames on the calling thread, which pauses playback. MP4/MOV
+ * and Matroska/WebM files keep all stream information in the file header, so for
+ * these formats, this copies what the first probe found. Other formats, and files
+ * where the two contexts have a different number of streams, are probed.
+ */
+static void find_stream_info_from(AVFormatContext *context, AVFormatContext *probed)
+{
+    if (!av_match_list(context->iformat->name, "mov,matroska", ',')
+        || context->nb_streams != probed->nb_streams) {
+        avformat_find_stream_info(context, NULL);
+        return;
+    }
+    for (unsigned int i = 0; i < context->nb_streams; i++) {
+        AVStream *stream = context->streams[i];
+        AVStream *probed_stream = probed->streams[i];
+        avcodec_parameters_copy(stream->codecpar, probed_stream->codecpar);
+        stream->start_time = probed_stream->start_time;
+        stream->duration = probed_stream->duration;
+        stream->avg_frame_rate = probed_stream->avg_frame_rate;
+        stream->r_frame_rate = probed_stream->r_frame_rate;
+    }
+    context->start_time = probed->start_time;
+    context->duration = probed->duration;
+    context->bit_rate = probed->bit_rate;
+}
+
 static int get_basic_info(producer_avformat self, mlt_profile profile, const char *filename)
 {
     int error = 0;
@@ -1653,7 +1682,7 @@ static int producer_open(
                             apply_properties(self->audio_format->priv_data,
                                              properties,
                                              AV_OPT_FLAG_DECODING_PARAM);
-                        avformat_find_stream_info(self->audio_format, NULL);
+                        find_stream_info_from(self->audio_format, self->video_format);
                     } else {
                         self->audio_format = self->video_format;
                     }
