@@ -26,6 +26,7 @@
 #include "mlt_log.h"
 #include "mlt_producer.h"
 #include "mlt_profile.h"
+#include "mlt_slices.h"
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -1334,6 +1335,41 @@ mlt_properties mlt_frame_get_unique_properties(mlt_frame self, mlt_service servi
     return mlt_properties_get_data(MLT_FRAME_PROPERTIES(self), unique, NULL);
 }
 
+struct copy_slice_context
+{
+    uint8_t *dst;
+    const uint8_t *src;
+    int size;
+};
+
+static int copy_slice(int id, int index, int count, void *cookie)
+{
+    struct copy_slice_context *ctx = cookie;
+    int start;
+    int size = mlt_slices_size_slice(count, index, ctx->size, &start);
+    memcpy(ctx->dst + start, ctx->src + start, size);
+    return 0;
+}
+
+/** The size from which copy_buffer() uses several threads. Images up to 1080p yuv422
+ * (about 4 MB) are copied with one memcpy() as before; 4K images and 1080p rgba
+ * images are copied in slices.
+ */
+#define SLICED_COPY_MIN_SIZE (4 << 20)
+
+/** Copy a buffer, in slices on several threads when it is large, because one thread
+ * cannot use all of the memory bandwidth.
+ */
+static void copy_buffer(void *dst, const void *src, int size)
+{
+    if (size < SLICED_COPY_MIN_SIZE) {
+        memcpy(dst, src, size);
+        return;
+    }
+    struct copy_slice_context ctx = {.dst = dst, .src = src, .size = size};
+    mlt_slices_run_normal(0, copy_slice, &ctx);
+}
+
 /** Make a copy of a frame.
  *
  * This does not copy the get_image/get_audio processing stacks or any
@@ -1387,7 +1423,7 @@ mlt_frame mlt_frame_clone(mlt_frame self, int is_deep)
             if (!size)
                 size = mlt_image_format_size(format, width, height, NULL);
             copy = mlt_pool_alloc(size);
-            memcpy(copy, data, size);
+            copy_buffer(copy, data, size);
             mlt_properties_set_data(new_props, "image", copy, size, mlt_pool_release, NULL);
 
             size = 0;
@@ -1396,7 +1432,7 @@ mlt_frame mlt_frame_clone(mlt_frame self, int is_deep)
                 if (!size)
                     size = width * height;
                 copy = mlt_pool_alloc(size);
-                memcpy(copy, data, size);
+                copy_buffer(copy, data, size);
                 mlt_properties_set_data(new_props, "alpha", copy, size, mlt_pool_release, NULL);
             };
         }
@@ -1527,7 +1563,7 @@ mlt_frame mlt_frame_clone_image(mlt_frame self, int is_deep)
             if (!size)
                 size = mlt_image_format_size(format, width, height, NULL);
             copy = mlt_pool_alloc(size);
-            memcpy(copy, data, size);
+            copy_buffer(copy, data, size);
             mlt_properties_set_data(new_props, "image", copy, size, mlt_pool_release, NULL);
 
             size = 0;
@@ -1536,7 +1572,7 @@ mlt_frame mlt_frame_clone_image(mlt_frame self, int is_deep)
                 if (!size)
                     size = width * height;
                 copy = mlt_pool_alloc(size);
-                memcpy(copy, data, size);
+                copy_buffer(copy, data, size);
                 mlt_properties_set_data(new_props, "alpha", copy, size, mlt_pool_release, NULL);
             };
         }
