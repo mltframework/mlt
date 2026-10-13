@@ -138,6 +138,50 @@ static uint8_t *add_opaque_alpha(mlt_frame frame, int width, int height)
     return alpha;
 }
 
+struct dissolve_opaque_context
+{
+    uint8_t *dst_image;
+    uint8_t *src_image;
+    uint8_t *dst_alpha;
+    uint8_t *src_alpha;
+    int dst_width;
+    int src_width;
+    int height;
+    int mix;
+};
+
+static int dissolve_opaque_slice_yuv422(int id, int index, int count, void *context)
+{
+    struct dissolve_opaque_context ctx = *((struct dissolve_opaque_context *) context);
+    int slice_start, slice_height = mlt_slices_size_slice(count, index, ctx.height, &slice_start);
+
+    ctx.dst_image += slice_start * (ctx.dst_width << 1);
+    ctx.src_image += slice_start * (ctx.src_width << 1);
+    if (ctx.dst_alpha)
+        ctx.dst_alpha += slice_start * ctx.dst_width;
+    if (ctx.src_alpha)
+        ctx.src_alpha += slice_start * ctx.src_width;
+
+    for (int i = 0; i < slice_height; i++) {
+        composite_line_yuv(ctx.dst_image,
+                           ctx.src_image,
+                           ctx.src_width,
+                           ctx.src_alpha,
+                           ctx.dst_alpha,
+                           ctx.mix,
+                           NULL,
+                           0,
+                           0);
+        ctx.dst_image += ctx.dst_width << 1;
+        ctx.src_image += ctx.src_width << 1;
+        if (ctx.dst_alpha)
+            ctx.dst_alpha += ctx.dst_width;
+        if (ctx.src_alpha)
+            ctx.src_alpha += ctx.src_width;
+    }
+    return 0;
+}
+
 static inline int dissolve_yuv422(mlt_frame frame,
                                   mlt_frame that,
                                   float weight,
@@ -148,7 +192,6 @@ static inline int dissolve_yuv422(mlt_frame frame,
                                   int fix_background_alpha)
 {
     int ret = 0;
-    int i = height + 1;
     int width_src = width, height_src = height;
     mlt_image_format format = mlt_image_yuv422;
     uint8_t *p_src, *p_dest;
@@ -193,15 +236,15 @@ static inline int dissolve_yuv422(mlt_frame frame,
                                                  .weight = weight};
         mlt_slices_run_normal(threads, dissolve_slice_yuv422, &context);
     } else {
-        while (--i) {
-            composite_line_yuv(p_dest, p_src, width_src, alpha_src, alpha_dst, mix, NULL, 0, 0);
-            p_src += width_src << 1;
-            p_dest += width << 1;
-            if (alpha_src)
-                alpha_src += width_src;
-            if (alpha_dst)
-                alpha_dst += width;
-        }
+        struct dissolve_opaque_context context = {.dst_image = p_dest,
+                                                  .src_image = p_src,
+                                                  .dst_alpha = alpha_dst,
+                                                  .src_alpha = alpha_src,
+                                                  .dst_width = width,
+                                                  .src_width = width_src,
+                                                  .height = height,
+                                                  .mix = mix};
+        mlt_slices_run_normal(threads, dissolve_opaque_slice_yuv422, &context);
     }
 
     return ret;
