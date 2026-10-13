@@ -962,7 +962,7 @@ static int get_basic_info(producer_avformat self, mlt_profile profile, const cha
             self->video_format = self->dummy_context;
             self->dummy_context = NULL;
         } else {
-            avformat_find_stream_info(self->video_format, NULL);
+            find_stream_info_from(self->video_format, self->dummy_context);
         }
         format = self->video_format;
     }
