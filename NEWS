@@ -1,6 +1,14 @@
 MLT Release Notes
 -----------------
 
+Version 7.43.0
+
+Modules
+  - Fixed the `qtext` typewriter effect delaying its start after the text is
+    edited. The animation stays anchored to the filter in-point. Subtitle cues
+    begin typing on the frame the cue is shown.
+
+
 Version 7.42.0
 
 Framework

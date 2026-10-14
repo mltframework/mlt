@@ -120,9 +120,9 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
     mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
     mlt_position position = mlt_frame_get_position(frame);
-    int64_t frameMs = ((int64_t) position + 1) * 1000 * profile->frame_rate_den
-                          / profile->frame_rate_num
-                      - 1;
+    int64_t frameMs = Subtitles::millisecondsForFrame(position,
+                                                      profile->frame_rate_num,
+                                                      profile->frame_rate_den);
     int in = mlt_properties_get_int(frame_properties, "in");
     if (in < 0) {
         in = 0;
@@ -151,6 +151,12 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
                              / profile->frame_rate_den / 1000;
         start -= in;
         mlt_properties_set_position(feed_properties, "start", start);
+        // Absolute frame on the same clock as mlt_frame_get_position. This is the
+        // first frame that shows the cue, not the truncated start used above.
+        mlt_position start_frame = Subtitles::frameForMilliseconds(subtitles[index].start,
+                                                                   profile->frame_rate_num,
+                                                                   profile->frame_rate_den);
+        mlt_properties_set_position(feed_properties, "start_frame", start_frame);
         mlt_position end = subtitles[index].end * profile->frame_rate_num / profile->frame_rate_den
                            / 1000;
         end -= in;
@@ -158,6 +164,7 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
         mlt_properties_set(feed_properties, "text", subtitles[index].text.c_str());
     } else {
         mlt_properties_set_position(feed_properties, "start", -1);
+        mlt_properties_set_position(feed_properties, "start_frame", -1);
         mlt_properties_set_position(feed_properties, "end", -1);
         mlt_properties_set(feed_properties, "text", "");
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Meltytech, LLC
+ * Copyright (c) 2024-2026 Meltytech, LLC
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -38,6 +38,27 @@ bool writeToSrtFile(const std::string &path, const SubtitleVector &items);
 SubtitleVector readFromSrtString(const std::string &text);
 bool writeToSrtString(std::string &text, const SubtitleVector &items);
 int indexForTime(const SubtitleVector &items, int64_t msTime, int searchStart, int msMargin);
+
+// Milliseconds of a frame on the clock used by indexForTime:
+// (position + 1) * 1000 * frameRateDen / frameRateNum - 1
+inline int64_t millisecondsForFrame(int64_t position, int frameRateNum, int frameRateDen)
+{
+    if (frameRateNum == 0)
+        return 0;
+    return (position + 1) * 1000 * frameRateDen / frameRateNum - 1;
+}
+
+// Smallest frame position whose millisecondsForFrame() is >= timeMs.
+inline int64_t frameForMilliseconds(int64_t timeMs, int frameRateNum, int frameRateDen)
+{
+    if (frameRateNum == 0 || frameRateDen == 0)
+        return 0;
+    if (timeMs < 0)
+        timeMs = 0;
+    return ((timeMs + 1) * frameRateNum + (1000LL * frameRateDen - 1)) / (1000LL * frameRateDen)
+           - 1;
+}
+
 } // namespace Subtitles
 
 #endif // SUBTITLES_H

@@ -44,11 +44,9 @@ struct TypewriterFilterData
     TypeWriter typewriter;
     std::string original_text;
     int macro_type;
-    mlt_position start_position;
 
     TypewriterFilterData()
         : macro_type(0)
-        , start_position(0)
     {}
 };
 
@@ -90,15 +88,13 @@ static std::string get_typewriter_text_for_filter(mlt_properties filter_properti
                             || tw_data->typewriter.getStepSigma() != step_sigma
                             || tw_data->typewriter.getStepSeed() != random_seed;
 
-    // Check if text or typewriter settings changed
+    // Rebuild the schedule when the string or the step settings change.
+    // parse() clears the render cursor. The time origin is the filter in-point
+    // unless _typewriter_start sets one.
     if (text_changed || settings_changed) {
-        // Only reset the start position when text content changes, not when
-        // numeric settings (step_length, etc.) change, to avoid a negative
-        // relative_position when the user adjusts settings and replays.
         if (text_changed) {
             tw_data->original_text = text_str;
             tw_data->macro_type = macro_type;
-            tw_data->start_position = position;
         }
         tw_data->typewriter.setPattern(text_str);
 
@@ -136,7 +132,12 @@ static std::string get_typewriter_text_for_filter(mlt_properties filter_properti
         tw_data->typewriter.parse();
     }
 
-    mlt_position relative_position = std::max(position - tw_data->start_position, 0);
+    // Optional origin in the same units as position (frames after the filter
+    // in-point). Negative means the animation started before the filter.
+    mlt_position start_position = 0;
+    if (mlt_properties_exists(filter_properties, "_typewriter_start"))
+        start_position = mlt_properties_get_position(filter_properties, "_typewriter_start");
+    mlt_position relative_position = std::max(position - start_position, (mlt_position) 0);
     std::string rendered_text = tw_data->typewriter.render(relative_position);
 
     // Add blinking cursor if enabled

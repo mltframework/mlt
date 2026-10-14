@@ -95,6 +95,8 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
 {
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
     const char *text = NULL;
+    mlt_position typewriter_start = 0;
+    int has_typewriter_start = 0;
     if (mlt_properties_exists(properties, "resource") || mlt_properties_exists(properties, "text")) {
         if (mlt_properties_exists(properties, "resource")) {
             refresh_resource_subtitles(filter);
@@ -118,14 +120,19 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
         }
         const Subtitles::SubtitleVector &subtitles = *psubtitles;
         mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
-        int64_t frameMs = ((int64_t) mlt_frame_get_position(frame) + 1) * 1000
-                              * profile->frame_rate_den / profile->frame_rate_num
-                          - 1;
+        int64_t frameMs = Subtitles::millisecondsForFrame(mlt_frame_get_position(frame),
+                                                          profile->frame_rate_num,
+                                                          profile->frame_rate_den);
         int prevIndex = mlt_properties_get_int(properties, "_prevIndex");
         int index = Subtitles::indexForTime(subtitles, frameMs, prevIndex, 0);
         if (index > -1) {
             text = subtitles[index].text.c_str();
             mlt_properties_set_int(properties, "_prevIndex", index);
+            mlt_position cue_frame = Subtitles::frameForMilliseconds(subtitles[index].start,
+                                                                     profile->frame_rate_num,
+                                                                     profile->frame_rate_den);
+            typewriter_start = cue_frame - mlt_filter_get_in(filter);
+            has_typewriter_start = 1;
         } else {
             return frame;
         }
@@ -144,6 +151,13 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
             return frame;
         }
         text = mlt_properties_get(feed_properties, "text");
+        if (mlt_properties_exists(feed_properties, "start_frame")) {
+            mlt_position cue_frame = mlt_properties_get_position(feed_properties, "start_frame");
+            if (cue_frame >= 0) {
+                typewriter_start = cue_frame - mlt_filter_get_in(filter);
+                has_typewriter_start = 1;
+            }
+        }
     }
 
     if (!text || !strcmp(text, "")) {
@@ -161,6 +175,8 @@ static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)
     mlt_properties text_filter_properties
         = mlt_frame_unique_properties(frame, MLT_FILTER_SERVICE(text_filter));
     mlt_properties_set_string(text_filter_properties, "argument", text);
+    if (has_typewriter_start)
+        mlt_properties_set_position(text_filter_properties, "_typewriter_start", typewriter_start);
     mlt_properties_pass_list(text_filter_properties,
                              properties,
                              "geometry family size weight style fgcolour bgcolour olcolour pad "
