@@ -65,6 +65,7 @@ Q_DECLARE_METATYPE(std::shared_ptr<TypeWriter>);
 
 // Private Constants
 static const double PI = 3.14159265358979323846;
+static QMutex f_mutex;
 
 class ImageItem : public QGraphicsItem
 {
@@ -981,7 +982,7 @@ void drawKdenliveTitle(producer_ktitle self,
             scene = NULL;
             mlt_properties_set_data(producer_props, "qscene", NULL, 0, NULL, NULL);
         }
-
+        f_mutex.lock();
         if (scene == NULL) {
             scene = new QGraphicsScene();
             scene->setItemIndexMethod(QGraphicsScene::NoIndex);
@@ -1016,6 +1017,7 @@ void drawKdenliveTitle(producer_ktitle self,
                                     (mlt_destructor) qscene_delete,
                                     NULL);
         }
+        f_mutex.unlock();
 
         QRectF start = stringToRect(QString(mlt_properties_get(producer_props, "_startrect")));
         QRectF end = stringToRect(QString(mlt_properties_get(producer_props, "_endrect")));
