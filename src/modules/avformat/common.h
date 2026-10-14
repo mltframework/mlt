@@ -36,6 +36,7 @@ mlt_channel_layout av_channel_layout_to_mlt(AVChannelLayout *layout);
 mlt_channel_layout av_channel_layout_to_mlt(int64_t layout);
 #endif
 mlt_channel_layout mlt_get_channel_layout_or_default(const char *name, int channels);
+const int *mlt_get_sws_coefficients(mlt_colorspace colorspace);
 int mlt_set_luma_transfer(struct SwsContext *context,
                           mlt_colorspace src_colorspace,
                           mlt_colorspace dst_colorspace,

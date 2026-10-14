@@ -59,6 +59,9 @@
 
 // System header files
 #include <limits.h>
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
 #include <math.h>
 #include <pthread.h>
 #include <stdatomic.h>
@@ -131,6 +134,9 @@ struct producer_avformat_s
     AVRational video_time_base;
     mlt_frame last_good_frame; // for video error concealment
     int last_good_position;    // for video error concealment
+    // For video error concealment: the position of the last good frame in the image
+    // cache, when last_good_frame is NULL.
+    mlt_position last_good_cache_position;
     AVFilterGraph *vfilter_graph;
     AVFilterContext *vfilter_in;
     AVFilterContext *vfilter_out;
@@ -214,6 +220,7 @@ mlt_producer producer_avformat_init(mlt_profile profile, const char *service, ch
     if (file) {
         // Construct the producer
         producer_avformat self = calloc(1, sizeof(struct producer_avformat_s));
+        self->last_good_cache_position = POSITION_INVALID;
         producer = calloc(1, sizeof(struct mlt_producer_s));
 
         // Initialise it
@@ -872,6 +879,35 @@ static mlt_image_format pick_image_format(enum AVPixelFormat pix_fmt,
     return current_format;
 }
 
+/** Get the stream information of a context that has the same file open as an
+ * already probed context.
+ *
+ * Probing decodes video frames on the calling thread, which pauses playback. MP4/MOV
+ * and Matroska/WebM files keep all stream information in the file header, so for
+ * these formats, this copies what the first probe found. Other formats, and files
+ * where the two contexts have a different number of streams, are probed.
+ */
+static void find_stream_info_from(AVFormatContext *context, AVFormatContext *probed)
+{
+    if (!av_match_list(context->iformat->name, "mov,matroska", ',')
+        || context->nb_streams != probed->nb_streams) {
+        avformat_find_stream_info(context, NULL);
+        return;
+    }
+    for (unsigned int i = 0; i < context->nb_streams; i++) {
+        AVStream *stream = context->streams[i];
+        AVStream *probed_stream = probed->streams[i];
+        avcodec_parameters_copy(stream->codecpar, probed_stream->codecpar);
+        stream->start_time = probed_stream->start_time;
+        stream->duration = probed_stream->duration;
+        stream->avg_frame_rate = probed_stream->avg_frame_rate;
+        stream->r_frame_rate = probed_stream->r_frame_rate;
+    }
+    context->start_time = probed->start_time;
+    context->duration = probed->duration;
+    context->bit_rate = probed->bit_rate;
+}
+
 static int get_basic_info(producer_avformat self, mlt_profile profile, const char *filename)
 {
     int error = 0;
@@ -930,7 +966,7 @@ static int get_basic_info(producer_avformat self, mlt_profile profile, const cha
             self->video_format = self->dummy_context;
             self->dummy_context = NULL;
         } else {
-            avformat_find_stream_info(self->video_format, NULL);
+            find_stream_info_from(self->video_format, self->dummy_context);
         }
         format = self->video_format;
     }
@@ -1650,7 +1686,7 @@ static int producer_open(
                             apply_properties(self->audio_format->priv_data,
                                              properties,
                                              AV_OPT_FLAG_DECODING_PARAM);
-                        avformat_find_stream_info(self->audio_format, NULL);
+                        find_stream_info_from(self->audio_format, self->video_format);
                     } else {
                         self->audio_format = self->video_format;
                     }
@@ -2241,6 +2277,72 @@ static int sliced_h_pix_fmt_conv_proc(int id, int idx, int jobs, void *cookie)
     return 0;
 }
 
+/** Convert progressive 8-bit 4:2:0 to packed 4:2:2 without libswscale.
+ *
+ * In 4:2:0 video such as H.264 and MPEG-2, each chroma line lies between two luma
+ * lines, so each output line mixes the nearest chroma line (3/4) and the next nearest
+ * one (1/4). For this conversion, libswscale runs its general scaler, which is much
+ * slower than this loop, and it places the chroma half a line too low.
+ */
+static int sliced_yuv420p_to_yuyv422_proc(int id, int idx, int jobs, void *cookie)
+{
+    struct sliced_pix_fmt_conv_t *ctx = (struct sliced_pix_fmt_conv_t *) cookie;
+    AVFrame *frame = ctx->frame;
+    int half_width = ctx->width / 2;
+    int chroma_height = (ctx->height + 1) / 2;
+    int start;
+    int lines = mlt_slices_size_slice(jobs, idx, ctx->height, &start);
+
+    for (int y = start; y < start + lines; y++) {
+        int near_line = y / 2;
+        int far_line = (y & 1) ? FFMIN(near_line + 1, chroma_height - 1) : FFMAX(near_line - 1, 0);
+        const uint8_t *restrict luma = frame->data[0] + y * frame->linesize[0];
+        const uint8_t *restrict u_near = frame->data[1] + near_line * frame->linesize[1];
+        const uint8_t *restrict u_far = frame->data[1] + far_line * frame->linesize[1];
+        const uint8_t *restrict v_near = frame->data[2] + near_line * frame->linesize[2];
+        const uint8_t *restrict v_far = frame->data[2] + far_line * frame->linesize[2];
+        uint8_t *restrict out = ctx->out_data[0] + y * ctx->out_stride[0];
+
+        int x = 0;
+#ifdef __SSE2__
+        // 32 pixels at a time: mix 16 chroma samples of each plane in 16 bits,
+        // then interleave them with the luma.
+        const __m128i zero = _mm_setzero_si128();
+        const __m128i two = _mm_set1_epi16(2);
+        for (; x + 16 <= half_width; x += 16) {
+            __m128i un = _mm_loadu_si128((const __m128i *) (u_near + x));
+            __m128i uf = _mm_loadu_si128((const __m128i *) (u_far + x));
+            __m128i vn = _mm_loadu_si128((const __m128i *) (v_near + x));
+            __m128i vf = _mm_loadu_si128((const __m128i *) (v_far + x));
+#define MIX(n, f) \
+    _mm_srli_epi16(_mm_add_epi16(_mm_add_epi16(_mm_add_epi16(n, n), n), _mm_add_epi16(f, two)), 2)
+            __m128i u
+                = _mm_packus_epi16(MIX(_mm_unpacklo_epi8(un, zero), _mm_unpacklo_epi8(uf, zero)),
+                                   MIX(_mm_unpackhi_epi8(un, zero), _mm_unpackhi_epi8(uf, zero)));
+            __m128i v
+                = _mm_packus_epi16(MIX(_mm_unpacklo_epi8(vn, zero), _mm_unpacklo_epi8(vf, zero)),
+                                   MIX(_mm_unpackhi_epi8(vn, zero), _mm_unpackhi_epi8(vf, zero)));
+#undef MIX
+            __m128i uv_lo = _mm_unpacklo_epi8(u, v);
+            __m128i uv_hi = _mm_unpackhi_epi8(u, v);
+            __m128i y_lo = _mm_loadu_si128((const __m128i *) (luma + 2 * x));
+            __m128i y_hi = _mm_loadu_si128((const __m128i *) (luma + 2 * x + 16));
+            _mm_storeu_si128((__m128i *) (out + 4 * x), _mm_unpacklo_epi8(y_lo, uv_lo));
+            _mm_storeu_si128((__m128i *) (out + 4 * x + 16), _mm_unpackhi_epi8(y_lo, uv_lo));
+            _mm_storeu_si128((__m128i *) (out + 4 * x + 32), _mm_unpacklo_epi8(y_hi, uv_hi));
+            _mm_storeu_si128((__m128i *) (out + 4 * x + 48), _mm_unpackhi_epi8(y_hi, uv_hi));
+        }
+#endif
+        for (; x < half_width; x++) {
+            out[4 * x] = luma[2 * x];
+            out[4 * x + 1] = (3 * u_near[x] + u_far[x] + 2) >> 2;
+            out[4 * x + 2] = luma[2 * x + 1];
+            out[4 * x + 3] = (3 * v_near[x] + v_far[x] + 2) >> 2;
+        }
+    }
+    return 0;
+}
+
 static mlt_colorspace convert_image_yuvp(producer_avformat self,
                                          mlt_profile profile,
                                          AVFrame *frame,
@@ -2598,8 +2700,19 @@ static void convert_image(producer_avformat self,
         c = (width + ctx.slice_w - 1) / ctx.slice_w;
         int last_slice_w = width - ctx.slice_w * (c - 1);
 
-        if (sliced && (last_slice_w % 8) == 0
-            && !(ctx.src_format == AV_PIX_FMT_YUV422P && last_slice_w % 16)) {
+#if LIBAVUTIL_VERSION_INT >= ((58 << 16) + (7 << 8) + 100)
+        int interlaced = frame->flags & AV_FRAME_FLAG_INTERLACED;
+#else
+        int interlaced = frame->interlaced_frame;
+#endif
+        if (sliced && !interlaced && width % 2 == 0
+            && (src_pix_fmt == AV_PIX_FMT_YUV420P || src_pix_fmt == AV_PIX_FMT_YUVJ420P)
+            && self->full_range == dst_full_range
+            && mlt_get_sws_coefficients(ctx.src_colorspace)
+                   == mlt_get_sws_coefficients(ctx.dst_colorspace)) {
+            mlt_slices_run_normal(0, sliced_yuv420p_to_yuyv422_proc, &ctx);
+        } else if (sliced && (last_slice_w % 8) == 0
+                   && !(ctx.src_format == AV_PIX_FMT_YUV422P && last_slice_w % 16)) {
 #if LIBAVUTIL_VERSION_INT >= ((58 << 16) + (7 << 8) + 100)
             c *= (frame->flags & AV_FRAME_FLAG_INTERLACED) ? 2 : 1;
 #else
@@ -2757,6 +2870,17 @@ static void init_cache(mlt_properties properties, mlt_cache *cache)
         mlt_cache_set_size(*cache, cache_size);
 }
 
+/** Make the last good frame for video error concealment independent of the image
+ * cache, because the cache is about to lose it.
+ */
+static void keep_last_good_frame(producer_avformat self)
+{
+    if (!self->last_good_frame && self->image_cache
+        && self->last_good_cache_position != POSITION_INVALID)
+        self->last_good_frame = mlt_cache_get_frame(self->image_cache,
+                                                    self->last_good_cache_position);
+}
+
 /** Get an image from a frame.
 */
 
@@ -2803,6 +2927,7 @@ static int producer_get_image(mlt_frame frame,
 
     if (self->reset_image_cache) {
         self->reset_image_cache = 0;
+        keep_last_good_frame(self);
         mlt_cache_close(self->image_cache);
         self->image_cache = NULL;
         av_frame_free(&self->video_frame);
@@ -3242,6 +3367,10 @@ static int producer_get_image(mlt_frame frame,
 
     if (image_size > 0) {
         mlt_properties_set_int(frame_properties, "format", *format);
+        // A frame before the last good one does not replace it for error concealment,
+        // but putting it in the image cache can push the last good one out.
+        if (self->current_position < self->last_good_position)
+            keep_last_good_frame(self);
         // Cache the image for rapid repeated access.
         if (self->image_cache) {
             if (is_album_art(self)) {
@@ -3253,33 +3382,41 @@ static int producer_get_image(mlt_frame frame,
                 mlt_cache_put_frame_image(self->image_cache, frame);
             }
         }
-        // Clone frame for error concealment.
+        // Keep the frame for error concealment. When the image cache has a copy of it,
+        // only remember where, so that only a decoding failure needs to copy it.
         if (self->current_position >= self->last_good_position) {
             self->last_good_position = self->current_position;
             if (self->last_good_frame)
                 mlt_frame_close(self->last_good_frame);
-            self->last_good_frame = mlt_frame_clone(frame, 1);
+            self->last_good_frame = self->image_cache ? NULL : mlt_frame_clone(frame, 1);
+            self->last_good_cache_position = self->image_cache ? position : POSITION_INVALID;
         }
-    } else if (self->last_good_frame) {
+    } else {
         // Use last known good frame if there was a decoding failure.
-        mlt_frame original = mlt_frame_clone(self->last_good_frame, 1);
-        mlt_properties orig_props = MLT_FRAME_PROPERTIES(original);
-        int size = 0;
+        mlt_frame original = NULL;
+        if (self->last_good_frame)
+            original = mlt_frame_clone(self->last_good_frame, 1);
+        else if (self->image_cache && self->last_good_cache_position != POSITION_INVALID)
+            original = mlt_cache_get_frame(self->image_cache, self->last_good_cache_position);
+        if (original) {
+            mlt_properties orig_props = MLT_FRAME_PROPERTIES(original);
+            int size = 0;
 
-        *buffer = mlt_frame_get_alpha_size(original, &size);
-        if (*buffer)
-            mlt_frame_set_alpha(frame, *buffer, size, NULL);
-        *buffer = mlt_properties_get_data(orig_props, "image", &size);
-        mlt_frame_set_image(frame, *buffer, size, NULL);
-        mlt_properties_set_data(frame_properties,
-                                "avformat.conceal_error",
-                                original,
-                                0,
-                                (mlt_destructor) mlt_frame_close,
-                                NULL);
-        *format = mlt_properties_get_int(orig_props, "format");
-        set_image_size(self, width, height);
-        got_picture = 1;
+            *buffer = mlt_frame_get_alpha_size(original, &size);
+            if (*buffer)
+                mlt_frame_set_alpha(frame, *buffer, size, NULL);
+            *buffer = mlt_properties_get_data(orig_props, "image", &size);
+            mlt_frame_set_image(frame, *buffer, size, NULL);
+            mlt_properties_set_data(frame_properties,
+                                    "avformat.conceal_error",
+                                    original,
+                                    0,
+                                    (mlt_destructor) mlt_frame_close,
+                                    NULL);
+            *format = mlt_properties_get_int(orig_props, "format");
+            set_image_size(self, width, height);
+            got_picture = 1;
+        }
     }
 
     // Regardless of speed, we expect to get the next frame (cos we ain't too bright)
@@ -4466,6 +4603,7 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
     // If cache miss
     if (!self) {
         self = calloc(1, sizeof(struct producer_avformat_s));
+        self->last_good_cache_position = POSITION_INVALID;
         self->parent = producer;
         mlt_service_cache_put(service,
                               "producer_avformat",
