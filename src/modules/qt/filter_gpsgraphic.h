@@ -59,12 +59,7 @@ struct private_data
 
 } // namespace
 
-enum gpsg_data_sources {
-    gspg_location_src = 0,
-    gpsg_altitude_src,
-    gpsg_hr_src,
-    gpsg_speed_src
-};
+enum gpsg_data_sources { gspg_location_src = 0, gpsg_altitude_src, gpsg_hr_src, gpsg_speed_src };
 
 enum gpsg_data_subids {
     gpsg_latitude_id = gspg_location_src,
