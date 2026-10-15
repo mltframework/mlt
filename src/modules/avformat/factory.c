@@ -64,7 +64,12 @@ static void avformat_do_init(void)
     av_log_set_level(mlt_log_get_level());
     if (getenv("MLT_AVFORMAT_PRODUCER_CACHE")) {
         int n = atoi(getenv("MLT_AVFORMAT_PRODUCER_CACHE"));
-        mlt_service_cache_set_size(NULL, "producer_avformat", n);
+        // A non-positive size is invalid; mlt_cache_put() requires size >= 1.
+        if (n > 0) {
+            mlt_service_cache_set_size(NULL, "producer_avformat", n);
+        } else {
+            mlt_log_warning(NULL, "[producer avformat] MLT_AVFORMAT_PRODUCER_CACHE must be > 0\n");
+        }
     }
 }
 
