@@ -494,6 +494,33 @@ private Q_SLOTS:
         QCOMPARE(key, 100);
     }
 
+    void PreviousKeyOnEmptyAnimation()
+    {
+        mlt_animation animation = mlt_animation_new();
+        QVERIFY(animation);
+
+        struct mlt_animation_item_s item = {};
+        item.frame = 7;
+        QCOMPARE(mlt_animation_prev_key(animation, &item, 0), 1);
+        QCOMPARE(item.frame, 7);
+
+        mlt_animation_close(animation);
+    }
+
+    void PreviousKeyAfterRemovingLastKeyframe()
+    {
+        Properties p;
+        p.anim_set("foo", 100, 50);
+        Animation a = p.get_animation("foo");
+        QVERIFY(a.is_valid());
+        QCOMPARE(a.remove(50), 0);
+        QCOMPARE(a.key_count(), 0);
+
+        int key = 7;
+        QCOMPARE(a.previous_key(50, key), true);
+        QCOMPARE(key, 7);
+    }
+
     void LinearInterpolationOneKey()
     {
         Properties p;
