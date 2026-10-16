@@ -320,8 +320,7 @@ void mlt_audio_shrink(mlt_audio self, int samples)
     } else if (plane_count == 1 || samples == 0) {
         // No need to move any data.
         self->samples = samples;
-    }
-    if (plane_count > 1) {
+    } else if (plane_count > 1) {
         // Move data to remove gaps between planes.
         size_t src_plane_size = mlt_audio_plane_size(self);
         self->samples = samples;
