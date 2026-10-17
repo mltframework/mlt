@@ -30,14 +30,17 @@
 #define MAX_SAMPLES (192000)
 #define SAMPLE_BYTES(samples, channels) ((samples) * (channels) * sizeof(float))
 #define MAX_BYTES SAMPLE_BYTES(MAX_SAMPLES, MAX_CHANNELS)
+#define MAX_FLOATS ((size_t) MAX_SAMPLES * MAX_CHANNELS)
 #define DBFSTOAMP(x) pow(10.0, (x) / 20.0)
 #define MIN_DBFS (-100.0)
 
 typedef struct transition_mix_s
 {
     mlt_transition parent;
-    float src_buffer[MAX_SAMPLES * MAX_CHANNELS];
-    float dest_buffer[MAX_SAMPLES * MAX_CHANNELS];
+    float *src_buffer;
+    float *dest_buffer;
+    size_t src_buffer_floats;  // allocated size of src_buffer, in floats
+    size_t dest_buffer_floats; // allocated size of dest_buffer, in floats
     int src_buffer_count;
     int dest_buffer_count;
     mlt_position previous_frame_a;
@@ -49,6 +52,29 @@ typedef struct transition_mix_s
     double previous_duck_fade_in;
     double previous_duck_fade_out;
 } * transition_mix;
+
+// The buffers are allocated on demand and only ever grow, up to MAX_FLOATS,
+// instead of reserving that much for every transition. The new space is zeroed
+// and the old contents are kept, so the buffer reads as if it were a fixed,
+// zero-initialized array of MAX_FLOATS.
+static int reserve_buffer(float **buffer, size_t *buffer_floats, size_t floats)
+{
+    if (floats <= *buffer_floats)
+        return 0;
+
+    size_t new_floats = CLAMP(*buffer_floats * 2, floats, MAX_FLOATS);
+    float *new_buffer = mlt_pool_alloc((int) (new_floats * sizeof(float)));
+    if (!new_buffer)
+        return 1;
+
+    if (*buffer_floats)
+        memcpy(new_buffer, *buffer, *buffer_floats * sizeof(float));
+    memset(&new_buffer[*buffer_floats], 0, (new_floats - *buffer_floats) * sizeof(float));
+    mlt_pool_release(*buffer);
+    *buffer = new_buffer;
+    *buffer_floats = new_floats;
+    return 0;
+}
 
 static void mix_audio(double weight_start,
                       double weight_end,
@@ -350,6 +376,10 @@ static int transition_get_audio(mlt_frame frame_a,
     // Prevent src buffer overflow by discarding oldest samples.
     samples_b = MIN(samples_b, MAX_SAMPLES * MAX_CHANNELS / channels_b);
     size_t bytes = SAMPLE_BYTES(samples_b, channels_b);
+    if (reserve_buffer(&self->src_buffer,
+                       &self->src_buffer_floats,
+                       MIN((self->src_buffer_count + samples_b) * (size_t) channels_b, MAX_FLOATS)))
+        return 1;
     if (SAMPLE_BYTES(self->src_buffer_count + samples_b, channels_b) > MAX_BYTES) {
         mlt_log_verbose(MLT_TRANSITION_SERVICE(transition),
                         "buffer overflow: src_buffer_count %d\n",
@@ -376,6 +406,10 @@ static int transition_get_audio(mlt_frame frame_a,
     // Prevent dest buffer overflow by discarding oldest samples.
     samples_a = MIN(samples_a, MAX_SAMPLES * MAX_CHANNELS / channels_a);
     bytes = SAMPLE_BYTES(samples_a, channels_a);
+    if (reserve_buffer(&self->dest_buffer,
+                       &self->dest_buffer_floats,
+                       MIN((self->dest_buffer_count + samples_a) * (size_t) channels_a, MAX_FLOATS)))
+        return 1;
     if (SAMPLE_BYTES(self->dest_buffer_count + samples_a, channels_a) > MAX_BYTES) {
         mlt_log_verbose(MLT_TRANSITION_SERVICE(transition),
                         "buffer overflow: dest_buffer_count %d\n",
@@ -596,7 +630,10 @@ static mlt_frame transition_process(mlt_transition transition, mlt_frame a_frame
 
 static void transition_close(mlt_transition transition)
 {
-    free(transition->child);
+    transition_mix self = transition->child;
+    mlt_pool_release(self->src_buffer);
+    mlt_pool_release(self->dest_buffer);
+    free(self);
     transition->close = NULL;
     mlt_transition_close(transition);
 }
