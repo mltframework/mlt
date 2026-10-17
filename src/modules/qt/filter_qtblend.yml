@@ -2,7 +2,7 @@ schema_version: 7.2
 type: filter
 identifier: qtblend
 title: Composite and transform
-version: 4
+version: 5
 copyright: Meltytech, LLC
 creator: Jean-Baptiste Mardelle
 license: LGPLv2.1
@@ -78,3 +78,33 @@ parameters:
     default: 0
     mutable: yes
     widget: color
+
+  - identifier: shutter_angle
+    title: Motion blur shutter angle
+    type: float
+    description: >
+      Simulated camera shutter angle in degrees, adding motion blur along the
+      frame to frame change of rect and rotation. 360 blurs across the complete
+      measured motion, 180 is the conventional film and video default.
+      0, the default, disables motion blur. Requires samples greater than 1.
+    default: 0
+    minimum: 0
+    maximum: 360
+    mutable: yes
+    animation: yes
+    widget: slider
+    unit: degrees
+
+  - identifier: samples
+    title: Motion blur samples
+    type: integer
+    description: >
+      Number of time interpolated samples accumulated to build the motion blur.
+      Higher values are smoother but proportionally slower to render; lower
+      values may show visible steps in the blur. 0 or 1, the default, disables
+      motion blur, as does a shutter_angle of 0.
+    default: 0
+    minimum: 0
+    maximum: 64
+    mutable: yes
+    widget: spinner
