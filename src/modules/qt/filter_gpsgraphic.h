@@ -140,8 +140,8 @@ double get_by_src(
 double get_min_bysrc(mlt_filter filter, int subtype = 0);
 double get_max_bysrc(mlt_filter filter, int subtype = 0);
 double get_crtval_bysrc(mlt_filter filter, int i_gps, int subtype = 0, gps_point_proc *gps_p = NULL);
-//returns the next gps point with a valid value for crt_source (starting with crt_i+1)
-int get_next_valid_gpspoint_index(mlt_filter filter, int crt_i);
+//returns gps point index with a valid value for crt_source (starts searching directly at crt_i)
+int get_valid_gpspoint_index(mlt_filter filter, int crt_i);
 //gets the nearest gps point [index] according to video time + input offset
 int get_now_gpspoint_index(mlt_filter filter, mlt_frame frame, bool force_result = true);
 //returns an interpolated gps point at the exact current video time + offset

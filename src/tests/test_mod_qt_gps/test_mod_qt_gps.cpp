@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2025 Julius Künzel <julius.kuenzel@kde.org>
+ * Copyright (C) 2026 Julius Künzel <julius.kuenzel@kde.org>
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -20,7 +20,7 @@
 
 #include <modules/qt/gps_parser.h>
 
-extern int64_t datetimeXMLstring_to_mseconds(const char *text, char *format);
+extern int64_t datetimeXMLstring_to_mseconds(const char *text, char const *format);
 
 class TestModQt : public QObject
 {
