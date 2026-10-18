@@ -50,9 +50,10 @@ parameters:
 
   - identifier: rotate_center
     title: Rotate from center
-    type: integer
+    type: boolean
     description: >
       Process the rotation from center if set, otherwise from top left corner
+    default: 0
     minimum: 0
     maximum: 1
     mutable: yes
