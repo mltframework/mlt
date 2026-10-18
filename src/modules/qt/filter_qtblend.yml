@@ -40,7 +40,7 @@ parameters:
     description: >
       Angle for rotation.
     type: float
-    default: 1
+    default: 0
     minimum: 0
     maximum: 360
     mutable: yes

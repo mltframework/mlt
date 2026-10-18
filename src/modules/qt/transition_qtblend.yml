@@ -22,6 +22,7 @@ parameters:
       Keyframable rectangle specification.
     mutable: yes
     argument: yes
+    animation: yes
 
   - identifier: distort
     title: Ignore aspect ratio
@@ -74,7 +75,7 @@ parameters:
     description: >
       Angle for rotation.
     type: float
-    default: 1
+    default: 0
     minimum: 0
     maximum: 360
     mutable: yes
