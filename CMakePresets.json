@@ -105,14 +105,14 @@
             "binaryDir": "${sourceDir}/build/${presetName}",
             "environment": {
                 "HOME": "C:/msys64/home/$penv{USERNAME}",
-                "PKG_CONFIG_PATH": "$env{HOME}/build/Shotcut/lib/pkgconfig;C:/msys64/mingw64/lib/pkgconfig;C:/msys64/clangarm64/lib/pkgconfig;$penv{PKG_CONFIG_PATH}",
-                "Path": "C:/msys64/usr/local/bin;C:/msys64/mingw64/bin;C:/msys64/clangarm64/bin;C:/msys64/usr/bin;$penv{Path}"
+                "PKG_CONFIG_PATH": "$env{HOME}/build/Shotcut/lib/pkgconfig;C:/msys64/ucrt64/lib/pkgconfig;C:/msys64/clangarm64/lib/pkgconfig;$penv{PKG_CONFIG_PATH}",
+                "Path": "C:/msys64/usr/local/bin;C:/msys64/ucrt64/bin;C:/msys64/clangarm64/bin;C:/msys64/usr/bin;$penv{Path}"
             },
             "cacheVariables": {
                 "BUILD_TESTING": "OFF",
                 "CMAKE_INSTALL_PREFIX": "$env{HOME}/build/Shotcut",
                 "CMAKE_BUILD_TYPE": "RelWithDebInfo",
-                "CMAKE_PREFIX_PATH": "C:/msys64/mingw64;C:/msys64/clangarm64",
+                "CMAKE_PREFIX_PATH": "C:/msys64/ucrt64;C:/msys64/clangarm64",
                 "MOD_GLAXNIMATE_QT6": "ON"
             },
             "generator": "Ninja"
