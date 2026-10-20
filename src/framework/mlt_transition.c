@@ -542,13 +542,27 @@ static int transition_get_frame(mlt_service service, mlt_frame_ptr frame, int in
         mlt_position position;
         int (*invalid)(mlt_frame) = type == 1 ? mlt_frame_is_test_card : mlt_frame_is_test_audio;
 
-        // Initialise temporary store
-        if (self->frames == NULL)
+        // Initialise temporary store. The track properties may change on another
+        // thread without mlt_transition_set_tracks(), so always ensure the cache
+        // is large enough for the tracks read above.
+        if (self->frames == NULL
+            || mlt_properties_get_int(properties, "_frames_size") < b_track + 1) {
+            free(self->frames);
             self->frames = calloc(b_track + 1, sizeof(mlt_frame));
+            mlt_properties_set_int(properties, "_frames_size", self->frames ? b_track + 1 : 0);
+        }
+        if (self->frames == NULL) {
+            pthread_mutex_unlock(&self->mutex);
+            return mlt_service_get_frame(self->producer, frame, index);
+        }
 
         // Get all frames between a and b
         for (i = a_track; i <= b_track; i++)
             mlt_service_get_frame(self->producer, &self->frames[i], i);
+
+        // Remember the range cached for this iteration
+        mlt_properties_set_int(properties, "_frames_a", a_track);
+        mlt_properties_set_int(properties, "_frames_b", b_track);
 
         // We're holding these frames until the last_track frame property is received
         self->held = 1;
@@ -606,8 +620,12 @@ static int transition_get_frame(mlt_service service, mlt_frame_ptr frame, int in
         }
     }
 
-    // Obtain the frame from the cache or the producer we're attached to
-    if (index >= a_track && index <= b_track && self->frames)
+    // Obtain the frame from the cache or the producer we're attached to.
+    // Use the range that was actually cached since the track properties may
+    // have changed during this iteration.
+    if (self->frames && index >= mlt_properties_get_int(properties, "_frames_a")
+        && index <= mlt_properties_get_int(properties, "_frames_b")
+        && index < mlt_properties_get_int(properties, "_frames_size") && self->frames[index])
         *frame = self->frames[index];
     else
         error = mlt_service_get_frame(self->producer, frame, index);
