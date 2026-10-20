@@ -61,6 +61,10 @@ bool qstring_contains_any_qstringlist(const QString &main_string, const QStringL
     return false;
 }
 
+const QString sample_format_line
+    = "#delimiter=\" \" datetime=\"yyyy/MM/dd\" datetime=\"hh:mm:ss\" latitude longitude "
+      "speed skip heading altitude";
+
 // Maps are usually in ESPG3857 format, not in GPS format EPSG4326 / WG84. We have to project
 // the latitude, otherwise big maps have wrong aspect ratio
 double project_latitude(double lat)
@@ -1326,7 +1330,8 @@ void qxml_parse_tcx(QXmlStreamReader &reader,
 }
 
 //tries to parse a .txt file containing GPS data; returns 0 for failure, 1 success
-//first line of the file must contain a format helper that starts with #delimiter=
+//first line of the file may contain a format helper that starts with #delimiter=
+//if no format is found, we try a generic regex for date+time and lat, lon (no other fields)
 int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, int &no_time_count)
 {
     //example from my dashcam (added extra spaces for readability):
@@ -1335,11 +1340,6 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
     //expected format line:
     //#delimiter=" " datetime="yyyy/MM/dd" datetime="hh:mm:ss" lat lon speed skip heading altitude
 
-    //NOTE: there's probably a very limited number of common formats, and 99% of them start with date+time lat lon
-    // so if there's enough interest in this, it could be automated with a decent success rate
-    QString default_format_line
-        = "#delimiter=\" \" datetime=\"yyyy/MM/dd\" datetime=\"hh:mm:ss\" latitude longitude "
-          "speed skip heading altitude";
     //regex for yyyy*MM*dd*HH*mm*ss[*sss], any separators (non digits chars), miliseconds optional
     QRegularExpression re_date_time(
         R"((\d{4})\D?(\d{2})\D?(\d{2})\D?(\d{2})\D?(\d{2})\D?(\d{2})(?:\D?(\d{1,3}))?)");
@@ -1350,14 +1350,14 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
 
     QString format_line, first_keyword = "#delimiter=", delimiter;
     QStringList format_tokens, format_tokens_arguments;
-    bool regex_mode = false, format_date_time_separated = false;
+    bool regex_mode = false;
 
     //if file doesn't start with "#delimiter=", will try regex for datetime and lat lon
     if ((format_line = reader.readLine()).startsWith(first_keyword) == false) {
         mlt_log_info(NULL,
                      "no format line found at the start of the file, trying a generic regex "
                      "for datetime and lat/lon");
-        mlt_log_info(NULL, "Note: sample format line: '%s'", qUtf8Printable(default_format_line));
+        mlt_log_info(NULL, "Note: sample format line: '%s'", qUtf8Printable(sample_format_line));
         reader.seek(0);
         regex_mode = true;
     } else if (!reader.atEnd()) {
@@ -1396,8 +1396,6 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                 int secondQ = format_tokens[i].indexOf('"', firstQ + 1);
                 format_tokens_arguments[i] = format_tokens[i].mid(firstQ + 1,
                                                                   secondQ - (firstQ + 1));
-                if (!format_tokens_arguments[i].contains('y', Qt::CaseInsensitive))
-                    format_date_time_separated = true;
             }
         }
     } else { //already end of file? this is an invalid file
@@ -1409,11 +1407,11 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
 
     //process the file line by line
     int nr_invalid_lines = 0;
+    bool format_date_time_separated = false;
     QVector<bool> warned_of_format(format_tokens.size(), false);
     while (!reader.atEnd()) {
         QString line = reader.readLine(256);
         gps_point_raw crt_point = uninit_gps_raw_point;
-
         //a point is valid if it has either (a valid time + at least one other field) or (a valid lat/lon pair)
         bool valid_datetime = false, got_other = false;
         int got_latlon = 0;
@@ -1474,14 +1472,18 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                 //              i,
                 //              line_tokens[i].toUtf8().constData());
                 if (format_tokens[i].contains("datetime=", Qt::CaseInsensitive)) {
+                    //explicit format provided by the user, can have date separated from time
                     datetime_assembled.append(line_tokens[i]);
                     datetime_assembled.append(delimiter);
                     datetime_format_assembled.append(format_tokens_arguments[i]);
                     datetime_format_assembled.append(delimiter);
+                    format_date_time_separated = true;
                 } else if (format_tokens[i].contains("datetimeiso", Qt::CaseInsensitive)) {
+                    //exact ISO format
                     crt_point.time = datetimeXMLstring_to_mseconds(qUtf8Printable(line_tokens[i]));
                     valid_datetime = (crt_point.time != 0);
                 } else if (format_tokens[i].contains("datetime", Qt::CaseInsensitive)) {
+                    //generic date+time in one token, will use regex for parsing
                     auto m = re_date_time.match(line_tokens[i]);
                     if (m.hasMatch()) {
                         int year = m.captured(1).toInt();
@@ -1502,6 +1504,7 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                         }
                     }
                 } else if (format_tokens[i].contains("date", Qt::CaseInsensitive)) {
+                    //generic date only in a single token, will use regex for parsing
                     auto m = re_date.match(line_tokens[i]);
                     if (m.hasMatch()) {
                         int year = m.captured(1).toInt();
@@ -1512,6 +1515,7 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                             got_qdate = true;
                     }
                 } else if (format_tokens[i].contains("time", Qt::CaseInsensitive)) {
+                    //generic time only in a single token, will use regex for parsing
                     auto m = re_time.match(line_tokens[i]);
                     if (m.hasMatch()) {
                         int hour = m.captured(1).toInt();
@@ -1526,15 +1530,15 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                     }
                 } else if (format_tokens[i].contains("lat", Qt::CaseInsensitive)) {
                     double negative = (line_tokens[i].startsWith('s', Qt::CaseInsensitive) ? -1 : 1);
-                    int number_at = line_tokens[i].indexOf(QRegularExpression("[-+0-9]"));
-                    crt_point.lat = line_tokens[i].mid(number_at).toDouble() * negative;
+                    int number_starts = line_tokens[i].indexOf(QRegularExpression("[-+0-9]"));
+                    crt_point.lat = line_tokens[i].mid(number_starts).toDouble() * negative;
                     crt_point.lat_projected = project_latitude(crt_point.lat);
                     if (is_valid_latitude(crt_point.lat))
                         got_latlon++;
                 } else if (format_tokens[i].contains("lon", Qt::CaseInsensitive)) {
                     double negative = (line_tokens[i].startsWith('w', Qt::CaseInsensitive) ? -1 : 1);
-                    int number_at = line_tokens[i].indexOf(QRegularExpression("[-+0-9]"));
-                    crt_point.lon = line_tokens[i].mid(number_at).toDouble() * negative;
+                    int number_starts = line_tokens[i].indexOf(QRegularExpression("[-+0-9]"));
+                    crt_point.lon = line_tokens[i].mid(number_starts).toDouble() * negative;
                     if (is_valid_longitude(crt_point.lon))
                         got_latlon++;
                 } else if (format_tokens[i].contains("speed", Qt::CaseInsensitive)) {
@@ -1555,7 +1559,7 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                         if (qstring_contains_any_qstringlist(line_tokens[i + 1],
                                                              accepted_distance_formats))
                             ratio = convert_distance_to_format(1, qPrintable(line_tokens[i + 1]));
-                        crt_point.speed /= ratio;
+                        crt_point.ele /= ratio;
                     }
                     got_other = true;
                 } else if (format_tokens[i].contains("head", Qt::CaseInsensitive)
@@ -1634,16 +1638,8 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
             nr_invalid_lines = 0;
         }
 
-        //we parsed a line, check the time and store it in the array
-        // if (crt_point.time != GPS_UNINIT && crt_point.time != 0) {
-        //     if (crt_point.time < last_time)
-        //         all_sorted = false;
-        //     // else if (crt_point.time == last_time)
-        //     //     eq_time_count += 1; //TODO: if multiple file support this won't be enough
-        //     last_time = crt_point.time;
-        // } else
         if (crt_point.time == GPS_UNINIT || crt_point.time == 0) {
-            //if no time is read (or bad format), we make it up starting from 1
+            //if no time is read (or bad format), we make it up starting from 1 (=1000ms)
             no_time_count += 1;
             crt_point.time = no_time_count * 1000;
         }
@@ -1722,9 +1718,7 @@ int q_parse_file(gps_private_data gdata)
                           "txt file (%s) processing failed. Make sure it starts with a recognised "
                           "format line!",
                           qUtf8Printable(filename));
-            mlt_log_info(NULL,
-                         "Sample format line: \n#delimiter=\" \" datetime=\"yyyy/MM/dd\" "
-                         "datetime=\"hh:mm:ss\" latitude longitude speed skip heading altitude");
+            mlt_log_info(NULL, "Sample format line: '%s'", qUtf8Printable(sample_format_line));
             return 0;
         }
         // mlt_log_info(NULL, "printing the read array, size=%lld", gps_points_array.size());
@@ -1768,7 +1762,6 @@ int q_parse_file(gps_private_data gdata)
     bool skip_notimes = false;
     if (no_time_count > 0 && no_time_count < gps_pt_count) {
         skip_notimes = true;
-        // gps_pt_count -= no_time_count;
         mlt_log_info(NULL,
                      "q_parse_file: will skip %d/%d points without valid time",
                      no_time_count,
