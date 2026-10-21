@@ -3951,6 +3951,16 @@ static int producer_get_audio(mlt_frame frame,
                 mlt_properties_pass_property(MLT_FRAME_PROPERTIES(frame),
                                              MLT_FRAME_PROPERTIES(original),
                                              "channel_layout");
+                // Store the audio on this frame so that later get_audio calls on it do not
+                // return silence. The cached frame, held above, owns the buffer.
+                if (*buffer) {
+                    mlt_frame_set_audio(frame,
+                                        *buffer,
+                                        *format,
+                                        mlt_audio_format_size(*format, *samples, *channels),
+                                        NULL);
+                    mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "audio_samples", *samples);
+                }
                 goto done_get_audio;
             }
         }
