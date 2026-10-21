@@ -532,7 +532,6 @@ void loadFromXml(producer_ktitle self,
                         qWarning() << "Ignoring invalid title rich-text gradient metadata";
                     }
                     txt->document()->setDocumentMargin(0);
-                    TitlerGradientV1::applyBrushes(txt->document(), int(boxWidth), int(boxHeight));
 
                     QTextOption option = txt->document()->defaultTextOption();
                     if (tabWidth > 0) {
@@ -590,6 +589,14 @@ void loadFromXml(producer_ktitle self,
                             txtProperties.namedItem("preferred-width").nodeValue().toInt());
                     } else if (boxWidth > 0) {
                         txt->setTextWidth(boxWidth);
+                    }
+
+                    // Selective brushes use the final laid-out glyph positions. A
+                    // legacy object gradient retains precedence over run metadata.
+                    if (txtProperties.namedItem("gradient").isNull()) {
+                        TitlerGradientV1::applyBrushes(txt->document(),
+                                                       int(boxWidth),
+                                                       int(boxHeight));
                     }
 
                     if (!txtProperties.namedItem("shadow").isNull()) {
