@@ -36,7 +36,7 @@ jobs:
         run: cppcheck src/ -j $(nproc) --force --inline-suppr --library=qt --error-exitcode=1 --template="::{severity} file={file},line={line},col={column}::{message}" ${{ env.extra-args }}
   clang-format:
     name: clang-format
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Install dependencies
