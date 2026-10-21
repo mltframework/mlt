@@ -24,7 +24,7 @@
 
 namespace {
 
-typedef struct
+struct private_data
 {
     gps_point_raw *gps_points_r;  //raw gps data from file
     gps_point_proc *gps_points_p; //processed gps data
@@ -36,14 +36,13 @@ typedef struct
     int64_t gps_offset;
     int64_t gps_proc_start_t; //process only points after this time (epoch milliseconds)
     char last_read_gps_processing_start_time[20];
-    char last_read_gps_processing_start_time[20];
     double speed_multiplier;
     double updates_per_second;
     char last_filename[PATH_MAX]; //gps file fullpath
     char interpolated;
     int swap_180;
     bool checked_gps_companion;
-} private_data;
+};
 
 } // namespace
 
@@ -626,7 +625,6 @@ static void process_file(mlt_filter filter, mlt_frame frame)
         } else
             return;
     }
-    //TODO: fix Ui with valid file from autoload
 
     //check if the file has been changed, if not, current data is ok, do nothing
     if (strcmp(pdata->last_filename, filename)) {
@@ -741,7 +739,7 @@ mlt_filter filter_gpstext_init(mlt_profile profile, mlt_service_type type, const
                                         "Altitude: #gps_elev#m\n\n"
                                         "GPS time: #gps_datetime_now# UTC\n"
                                         "GPS location: #gps_lat#, #gps_lon#");
-        mlt_properties_set_string(my_properties, "geometry", "10%/55%:80%x35%:100%");
+        mlt_properties_set_string(my_properties, "geometry", "10%/50%:80%x40%:100%");
         mlt_properties_set_string(my_properties, "family", "Sans");
         mlt_properties_set_string(my_properties, "size", "26");
         mlt_properties_set_string(my_properties, "weight", "400");

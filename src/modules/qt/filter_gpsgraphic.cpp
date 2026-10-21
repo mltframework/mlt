@@ -663,7 +663,6 @@ static void process_file(mlt_filter filter, mlt_frame frame)
 
     //check if the file has been changed, if not, current data is ok, do nothing
     if (strcmp(pdata->last_filename, filename)) {
-        // mlt_log_info(filter, "Reading new file: last_filename (%s) != entered_filename (%s), swap_180 = %d\n", pdata->last_filename, filename, pdata->swap_180);
         default_priv_data(pdata);
 
         strncpy(pdata->last_filename, filename, sizeof(pdata->last_filename) - 1);
@@ -761,7 +760,7 @@ mlt_filter filter_gpsgraphic_init(mlt_profile profile,
         mlt_properties_set_int(properties, "show_now_text", 1);
         mlt_properties_set_double(properties, "angle", 0);
         mlt_properties_set_int(properties, "thickness", 5);
-        mlt_properties_set(properties, "rect", "70% 70% 25% 25%");
+        mlt_properties_set(properties, "rect", "70% 70% 20% 20%");
         mlt_properties_set_int(properties, "show_grid", 0);
         mlt_properties_set(properties, "legend_unit", "");
         mlt_properties_set_int(properties, "draw_individual_dots", 0);

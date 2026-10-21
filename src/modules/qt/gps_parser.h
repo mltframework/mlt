@@ -19,7 +19,6 @@
 #ifndef GPS_PARSER_H
 #define GPS_PARSER_H
 
-#include <chrono>
 #include <cmath>
 #include <framework/mlt.h>
 #include <QFile>
@@ -38,12 +37,6 @@ struct gps_point_raw
     int64_t time; //epoch milliseconds
     bool operator<(const gps_point_raw &pt2) const { return time < pt2.time; }
 };
-
-typedef struct gps_point_raw_list
-{
-    gps_point_raw gp;
-    struct gps_point_raw_list *next;
-} gps_point_ll;
 
 struct gps_point_proc
 {
@@ -150,8 +143,13 @@ gps_point_proc weighted_middle_point_proc(gps_point_proc *p1,
                                           int64_t new_t,
                                           int max_gps_diff_ms);
 
-void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *count_pts);
-void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *count_pts);
+void qxml_parse_gpx(QXmlStreamReader &reader,
+                    QVector<gps_point_raw> &gps_points_file,
+                    int &no_time_count);
+void qxml_parse_tcx(QXmlStreamReader &reader,
+                    QVector<gps_point_raw> &gps_points_file,
+                    int &no_time_count);
+int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, int &no_time_count);
 int q_auto_gps_file(const char *clip_path, char *auto_filename);
 int q_parse_file(gps_private_data gdata);
 

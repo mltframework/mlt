@@ -128,23 +128,6 @@ double get_avg_gps_time_ms(gps_private_data gdata)
     return (double) tdiff / gp_size;
 }
 
-/* int64_t datetime_unknown_to_mseconds (const char *text) 
-{
-        //Qt::ISODateWithMs,
-        //Qt::ISODate,
-    const QStringList date_formats {
-        "yyyy/MM/dd HH:mm:ss.zzz",
-        "yyyy/MM/dd HH:mm:ss",
-        "yyyy-MM-dd HH:mm:ss.zzz",
-        "yyyy-MM-dd HH:mm:ss",
-        "yyyy/MM/dd",
-        "yyyy-MM-dd",
-        "HH:mm:ss.zzz",
-        "HH:mm:ss"
-    };
-
-} */
-
 /* Converts the datetime string from gps file into seconds since epoch
  * Note: assumes UTC
  */
@@ -1384,12 +1367,13 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
         R"((\d{4})\D?(\d{2})\D?(\d{2})\D?(\d{2})\D?(\d{2})\D?(\d{2})(?:\D?(\d{1,3}))?)");
     QRegularExpression re_date(R"((\d{4})\D?(\d{2})\D?(\d{2}))");
     QRegularExpression re_time(R"((\d{2})\D?(\d{2})\D?(\d{2})(?:\D?(\d{1,3}))?)");
-    QRegularExpression re_lat(R"(([NS])[: ]?([+-]?\d{1,3}[\.,]\d{6}))");
-    QRegularExpression re_lon(R"(([EW])[: ]?([+-]?\d{1,3}[\.,]\d{6}))");
+    QRegularExpression re_lat(R"(([NS])[: ]?([+-]?\d{1,3}[\.]\d{6}))");
+    QRegularExpression re_lon(R"(([EW])[: ]?([+-]?\d{1,3}[\.]\d{6}))");
 
-    QString format_line, first_keyword = "#delimiter=", delimiter;
+    const QString first_keyword = "#delimiter=";
+    QString format_line, delimiter;
     QStringList format_tokens, format_tokens_arguments;
-    bool regex_mode = false;
+    bool regex_mode = false, format_date_time_separated = false;
 
     //if file doesn't start with "#delimiter=", will try regex for datetime and lat lon
     if ((format_line = reader.readLine()).startsWith(first_keyword) == false) {
@@ -1435,6 +1419,7 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                 int secondQ = format_tokens[i].indexOf('"', firstQ + 1);
                 format_tokens_arguments[i] = format_tokens[i].mid(firstQ + 1,
                                                                   secondQ - (firstQ + 1));
+                format_date_time_separated = true;
             }
         }
     } else { //already end of file? this is an invalid file
@@ -1446,10 +1431,9 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
 
     //process the file line by line
     int nr_invalid_lines = 0;
-    bool format_date_time_separated = false;
     QVector<bool> warned_of_format(format_tokens.size(), false);
     while (!reader.atEnd()) {
-        QString line = reader.readLine(256);
+        QString line = reader.readLine();
         gps_point_raw crt_point = uninit_gps_raw_point;
         //a point is valid if it has either (a valid time + at least one other field) or (a valid lat/lon pair)
         bool valid_datetime = false, got_other = false;
@@ -1499,7 +1483,7 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                 }
             }
         } else { //format provided by the file
-            QStringList line_tokens = line.split(delimiter, Qt::SkipEmptyParts);
+            QStringList line_tokens = line.split(delimiter);
             QString datetime_assembled, datetime_format_assembled;
             bool got_qdate = false, got_qtime = false;
             QDate qdate_part;
@@ -1518,8 +1502,6 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                     datetime_assembled.append(delimiter);
                     datetime_format_assembled.append(format_tokens_arguments[i]);
                     datetime_format_assembled.append(delimiter);
-//TODO: is this check necessary? we already know from before if this matches or not but could there be a valid case where we have both this and the other time token?
-                    format_date_time_separated = true;
                 } else if (format_tokens[i].contains("datetimeiso", Qt::CaseInsensitive)) {
                     //exact ISO format
                     crt_point.time = datetimeXMLstring_to_mseconds(qUtf8Printable(line_tokens[i]));
@@ -1589,7 +1571,9 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                         double ratio = 1;
                         if (qstring_contains_any_qstringlist(line_tokens[i + 1],
                                                              accepted_speed_formats))
-                            ratio = convert_speed_to_format(1, qPrintable(line_tokens[i + 1]));
+                            ratio = convert_speed_to_format(1,
+                                                            qPrintable(
+                                                                line_tokens[i + 1].toLower()));
                         crt_point.speed /= ratio;
                     }
                     got_other = true;
@@ -1600,7 +1584,9 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                         double ratio = 1;
                         if (qstring_contains_any_qstringlist(line_tokens[i + 1],
                                                              accepted_distance_formats))
-                            ratio = convert_distance_to_format(1, qPrintable(line_tokens[i + 1]));
+                            ratio = convert_distance_to_format(1,
+                                                               qPrintable(
+                                                                   line_tokens[i + 1].toLower()));
                         crt_point.ele /= ratio;
                     }
                     got_other = true;
@@ -1677,7 +1663,7 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
 
 //checks if there's a file with the same base name as original clip + extension of supported gps
 //returns 0 on failure, 1 on success (and fills in auto_filename)
-//TODO: maybe also q_parse_file() here - but cache the result so we don't read twice
+//TODO: do q_parse_file() here even if we process twice?// actually should we keep in cache all read files?
 int q_auto_gps_file(const char *clip_path, char *auto_filename)
 {
     // mlt_log_info(NULL,
@@ -1690,7 +1676,7 @@ int q_auto_gps_file(const char *clip_path, char *auto_filename)
             QString guess = clip.dir().filePath(clip.completeBaseName() + ext);
             // mlt_log_info(NULL, "q_auto_gps_file: checking for '%s'", qPrintable(guess));
             if (QFile::exists(guess)) {
-                strncat(auto_filename, guess.toUtf8(), PATH_MAX);
+                strncat(auto_filename, guess.toUtf8(), PATH_MAX - 1);
                 return 1;
             }
         }
