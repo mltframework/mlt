@@ -92,7 +92,8 @@ inline void _mlt_log_gps_point(const int i, const gps_point_raw &crt_point)
     char str_time[25] = {0};
     mseconds_to_timestring(crt_point.time, NULL, str_time);
     mlt_log_info(NULL,
-                 "gps_point[%d]: time:%lld (%s), lat:%f, lon:%f, lat_projected:%f, speed:%f, "
+                 "gps_point[%d]: time:%" PRId64
+                 " (%s), lat:%f, lon:%f, lat_projected:%f, speed:%f, "
                  "distance:%f, ele:%f, hr:%f, bearing:%f, cadence:%f, temp:%f, power:%f\n",
                  i,
                  crt_point.time,
@@ -150,7 +151,7 @@ int64_t datetimeXMLstring_to_mseconds(const char *text, const char *format /* = 
         return 0;
     }
 
-#if QT_VERSION > QT_VERSION_CHECK(6, 5, 0)
+#if QT_VERSION >= QT_VERSION_CHECK(6, 5, 0)
     datetime.setTimeZone(QTimeZone::UTC);
 #else
     datetime.setTimeZone(QTimeZone(0));
@@ -1406,7 +1407,7 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
         }
 
         // mlt_log_debug(NULL,
-        //               "q_parse_txt(): format_line='%s', delimiter='%s', format_tokens found=%lld",
+        //               "q_parse_txt(): format_line='%s', delimiter='%s', format_tokens found=%" PRId64 "",
         //               qUtf8Printable(format_line),
         //               qUtf8Printable(delimiter),
         //               format_tokens.size());
@@ -1451,9 +1452,7 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                 int second = m.captured(6).toInt();
                 int msec = m.captured(7).isEmpty() ? 0
                                                    : m.captured(7).leftJustified(3, '0').toInt();
-                QDateTime dt(QDate(year, month, day),
-                             QTime(hour, minute, second, msec),
-                             QTimeZone::UTC);
+                QDateTime dt(QDate(year, month, day), QTime(hour, minute, second, msec), Qt::UTC);
                 if (dt.isValid()) {
                     crt_point.time = dt.toMSecsSinceEpoch();
                     valid_datetime = (crt_point.time != 0);
@@ -1521,7 +1520,7 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                                        : m.captured(7).leftJustified(3, '0').toInt();
                         QDateTime dt(QDate(year, month, day),
                                      QTime(hour, minute, second, msec),
-                                     QTimeZone::UTC);
+                                     Qt::UTC);
                         if (dt.isValid()) {
                             crt_point.time = dt.toMSecsSinceEpoch();
                             valid_datetime = (crt_point.time != 0);
@@ -1620,7 +1619,7 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
 
             //process datetime now after the entire line is parsed:
             if (got_qdate && got_qtime) {
-                QDateTime dt(qdate_part, qtime_part, QTimeZone::UTC);
+                QDateTime dt(qdate_part, qtime_part, Qt::UTC);
                 if (dt.isValid()) {
                     crt_point.time = dt.toMSecsSinceEpoch();
                     valid_datetime = (crt_point.time != 0);
@@ -1632,7 +1631,7 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
                 valid_datetime = (crt_point.time != 0);
                 // mlt_log_info(NULL,
                 //              "format_date_time_separated true, assembled input:'%s', assembled format:'%s', "
-                //              "result=%lld",
+                //              "result=%" PRId64 "",
                 //              qUtf8Printable(datetime_assembled),
                 //              qUtf8Printable(datetime_format_assembled),
                 //              crt_point.time);
@@ -1751,7 +1750,7 @@ int q_parse_file(gps_private_data gdata)
             mlt_log_info(NULL, "Sample format line: '%s'", qUtf8Printable(sample_format_line));
             return 0;
         }
-        // mlt_log_info(NULL, "printing the read array, size=%lld", gps_points_array.size());
+        // mlt_log_info(NULL, "printing the read array, size=%" PRId64 "", gps_points_array.size());
         // for (int i=0; i< gps_points_array.size(); i++)
         //     _mlt_log_gps_point(i, gps_points_array[i]);
     }
