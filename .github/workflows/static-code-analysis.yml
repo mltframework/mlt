@@ -13,7 +13,7 @@ concurrency:
 jobs:
   cppcheck:
     name: Cppcheck
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       extra-args: >-
         -i src/modules/decklink/darwin
