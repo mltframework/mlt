@@ -71,6 +71,10 @@ if(MOD_QT6 AND BUILD_TESTS_WITH_QT6)
     TEST_NAME richtextgradient
     LINK_LIBRARIES Qt6::Gui Qt6::Widgets Qt6::Xml
   )
+  add_qt_test(
+    TEST_NAME richtextshadow
+    LINK_LIBRARIES Qt6::Gui Qt6::Widgets Qt6::Xml
+  )
 endif()
 
 if(Kwalify_FOUND)

@@ -2,6 +2,7 @@
 #pragma once
 
 #include "richtextoutline.h"
+#include "richtextshadow.h"
 
 #include <algorithm>
 #include <cmath>
@@ -103,6 +104,7 @@ private:
 class Item : public QGraphicsTextItem
 {
 public:
+    void setShadowFallback(const TitlerShadowV1::Style &style) { m_shadowStyle = style; }
     void setOutline(qreal width, const QColor &color)
     {
         width = std::isfinite(width) ? std::max(qreal(0), width) : qreal(0);
@@ -123,6 +125,7 @@ public:
     {
         const qreal margin = m_outlineMargin;
         return QGraphicsTextItem::boundingRect()
+            .united(m_shadowBounds)
             .united(m_inkBounds)
             .adjusted(-margin, -margin, margin, margin);
     }
@@ -131,6 +134,11 @@ public:
         prepareGeometryChange();
         m_inkBounds = TitlerOutline::inkBounds(document());
         m_outlineMargin = TitlerOutline::margin(document(), m_outlinePen);
+        m_shadowOverrides = TitlerShadowV1::hasOverrides(document());
+        m_shadowBounds = m_shadowOverrides
+                             ? TitlerShadowV1::bounds(document(), m_shadowStyle, m_outlinePen)
+                             : QRectF();
+        m_shadowVisible = -1;
         m_total = document()->characterCount() - 1;
         m_text = document()->toPlainText();
         m_visible = m_total;
@@ -175,6 +183,7 @@ protected:
         int lineId;
         QTextCharFormat format;
         QRawFont physicalFont;
+        QRectF lineBounds;
     };
 
     QVector<VisualCell> visibleCells() const
@@ -228,16 +237,22 @@ protected:
                 const qreal a = line.cursorToX(start);
                 const qreal z = line.cursorToX(end);
                 const QPointF origin = layout->position();
-                const QRectF rect(origin.x() + std::min(a, z),
-                                  origin.y() + line.y(),
-                                  std::abs(z - a),
-                                  line.height());
+                // Preserve the legacy title path; selective shadows and their
+                // visible text share the same shaped decoration intervals.
+                const QRectF rect
+                    = m_shadowOverrides
+                          ? TitlerShadowV1::decorationRect(line, start, end - start, runs, origin)
+                          : QRectF(origin.x() + std::min(a, z),
+                                   origin.y() + line.y(),
+                                   std::abs(z - a),
+                                   line.height());
                 cells.append({rect,
                               block.position() + end <= m_visible ? rect : QRectF(),
                               origin.y() + line.y() + line.ascent(),
                               block.position() + line.textStart(),
                               format,
-                              physicalFont});
+                              physicalFont,
+                              line.naturalTextRect().translated(origin)});
             }
         }
         std::sort(cells.begin(), cells.end(), [](const VisualCell &a, const VisualCell &b) {
@@ -395,6 +410,17 @@ protected:
             return;
         }
         painter->save();
+        if (m_shadowOverrides) {
+            if (m_shadowVisible != m_visible) {
+                m_shadowLayers = TitlerShadowV1::render(document(),
+                                                        m_shadowStyle,
+                                                        m_outlinePen,
+                                                        m_visible,
+                                                        defaultTextColor());
+                m_shadowVisible = m_visible;
+            }
+            TitlerShadowV1::paint(painter, m_shadowLayers);
+        }
         TitlerOutline::paint(painter, document(), m_outlinePen, m_visible);
         {
             // The final reveal uses the same cells, glyphs and decorations as earlier frames.
@@ -438,12 +464,30 @@ protected:
                     }
                 }
             }
-            paintDecorations(painter, cells);
+            if (m_shadowOverrides) {
+                // New selective-shadow titles use Qt's decoration placement for
+                // both the visible text and its alpha mask. Keep legacy frames.
+                painter->save();
+                painter->setClipRect(TitlerShadowV1::decorationBounds(document(), m_outlinePen),
+                                     Qt::IntersectClip);
+                TitlerShadowV1::paintShadowDecorations(painter,
+                                                       cells,
+                                                       document()->defaultFont(),
+                                                       defaultTextColor());
+                painter->restore();
+            } else {
+                paintDecorations(painter, cells);
+            }
         }
         painter->restore();
     }
 
 private:
+    TitlerShadowV1::Style m_shadowStyle;
+    TitlerShadowV1::Layers m_shadowLayers;
+    QRectF m_shadowBounds;
+    int m_shadowVisible{-1};
+    bool m_shadowOverrides{false};
     QPen m_outlinePen{Qt::NoPen};
     qreal m_outlineMargin{0};
     QRectF m_inkBounds;
