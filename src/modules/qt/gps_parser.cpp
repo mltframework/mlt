@@ -1620,7 +1620,7 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
 
             //process datetime now after the entire line is parsed:
             if (got_qdate && got_qtime) {
-                QDateTime dt(qdate_part, qtime_part);
+                QDateTime dt(qdate_part, qtime_part, QTimeZone::UTC);
                 if (dt.isValid()) {
                     crt_point.time = dt.toMSecsSinceEpoch();
                     valid_datetime = (crt_point.time != 0);
@@ -1671,12 +1671,12 @@ int q_auto_gps_file(const char *clip_path, char *auto_filename)
     //              (clip_path ? clip_path : "NULL"));
     if (clip_path) {
         QFileInfo clip(QString::fromUtf8(clip_path));
-        QStringList exentsions_to_check = {".gpx", ".tcx", ".txt"};
-        for (auto ext : exentsions_to_check) {
+        QStringList extensions_to_check = {".gpx", ".GPX", ".tcx", ".TCX", ".txt", ".TXT"};
+        for (auto ext : extensions_to_check) {
             QString guess = clip.dir().filePath(clip.completeBaseName() + ext);
-            // mlt_log_info(NULL, "q_auto_gps_file: checking for '%s'", qPrintable(guess));
             if (QFile::exists(guess)) {
-                strncat(auto_filename, guess.toUtf8(), PATH_MAX - 1);
+                QByteArray guess_utf8 = guess.toUtf8();
+                strncat(auto_filename, guess_utf8.constData(), PATH_MAX - strlen(auto_filename) - 1);
                 return 1;
             }
         }

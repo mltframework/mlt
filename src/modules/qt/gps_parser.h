@@ -22,6 +22,7 @@
 #include <cmath>
 #include <framework/mlt.h>
 #include <QFile>
+#include <QTextStream>
 #include <QXmlStreamReader>
 
 // #include <chrono>
