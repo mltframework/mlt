@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 klg90 <284782940+klg90@users.noreply.github.com>
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include <QAbstractTextDocumentLayout>
@@ -161,9 +162,9 @@ private Q_SLOTS:
         QVERIFY(repository);
         std::unique_ptr<Mlt::Properties> metadata(
             repository->metadata(mlt_service_producer_type, "kdenlivetitle"));
-        QVERIFY2(metadata && metadata->get_double("version") >= 8,
+        QVERIFY2(metadata && metadata->get_double("version") >= 9,
                  "The tested Qt module must provide the rich-text kdenlivetitle producer (version "
-                 ">= 8)");
+                 ">= 9)");
     }
 
     void selectiveExport_data()

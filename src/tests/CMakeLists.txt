@@ -75,6 +75,10 @@ if(MOD_QT6 AND BUILD_TESTS_WITH_QT6)
     TEST_NAME richtextshadow
     LINK_LIBRARIES Qt6::Gui Qt6::Widgets Qt6::Xml
   )
+  set_property(
+    TEST "QtTest:richtextgradient" "QtTest:richtextshadow"
+    APPEND PROPERTY ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+  )
 endif()
 
 if(Kwalify_FOUND)

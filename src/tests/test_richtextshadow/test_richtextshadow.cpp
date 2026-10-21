@@ -1,3 +1,4 @@
+// SPDX-FileCopyrightText: 2026 klg90 <284782940+klg90@users.noreply.github.com>
 // SPDX-License-Identifier: LGPL-2.1-or-later
 
 #include <QAbstractTextDocumentLayout>
@@ -188,6 +189,62 @@ private Q_SLOTS:
         std::unique_ptr<Mlt::Properties> metadata(
             repository->metadata(mlt_service_producer_type, "kdenlivetitle"));
         QVERIFY(metadata && metadata->get_double("version") >= 9);
+    }
+
+    void nativeAlphaAcrossRasterTargets()
+    {
+        QTextDocument document;
+        configureDocument(document, 0);
+        QTextCursor cursor(&document);
+        cursor.select(QTextCursor::Document);
+        QTextCharFormat format;
+        format.setProperty(TitlerShadowV1::Enabled, false);
+        format.setProperty(TitlerShadowV1::Color, QColor(0, 255, 0));
+        format.setProperty(TitlerShadowV1::Blur, 0);
+        format.setProperty(TitlerShadowV1::OffsetX, 0);
+        format.setProperty(TitlerShadowV1::OffsetY, 100);
+        cursor.mergeCharFormat(format);
+        // This is the native QTextDocument result in RGBA, the video raster format.
+        const QImage body = renderDocument(document);
+        QImage tinted = body;
+        {
+            QPainter painter(&tinted);
+            painter.setCompositionMode(QPainter::CompositionMode_SourceIn);
+            painter.fillRect(tinted.rect(), Qt::green);
+        }
+        // Only Enabled changes after the native reference, preserving format boundaries.
+        format = QTextCharFormat();
+        format.setProperty(TitlerShadowV1::Enabled, true);
+        cursor.mergeCharFormat(format);
+        const auto layers = TitlerShadowV1::render(&document, {}, Qt::NoPen);
+        QVERIFY(!layers.isEmpty());
+        for (const auto rasterFormat : {QImage::Format_RGBA8888,
+                                        QImage::Format_RGBA8888_Premultiplied,
+                                        QImage::Format_ARGB32_Premultiplied}) {
+            QImage expected(body.size(), rasterFormat);
+            expected.fill(Qt::transparent);
+            {
+                QPainter painter(&expected);
+                painter.drawImage(0, 100, tinted);
+            }
+            QImage actual(body.size(), rasterFormat);
+            actual.fill(Qt::transparent);
+            {
+                QPainter painter(&actual);
+                painter.translate(40, 40);
+                TitlerShadowV1::paint(&painter, layers);
+            }
+            int covered = 0;
+            int mismatched = 0;
+            for (int y = 0; y < actual.height(); ++y)
+                for (int x = 0; x < actual.width(); ++x) {
+                    const int expectedAlpha = qAlpha(expected.pixel(x, y));
+                    covered += expectedAlpha > 0;
+                    mismatched += qAlpha(actual.pixel(x, y)) != expectedAlpha;
+                }
+            QVERIFY(covered > 100);
+            QCOMPARE(mismatched, 0);
+        }
     }
 
     void selectiveRendering_data()
