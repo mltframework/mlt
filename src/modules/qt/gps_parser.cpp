@@ -1368,8 +1368,8 @@ int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, in
         R"((\d{4})\D?(\d{2})\D?(\d{2})\D?(\d{2})\D?(\d{2})\D?(\d{2})(?:\D?(\d{1,3}))?)");
     QRegularExpression re_date(R"((\d{4})\D?(\d{2})\D?(\d{2}))");
     QRegularExpression re_time(R"((\d{2})\D?(\d{2})\D?(\d{2})(?:\D?(\d{1,3}))?)");
-    QRegularExpression re_lat(R"(([NS])[: ]?([+-]?\d{1,3}[\.]\d{6}))");
-    QRegularExpression re_lon(R"(([EW])[: ]?([+-]?\d{1,3}[\.]\d{6}))");
+    QRegularExpression re_lat(R"(([NS])[: ]?([+-]?\d{1,3}[\.]\d{4,}))");
+    QRegularExpression re_lon(R"(([EW])[: ]?([+-]?\d{1,3}[\.]\d{4,}))");
 
     const QString first_keyword = "#delimiter=";
     QString format_line, delimiter;
@@ -1695,7 +1695,7 @@ int q_parse_file(gps_private_data gdata)
     QString filename = gdata.last_filename;
     int &swap_to_180 = *gdata.swap180;
 
-    // mlt_log_info(gdata.filter, "in q_parse_file, filename: %s\n", filename);
+    // mlt_log_info(gdata.filter, "in q_parse_file, filename: %s\n", qUtf8Printable(filename));
 
     QFile gps_file(filename);
 

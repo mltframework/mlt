@@ -760,7 +760,7 @@ mlt_filter filter_gpsgraphic_init(mlt_profile profile,
         mlt_properties_set_int(properties, "show_now_text", 1);
         mlt_properties_set_double(properties, "angle", 0);
         mlt_properties_set_int(properties, "thickness", 5);
-        mlt_properties_set(properties, "rect", "70% 70% 20% 20%");
+        mlt_properties_set(properties, "rect", "75% 75% 20% 20%");
         mlt_properties_set_int(properties, "show_grid", 0);
         mlt_properties_set(properties, "legend_unit", "");
         mlt_properties_set_int(properties, "draw_individual_dots", 0);
