@@ -612,14 +612,14 @@ void loadFromXml(producer_ktitle self,
                                                     values.at(2).toInt(),
                                                     values.at(3).toInt(),
                                                     values.at(4).toInt()});
-                        }
-                        if (values.count() >= 5 && values.at(0).toInt() != 0
-                            && !TitlerShadowV1::hasOverrides(txt->document())) {
-                            auto *shadow = new QGraphicsDropShadowEffect();
-                            shadow->setColor(QColor(values.at(1)));
-                            shadow->setBlurRadius(values.at(2).toDouble());
-                            shadow->setOffset(values.at(3).toDouble(), values.at(4).toDouble());
-                            txt->setGraphicsEffect(shadow);
+                            if (values.at(0).toInt() != 0
+                                && !TitlerShadowV1::hasOverrides(txt->document())) {
+                                auto *shadow = new QGraphicsDropShadowEffect();
+                                shadow->setColor(QColor(values.at(1)));
+                                shadow->setBlurRadius(values.at(2).toDouble());
+                                shadow->setOffset(values.at(3).toDouble(), values.at(4).toDouble());
+                                txt->setGraphicsEffect(shadow);
+                            }
                         }
                     }
 
