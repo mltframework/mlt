@@ -2,7 +2,7 @@ schema_version: 7.2
 type: filter
 identifier: gpsgraphic
 title: GPS Graphic
-version: 4
+version: 5
 copyright: Meltytech, LLC
 creator: Daniel F
 license: LGPLv2.1
@@ -17,7 +17,8 @@ parameters:
   - identifier: resource
     title: GPS File/URL
     description: >
-      The fullpath of file containing location (GPS) data. Supported extensions: .gpx, .tcx.
+      The fullpath of the file containing location (GPS) data. Supported extensions: .gpx, .tcx .txt
+      (see the gpstext yml for .txt support details)
     type: string
     required: yes
     readonly: no
