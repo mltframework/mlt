@@ -1,6 +1,6 @@
 /*
  * filter_resize.c -- resizing filter
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -276,8 +276,20 @@ static int filter_get_image(mlt_frame frame,
     mlt_properties_set_int(properties, "resize_height", *height);
 
     // If there will be padding, then we need packed image format.
-    if (*format == mlt_image_yuv420p && (owidth < *width || oheight < *height)) {
-        *format = mlt_image_yuv422;
+    if (owidth < *width || oheight < *height) {
+        switch (*format) {
+        case mlt_image_yuv420p:
+            *format = mlt_image_yuv422;
+            break;
+        case mlt_image_yuv420p10:
+        case mlt_image_yuv444p10:
+        case mlt_image_yuv422p16:
+            // Keep the bit depth
+            *format = mlt_image_rgba64;
+            break;
+        default:
+            break;
+        }
     }
 
     // Now get the image
