@@ -125,9 +125,19 @@ static int filter_get_image(mlt_frame frame,
         int bpp;
         mlt_image_format requested_format = *format;
 
-        if (requested_format == mlt_image_yuv420p) {
-            // The crop function does not support planar.
+        // The crop function does not support planar.
+        switch (requested_format) {
+        case mlt_image_yuv420p:
             requested_format = mlt_image_yuv422;
+            break;
+        case mlt_image_yuv420p10:
+        case mlt_image_yuv444p10:
+        case mlt_image_yuv422p16:
+            // Keep the bit depth
+            requested_format = mlt_image_rgba64;
+            break;
+        default:
+            break;
         }
         if (requested_format == mlt_image_yuv422 && (left & 1 || right & 1)) {
             // Subsampled YUV requires even dimensions. Use RGB for odd dimensions.
