@@ -1,6 +1,6 @@
 /*
  * filter_volume.c -- adjust audio volume
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -254,13 +254,13 @@ static int filter_get_audio(mlt_frame frame,
         for (j = 0; j < *channels; j++) {
             if (channel_mask & (1 << j))
                 for (i = 0; i < *samples; i++) {
+                    int16_t *s = &p[*channels * i + j];
                     g = gain + i * gain_step;
-                    sample = p[0] * g;
-                    p[0] = ROUND(sample);
+                    sample = *s * g;
+                    *s = ROUND(sample);
                     if (g > 1.0 && normalize) {
                         /* use limiter function instead of clipping */
-                        p[*channels * i + j] = ROUND(
-                            samplemax * limiter(sample / (double) samplemax, limiter_level));
+                        *s = ROUND(samplemax * limiter(sample / (double) samplemax, limiter_level));
                     }
                 }
         }
