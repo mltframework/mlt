@@ -47,7 +47,23 @@ struct playlist_entry_s
     mlt_event event;
     int preservation_hack;
     unsigned int revision;
+    int is_blank;
 };
+
+/** Determine if a playlist entry is a blank.
+ *
+ * Whether the producer of an entry is a blank does not change, so it is
+ * determined once when the entry is created. An entry whose producer has been
+ * closed by autoclose counts as a blank, as mlt_producer_is_blank() does for NULL.
+ * \private \memberof mlt_playlist_s
+ * \param entry a playlist entry
+ * \return true if the entry is a blank
+ */
+
+static inline int entry_is_blank(playlist_entry *entry)
+{
+    return entry->producer == NULL || entry->is_blank;
+}
 
 /** Determine if the producer of a playlist entry may have changed.
  *
@@ -287,9 +303,10 @@ static int mlt_playlist_virtual_append(mlt_playlist self,
     mlt_producer producer = NULL;
     mlt_properties properties = NULL;
     mlt_properties parent = NULL;
+    int is_blank = mlt_producer_is_blank(source);
 
     // If we have a cut, then use the in/out points from the cut
-    if (mlt_producer_is_blank(source)) {
+    if (is_blank) {
         mlt_position length = out - in + 1;
         mlt_producer blank = blank_producer(self);
 
@@ -364,6 +381,7 @@ static int mlt_playlist_virtual_append(mlt_playlist self,
         self->list[self->count]->frame_out = out;
         self->list[self->count]->frame_count = out - in + 1;
         self->list[self->count]->repeat = 1;
+        self->list[self->count]->is_blank = is_blank;
         self->list[self->count]->producer_length = mlt_producer_get_playtime(producer);
         entry_force_refresh(self->list[self->count]);
         self->list[self->count]->event = mlt_events_listen(parent,
@@ -1739,7 +1757,7 @@ void mlt_playlist_consolidate_blanks(mlt_playlist self, int keep_length)
             playlist_entry *left = self->list[i - 1];
             playlist_entry *right = self->list[i];
 
-            if (mlt_producer_is_blank(left->producer) && mlt_producer_is_blank(right->producer)) {
+            if (entry_is_blank(left) && entry_is_blank(right)) {
                 mlt_playlist_resize_clip(self, i - 1, 0, left->frame_count + right->frame_count - 1);
                 mlt_playlist_remove(self, i--);
             }
@@ -1747,7 +1765,7 @@ void mlt_playlist_consolidate_blanks(mlt_playlist self, int keep_length)
 
         if (!keep_length && self->count > 0) {
             playlist_entry *last = self->list[self->count - 1];
-            if (mlt_producer_is_blank(last->producer))
+            if (entry_is_blank(last))
                 mlt_playlist_remove(self, self->count - 1);
         }
 
@@ -1766,7 +1784,7 @@ void mlt_playlist_consolidate_blanks(mlt_playlist self, int keep_length)
 
 int mlt_playlist_is_blank(mlt_playlist self, int clip)
 {
-    return self == NULL || mlt_producer_is_blank(mlt_playlist_get_clip(self, clip));
+    return self == NULL || clip < 0 || clip >= self->count || entry_is_blank(self->list[clip]);
 }
 
 /** Determine if the specified position is a blank.
@@ -1779,7 +1797,9 @@ int mlt_playlist_is_blank(mlt_playlist self, int clip)
 
 int mlt_playlist_is_blank_at(mlt_playlist self, mlt_position position)
 {
-    return self == NULL || mlt_producer_is_blank(mlt_playlist_get_clip_at(self, position));
+    int index = 0, total = 0;
+    return self == NULL || mlt_playlist_locate(self, &position, &index, &total) == NULL
+           || entry_is_blank(self->list[index]);
 }
 
 /** Replace the specified clip with a blank and return the clip.
