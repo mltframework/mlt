@@ -46,7 +46,37 @@ struct playlist_entry_s
     mlt_position producer_length;
     mlt_event event;
     int preservation_hack;
+    unsigned int revision;
 };
+
+/** Determine if the producer of a playlist entry may have changed.
+ *
+ * The producer's points are only read again when one of its properties has
+ * changed since the last time this was checked for the entry.
+ * \private \memberof mlt_playlist_s
+ * \param entry a playlist entry with a producer
+ * \return true if the producer may have changed
+ */
+
+static int entry_producer_changed(playlist_entry *entry)
+{
+    unsigned int revision = mlt_properties_revision(MLT_PRODUCER_PROPERTIES(entry->producer));
+    int changed = revision != entry->revision;
+    entry->revision = revision;
+    return changed;
+}
+
+/** Make the next refresh compare an entry with the points of its producer.
+ *
+ * \private \memberof mlt_playlist_s
+ * \param entry a playlist entry
+ */
+
+static void entry_force_refresh(playlist_entry *entry)
+{
+    if (entry->producer)
+        entry->revision = mlt_properties_revision(MLT_PRODUCER_PROPERTIES(entry->producer)) - 1;
+}
 
 /* Forward declarations
 */
@@ -187,7 +217,7 @@ static int mlt_playlist_virtual_refresh(mlt_playlist self)
     for (i = 0; i < self->count; i++) {
         // Get the producer
         mlt_producer producer = self->list[i]->producer;
-        if (producer) {
+        if (producer && entry_producer_changed(self->list[i])) {
             int current_length = mlt_producer_get_playtime(producer);
 
             // Check if the length of the producer has changed
@@ -335,6 +365,7 @@ static int mlt_playlist_virtual_append(mlt_playlist self,
         self->list[self->count]->frame_count = out - in + 1;
         self->list[self->count]->repeat = 1;
         self->list[self->count]->producer_length = mlt_producer_get_playtime(producer);
+        entry_force_refresh(self->list[self->count]);
         self->list[self->count]->event = mlt_events_listen(parent,
                                                            self,
                                                            "producer-changed",
@@ -519,6 +550,7 @@ static mlt_producer mlt_playlist_virtual_set_out(mlt_playlist self)
         // Update the frame_count for the changed clip (hmmm)
         self->list[i]->frame_out = position;
         self->list[i]->frame_count = self->list[i]->frame_out - self->list[i]->frame_in + 1;
+        entry_force_refresh(self->list[i]);
 
         // Refresh the playlist
         mlt_playlist_virtual_refresh(self);
