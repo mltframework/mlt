@@ -284,6 +284,49 @@ private Q_SLOTS:
         QCOMPARE(frame->get_int("consumer.dummy"), 1);
         delete frame;
     }
+
+    void RefreshDetectsCutChange()
+    {
+        Producer p(profile, "color", "red");
+        p.set("length", 100);
+        p.set_in_and_out(0, 99);
+        Playlist pl(profile);
+        for (int i = 0; i < 4; i++)
+            pl.append(p, 0, 9);
+        QCOMPARE(pl.get_playtime(), 40);
+
+        // A cut does not notify the playlist when its points change.
+        Producer *cut = pl.get_clip(0);
+        QVERIFY(cut != nullptr);
+        cut->set_in_and_out(0, 4);
+        delete cut;
+        QCOMPARE(pl.clip_length(0), 10);
+
+        // The next edit refreshes the playlist from the producers.
+        pl.blank(9);
+        QCOMPARE(pl.clip_length(0), 5);
+        QCOMPARE(pl.clip_start(1), 5);
+        QCOMPARE(pl.get_playtime(), 45);
+
+        cut = pl.get_clip(2);
+        QVERIFY(cut != nullptr);
+        cut->set_in_and_out(2, 4);
+        delete cut;
+        QCOMPARE(pl.resize_clip(1, 0, 19), 0);
+        QCOMPARE(pl.clip_length(1), 20);
+        QCOMPARE(pl.clip_length(2), 3);
+        QCOMPARE(pl.clip_start(3), 28);
+        QCOMPARE(pl.get_playtime(), 48);
+
+        // So does a change of the parent producer.
+        cut = pl.get_clip(3);
+        QVERIFY(cut != nullptr);
+        cut->set_in_and_out(0, 0);
+        delete cut;
+        p.set("out", 98);
+        QCOMPARE(pl.clip_length(3), 1);
+        QCOMPARE(pl.get_playtime(), 39);
+    }
 };
 
 QTEST_APPLESS_MAIN(TestPlaylist)

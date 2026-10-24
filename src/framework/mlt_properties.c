@@ -38,6 +38,7 @@
 #include <locale.h>
 #include <pthread.h>
 #include <stdarg.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -66,6 +67,7 @@ typedef struct
     mlt_properties *children_properties;
     char **children_names;
     int children_count;
+    atomic_uint revision;
 } property_list;
 
 /* Memory leak checks */
@@ -485,6 +487,26 @@ int mlt_properties_ref_count(mlt_properties self)
     return 0;
 }
 
+/** Get the revision of a properties list.
+ *
+ * The revision changes whenever a property is set, cleared or renamed, so
+ * comparing it with a previously saved value tells whether any property may
+ * have changed since then. The value itself has no meaning and wraps around.
+ *
+ * \public \memberof mlt_properties_s
+ * \param self a properties list
+ * \return the current revision
+ */
+
+unsigned int mlt_properties_revision(mlt_properties self)
+{
+    if (self != NULL) {
+        property_list *list = self->local;
+        return atomic_load(&list->revision);
+    }
+    return 0;
+}
+
 /** Set a properties list to be a mirror copy of another.
  *
  * Note that this does not copy all existing properties. Rather, you must
@@ -736,6 +758,7 @@ static mlt_property mlt_properties_fetch(mlt_properties self, const char *name)
 
 static void fire_property_changed(mlt_properties self, const char *name)
 {
+    atomic_fetch_add(&((property_list *) self->local)->revision, 1);
     mlt_events_fire(self, "property-changed", mlt_event_data_from_string(name));
 }
 
@@ -1419,6 +1442,8 @@ int mlt_properties_rename(mlt_properties self, const char *source, const char *d
                 }
             }
         }
+        if (found)
+            atomic_fetch_add(&list->revision, 1);
         mlt_properties_unlock(self);
     }
     return value != NULL;

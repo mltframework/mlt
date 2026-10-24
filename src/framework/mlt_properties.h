@@ -3,7 +3,7 @@
  * \brief Properties class declaration
  * \see mlt_properties_s
  *
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -56,6 +56,7 @@ MLT_EXPORT int mlt_properties_preset(mlt_properties self, const char *name);
 MLT_EXPORT int mlt_properties_inc_ref(mlt_properties self);
 MLT_EXPORT int mlt_properties_dec_ref(mlt_properties self);
 MLT_EXPORT int mlt_properties_ref_count(mlt_properties self);
+MLT_EXPORT unsigned int mlt_properties_revision(mlt_properties self);
 MLT_EXPORT void mlt_properties_mirror(mlt_properties self, mlt_properties that);
 MLT_EXPORT int mlt_properties_inherit(mlt_properties self, mlt_properties that);
 MLT_EXPORT int mlt_properties_copy(mlt_properties self, mlt_properties that, const char *prefix);

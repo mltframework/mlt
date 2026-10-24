@@ -1583,6 +1583,45 @@ private Q_SLOTS:
         QCOMPARE(p.get_int("foo"), 123);
         QCOMPARE(p.get_double("foo"), 123.4);
     }
+
+    void RevisionChangesOnModification()
+    {
+        Properties p;
+        mlt_properties props = p.get_properties();
+        unsigned int revision = mlt_properties_revision(props);
+        p.set("foo", "bar");
+        QVERIFY(mlt_properties_revision(props) != revision);
+        revision = mlt_properties_revision(props);
+        p.set("foo", 10);
+        QVERIFY(mlt_properties_revision(props) != revision);
+        revision = mlt_properties_revision(props);
+        p.anim_set("anim", 1.0, 5);
+        QVERIFY(mlt_properties_revision(props) != revision);
+        revision = mlt_properties_revision(props);
+        p.set("data", &revision, 0);
+        QVERIFY(mlt_properties_revision(props) != revision);
+        revision = mlt_properties_revision(props);
+        p.clear("foo");
+        QVERIFY(mlt_properties_revision(props) != revision);
+        revision = mlt_properties_revision(props);
+        QCOMPARE(mlt_properties_rename(props, "anim", "renamed"), 0);
+        QVERIFY(mlt_properties_revision(props) != revision);
+    }
+
+    void RevisionUnchangedOnRead()
+    {
+        Properties p;
+        p.set("foo", "123");
+        p.anim_set("anim", 1.0, 5);
+        mlt_properties props = p.get_properties();
+        const unsigned int revision = mlt_properties_revision(props);
+        QCOMPARE(p.get_int("foo"), 123);
+        QCOMPARE(p.get("foo"), "123");
+        QCOMPARE(p.anim_get_double("anim", 5), 1.0);
+        QCOMPARE(p.get("missing"), nullptr);
+        QCOMPARE(mlt_properties_rename(props, "missing", "other"), 0);
+        QCOMPARE(mlt_properties_revision(props), revision);
+    }
 };
 
 QTEST_APPLESS_MAIN(TestProperties)
