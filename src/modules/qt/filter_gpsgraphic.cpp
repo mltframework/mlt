@@ -633,26 +633,44 @@ static void process_filter_properties(mlt_filter filter, mlt_frame frame)
                                / 1000);
 }
 
-//checks if a new file is selected and if so, does private_data cleanup and calls qxml_parse_file
+//checks if a new file is selected and if so, does private_data cleanup and calls q_parse_file
 //+ computes some one time pdata values
 static void process_file(mlt_filter filter, mlt_frame frame)
 {
     private_data *pdata = (private_data *) filter->child;
     mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
     char *filename = mlt_properties_get(properties, "resource");
+    char auto_filename[PATH_MAX] = {0};
+    bool try_auto_filename = false;
 
-    //if there's no file selected just return
-    if (!filename || !strcmp(filename, ""))
-        return;
+    //if there's no file selected, try to find one, and just return if failure or already tried
+    if (!filename || !strcmp(filename, "")) {
+        if (pdata->checked_gps_companion)
+            return;
+
+        //get the parent clip's path
+        mlt_producer producer = mlt_producer_cut_parent(mlt_frame_get_original_producer(frame));
+        char *clip_path = mlt_properties_get(MLT_PRODUCER_PROPERTIES(producer), "resource");
+        bool ret = q_auto_gps_file(clip_path, auto_filename);
+        pdata->checked_gps_companion = true;
+
+        if (ret) {
+            filename = auto_filename;
+            try_auto_filename = true;
+        } else
+            return;
+    }
 
     //check if the file has been changed, if not, current data is ok, do nothing
     if (strcmp(pdata->last_filename, filename)) {
-        // mlt_log_info(filter, "Reading new file: last_filename (%s) != entered_filename (%s), swap_180 = %d\n", pdata->last_filename, filename, swap);
         default_priv_data(pdata);
+
         strncpy(pdata->last_filename, filename, sizeof(pdata->last_filename) - 1);
         pdata->last_filename[sizeof(pdata->last_filename) - 1] = '\0';
 
-        if (qxml_parse_file(filter_to_gps_data(filter)) == 1) {
+        if (q_parse_file(filter_to_gps_data(filter)) == 1) {
+            if (try_auto_filename)
+                mlt_properties_set_string(properties, "resource", filename);
             get_first_gps_time(filter_to_gps_data(filter));
             get_last_gps_time(filter_to_gps_data(filter));
 
@@ -665,6 +683,8 @@ static void process_file(mlt_filter filter, mlt_frame frame)
             //store name in pdata or it'll retry reading every frame if bad file
             strncpy(pdata->last_filename, filename, sizeof(pdata->last_filename) - 1);
             pdata->last_filename[sizeof(pdata->last_filename) - 1] = '\0';
+            if (try_auto_filename)
+                pdata->checked_gps_companion = true;
         }
     }
 }
@@ -740,7 +760,7 @@ mlt_filter filter_gpsgraphic_init(mlt_profile profile,
         mlt_properties_set_int(properties, "show_now_text", 1);
         mlt_properties_set_double(properties, "angle", 0);
         mlt_properties_set_int(properties, "thickness", 5);
-        mlt_properties_set(properties, "rect", "10% 10% 30% 30%");
+        mlt_properties_set(properties, "rect", "75% 75% 20% 20%");
         mlt_properties_set_int(properties, "show_grid", 0);
         mlt_properties_set(properties, "legend_unit", "");
         mlt_properties_set_int(properties, "draw_individual_dots", 0);
