@@ -327,6 +327,54 @@ private Q_SLOTS:
         QCOMPARE(pl.clip_length(3), 1);
         QCOMPARE(pl.get_playtime(), 39);
     }
+
+    void BlankStatus()
+    {
+        Producer p(profile, "color", "red");
+        p.set("length", 100);
+        p.set_in_and_out(0, 99);
+        Playlist pl(profile);
+        pl.blank(4);
+        pl.append(p, 0, 9);
+        pl.blank(4);
+        pl.blank(2);
+        pl.append(p, 0, 9);
+        pl.blank(6);
+        QCOMPARE(pl.count(), 6);
+        QVERIFY(pl.is_blank(0));
+        QVERIFY(!pl.is_blank(1));
+        QVERIFY(pl.is_blank(2));
+        QVERIFY(pl.is_blank(3));
+        QVERIFY(!pl.is_blank(4));
+        QVERIFY(pl.is_blank(5));
+        QVERIFY(pl.is_blank(-1));
+        QVERIFY(pl.is_blank(6));
+        QVERIFY(pl.is_blank_at(0));
+        QVERIFY(!pl.is_blank_at(5));
+        QVERIFY(pl.is_blank_at(15));
+        QVERIFY(pl.is_blank_at(1000));
+
+        pl.consolidate_blanks(0);
+        QCOMPARE(pl.count(), 4);
+        QVERIFY(pl.is_blank(0));
+        QVERIFY(!pl.is_blank(1));
+        QVERIFY(pl.is_blank(2));
+        QCOMPARE(pl.clip_length(2), 8);
+        QVERIFY(!pl.is_blank(3));
+        QCOMPARE(pl.get_playtime(), 33);
+
+        // A clip replaced by a blank is merged with its neighbours.
+        Producer *clip = pl.replace_with_blank(3);
+        QVERIFY(clip != nullptr);
+        delete clip;
+        QVERIFY(pl.is_blank(3));
+        pl.consolidate_blanks(1);
+        QCOMPARE(pl.count(), 3);
+        QCOMPARE(pl.clip_length(2), 18);
+        pl.consolidate_blanks(0);
+        QCOMPARE(pl.count(), 2);
+        QCOMPARE(pl.get_playtime(), 15);
+    }
 };
 
 QTEST_APPLESS_MAIN(TestPlaylist)
