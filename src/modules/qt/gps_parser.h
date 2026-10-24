@@ -22,6 +22,7 @@
 #include <cmath>
 #include <framework/mlt.h>
 #include <QFile>
+#include <QTextStream>
 #include <QXmlStreamReader>
 
 // #include <chrono>
@@ -31,25 +32,20 @@
 #define GPS_UNINIT -9999
 #define MAX_PRINT_TIMESTAMP_NS 32
 
-typedef struct
+struct gps_point_raw
 {
     double lat, lon, lat_projected, speed, total_dist, ele, hr, bearing, cad, atemp, power;
     int64_t time; //epoch milliseconds
-} gps_point_raw;
+    bool operator<(const gps_point_raw &pt2) const { return time < pt2.time; }
+};
 
-typedef struct gps_point_raw_list
-{
-    gps_point_raw gp;
-    struct gps_point_raw_list *next;
-} gps_point_ll;
-
-typedef struct
+struct gps_point_proc
 {
     double lat, lon, lat_projected, speed, speed_vertical, speed_3d, total_dist, ele, hr, bearing,
         cad, atemp, power;
     int64_t time;
     double d_elev, elev_up, elev_down, dist_up, dist_down, dist_flat, grade_p;
-} gps_point_proc;
+};
 
 //0 is a valid value for many fields, use GPS_UNINIT (-9999) to differentiate missing values
 static const gps_point_raw uninit_gps_raw_point = {.lat = GPS_UNINIT,
@@ -88,7 +84,7 @@ static const gps_point_proc uninit_gps_proc_point = {.lat = GPS_UNINIT,
                                                      .grade_p = GPS_UNINIT};
 
 //structure used to ease argument passing between filter and GPS parser api
-typedef struct
+struct gps_private_data
 {
     gps_point_raw *gps_points_r;         //raw gps data from file
     gps_point_proc *gps_points_p;        //processed gps data
@@ -105,10 +101,12 @@ typedef struct
     int last_smooth_lvl;
     char *last_filename; //gps file fullpath
     mlt_filter filter;
-} gps_private_data;
+};
 
 #define has_valid_location(x) (((x).lat) != GPS_UNINIT && ((x).lon) != GPS_UNINIT)
 #define has_valid_location_ptr(x) ((x) && ((x)->lat) != GPS_UNINIT && ((x)->lon) != GPS_UNINIT)
+#define is_valid_latitude(lat) ((lat) >= -90 && (lat) <= 90)
+#define is_valid_longitude(lon) ((lon) >= -180 && (lon) <= 180)
 
 #define MATH_PI 3.14159265358979323846
 #define to_rad(x) ((x) *MATH_PI / 180.0)
@@ -133,6 +131,10 @@ void process_gps_smoothing(gps_private_data gdata, char do_processing);
 double project_latitude(double lat);
 double unproject_latitude(double lat_projected);
 
+extern QStringList accepted_distance_formats;
+extern QStringList accepted_speed_formats;
+bool qstring_contains_any_qstringlist(const QString &main_string, const QStringList &list);
+
 double weighted_middle_double(
     double v1, int64_t t1, double v2, int64_t t2, int64_t new_t, int max_gps_diff_ms);
 int64_t weighted_middle_int64(
@@ -142,9 +144,15 @@ gps_point_proc weighted_middle_point_proc(gps_point_proc *p1,
                                           int64_t new_t,
                                           int max_gps_diff_ms);
 
-void qxml_parse_gpx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *count_pts);
-void qxml_parse_tcx(QXmlStreamReader &reader, gps_point_ll **gps_list, int *count_pts);
-int qxml_parse_file(gps_private_data gdata);
+void qxml_parse_gpx(QXmlStreamReader &reader,
+                    QVector<gps_point_raw> &gps_points_file,
+                    int &no_time_count);
+void qxml_parse_tcx(QXmlStreamReader &reader,
+                    QVector<gps_point_raw> &gps_points_file,
+                    int &no_time_count);
+int q_parse_txt(QTextStream &reader, QVector<gps_point_raw> &gps_points_file, int &no_time_count);
+int q_auto_gps_file(const char *clip_path, char *auto_filename);
+int q_parse_file(gps_private_data gdata);
 
 #define swap_180_if_needed(lon) (pdata->swap_180 ? get_180_swapped(lon) : lon)
 double get_180_swapped(double lon);
