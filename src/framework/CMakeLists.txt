@@ -133,8 +133,13 @@ set_target_properties(mlt PROPERTIES
 )
 
 if(WIN32)
+  include(CheckSymbolExists)
+  set(CMAKE_REQUIRED_LIBRARIES Threads::Threads)
+  check_symbol_exists(nanosleep "pthread.h;pthread_time.h" HAVE_PTHREAD_NANOSLEEP_WIN32)
+  unset(CMAKE_REQUIRED_LIBRARIES)
+
   if(MINGW)
-    target_link_libraries(mlt PRIVATE ${MLT_PTHREAD_LIBS})
+    target_link_libraries(mlt PRIVATE Threads::Threads)
     target_link_options(mlt PRIVATE -Wl,--output-def,${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmlt-${MLT_VERSION_MAJOR}.def)
     install(FILES "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/libmlt-${MLT_VERSION_MAJOR}.def" DESTINATION ${CMAKE_INSTALL_LIBDIR})
   endif()
@@ -144,6 +149,8 @@ if(WIN32)
     target_compile_definitions(mlt PRIVATE NODEPLOY)
   endif()
 endif()
+
+configure_file(mlt_config.h.in ${CMAKE_CURRENT_BINARY_DIR}/mlt_config.h)
 
 if(NOT (WIN32 OR RELOCATABLE))
   if(APPLE)
@@ -167,6 +174,7 @@ install(TARGETS mlt
 
 # Install the generated export header
 install(FILES ${CMAKE_CURRENT_BINARY_DIR}/mlt_export.h 
+              ${CMAKE_CURRENT_BINARY_DIR}/mlt_config.h
   DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/mlt-${MLT_VERSION_MAJOR}/framework
 )
 
