@@ -521,6 +521,13 @@ public:
 
         // Loop until told not to
         while (running) {
+            // This pull satisfies every refresh already latched. A refresh that
+            // arrives during the pull stays latched so a paused consumer will
+            // fetch another frame instead of parking on a stale one.
+            pthread_mutex_lock(&refresh_mutex);
+            refresh_count = 0;
+            pthread_mutex_unlock(&refresh_mutex);
+
             // Get a frame from the attached producer
             frame = mlt_consumer_rt_frame(getConsumer());
 
@@ -532,10 +539,8 @@ public:
                 // Get the speed of the frame
                 double speed = mlt_properties_get_double(properties, "_speed");
 
-                // Get refresh request for the current frame
-                int refresh = mlt_properties_get_int(consumer_props, "refresh");
-
-                // Clear refresh
+                // Clear refresh. A zero value is not a pause-wake: the listener
+                // latches only when the property is non-zero.
                 mlt_events_block(consumer_props, consumer_props);
                 mlt_properties_set_int(consumer_props, "refresh", 0);
                 mlt_events_unblock(consumer_props, consumer_props);
@@ -573,13 +578,17 @@ public:
                     // Calculate the next playtime
                     playtime += duration;
                 } else if (running) {
-                    pthread_mutex_lock(&refresh_mutex);
-                    if (refresh == 0 && refresh_count <= 0) {
-                        play_video(frame);
-                        pthread_cond_wait(&refresh_cond, &refresh_mutex);
-                    }
+                    // Speed 0: show this frame once, then wait until a refresh
+                    // or stop. Do not hold refresh_mutex across the notification:
+                    // the handler may set "refresh" and take that same lock.
+                    // stop() clears running and broadcasts; that must not be lost
+                    // if it arrives before the wait.
+                    play_video(frame);
                     mlt_frame_close(frame);
-                    refresh_count--;
+                    frame = nullptr;
+                    pthread_mutex_lock(&refresh_mutex);
+                    while (running && refresh_count == 0)
+                        pthread_cond_wait(&refresh_cond, &refresh_mutex);
                     pthread_mutex_unlock(&refresh_mutex);
                 } else {
                     mlt_frame_close(frame);
@@ -625,29 +634,16 @@ public:
 
         pthread_mutex_lock(&audio_mutex);
 
-        // Block until audio received
-        while (running && len > audio_avail)
-            pthread_cond_wait(&audio_cond, &audio_mutex);
-
-        if (audio_avail >= len) {
-            // Place in the audio buffer
-            memcpy(outbuf, audio_buffer, len);
-
-            // Remove len from the audio available
-            audio_avail -= len;
-
-            // Remove the samples
-            memmove(audio_buffer, audio_buffer + len, audio_avail);
-        } else {
-            // Just to be safe, wipe the stream first
-            memset(outbuf, 0, len);
-
-            // Copy what we have
-            memcpy(outbuf, audio_buffer, audio_avail);
-
-            // No audio left
-            audio_avail = 0;
+        // Never block the device thread. While paused the consumer waits for
+        // a refresh and does not feed this buffer; return silence for the gap.
+        int bytes = audio_avail >= len ? len : audio_avail;
+        if (bytes > 0) {
+            memcpy(outbuf, audio_buffer, bytes);
+            audio_avail -= bytes;
+            memmove(audio_buffer, audio_buffer + bytes, audio_avail);
         }
+        if (bytes < len)
+            memset((uint8_t *) outbuf + bytes, 0, len - bytes);
 
         if (volume != 1.0) {
             float *p = outbuf;
@@ -702,6 +698,12 @@ public:
 
         if (init_audio == 0) {
             mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
+            double speed = mlt_properties_get_double(properties, "_speed");
+            // Paused without scrub: the device callback already fills silence.
+            // Do not wait on the ring just to enqueue a silent frame.
+            if (speed == 0.0 && !scrub)
+                return init_audio;
+
             int samples_copied = 0;
             int dst_stride = out_channels * sizeof(*pcm);
 
@@ -721,7 +723,7 @@ public:
                     }
                     int dst_bytes = samples_to_copy * dst_stride;
 
-                    if (scrub || mlt_properties_get_double(properties, "_speed") == 1) {
+                    if (scrub || speed == 1.0) {
                         if (channels == out_channels) {
                             memcpy(&audio_buffer[audio_avail], pcm, dst_bytes);
                             pcm += samples_to_copy * channels;
@@ -850,10 +852,14 @@ static void consumer_refresh_cb(mlt_consumer sdl, mlt_consumer consumer, mlt_eve
     const char *name = mlt_event_data_to_string(event_data);
     if (name && !strcmp(name, "refresh")) {
         RtAudioConsumer *rtaudio = (RtAudioConsumer *) consumer->child;
-        pthread_mutex_lock(&rtaudio->refresh_mutex);
-        rtaudio->refresh_count = rtaudio->refresh_count <= 0 ? 1 : rtaudio->refresh_count + 1;
-        pthread_cond_broadcast(&rtaudio->refresh_cond);
-        pthread_mutex_unlock(&rtaudio->refresh_mutex);
+        // Clearing refresh writes 0 and must not wake a paused consumer.
+        // One latch covers every refresh that arrives before the next pull.
+        if (mlt_properties_get_int(MLT_CONSUMER_PROPERTIES(rtaudio->getConsumer()), "refresh")) {
+            pthread_mutex_lock(&rtaudio->refresh_mutex);
+            rtaudio->refresh_count = 1;
+            pthread_cond_broadcast(&rtaudio->refresh_cond);
+            pthread_mutex_unlock(&rtaudio->refresh_mutex);
+        }
     }
 }
 
