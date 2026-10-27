@@ -532,7 +532,6 @@ void loadFromXml(producer_ktitle self,
                         qWarning() << "Ignoring invalid title rich-text gradient metadata";
                     }
                     txt->document()->setDocumentMargin(0);
-                    TitlerGradientV1::applyBrushes(txt->document(), int(boxWidth), int(boxHeight));
 
                     QTextOption option = txt->document()->defaultTextOption();
                     if (tabWidth > 0) {
@@ -592,16 +591,35 @@ void loadFromXml(producer_ktitle self,
                         txt->setTextWidth(boxWidth);
                     }
 
+                    // Selective brushes use the final laid-out glyph positions. A
+                    // legacy object gradient retains precedence over run metadata.
+                    if (txtProperties.namedItem("gradient").isNull()) {
+                        TitlerGradientV1::applyBrushes(txt->document(),
+                                                       int(boxWidth),
+                                                       int(boxHeight));
+                    }
+
+                    if (!TitlerShadowV1::restore(contentElement, txt->document())) {
+                        qWarning() << "Ignoring invalid title rich-text shadow metadata";
+                    }
                     if (!txtProperties.namedItem("shadow").isNull()) {
                         const QStringList values
                             = txtProperties.namedItem("shadow").nodeValue().split(";");
 
-                        if (values.count() >= 5 && values.at(0).toInt() != 0) {
-                            auto *shadow = new QGraphicsDropShadowEffect();
-                            shadow->setColor(QColor(values.at(1)));
-                            shadow->setBlurRadius(values.at(2).toDouble());
-                            shadow->setOffset(values.at(3).toDouble(), values.at(4).toDouble());
-                            txt->setGraphicsEffect(shadow);
+                        if (values.count() >= 5) {
+                            txt->setShadowFallback({values.at(0).toInt() != 0,
+                                                    QColor(values.at(1)),
+                                                    values.at(2).toInt(),
+                                                    values.at(3).toInt(),
+                                                    values.at(4).toInt()});
+                            if (values.at(0).toInt() != 0
+                                && !TitlerShadowV1::hasOverrides(txt->document())) {
+                                auto *shadow = new QGraphicsDropShadowEffect();
+                                shadow->setColor(QColor(values.at(1)));
+                                shadow->setBlurRadius(values.at(2).toDouble());
+                                shadow->setOffset(values.at(3).toDouble(), values.at(4).toDouble());
+                                txt->setGraphicsEffect(shadow);
+                            }
                         }
                     }
 

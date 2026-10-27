@@ -65,6 +65,22 @@ if(MOD_QT6)
   )
 endif()
 
+
+if(MOD_QT6 AND BUILD_TESTS_WITH_QT6)
+  add_qt_test(
+    TEST_NAME richtextgradient
+    LINK_LIBRARIES Qt6::Gui Qt6::Widgets Qt6::Xml
+  )
+  add_qt_test(
+    TEST_NAME richtextshadow
+    LINK_LIBRARIES Qt6::Gui Qt6::Widgets Qt6::Xml
+  )
+  set_property(
+    TEST "QtTest:richtextgradient" "QtTest:richtextshadow"
+    APPEND PROPERTY ENVIRONMENT "QT_QPA_PLATFORM=offscreen"
+  )
+endif()
+
 if(Kwalify_FOUND)
   file(GLOB YML_FILES "${CMAKE_SOURCE_DIR}/src/modules/*/*.yml")
   foreach(YML_FILE ${YML_FILES})
