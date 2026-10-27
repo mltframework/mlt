@@ -20,10 +20,6 @@ else()
   target_link_libraries(mltsdl2 PRIVATE m)
 endif()
 
-if(MINGW)
-  target_link_libraries(mltsdl2 PRIVATE ${MLT_PTHREAD_LIBS})
-endif()
-
 set_target_properties(mltsdl2 PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltsdl2 LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})

@@ -332,12 +332,13 @@ typedef void *(*mlt_thread_function_t)(void *);      /**< generic thread functio
 #endif
 
 #ifdef _WIN32
+#include "mlt_config.h"
 #include <pthread.h>
 /* Win32 compatibility function declarations */
 #if !defined(__MINGW32__)
 MLT_EXPORT int usleep(unsigned int useconds);
 #endif
-#ifndef WIN_PTHREADS_TIME_H
+#ifndef HAVE_PTHREAD_NANOSLEEP_WIN32
 MLT_EXPORT int nanosleep(const struct timespec *rqtp, struct timespec *rmtp);
 #endif
 MLT_EXPORT int setenv(const char *name, const char *value, int overwrite);

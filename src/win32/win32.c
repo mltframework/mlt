@@ -29,6 +29,7 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <mlt_config.h>
 #include "../framework/mlt_properties.h"
 #include "../framework/mlt_log.h"
 
@@ -46,7 +47,7 @@ int usleep(unsigned int useconds)
 	return 0;
 }
 
-#ifndef WIN_PTHREADS_TIME_H
+#ifndef HAVE_PTHREAD_NANOSLEEP_WIN32
 int nanosleep(const struct timespec * rqtp, struct timespec * rmtp)
 {
 	if (rqtp->tv_nsec > 999999999) {
