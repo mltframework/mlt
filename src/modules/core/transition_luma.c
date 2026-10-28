@@ -138,6 +138,13 @@ static uint8_t *add_opaque_alpha(mlt_frame frame, int width, int height)
     return alpha;
 }
 
+// Makes filter_resize pad with transparency as it does for rgba, unless already specified.
+static void request_transparent_padding(mlt_frame frame)
+{
+    if (!mlt_frame_get_resize_alpha(frame, NULL))
+        mlt_frame_set_resize_alpha(frame, 1, 0);
+}
+
 struct dissolve_opaque_context
 {
     uint8_t *dst_image;
@@ -200,9 +207,8 @@ static inline int dissolve_yuv422(mlt_frame frame,
     int mix = weight * (1 << 16);
 
     if (fix_background_alpha) {
-        // Tell filter_resize to make the padding transparent (see filter_resize.c).
-        mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "fix_background_alpha", 1);
-        mlt_properties_set_int(MLT_FRAME_PROPERTIES(that), "fix_background_alpha", 1);
+        request_transparent_padding(frame);
+        request_transparent_padding(that);
     }
 
     mlt_frame_get_image(frame, &p_dest, &format, &width, &height, 1);
@@ -411,9 +417,8 @@ static void luma_composite_yuv422(mlt_frame a_frame,
     int stride_dest;
 
     if (fix_background_alpha) {
-        // Tell filter_resize to make the padding transparent (see filter_resize.c).
-        mlt_properties_set_int(MLT_FRAME_PROPERTIES(a_frame), "fix_background_alpha", 1);
-        mlt_properties_set_int(MLT_FRAME_PROPERTIES(b_frame), "fix_background_alpha", 1);
+        request_transparent_padding(a_frame);
+        request_transparent_padding(b_frame);
     }
 
     if (mlt_properties_get(&a_frame->parent, "distort"))

@@ -1,6 +1,6 @@
 /*
  * transition_composite.c -- compose one image over another using alpha channel
- * Copyright (C) 2003-2022 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -722,7 +722,9 @@ static int get_b_frame_image(mlt_transition self,
     // Get the properties objects
     mlt_properties b_props = MLT_FRAME_PROPERTIES(b_frame);
     mlt_properties properties = MLT_TRANSITION_PROPERTIES(self);
-    uint8_t resize_alpha = mlt_properties_get_int(b_props, "resize_alpha");
+    int saved_resize_alpha;
+    int has_resize_alpha = mlt_frame_get_resize_alpha(b_frame, &saved_resize_alpha);
+    uint8_t resize_alpha = saved_resize_alpha;
     double output_ar = mlt_profile_sar(mlt_service_profile(MLT_TRANSITION_SERVICE(self)));
 
     // Do not scale if we are cropping - the compositing rectangle can crop the b image
@@ -813,7 +815,7 @@ static int get_b_frame_image(mlt_transition self,
 
     // If we're not aligned, we want a non-transparent background
     if (mlt_properties_get_int(properties, "aligned") == 0)
-        mlt_properties_set_int(b_props, "resize_alpha", 255);
+        mlt_frame_set_resize_alpha(b_frame, 1, 255);
 
     // Take into consideration alignment for optimisation (titles are a special case)
     if (!mlt_properties_get_int(properties, "titles")
@@ -835,7 +837,7 @@ static int get_b_frame_image(mlt_transition self,
         geometry->sw = *width;
 
     // Set the frame back
-    mlt_properties_set_int(b_props, "resize_alpha", resize_alpha);
+    mlt_frame_set_resize_alpha(b_frame, has_resize_alpha, saved_resize_alpha);
 
     return !error && image;
 }
