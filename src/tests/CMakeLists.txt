@@ -47,6 +47,11 @@ add_qt_test(TEST_NAME repository)
 add_qt_test(TEST_NAME service)
 add_qt_test(TEST_NAME tractor)
 add_qt_test(TEST_NAME xml)
+add_qt_test(
+  TEST_NAME dissolve
+  INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/src/modules/avformat"
+  SOURCE_FILES "${CMAKE_SOURCE_DIR}/src/modules/avformat/conceal.c"
+)
 
 if(MOD_AVFORMAT)
   add_qt_test(TEST_NAME mod_avformat)
