@@ -27,6 +27,7 @@
 #endif
 
 #include "common.h"
+#include "conceal.h"
 
 // MLT Header files
 #include <framework/mlt_cache.h>
@@ -129,10 +130,7 @@ struct producer_avformat_s
     int packets_thread_stop; // non-zero when packets_thread is to stop
     int is_thread_init;
     AVRational video_time_base;
-    mlt_frame last_good_frame; // for video error concealment
-    int last_good_position;    // for video error concealment
-    // Image cache key of the last good frame when last_good_frame is NULL.
-    mlt_position last_good_cache_position;
+    avformat_conceal conceal; // last good picture for video error concealment
     AVFilterGraph *vfilter_graph;
     AVFilterContext *vfilter_in;
     AVFilterContext *vfilter_out;
@@ -232,7 +230,7 @@ mlt_producer producer_avformat_init(mlt_profile profile, const char *service, ch
     if (file) {
         // Construct the producer
         producer_avformat self = calloc(1, sizeof(struct producer_avformat_s));
-        self->last_good_cache_position = POSITION_INVALID;
+        avformat_conceal_init(&self->conceal);
         producer = calloc(1, sizeof(struct mlt_producer_s));
 
         // Initialise it
@@ -2758,15 +2756,6 @@ static void init_cache(mlt_properties properties, mlt_cache *cache)
         mlt_cache_set_size(*cache, cache_size);
 }
 
-// Copy the last good frame out of the image cache before the cache can lose it.
-static void keep_last_good_frame(producer_avformat self)
-{
-    if (!self->last_good_frame && self->image_cache
-        && self->last_good_cache_position != POSITION_INVALID)
-        self->last_good_frame = mlt_cache_get_frame(self->image_cache,
-                                                    self->last_good_cache_position);
-}
-
 /** Get an image from a frame.
 */
 
@@ -2813,7 +2802,7 @@ static int producer_get_image(mlt_frame frame,
 
     if (self->reset_image_cache) {
         self->reset_image_cache = 0;
-        keep_last_good_frame(self);
+        avformat_conceal_detach(&self->conceal, self->image_cache);
         mlt_cache_close(self->image_cache);
         self->image_cache = NULL;
         av_frame_free(&self->video_frame);
@@ -3046,7 +3035,7 @@ static int producer_get_image(mlt_frame frame,
                                 mlt_log_warning(MLT_PRODUCER_SERVICE(producer),
                                                 "video decoding error %d\n",
                                                 error);
-                                self->last_good_position = POSITION_INVALID;
+                                avformat_conceal_reset_source(&self->conceal);
                             }
                         } else {
                             if (self->hwaccel.device_ctx
@@ -3254,8 +3243,7 @@ static int producer_get_image(mlt_frame frame,
     if (image_size > 0) {
         mlt_properties_set_int(frame_properties, "format", *format);
         // An earlier frame does not become the last good one, but caching it may evict that.
-        if (self->current_position < self->last_good_position)
-            keep_last_good_frame(self);
+        avformat_conceal_detach_if_older(&self->conceal, self->image_cache, self->current_position);
         // Cache the image for rapid repeated access.
         if (self->image_cache) {
             if (is_album_art(self)) {
@@ -3268,20 +3256,14 @@ static int producer_get_image(mlt_frame frame,
             }
         }
         // For error concealment; avoid a second copy when the image cache already has one.
-        if (self->current_position >= self->last_good_position) {
-            self->last_good_position = self->current_position;
-            if (self->last_good_frame)
-                mlt_frame_close(self->last_good_frame);
-            self->last_good_frame = self->image_cache ? NULL : mlt_frame_clone(frame, 1);
-            self->last_good_cache_position = self->image_cache ? position : POSITION_INVALID;
-        }
+        avformat_conceal_record(&self->conceal,
+                                frame,
+                                self->image_cache,
+                                self->current_position,
+                                position);
     } else {
         // Use last known good frame if there was a decoding failure.
-        mlt_frame original = NULL;
-        if (self->last_good_frame)
-            original = mlt_frame_clone(self->last_good_frame, 1);
-        else if (self->image_cache && self->last_good_cache_position != POSITION_INVALID)
-            original = mlt_cache_get_frame(self->image_cache, self->last_good_cache_position);
+        mlt_frame original = avformat_conceal_fetch(&self->conceal, self->image_cache);
         if (original) {
             mlt_properties orig_props = MLT_FRAME_PROPERTIES(original);
             int size = 0;
@@ -4499,7 +4481,7 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
         producer_avformat created = calloc(1, sizeof(struct producer_avformat_s));
         if (!created)
             break;
-        created->last_good_cache_position = POSITION_INVALID;
+        avformat_conceal_init(&created->conceal);
         created->parent = producer;
         // The mutexes must exist before the state is visible to anyone else: it can
         // be evicted and destroyed, or used by the code below, right away.
@@ -4678,8 +4660,7 @@ static void producer_avformat_close(producer_avformat self)
     // Cleanup caches.
     mlt_cache_close(self->image_cache);
     mlt_cache_close(self->audio_cache);
-    if (self->last_good_frame)
-        mlt_frame_close(self->last_good_frame);
+    avformat_conceal_close(&self->conceal);
 
     // Cleanup the mutexes
     if (self->is_mutex_init) {

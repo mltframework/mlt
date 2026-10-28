@@ -7,6 +7,8 @@ add_library(mltavformat MODULE
   filter_sws_colortransform.c
   # avformat
   producer_avformat.c
+  conceal.c
+  conceal.h
   consumer_avformat.c
   # avfilter
   filter_avfilter.c
