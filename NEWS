@@ -4,6 +4,10 @@ MLT Release Notes
 Version 7.43.0
 
 Modules
+  - Fixed `subtitle` and `subtitle_feed` dropping every cue after a blank
+    line. An empty line is no longer read as a cue number.
+  - Fixed `Subtitles::writeToSrtString()` leaving its output string unchanged.
+    Cue text no longer keeps trailing blank lines that split the next cue.
   - Fixed the `rtaudio` consumer stuttering while paused (producer speed 0).
     Pausing no longer pulls frames continuously, and the device callback
     returns silence instead of blocking when the audio buffer is empty.

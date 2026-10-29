@@ -52,6 +52,11 @@ add_qt_test(
   INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/src/modules/avformat"
   SOURCE_FILES "${CMAKE_SOURCE_DIR}/src/modules/avformat/conceal.c"
 )
+add_qt_test(
+  TEST_NAME subtitles
+  INCLUDE_DIRS "${CMAKE_SOURCE_DIR}/src/modules/plus/subtitles"
+  SOURCE_FILES "${CMAKE_SOURCE_DIR}/src/modules/plus/subtitles/subtitles.cpp"
+)
 
 if(MOD_AVFORMAT)
   add_qt_test(TEST_NAME mod_avformat)
