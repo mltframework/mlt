@@ -166,7 +166,9 @@ static uint8_t *frame_resize_image(mlt_frame frame, int owidth, int oheight, mlt
                       oheight,
                       mlt_image_format_name(format));
 
-        uint8_t alpha_value = mlt_properties_get_int(properties, "resize_alpha");
+        int resize_alpha_value;
+        int has_resize_alpha = mlt_frame_get_resize_alpha(frame, &resize_alpha_value);
+        uint8_t alpha_value = resize_alpha_value;
         // Create the output image
         uint8_t *output = mlt_pool_alloc(owidth * (oheight + 1) * bpp);
 
@@ -175,6 +177,14 @@ static uint8_t *frame_resize_image(mlt_frame frame, int owidth, int oheight, mlt
 
         // Now update the frame
         mlt_frame_set_image(frame, output, owidth * (oheight + 1) * bpp, mlt_pool_release);
+
+        // An explicit resize_alpha other than 255 needs a mask to make the padding transparent.
+        if (format == mlt_image_yuv422 && !alpha && alpha_value != 255 && has_resize_alpha) {
+            alpha_size = iwidth * iheight;
+            alpha = mlt_pool_alloc(alpha_size);
+            memset(alpha, 255, alpha_size);
+            mlt_frame_set_alpha(frame, alpha, alpha_size, mlt_pool_release);
+        }
 
         // We should resize the alpha too
         if (format != mlt_image_rgba && alpha && alpha_size >= iwidth * iheight) {

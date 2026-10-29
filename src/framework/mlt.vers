@@ -709,4 +709,6 @@ MLT_7.42.0 {
 MLT_7.44.0 {
   global:
     mlt_properties_revision;
+    mlt_frame_get_resize_alpha;
+    mlt_frame_set_resize_alpha;
 } MLT_7.42.0;

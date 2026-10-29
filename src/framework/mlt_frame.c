@@ -1030,15 +1030,54 @@ void mlt_frame_copy_convert_image(mlt_frame dst, mlt_frame src)
                             NULL);
 }
 
+/** Get the padding alpha requested of filter_resize.
+ *
+ * Missing and an explicit 0 are different: missing keeps the default of padding
+ * only an existing alpha mask, while an explicit value other than 255 also asks
+ * filter_resize to create a mask for an opaque image. Use this pair instead of
+ * get_int/set_int, which turn missing into 0.
+ * \public \memberof mlt_frame_s
+ * \param self a frame
+ * \param[out] value the padding alpha if set; may be NULL
+ * \return true if resize_alpha is set
+ */
+
+int mlt_frame_get_resize_alpha(mlt_frame self, int *value)
+{
+    mlt_properties properties = MLT_FRAME_PROPERTIES(self);
+    int is_set = mlt_properties_exists(properties, "resize_alpha");
+    if (value)
+        *value = is_set ? mlt_properties_get_int(properties, "resize_alpha") : 0;
+    return is_set;
+}
+
+/** Set or clear the padding alpha requested of filter_resize.
+ *
+ * \public \memberof mlt_frame_s
+ * \param self a frame
+ * \param is_set false to remove the request
+ * \param value the padding alpha
+ * \see mlt_frame_get_resize_alpha
+ */
+
+void mlt_frame_set_resize_alpha(mlt_frame self, int is_set, int value)
+{
+    mlt_properties properties = MLT_FRAME_PROPERTIES(self);
+    if (is_set)
+        mlt_properties_set_int(properties, "resize_alpha", value);
+    else
+        mlt_properties_clear(properties, "resize_alpha");
+}
+
 /** Copy consumer scaling hints from \p src onto \p dst. */
 static void copy_consumer_image_hints(mlt_frame dst, mlt_frame src)
 {
     mlt_properties dst_properties = MLT_FRAME_PROPERTIES(dst);
     mlt_properties src_properties = MLT_FRAME_PROPERTIES(src);
+    int resize_alpha;
+    int has_resize_alpha = mlt_frame_get_resize_alpha(src, &resize_alpha);
 
-    mlt_properties_set_int(dst_properties,
-                           "resize_alpha",
-                           mlt_properties_get_int(src_properties, "resize_alpha"));
+    mlt_frame_set_resize_alpha(dst, has_resize_alpha, resize_alpha);
     mlt_properties_set_int(dst_properties,
                            "distort",
                            mlt_properties_get_int(src_properties, "distort"));

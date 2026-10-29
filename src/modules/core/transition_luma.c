@@ -17,7 +17,7 @@
  *
  * You should have received a copy of the GNU Lesser General Public
  * License along with this library; if not, write to the Free Software
- * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
+ * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301 USA
  */
 
 #include <framework/mlt.h>
@@ -95,37 +95,111 @@ struct dissolve_slice_context
     int width;
     int height;
     float weight;
+    // The following are used only by dissolve_slice_yuv422.
+    int dst_stride; // in pixels
+    int src_stride; // in pixels
+    int mix;
+    int alpha_over;
 };
 
 static int dissolve_slice_yuv422(int id, int index, int count, void *context)
 {
     struct dissolve_slice_context ctx = *((struct dissolve_slice_context *) context);
-    int stride = ctx.width * 2;
     int slice_start, slice_height = mlt_slices_size_slice(count, index, ctx.height, &slice_start);
-    int i;
 
-    ctx.dst_image += slice_start * stride;
-    ctx.src_image += slice_start * stride;
+    ctx.dst_image += slice_start * ctx.dst_stride * 2;
+    ctx.src_image += slice_start * ctx.src_stride * 2;
     if (ctx.dst_alpha)
-        ctx.dst_alpha += slice_start * ctx.width;
+        ctx.dst_alpha += slice_start * ctx.dst_stride;
     if (ctx.src_alpha)
-        ctx.src_alpha += slice_start * ctx.width;
+        ctx.src_alpha += slice_start * ctx.src_stride;
 
-    for (i = 0; i < slice_height; i++) {
-        composite_line_yuv_float(ctx.dst_image,
-                                 ctx.src_image,
-                                 ctx.width,
-                                 ctx.src_alpha,
-                                 ctx.dst_alpha,
-                                 ctx.weight);
-        ctx.dst_image += stride;
-        ctx.src_image += stride;
+    for (int i = 0; i < slice_height; i++) {
+        if (ctx.alpha_over)
+            composite_line_yuv_float(ctx.dst_image,
+                                     ctx.src_image,
+                                     ctx.width,
+                                     ctx.src_alpha,
+                                     ctx.dst_alpha,
+                                     ctx.weight);
+        else
+            composite_line_yuv(ctx.dst_image,
+                               ctx.src_image,
+                               ctx.width,
+                               ctx.src_alpha,
+                               ctx.dst_alpha,
+                               ctx.mix,
+                               NULL,
+                               0,
+                               0);
+        ctx.dst_image += ctx.dst_stride * 2;
+        ctx.src_image += ctx.src_stride * 2;
         if (ctx.dst_alpha)
-            ctx.dst_alpha += ctx.width;
+            ctx.dst_alpha += ctx.dst_stride;
         if (ctx.src_alpha)
-            ctx.src_alpha += ctx.width;
+            ctx.src_alpha += ctx.src_stride;
     }
     return 0;
+}
+
+// Gives a frame an opaque alpha mask, as converting it to rgba and back does.
+static uint8_t *add_opaque_alpha(mlt_frame frame, int width, int height)
+{
+    int size = width * height;
+    uint8_t *alpha = mlt_pool_alloc(size);
+    memset(alpha, 255, size);
+    mlt_frame_set_alpha(frame, alpha, size, mlt_pool_release);
+    return alpha;
+}
+
+// Makes filter_resize pad with transparency as it does for rgba, unless already
+// specified.
+static void request_transparent_padding(mlt_frame frame)
+{
+    if (!mlt_frame_get_resize_alpha(frame, NULL))
+        mlt_frame_set_resize_alpha(frame, 1, 0);
+}
+
+/* Fetch both frames as yuv422. Padding is requested before either fetch.
+ * A side with no mask gets an opaque one only when fix_background_alpha is on
+ * and the other side is translucent.
+ */
+static void prepare_yuv422_pair(mlt_frame dst_frame,
+                                mlt_frame src_frame,
+                                int *dst_width,
+                                int *dst_height,
+                                int *src_width,
+                                int *src_height,
+                                int fix_background_alpha,
+                                uint8_t **dst_image,
+                                uint8_t **src_image,
+                                uint8_t **dst_alpha,
+                                uint8_t **src_alpha,
+                                int *is_translucent)
+{
+    mlt_image_format format = mlt_image_yuv422;
+
+    if (fix_background_alpha) {
+        request_transparent_padding(dst_frame);
+        request_transparent_padding(src_frame);
+    }
+
+    mlt_frame_get_image(dst_frame, dst_image, &format, dst_width, dst_height, 1);
+    *dst_alpha = mlt_frame_get_alpha(dst_frame);
+    format = mlt_image_yuv422;
+    mlt_frame_get_image(src_frame, src_image, &format, src_width, src_height, 0);
+    *src_alpha = mlt_frame_get_alpha(src_frame);
+    *is_translucent = (*dst_alpha && !is_opaque(*dst_alpha, *dst_width, *dst_height))
+                      || (*src_alpha && !is_opaque(*src_alpha, *src_width, *src_height));
+
+    // An opaque frame without an alpha mask must get one when the other frame is
+    // translucent, so that the alpha of the result is computed (see alpha_over).
+    if (fix_background_alpha && *is_translucent) {
+        if (!*dst_alpha)
+            *dst_alpha = add_opaque_alpha(dst_frame, *dst_width, *dst_height);
+        if (!*src_alpha)
+            *src_alpha = add_opaque_alpha(src_frame, *src_width, *src_height);
+    }
 }
 
 static inline int dissolve_yuv422(mlt_frame frame,
@@ -138,53 +212,39 @@ static inline int dissolve_yuv422(mlt_frame frame,
                                   int fix_background_alpha)
 {
     int ret = 0;
-    int i = height + 1;
     int width_src = width, height_src = height;
-    mlt_image_format format = (fix_background_alpha && mlt_frame_has_convert_image(frame))
-                                  ? mlt_image_rgba
-                                  : mlt_image_yuv422;
     uint8_t *p_src, *p_dest;
     uint8_t *alpha_src;
     uint8_t *alpha_dst;
+    int is_translucent = 0;
     int mix = weight * (1 << 16);
 
-    mlt_frame_get_image(frame, &p_dest, &format, &width, &height, 1);
-    if (fix_background_alpha && mlt_frame_has_convert_image(frame))
-        mlt_frame_convert_image(frame, &p_dest, &format, mlt_image_yuv422);
-    alpha_dst = mlt_frame_get_alpha(frame);
-    if (fix_background_alpha && mlt_frame_has_convert_image(that))
-        format = mlt_image_rgba;
-    mlt_frame_get_image(that, &p_src, &format, &width_src, &height_src, 0);
-    if (mlt_frame_has_convert_image(that))
-        mlt_frame_convert_image(that, &p_src, &format, mlt_image_yuv422);
-    alpha_src = mlt_frame_get_alpha(that);
-    int is_translucent = (alpha_dst && !is_opaque(alpha_dst, width, height))
-                         || (alpha_src && !is_opaque(alpha_src, width_src, height_src));
+    prepare_yuv422_pair(frame,
+                        that,
+                        &width,
+                        &height,
+                        &width_src,
+                        &height_src,
+                        fix_background_alpha,
+                        &p_dest,
+                        &p_src,
+                        &alpha_dst,
+                        &alpha_src,
+                        &is_translucent);
 
-    // Pick the lesser of two evils ;-)
-    width_src = width_src > width ? width : width_src;
-    height_src = height_src > height ? height : height_src;
-
-    if (is_translucent && alpha_over) {
-        struct dissolve_slice_context context = {.dst_image = p_dest,
-                                                 .src_image = p_src,
-                                                 .dst_alpha = alpha_dst,
-                                                 .src_alpha = alpha_src,
-                                                 .width = width_src,
-                                                 .height = height_src,
-                                                 .weight = weight};
-        mlt_slices_run_normal(threads, dissolve_slice_yuv422, &context);
-    } else {
-        while (--i) {
-            composite_line_yuv(p_dest, p_src, width_src, alpha_src, alpha_dst, mix, NULL, 0, 0);
-            p_src += width_src << 1;
-            p_dest += width << 1;
-            if (alpha_src)
-                alpha_src += width_src;
-            if (alpha_dst)
-                alpha_dst += width;
-        }
-    }
+    struct dissolve_slice_context context = {.dst_image = p_dest,
+                                             .src_image = p_src,
+                                             .dst_alpha = alpha_dst,
+                                             .src_alpha = alpha_src,
+                                             // Pick the lesser of two evils ;-)
+                                             .width = MIN(width_src, width),
+                                             .height = MIN(height_src, height),
+                                             .weight = weight,
+                                             .dst_stride = width,
+                                             .src_stride = width_src,
+                                             .mix = mix,
+                                             .alpha_over = is_translucent && alpha_over};
+    mlt_slices_run_normal(threads, dissolve_slice_yuv422, &context);
 
     return ret;
 }
@@ -292,7 +352,7 @@ static inline int dissolve_rgba64(
 }
 
 /** A smoother, non-linear threshold determination function.
-*/
+ */
 
 static inline int32_t smoothstep(int32_t edge1, int32_t edge2, uint32_t a)
 {
@@ -322,7 +382,8 @@ static float smoothstep_float(float edge1, float edge2, float a)
 
 /** powerful stuff
 
-    \param field_order -1 = progressive, 0 = lower field first, 1 = top field first
+    \param field_order -1 = progressive, 0 = lower field first, 1 = top field
+   first
 */
 static void luma_composite_yuv422(mlt_frame a_frame,
                                   mlt_frame b_frame,
@@ -341,40 +402,37 @@ static void luma_composite_yuv422(mlt_frame a_frame,
 {
     int width_src = *width, height_src = *height;
     int width_dest = *width, height_dest = *height;
-    mlt_image_format format_src = (fix_background_alpha && mlt_frame_has_convert_image(a_frame))
-                                      ? mlt_image_rgba
-                                      : mlt_image_yuv422;
-    mlt_image_format format_dest = (fix_background_alpha && mlt_frame_has_convert_image(b_frame))
-                                       ? mlt_image_rgba
-                                       : mlt_image_yuv422;
     uint8_t *p_src, *p_dest;
     uint8_t *alpha_src, *alpha_dest;
     int i, j;
     int stride_src;
     int stride_dest;
+    int is_translucent = 0;
 
     if (mlt_properties_get(&a_frame->parent, "distort"))
         mlt_properties_set(&b_frame->parent,
                            "distort",
                            mlt_properties_get(&a_frame->parent, "distort"));
-    mlt_frame_get_image(a_frame, &p_dest, &format_dest, &width_dest, &height_dest, 1);
-    if (fix_background_alpha && mlt_frame_has_convert_image(a_frame))
-        mlt_frame_convert_image(a_frame, &p_dest, &format_dest, mlt_image_yuv422);
-    alpha_dest = mlt_frame_get_alpha(a_frame);
-    mlt_frame_get_image(b_frame, &p_src, &format_src, &width_src, &height_src, 0);
-    if (fix_background_alpha && mlt_frame_has_convert_image(b_frame))
-        mlt_frame_convert_image(b_frame, &p_src, &format_src, mlt_image_yuv422);
-    alpha_src = mlt_frame_get_alpha(b_frame);
+
+    prepare_yuv422_pair(a_frame,
+                        b_frame,
+                        &width_dest,
+                        &height_dest,
+                        &width_src,
+                        &height_src,
+                        fix_background_alpha,
+                        &p_dest,
+                        &p_src,
+                        &alpha_dest,
+                        &alpha_src,
+                        &is_translucent);
 
     if (*width == 0 || *height == 0)
         return;
 
-    int is_translucent = (alpha_dest && !is_opaque(alpha_dest, width_dest, height_dest))
-                         || (alpha_src && !is_opaque(alpha_src, width_src, height_src));
-
-    // Pick the lesser of two evils ;-)
-    width_src = width_src > width_dest ? width_dest : width_src;
-    height_src = height_src > height_dest ? height_dest : height_src;
+    // Blend the overlap. Each image keeps its own full width as the row stride.
+    int blend_width = MIN(width_src, width_dest);
+    int blend_height = MIN(height_src, height_dest);
 
     stride_src = width_src * 2;
     stride_dest = width_dest * 2;
@@ -407,12 +465,12 @@ static void luma_composite_yuv422(mlt_frame a_frame,
         y_offset = field << 16;
         i = field;
 
-        while (i < height_src) {
+        while (i < blend_height) {
             p = p_row;
             q = q_row;
             l = luma_bitmap + (y_offset >> 16) * (luma_width * field_count);
             x_offset = 0;
-            j = width_src;
+            j = blend_width;
 
             if (is_translucent) {
                 while (j--) {
@@ -461,6 +519,12 @@ static void luma_composite_yuv422(mlt_frame a_frame,
                     q++;
                     x_offset += x_diff;
                 }
+            }
+            if (is_translucent) {
+                if (alpha_dest)
+                    alpha_dest += width_dest - blend_width;
+                if (alpha_src)
+                    alpha_src += width_src - blend_width;
             }
             y_offset += y_diff;
             i += field_count;
@@ -1024,7 +1088,8 @@ static int transition_get_image(mlt_frame a_frame,
 
         if (mlt_color_trc_linear
             == mlt_image_color_trc_id(mlt_properties_get(a_props, "consumer.mlt_color_trc"))) {
-            // Make progress appear linear using a gamma curve similar to sRGB or Rec. 709
+            // Make progress appear linear using a gamma curve similar to sRGB or Rec.
+            // 709
             if (reverse || invert)
                 mix = 1.0 - pow(1.0 - mix, 2.0);
             else
@@ -1066,7 +1131,7 @@ static int transition_get_image(mlt_frame a_frame,
 }
 
 /** Luma transition processing.
-*/
+ */
 
 static mlt_frame transition_process(mlt_transition transition, mlt_frame a_frame, mlt_frame b_frame)
 {
@@ -1083,7 +1148,7 @@ static mlt_frame transition_process(mlt_transition transition, mlt_frame a_frame
 }
 
 /** Constructor for the filter.
-*/
+ */
 
 mlt_transition transition_luma_init(mlt_profile profile,
                                     mlt_service_type type,
