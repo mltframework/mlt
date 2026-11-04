@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2021  Meltytech, LLC
+ * Copyright (C) 2021-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -25,6 +25,7 @@ using namespace Mlt;
 #include <QString>
 #include <QtTest>
 
+#include <memory>
 #include <mlt++/Mlt.h>
 using namespace Mlt;
 
@@ -58,6 +59,33 @@ private Q_SLOTS:
         QCOMPARE(cutProducer.type(), mlt_service_producer_type);
 
         delete cutService;
+    }
+
+    void FractionalSpeedAdvances_data()
+    {
+        QTest::addColumn<double>("speed");
+        QTest::addColumn<int>("start");
+        QTest::addColumn<QList<int>>("positions");
+        QTest::newRow("one and a half") << 1.5 << 0 << QList<int>{0, 1, 3, 4, 6};
+        QTest::newRow("half") << 0.5 << 0 << QList<int>{0, 0, 1, 1, 2};
+        QTest::newRow("double") << 2.0 << 0 << QList<int>{0, 2, 4, 6, 8};
+        QTest::newRow("minus one and a half") << -1.5 << 10 << QList<int>{10, 8, 7, 5, 4};
+    }
+
+    void FractionalSpeedAdvances()
+    {
+        QFETCH(double, speed);
+        QFETCH(int, start);
+        QFETCH(QList<int>, positions);
+        Profile profile("dv_pal");
+        Producer producer(profile, "noise");
+        QVERIFY(producer.is_valid());
+        producer.seek(start);
+        producer.set_speed(speed);
+        for (int expected : positions) {
+            QCOMPARE(int(producer.position()), expected);
+            std::unique_ptr<Frame> frame(producer.get_frame());
+        }
     }
 };
 
