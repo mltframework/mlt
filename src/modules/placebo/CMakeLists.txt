@@ -8,6 +8,7 @@ add_library(mltplacebo MODULE
   convert.c convert.h
   factory.c
   filter_placebo_render.c
+  filter_placebo_scale.c
   filter_placebo_shader.c
   gpu_context.c gpu_context.h
   vulkan_frame.c vulkan_frame.h
@@ -62,6 +63,7 @@ install(TARGETS mltplacebo LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
   filter_placebo_render.yml
+  filter_placebo_scale.yml
   filter_placebo_shader.yml
   DESTINATION ${MLT_INSTALL_DATA_DIR}/placebo
 )

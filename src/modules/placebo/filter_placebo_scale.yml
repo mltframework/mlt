@@ -1,0 +1,28 @@
+schema_version: 7.0
+type: filter
+identifier: placebo.scale
+title: GPU Scale and Pad (libplacebo)
+version: 1
+copyright: Copyright (C) 2026 D-Ogi
+creator: D-Ogi
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+  - Hidden
+description: >
+  Scale the picture to fit the requested frame on the GPU and pad the rest
+  with black so the aspect ratio is preserved. The loader attaches this in
+  place of swscale. When this filter is attached, resize is not attached.
+notes: >
+  This is not intended to be created directly. The loader producer and chain
+  normalizers prefer it, and fall through to the next scaler when the GPU is
+  unavailable.
+  A decoded Vulkan frame (mlt_image_private subtype "vulkan") stays in VRAM.
+  The result is a placebo texture at the full requested size. placebo.render
+  downloads that texture when a caller asks for a normal image format.
+  The fit matches the resize filter. The picture is scaled to fit inside the
+  frame and centered. It is not cropped and it is not stretched, unless the
+  frame distort property is set.
+  The kernel follows consumer.rescale: nearest, bilinear, or the libplacebo
+  default for any other value.

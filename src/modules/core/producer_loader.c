@@ -213,6 +213,19 @@ static void ensure_normalizers_loaded(void)
     pthread_mutex_unlock(&init_mutex);
 }
 
+/* placebo.scale already fits and pads, so a CPU resizer would download. */
+static int loader_skips_resize(mlt_producer producer)
+{
+    mlt_service service = MLT_PRODUCER_SERVICE(producer);
+    int count = mlt_service_filter_count(service);
+    for (int i = 0; i < count; i++) {
+        mlt_filter filter = mlt_service_filter(service, i);
+        if (filter && mlt_properties_get_int(MLT_FILTER_PROPERTIES(filter), "_loader_no_resize"))
+            return 1;
+    }
+    return 0;
+}
+
 static void attach_normalizers(mlt_profile profile, mlt_producer producer, int nogl)
 {
     mlt_tokeniser tokeniser = mlt_tokeniser_init();
@@ -222,6 +235,8 @@ static void attach_normalizers(mlt_profile profile, mlt_producer producer, int n
     for (int i = 0; i < mlt_properties_count(normalizers); i++) {
         const char *key = mlt_properties_get_name(normalizers, i);
         if (!key || !strcmp(key, "image_convert"))
+            continue;
+        if (!strcmp(key, "resizer") && loader_skips_resize(producer))
             continue;
         int created = 0;
         char *value = mlt_properties_get_value(normalizers, i);
