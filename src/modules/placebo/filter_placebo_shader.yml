@@ -13,6 +13,11 @@ description: >
   Load and apply a custom mpv/libplacebo .hook shader file for GPU-accelerated
   video processing. Supports Anime4K, FSRCNNX, film grain, and other
   mpv-compatible user shaders. The shader file is hot-reloaded when modified.
+  A placebo texture is the usual input. An mlt_image_private image with
+  subtype "vulkan" (an FFmpeg Vulkan frame on the shared device) is mapped,
+  shaded, and replaced with a placebo texture, so the frame stays in VRAM.
+  Place this filter ahead of placebo.render. The download to RAM happens in
+  that render filter when the caller asks for a normal image format.
   The compiled shader cache is stored in a platform-specific location and can
   be overridden by setting the MLT_PLACEBO_CACHE_PATH environment variable to
   an absolute path for the cache file.

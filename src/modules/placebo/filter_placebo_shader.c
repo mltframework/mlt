@@ -19,6 +19,7 @@
 
 #include "convert.h"
 #include "gpu_context.h"
+#include "vulkan_frame.h"
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
@@ -366,16 +367,16 @@ static int filter_get_image(mlt_frame frame,
 
     int w = *width;
     int h = *height;
-
-    if (!placebo_frame_is_tex(frame, *format)) {
+    int is_tex = placebo_frame_is_tex(frame, *format);
+    int is_vulkan = placebo_frame_is_vulkan(frame, *format);
+    if (!is_tex && !is_vulkan) {
         mlt_log_error(MLT_FILTER_SERVICE(filter),
-                      "Expected placebo private input, got %s (%s)\n",
+                      "Expected placebo or vulkan private input, got %s (%s)\n",
                       mlt_image_format_name(*format),
                       mlt_properties_get(MLT_FRAME_PROPERTIES(frame), MLT_PLACEBO_IMAGE_PRIVATE));
         return 1;
     }
-    pl_tex src_tex = placebo_image_get_tex(*image);
-    if (!src_tex)
+    if (is_tex && !placebo_image_get_tex(*image))
         return 1;
 
     /* Hold the render lock for the entire shader-reload + render sequence.
@@ -384,10 +385,10 @@ static int filter_get_image(mlt_frame frame,
      * still using it in pl_render_image (use-after-free / double-destroy). */
     placebo_render_lock();
 
-    /* Reload shader if path/text/mtime changed; returns 0 if unavailable. */
+    /* Reload shader if path/text/mtime changed; returns 0 if unavailable.
+       The upstream image, including a vulkan AVFrame, stays on the frame. */
     if (!ensure_shader(filter, priv, gpu)) {
         placebo_render_unlock();
-        /* src_tex is already attached to the frame; pass it through. */
         return 0;
     }
 
@@ -406,17 +407,34 @@ static int filter_get_image(mlt_frame frame,
         return 1;
     }
 
-    /* Build pl_frames */
-    struct pl_frame pl_src = {
-        .num_planes = 1,
-        .planes = {{
-            .texture = src_tex,
-            .components = 4,
-            .component_mapping = {0, 1, 2, 3},
-        }},
-        .repr = pl_color_repr_rgb,
-        .color = pl_color_space_srgb,
-    };
+    /* A vulkan AVFrame stays mapped only for this render. Unmap before
+       placebo_frame_set_tex replaces the image and frees the AVFrame.
+       The mapped frame keeps its YUV color; a placebo texture is rgba8. */
+    struct pl_frame mapped = {0};
+    struct pl_frame pl_src = {0};
+    const struct pl_frame *src = &pl_src;
+    int mapped_vulkan = 0;
+    if (is_vulkan) {
+        if (!placebo_map_vulkan_image(gpu, *image, &mapped)) {
+            mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to map Vulkan frame\n");
+            pl_tex_destroy(gpu, &dst_tex);
+            placebo_render_unlock();
+            return 1;
+        }
+        src = &mapped;
+        mapped_vulkan = 1;
+    } else {
+        pl_src = (struct pl_frame){
+            .num_planes = 1,
+            .planes = {{
+                .texture = placebo_image_get_tex(*image),
+                .components = 4,
+                .component_mapping = {0, 1, 2, 3},
+            }},
+            .repr = pl_color_repr_rgb,
+            .color = pl_color_space_srgb,
+        };
+    }
 
     struct pl_frame pl_dst = {
         .num_planes = 1,
@@ -436,14 +454,21 @@ static int filter_get_image(mlt_frame frame,
         apply_shader_params(filter, frame, filter_props, priv->hooks[0]);
     }
 
-    /* Render with shader hooks */
+    /* Render with shader hooks. HOOK MAIN runs after YUV to RGB. */
     struct pl_render_params params = pl_render_default_params;
     params.hooks = priv->hooks;
     params.num_hooks = priv->num_hooks;
 
-    if (!pl_render_image(renderer, &pl_src, &pl_dst, &params)) {
+    if (!pl_render_image(renderer, src, &pl_dst, &params)) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "pl_render_image with shader hook failed\n");
+        if (mapped_vulkan)
+            placebo_unmap_vulkan_image(gpu, &mapped);
+        pl_tex_destroy(gpu, &dst_tex);
+        placebo_render_unlock();
+        return 1;
     }
+    if (mapped_vulkan)
+        placebo_unmap_vulkan_image(gpu, &mapped);
 
     placebo_render_unlock();
 

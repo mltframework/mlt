@@ -48,6 +48,21 @@ void placebo_render_unlock(void);
 /* Tear down all GPU resources. Registered for cleanup on first init. */
 void placebo_gpu_release(void);
 
+/* Publish the singleton Vulkan device on mlt_global_properties() as
+   "placebo.vulkan" so avformat can decode with the same VkDevice.
+   No-op when the backend is not Vulkan or the property is already set.
+   Handles inside the properties are not owned (destructor NULL).
+   Keys: instance, phys_dev, device, get_proc_addr, features,
+   inst_extensions, nb_inst_extensions, dev_extensions, nb_dev_extensions,
+   queue_graphics_index/count, queue_compute_index/count,
+   queue_transfer_index/count, queue_decode_index/count (decode index is -1
+   when the device has no video decode queue), lock_queue, unlock_queue,
+   lock_ctx. */
+void placebo_vulkan_publish(void);
+
+/* Non-zero when a published Vulkan device has a video decode queue. */
+int placebo_vulkan_has_decode_queue(void);
+
 /* Interpret an opaque placebo image payload as a libplacebo texture handle. */
 pl_tex placebo_image_get_tex(const uint8_t *image);
 
@@ -67,6 +82,10 @@ int placebo_frame_wants_tex(mlt_frame frame, mlt_image_format format);
 /* Return non-zero when the frame currently stores a placebo private image.
    This checks the actual image payload marker, not the transient request state. */
 int placebo_frame_is_tex(mlt_frame frame, mlt_image_format format);
+
+/* Return non-zero when the frame currently stores a Vulkan AVFrame.
+   The subtype string is "vulkan"; the payload is owned by the frame image. */
+int placebo_frame_is_vulkan(mlt_frame frame, mlt_image_format format);
 
 /* Store a libplacebo texture on the frame as mlt_image_private.
    The texture lifetime is owned by the frame image property. */

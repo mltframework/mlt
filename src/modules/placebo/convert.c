@@ -136,6 +136,16 @@ int placebo_convert_image(mlt_frame frame,
     if (*format != mlt_image_private && output_format != mlt_image_private)
         return 1;
 
+    /* A Vulkan AVFrame is not RGBA and not a pl_tex. Pass it through when the
+       caller still wants a private image (placebo.render maps it). Refuse a
+       CPU format so it cannot be read as pixels; the render filter downloads
+       after it has replaced the image with a pl_tex. */
+    if (placebo_frame_is_vulkan(frame, *format)) {
+        if (output_format == mlt_image_private)
+            return 0;
+        return 1;
+    }
+
     // Reuse existing GPU texture
     if (placebo_frame_is_tex(frame, *format) && placebo_frame_wants_tex(frame, output_format))
         return 0;

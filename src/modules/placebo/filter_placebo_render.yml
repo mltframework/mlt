@@ -11,8 +11,14 @@ tags:
   - Video
 description: >
   GPU-accelerated scaling, debanding, dithering and tonemapping via libplacebo.
-  Uses D3D11 on Windows, Vulkan elsewhere. Useful as a finishing pass to reduce
-  banding artifacts and improve gradient quality before output.
+  Uses D3D11 on Windows, Vulkan elsewhere, unless MLT_AVFORMAT_HWACCEL=vulkan,
+  in which case Vulkan is used first so the device can be shared.
+  On creation the filter initializes the GPU. A Vulkan device is published for
+  an avformat producer to decode into. The producer can hand that frame over as
+  an mlt_image_private image with subtype "vulkan". This filter renders it on
+  the GPU and downloads to RAM only when the caller asks for a normal image
+  format. Useful as a finishing pass to reduce banding artifacts and improve
+  gradient quality before output.
   The compiled shader cache is stored in a platform-specific location and can
   be overridden by setting the MLT_PLACEBO_CACHE_PATH environment variable to
   an absolute path for the cache file.

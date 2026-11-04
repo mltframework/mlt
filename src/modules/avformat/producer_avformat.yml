@@ -33,6 +33,13 @@ notes: >
   video's PPS is less than or equal to this threshold. You should not use
   MLT_AVFORMAT_HWACCEL_PPS in conjunction with the consumer scale property.
   Hardware decoding gracefully falls back to software decoding.
+  When MLT_AVFORMAT_HWACCEL=vulkan and placebo.render has published its Vulkan
+  device, that device is used for decoding and MLT_AVFORMAT_HWACCEL_DEVICE is
+  ignored. A caller that requests mlt_image_private with subtype "vulkan"
+  receives the decoded frame still in VRAM. The device must already be
+  published when the codec opens, which an explicit profile and an attached
+  placebo.render filter provide. Otherwise decoding uses its own device and
+  downloads the frame.
 
 bugs:
   - Audio sync discrepancy with some content.

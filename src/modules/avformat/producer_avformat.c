@@ -47,6 +47,9 @@
 #include <libavutil/channel_layout.h>
 #include <libavutil/dict.h>
 #include <libavutil/hwcontext.h>
+#if HAVE_FFMPEG_VULKAN
+#include <libavutil/hwcontext_vulkan.h>
+#endif
 #include <libavutil/imgutils.h>
 #include <libavutil/opt.h>
 #include <libavutil/pixdesc.h>
@@ -63,6 +66,7 @@
 #include <math.h>
 #include <pthread.h>
 #include <stdatomic.h>
+#include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
@@ -149,6 +153,10 @@ struct producer_avformat_s
         AVFilterGraph *filter_graph;
         AVFilterContext *filter_in;
         AVFilterContext *filter_out;
+        int shared_device; // non-zero when device_ctx borrows placebo's VkDevice
+        void *lock_ctx;    // pl_vulkan, owned by the placebo GPU singleton
+        void (*lock_queue)(void *vk, uint32_t queue_family, uint32_t index);
+        void (*unlock_queue)(void *vk, uint32_t queue_family, uint32_t index);
     } hwaccel;
 };
 typedef struct producer_avformat_s *producer_avformat;
@@ -1716,6 +1724,10 @@ static void prepare_reopen(producer_avformat self)
     av_frame_unref(self->video_frame);
     av_buffer_unref(&self->hwaccel.device_ctx);
     self->hwaccel.device_ctx = NULL;
+    self->hwaccel.shared_device = 0;
+    self->hwaccel.lock_ctx = NULL;
+    self->hwaccel.lock_queue = NULL;
+    self->hwaccel.unlock_queue = NULL;
     if (self->seekable && self->audio_format)
         avformat_close_input(&self->audio_format);
     if (self->video_format)
@@ -2756,6 +2768,110 @@ static void init_cache(mlt_properties properties, mlt_cache *cache)
         mlt_cache_set_size(*cache, cache_size);
 }
 
+static int software_graph_needed(producer_avformat self)
+{
+    if (self->vfilter_graph)
+        return 1;
+
+    mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
+    if (mlt_properties_exists(properties, "filtergraph"))
+        return 1;
+    const char *lut = mlt_properties_get(properties, "lut");
+    if (lut && lut[0])
+        return 1;
+    if (self->autorotate && self->video_index != -1 && self->video_format) {
+        double theta = get_rotation(properties, self->video_format->streams[self->video_index]);
+        if (fabs(theta - 90) < 1.0 || fabs(theta - 180) < 1.0 || fabs(theta - 270) < 1.0)
+            return 1;
+    }
+    return 0;
+}
+
+static void destroy_avframe(void *p)
+{
+    AVFrame *frame = p;
+    av_frame_free(&frame);
+}
+
+static int producer_wants_vulkan_image(producer_avformat self,
+                                       mlt_frame frame,
+                                       mlt_image_format format)
+{
+    const char *subtype;
+
+    if (format != mlt_image_private || !self->hwaccel.shared_device || !self->hwaccel.device_ctx)
+        return 0;
+    if (self->hwaccel.pix_fmt != AV_PIX_FMT_VULKAN)
+        return 0;
+    subtype = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "mlt_image_private");
+    return subtype && !strcmp(subtype, "vulkan");
+}
+
+static int keep_vulkan_frame(producer_avformat self, int requested)
+{
+    return requested && self->video_frame && self->video_frame->format == AV_PIX_FMT_VULKAN
+           && self->hwaccel.shared_device && !software_graph_needed(self);
+}
+
+static int transfer_hw_frame(producer_avformat self)
+{
+    AVFrame *sw_video_frame;
+    int ret;
+
+    if (!self->hwaccel.device_ctx || !self->video_frame)
+        return 0;
+    if (self->video_frame->format != self->hwaccel.pix_fmt)
+        return 0;
+
+    sw_video_frame = av_frame_alloc();
+    if (!sw_video_frame)
+        return AVERROR(ENOMEM);
+    ret = av_hwframe_transfer_data(sw_video_frame, self->video_frame, 0);
+    if (ret < 0) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent),
+                      "av_hwframe_transfer_data() failed %d\n",
+                      ret);
+        av_frame_free(&sw_video_frame);
+        av_frame_unref(self->video_frame);
+        return ret;
+    }
+    av_frame_copy_props(sw_video_frame, self->video_frame);
+    sw_video_frame->width = self->video_frame->width;
+    sw_video_frame->height = self->video_frame->height;
+    av_frame_unref(self->video_frame);
+    av_frame_move_ref(self->video_frame, sw_video_frame);
+    av_frame_free(&sw_video_frame);
+    return 0;
+}
+
+/* Hand the hardware frame to the caller without copying it to RAM.
+   mlt_image_format_size(mlt_image_private) is only a pointer, so this must not
+   use allocate_buffer(); the pool destructor would free the AVFrame. */
+static int output_vulkan_frame(producer_avformat self,
+                               mlt_frame frame,
+                               uint8_t **buffer,
+                               mlt_image_format *format,
+                               int *width,
+                               int *height)
+{
+    AVFrame *cloned = av_frame_clone(self->video_frame);
+    mlt_properties props = MLT_FRAME_PROPERTIES(frame);
+
+    if (!cloned)
+        return 1;
+    set_image_size(self, width, height);
+    *format = mlt_image_private;
+    *buffer = (uint8_t *) cloned;
+    mlt_properties_set_int(props, "format", mlt_image_private);
+    mlt_properties_set(props, "mlt_image_private", "vulkan");
+    if (mlt_frame_set_image(frame, (uint8_t *) cloned, 0, destroy_avframe)) {
+        av_frame_free(&cloned);
+        *buffer = NULL;
+        return 1;
+    }
+    return 0;
+}
+
 /** Get an image from a frame.
 */
 
@@ -2880,30 +2996,49 @@ static int producer_get_image(mlt_frame frame,
     stream = context->streams[self->video_index];
     codec_params = stream->codecpar;
 
-    // Only change the requested image format for special cases
-    *format = pick_image_format(self->vfilter_out ? av_buffersink_get_format(self->vfilter_out)
-                                                  : codec_params->format,
-                                *format);
+    // Only change the requested image format for special cases.
+    // A vulkan private request stays private so the frame can remain in VRAM.
+    int requested_vulkan = producer_wants_vulkan_image(self, frame, *format);
+    if (!requested_vulkan) {
+        *format = pick_image_format(self->vfilter_out ? av_buffersink_get_format(self->vfilter_out)
+                                                      : codec_params->format,
+                                    *format);
+        if (*format != mlt_image_private)
+            mlt_properties_clear(frame_properties, "mlt_image_private");
+    }
 
-    // Duplicate the last image if necessary
-    if (self->video_frame && self->video_frame->linesize[0]
+    // Duplicate the last image if necessary.
+    // A kept Vulkan frame has linesize 0; its payload is the AVVkFrame in data[0].
+    if (self->video_frame
+        && (self->video_frame->linesize[0] || self->video_frame->format == AV_PIX_FMT_VULKAN)
         && (self->pkt.stream_index == self->video_index)
         && (paused || self->current_position >= req_position)) {
-        // Duplicate it
-        set_image_size(self, width, height);
-        if ((image_size = allocate_buffer(frame, codec_params, buffer, *format, *width, *height))) {
-            convert_image(self,
-                          frame_properties,
-                          self->video_frame,
-                          *buffer,
-                          self->video_frame->format,
-                          format,
-                          *width,
-                          *height,
-                          &alpha,
-                          dst_colorspace,
-                          dst_full_range);
-            got_picture = 1;
+        if (keep_vulkan_frame(self, requested_vulkan)) {
+            if (output_vulkan_frame(self, frame, buffer, format, width, height) == 0)
+                got_picture = 1;
+        } else if (transfer_hw_frame(self) < 0) {
+            got_picture = 0;
+        } else {
+            if (requested_vulkan) {
+                *format = pick_image_format(self->video_frame->format, mlt_image_none);
+                mlt_properties_clear(frame_properties, "mlt_image_private");
+            }
+            set_image_size(self, width, height);
+            if ((image_size
+                 = allocate_buffer(frame, codec_params, buffer, *format, *width, *height))) {
+                convert_image(self,
+                              frame_properties,
+                              self->video_frame,
+                              *buffer,
+                              self->video_frame->format,
+                              format,
+                              *width,
+                              *height,
+                              &alpha,
+                              dst_colorspace,
+                              dst_full_range);
+                got_picture = 1;
+            }
         }
     } else {
         int64_t int_position = 0;
@@ -3073,25 +3208,12 @@ static int producer_get_image(mlt_frame frame,
                                     apply_hwaccel_filters(self, producer);
                                 }
 
-                                // Transfer from hardware to software frame
-                                AVFrame *sw_video_frame = av_frame_alloc();
-                                int transfer_data_result
-                                    = av_hwframe_transfer_data(sw_video_frame, self->video_frame, 0);
-                                if (transfer_data_result < 0) {
-                                    mlt_log_error(MLT_PRODUCER_SERVICE(producer),
-                                                  "av_hwframe_transfer_data() failed %d\n",
-                                                  transfer_data_result);
-                                    av_frame_free(&sw_video_frame);
-                                    av_frame_unref(self->video_frame);
+                                // Leave a shared-device Vulkan frame in VRAM when the caller
+                                // asked for one and no software filter graph will consume it.
+                                // scale_vulkan, if it ran above, keeps AV_PIX_FMT_VULKAN.
+                                if (!keep_vulkan_frame(self, requested_vulkan)
+                                    && transfer_hw_frame(self) < 0)
                                     goto exit_get_image;
-                                }
-                                av_frame_copy_props(sw_video_frame, self->video_frame);
-                                sw_video_frame->width = self->video_frame->width;
-                                sw_video_frame->height = self->video_frame->height;
-
-                                av_frame_unref(self->video_frame);
-                                av_frame_move_ref(self->video_frame, sw_video_frame);
-                                av_frame_free(&sw_video_frame);
                             }
                             got_picture = 1;
                             decode_errors = 0;
@@ -3210,22 +3332,33 @@ static int producer_get_image(mlt_frame frame,
                 }
 
                 set_image_size(self, width, height);
-                if ((image_size
-                     = allocate_buffer(frame, codec_params, buffer, *format, *width, *height))) {
-                    convert_image(self,
-                                  frame_properties,
-                                  self->video_frame,
-                                  *buffer,
-                                  self->video_frame->format,
-                                  format,
-                                  *width,
-                                  *height,
-                                  &alpha,
-                                  dst_colorspace,
-                                  dst_full_range);
-                    self->current_position = int_position;
+                if (keep_vulkan_frame(self, requested_vulkan)) {
+                    if (output_vulkan_frame(self, frame, buffer, format, width, height) == 0)
+                        self->current_position = int_position;
+                    else
+                        got_picture = 0;
                 } else {
-                    got_picture = 0;
+                    if (requested_vulkan) {
+                        *format = pick_image_format(self->video_frame->format, mlt_image_none);
+                        mlt_properties_clear(frame_properties, "mlt_image_private");
+                    }
+                    if ((image_size
+                         = allocate_buffer(frame, codec_params, buffer, *format, *width, *height))) {
+                        convert_image(self,
+                                      frame_properties,
+                                      self->video_frame,
+                                      *buffer,
+                                      self->video_frame->format,
+                                      format,
+                                      *width,
+                                      *height,
+                                      &alpha,
+                                      dst_colorspace,
+                                      dst_full_range);
+                        self->current_position = int_position;
+                    } else {
+                        got_picture = 0;
+                    }
                 }
             }
 
@@ -3261,8 +3394,9 @@ static int producer_get_image(mlt_frame frame,
                                 self->image_cache,
                                 self->current_position,
                                 position);
-    } else {
+    } else if (!got_picture) {
         // Use last known good frame if there was a decoding failure.
+        // A successful Vulkan export has image_size 0 and must not be replaced.
         mlt_frame original = avformat_conceal_fetch(&self->conceal, self->image_cache);
         if (original) {
             mlt_properties orig_props = MLT_FRAME_PROPERTIES(original);
@@ -3322,6 +3456,162 @@ static void apply_properties(void *obj, mlt_properties properties, int flags)
         }
     }
 }
+
+#if HAVE_FFMPEG_VULKAN
+static void placebo_lock_queue(struct AVHWDeviceContext *dev_ctx,
+                               uint32_t queue_family,
+                               uint32_t index)
+{
+    producer_avformat self = dev_ctx->user_opaque;
+    if (self && self->hwaccel.lock_queue && self->hwaccel.lock_ctx)
+        self->hwaccel.lock_queue(self->hwaccel.lock_ctx, queue_family, index);
+}
+
+static void placebo_unlock_queue(struct AVHWDeviceContext *dev_ctx,
+                                 uint32_t queue_family,
+                                 uint32_t index)
+{
+    producer_avformat self = dev_ctx->user_opaque;
+    if (self && self->hwaccel.unlock_queue && self->hwaccel.lock_ctx)
+        self->hwaccel.unlock_queue(self->hwaccel.lock_ctx, queue_family, index);
+}
+
+static void load_fn_ptr(void *ptr, void *dest, size_t size)
+{
+    if (!ptr || size != sizeof(ptr))
+        return;
+    memcpy(dest, &ptr, size);
+}
+
+/* Borrow the VkDevice published by placebo. FFmpeg must not destroy it:
+   av_hwdevice_ctx_alloc() leaves AVHWDeviceContext.free unset, unlike
+   av_hwdevice_ctx_create(). Returns non-zero when device_ctx is ready. */
+static int adopt_placebo_vulkan_device(producer_avformat self)
+{
+    mlt_properties published = mlt_properties_get_data(mlt_global_properties(),
+                                                       "placebo.vulkan",
+                                                       NULL);
+    int decode_index;
+    int decode_count;
+    void *instance;
+    void *phys_dev;
+    void *device;
+    void *features;
+    void *lock_ctx;
+    void (*lock_queue)(void *, uint32_t, uint32_t) = NULL;
+    void (*unlock_queue)(void *, uint32_t, uint32_t) = NULL;
+    PFN_vkGetInstanceProcAddr get_proc_addr = NULL;
+    AVBufferRef *ref;
+    AVHWDeviceContext *device_ctx;
+    AVVulkanDeviceContext *vk;
+    int nb_qf = 0;
+    int ret;
+
+    if (!published)
+        return 0;
+
+    decode_count = mlt_properties_get_int(published, "queue_decode_count");
+    decode_index = mlt_properties_get_int(published, "queue_decode_index");
+    if (decode_count <= 0 || decode_index < 0) {
+        mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent),
+                        "hwaccel vulkan shared placebo device has no decode queue\n");
+        return 0;
+    }
+
+    instance = mlt_properties_get_data(published, "instance", NULL);
+    phys_dev = mlt_properties_get_data(published, "phys_dev", NULL);
+    device = mlt_properties_get_data(published, "device", NULL);
+    features = mlt_properties_get_data(published, "features", NULL);
+    lock_ctx = mlt_properties_get_data(published, "lock_ctx", NULL);
+    load_fn_ptr(mlt_properties_get_data(published, "lock_queue", NULL),
+                &lock_queue,
+                sizeof(lock_queue));
+    load_fn_ptr(mlt_properties_get_data(published, "unlock_queue", NULL),
+                &unlock_queue,
+                sizeof(unlock_queue));
+    load_fn_ptr(mlt_properties_get_data(published, "get_proc_addr", NULL),
+                &get_proc_addr,
+                sizeof(get_proc_addr));
+    if (!instance || !phys_dev || !device || !features || !lock_ctx || !lock_queue
+        || !unlock_queue) {
+        mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent),
+                        "hwaccel vulkan shared placebo device is incomplete\n");
+        return 0;
+    }
+
+    ref = av_hwdevice_ctx_alloc(AV_HWDEVICE_TYPE_VULKAN);
+    if (!ref)
+        return 0;
+
+    device_ctx = (AVHWDeviceContext *) ref->data;
+    device_ctx->user_opaque = self;
+    self->hwaccel.lock_ctx = lock_ctx;
+    self->hwaccel.lock_queue = lock_queue;
+    self->hwaccel.unlock_queue = unlock_queue;
+
+    vk = device_ctx->hwctx;
+#if FF_API_VULKAN_SYNC_QUEUES
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+    vk->lock_queue = placebo_lock_queue;
+    vk->unlock_queue = placebo_unlock_queue;
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+#endif
+    vk->get_proc_addr = get_proc_addr;
+    vk->inst = (VkInstance) instance;
+    vk->phys_dev = (VkPhysicalDevice) phys_dev;
+    vk->act_dev = (VkDevice) device;
+    vk->device_features = *(const VkPhysicalDeviceFeatures2 *) features;
+    vk->enabled_inst_extensions = mlt_properties_get_data(published, "inst_extensions", NULL);
+    vk->nb_enabled_inst_extensions = mlt_properties_get_int(published, "nb_inst_extensions");
+    vk->enabled_dev_extensions = mlt_properties_get_data(published, "dev_extensions", NULL);
+    vk->nb_enabled_dev_extensions = mlt_properties_get_int(published, "nb_dev_extensions");
+
+    vk->qf[nb_qf++] = (AVVulkanDeviceQueueFamily){
+        .idx = mlt_properties_get_int(published, "queue_graphics_index"),
+        .num = mlt_properties_get_int(published, "queue_graphics_count"),
+        .flags = VK_QUEUE_GRAPHICS_BIT,
+    };
+    vk->qf[nb_qf++] = (AVVulkanDeviceQueueFamily){
+        .idx = mlt_properties_get_int(published, "queue_transfer_index"),
+        .num = mlt_properties_get_int(published, "queue_transfer_count"),
+        .flags = VK_QUEUE_TRANSFER_BIT,
+    };
+    vk->qf[nb_qf++] = (AVVulkanDeviceQueueFamily){
+        .idx = mlt_properties_get_int(published, "queue_compute_index"),
+        .num = mlt_properties_get_int(published, "queue_compute_count"),
+        .flags = VK_QUEUE_COMPUTE_BIT,
+    };
+    vk->qf[nb_qf++] = (AVVulkanDeviceQueueFamily){
+        .idx = decode_index,
+        .num = decode_count,
+        .flags = VK_QUEUE_VIDEO_DECODE_BIT_KHR,
+    };
+    vk->nb_qf = nb_qf;
+
+    ret = av_hwdevice_ctx_init(ref);
+    if (ret < 0) {
+        mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent),
+                        "hwaccel vulkan shared placebo device av_hwdevice_ctx_init() failed %d\n",
+                        ret);
+        av_buffer_unref(&ref);
+        self->hwaccel.lock_ctx = NULL;
+        self->hwaccel.lock_queue = NULL;
+        self->hwaccel.unlock_queue = NULL;
+        self->hwaccel.shared_device = 0;
+        return 0;
+    }
+
+    self->hwaccel.device_ctx = ref;
+    self->hwaccel.shared_device = 1;
+    mlt_log_info(MLT_PRODUCER_SERVICE(self->parent), "hwaccel vulkan using shared placebo device\n");
+    return 1;
+}
+#endif
 
 /** Initialize the video codec context.
  */
@@ -3407,23 +3697,38 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
         }
 
         if (found_hw_pix_fmt) {
+            int adopted = 0;
             av_buffer_unref(&self->hwaccel.device_ctx);
-            int ret = av_hwdevice_ctx_create(&self->hwaccel.device_ctx,
-                                             self->hwaccel.device_type,
-                                             self->hwaccel.device,
-                                             NULL,
-                                             0);
-            if (ret >= 0) {
-                codec_context->hw_device_ctx = av_buffer_ref(self->hwaccel.device_ctx);
-                mlt_log_info(MLT_PRODUCER_SERVICE(self->parent),
-                             "hwaccel %s av_hwdevice_ctx_create() success\n",
-                             av_get_pix_fmt_name(self->hwaccel.pix_fmt));
-            } else {
-                mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent),
-                                "hwaccel %s av_hwdevice_ctx_create() failed %d\n",
-                                av_get_pix_fmt_name(self->hwaccel.pix_fmt),
-                                ret);
+            self->hwaccel.shared_device = 0;
+            self->hwaccel.lock_ctx = NULL;
+            self->hwaccel.lock_queue = NULL;
+            self->hwaccel.unlock_queue = NULL;
+#if HAVE_FFMPEG_VULKAN
+            if (self->hwaccel.device_type == AV_HWDEVICE_TYPE_VULKAN)
+                adopted = adopt_placebo_vulkan_device(self);
+#endif
+            /* MLT_AVFORMAT_HWACCEL_DEVICE is ignored when the shared device is adopted.
+               A private device is not exported as a vulkan image: it is a different
+               VkDevice than placebo, so the frame would be downloaded and uploaded. */
+            if (!adopted) {
+                int ret = av_hwdevice_ctx_create(&self->hwaccel.device_ctx,
+                                                 self->hwaccel.device_type,
+                                                 self->hwaccel.device,
+                                                 NULL,
+                                                 0);
+                if (ret >= 0) {
+                    mlt_log_info(MLT_PRODUCER_SERVICE(self->parent),
+                                 "hwaccel %s av_hwdevice_ctx_create() success\n",
+                                 av_get_pix_fmt_name(self->hwaccel.pix_fmt));
+                } else {
+                    mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent),
+                                    "hwaccel %s av_hwdevice_ctx_create() failed %d\n",
+                                    av_get_pix_fmt_name(self->hwaccel.pix_fmt),
+                                    ret);
+                }
             }
+            if (self->hwaccel.device_ctx)
+                codec_context->hw_device_ctx = av_buffer_ref(self->hwaccel.device_ctx);
         } else {
             mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent), "failed to find hw_pix_fmt\n");
         }

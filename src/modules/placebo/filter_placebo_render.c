@@ -19,6 +19,7 @@
 
 #include "convert.h"
 #include "gpu_context.h"
+#include "vulkan_frame.h"
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
@@ -83,6 +84,53 @@ static const struct pl_tone_map_function *lookup_tonemap(const char *name)
     return &pl_tone_map_auto;
 }
 
+static int render_frame(mlt_filter filter,
+                        pl_renderer renderer,
+                        const struct pl_frame *src,
+                        struct pl_frame *dst)
+{
+    mlt_properties filter_props = MLT_FILTER_PROPERTIES(filter);
+    const char *preset = mlt_properties_get(filter_props, "preset");
+    struct pl_render_params params;
+    if (preset && !strcmp(preset, "high_quality"))
+        params = pl_render_high_quality_params;
+    else if (preset && !strcmp(preset, "fast"))
+        params = pl_render_fast_params;
+    else
+        params = pl_render_default_params;
+
+    const char *upscaler = mlt_properties_get(filter_props, "upscaler");
+    const char *downscaler = mlt_properties_get(filter_props, "downscaler");
+    params.upscaler = lookup_scaler(upscaler);
+    params.downscaler = lookup_scaler(downscaler);
+
+    struct pl_deband_params deband_params = pl_deband_default_params;
+    if (mlt_properties_get_int(filter_props, "deband")) {
+        int iterations = mlt_properties_get_int(filter_props, "deband_iterations");
+        if (iterations > 0)
+            deband_params.iterations = iterations;
+        params.deband_params = &deband_params;
+    } else {
+        params.deband_params = NULL;
+    }
+
+    const char *dither_name = mlt_properties_get(filter_props, "dithering");
+    struct pl_dither_params dither_params = pl_dither_default_params;
+    if (dither_name && !strcmp(dither_name, "none")) {
+        params.dither_params = NULL;
+    } else {
+        dither_params.method = lookup_dither(dither_name);
+        params.dither_params = &dither_params;
+    }
+
+    const char *tonemap_name = mlt_properties_get(filter_props, "tonemapping");
+    struct pl_color_map_params color_map_params = pl_color_map_default_params;
+    color_map_params.tone_mapping_function = lookup_tonemap(tonemap_name);
+    params.color_map_params = &color_map_params;
+
+    return pl_render_image(renderer, src, dst, &params) ? 0 : 1;
+}
+
 static int filter_get_image(mlt_frame frame,
                             uint8_t **image,
                             mlt_image_format *format,
@@ -91,7 +139,6 @@ static int filter_get_image(mlt_frame frame,
                             int writable)
 {
     mlt_filter filter = mlt_frame_pop_service(frame);
-    mlt_properties filter_props = MLT_FILTER_PROPERTIES(filter);
 
     pl_gpu gpu = placebo_gpu_get();
     pl_renderer renderer = placebo_renderer_get();
@@ -107,9 +154,14 @@ static int filter_get_image(mlt_frame frame,
         return mlt_frame_get_image(frame, image, format, width, height, writable);
     }
 
-    /* Request placebo private image format from upstream. */
+    /* Request a private image. "vulkan" asks avformat to keep the decoded
+       frame in VRAM. A software frame is uploaded by placebo_convert_image
+       because _placebo_requested is set. */
+    int want_vulkan = placebo_vulkan_frame_supported() && placebo_vulkan_has_decode_queue();
     placebo_frame_set_requested_tex(frame, 1);
     *format = mlt_image_private;
+    if (want_vulkan)
+        mlt_properties_set(MLT_FRAME_PROPERTIES(frame), MLT_PLACEBO_IMAGE_PRIVATE, "vulkan");
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
     placebo_frame_set_requested_tex(frame, 0);
     if (error || !*image)
@@ -117,16 +169,16 @@ static int filter_get_image(mlt_frame frame,
 
     int w = *width;
     int h = *height;
-
-    if (!placebo_frame_is_tex(frame, *format)) {
+    int is_tex = placebo_frame_is_tex(frame, *format);
+    int is_vulkan = placebo_frame_is_vulkan(frame, *format);
+    if (!is_tex && !is_vulkan) {
         mlt_log_error(MLT_FILTER_SERVICE(filter),
-                      "Expected placebo private input, got %s (%s)\n",
+                      "Expected placebo or vulkan private input, got %s (%s)\n",
                       mlt_image_format_name(*format),
                       mlt_properties_get(MLT_FRAME_PROPERTIES(frame), MLT_PLACEBO_IMAGE_PRIVATE));
         return 1;
     }
-    pl_tex src_tex = placebo_image_get_tex(*image);
-    if (!src_tex)
+    if (is_tex && !placebo_image_get_tex(*image))
         return 1;
 
     /* sampleable is needed so a subsequent placebo filter can bind this
@@ -145,18 +197,34 @@ static int filter_get_image(mlt_frame frame,
         return 1;
     }
 
-    /* Build source and target pl_frames */
-    struct pl_frame pl_src = {
-        .num_planes = 1,
-        .planes = {{
-            .texture = src_tex,
-            .components = 4,
-            .component_mapping = {0, 1, 2, 3},
-        }},
-        .repr = pl_color_repr_rgb,
-        .color = pl_color_space_srgb,
-    };
+    struct pl_frame mapped = {0};
+    struct pl_frame pl_src = {0};
+    const struct pl_frame *src = &pl_src;
+    int mapped_vulkan = 0;
+    if (is_vulkan) {
+        if (!placebo_map_vulkan_image(gpu, *image, &mapped)) {
+            mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to map Vulkan frame\n");
+            pl_tex_destroy(gpu, &dst_tex);
+            placebo_render_unlock();
+            return 1;
+        }
+        src = &mapped;
+        mapped_vulkan = 1;
+    } else {
+        pl_src = (struct pl_frame){
+            .num_planes = 1,
+            .planes = {{
+                .texture = placebo_image_get_tex(*image),
+                .components = 4,
+                .component_mapping = {0, 1, 2, 3},
+            }},
+            .repr = pl_color_repr_rgb,
+            .color = pl_color_space_srgb,
+        };
+    }
 
+    /* Destination stays rgba8 sRGB. The mapped Vulkan frame keeps the
+       AVFrame's YUV color; pl_render_image converts it. */
     struct pl_frame pl_dst = {
         .num_planes = 1,
         .planes = {{
@@ -168,56 +236,17 @@ static int filter_get_image(mlt_frame frame,
         .color = pl_color_space_srgb,
     };
 
-    /* Configure render params from filter properties */
-    const char *preset = mlt_properties_get(filter_props, "preset");
-    struct pl_render_params params;
-    if (preset && !strcmp(preset, "high_quality"))
-        params = pl_render_high_quality_params;
-    else if (preset && !strcmp(preset, "fast"))
-        params = pl_render_fast_params;
-    else
-        params = pl_render_default_params;
-
-    /* Scalers */
-    const char *upscaler = mlt_properties_get(filter_props, "upscaler");
-    const char *downscaler = mlt_properties_get(filter_props, "downscaler");
-    params.upscaler = lookup_scaler(upscaler);
-    params.downscaler = lookup_scaler(downscaler);
-
-    /* Debanding */
-    struct pl_deband_params deband_params = pl_deband_default_params;
-    if (mlt_properties_get_int(filter_props, "deband")) {
-        int iterations = mlt_properties_get_int(filter_props, "deband_iterations");
-        if (iterations > 0)
-            deband_params.iterations = iterations;
-        params.deband_params = &deband_params;
-    } else {
-        params.deband_params = NULL;
-    }
-
-    /* Dithering */
-    const char *dither_name = mlt_properties_get(filter_props, "dithering");
-    struct pl_dither_params dither_params = pl_dither_default_params;
-    if (dither_name && !strcmp(dither_name, "none")) {
-        params.dither_params = NULL;
-    } else {
-        dither_params.method = lookup_dither(dither_name);
-        params.dither_params = &dither_params;
-    }
-
-    /* Tone mapping */
-    const char *tonemap_name = mlt_properties_get(filter_props, "tonemapping");
-    struct pl_color_map_params color_map_params = pl_color_map_default_params;
-    color_map_params.tone_mapping_function = lookup_tonemap(tonemap_name);
-    params.color_map_params = &color_map_params;
-
-    /* Render */
-    if (!pl_render_image(renderer, &pl_src, &pl_dst, &params)) {
+    if (render_frame(filter, renderer, src, &pl_dst)) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "pl_render_image failed\n");
+        if (mapped_vulkan)
+            placebo_unmap_vulkan_image(gpu, &mapped);
         pl_tex_destroy(gpu, &dst_tex);
         placebo_render_unlock();
         return 1;
     }
+    /* Unmap before set_tex replaces the image and frees the AVFrame. */
+    if (mapped_vulkan)
+        placebo_unmap_vulkan_image(gpu, &mapped);
 
     placebo_render_unlock();
 
@@ -250,6 +279,10 @@ mlt_filter filter_placebo_render_init(mlt_profile profile,
     mlt_filter filter = mlt_filter_new();
     if (filter) {
         filter->process = filter_process;
+        /* Create the GPU before the consumer pulls a frame. video_codec_init()
+           adopts a device published here; publishing from get_image is too late. */
+        if (placebo_gpu_get())
+            placebo_vulkan_publish();
         mlt_properties props = MLT_FILTER_PROPERTIES(filter);
         mlt_properties_set(props, "preset", "default");
         mlt_properties_set(props, "upscaler", "ewa_lanczos");
