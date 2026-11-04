@@ -1,6 +1,6 @@
 /*
  * producer_timewarp.c -- modify speed and direction of a clip
- * Copyright (C) 2015-2021 Meltytech, LLC
+ * Copyright (C) 2015-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -34,6 +34,7 @@ typedef struct
     mlt_profile clip_profile;
     mlt_properties clip_parameters;
     mlt_filter pitch_filter;
+    int pitch_wsola;
 } private_data;
 
 // Private Functions
@@ -87,6 +88,14 @@ static int producer_probe(mlt_producer parent)
         }
     }
     return 1;
+}
+
+// "wsola" selects the WSOLA filter for pitch compensation, anything else
+// rubberband.
+static int use_wsola_pitch(mlt_properties producer_properties)
+{
+    const char *method = mlt_properties_get(producer_properties, "warp_pitch_method");
+    return method && !strcmp(method, "wsola");
 }
 
 static int producer_get_audio(mlt_frame frame,
@@ -169,16 +178,28 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
             // Pitch compensation does not work well for speed *reduction* of 1/10th or less.
             if (mlt_properties_get_int(producer_properties, "warp_pitch")
                 && fabs(pdata->speed) >= 0.1) {
+                int wsola = use_wsola_pitch(producer_properties);
+                if (pdata->pitch_filter && pdata->pitch_wsola != wsola) {
+                    mlt_filter_close(pdata->pitch_filter);
+                    pdata->pitch_filter = NULL;
+                }
                 if (!pdata->pitch_filter) {
-                    pdata->pitch_filter = mlt_factory_filter(mlt_service_profile(
-                                                                 MLT_PRODUCER_SERVICE(producer)),
-                                                             "rbpitch",
-                                                             NULL);
+                    mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(producer));
+                    if (wsola)
+                        pdata->pitch_filter = mlt_factory_filter(profile, "wsola", NULL);
+                    if (!pdata->pitch_filter)
+                        pdata->pitch_filter = mlt_factory_filter(profile, "rbpitch", NULL);
+                    pdata->pitch_wsola = wsola;
                 }
                 if (pdata->pitch_filter) {
-                    mlt_properties_set_double(MLT_FILTER_PROPERTIES(pdata->pitch_filter),
-                                              "pitchscale",
-                                              1.0 / fabs(pdata->speed));
+                    mlt_properties filter_properties = MLT_FILTER_PROPERTIES(pdata->pitch_filter);
+                    if (!strcmp(mlt_properties_get(filter_properties, "mlt_service"), "wsola")) {
+                        mlt_properties_set_double(filter_properties, "speed", fabs(pdata->speed));
+                    } else {
+                        mlt_properties_set_double(filter_properties,
+                                                  "pitchscale",
+                                                  1.0 / fabs(pdata->speed));
+                    }
                     mlt_filter_process(pdata->pitch_filter, *frame);
                 }
             }

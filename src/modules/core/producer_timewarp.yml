@@ -59,6 +59,20 @@ parameters:
     mutable: no
     default: 0
 
+  - identifier: warp_pitch_method
+    title: Pitch Compensation Method
+    type: string
+    description: >
+      The algorithm used when warp_pitch is enabled: "rubberband" (shifts the
+      pitch of the resampled audio) or "wsola" (time stretches the original
+      audio).
+    readonly: no
+    mutable: yes
+    values:
+      - rubberband
+      - wsola
+    default: rubberband
+
   - identifier: warp_speed
     title: Warp Speed
     type: float

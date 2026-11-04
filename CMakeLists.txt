@@ -54,6 +54,7 @@ option(MOD_SOX "Enable SoX module" ON)
 option(MOD_SPATIALAUDIO "Enable SpatialAudio module" OFF)
 option(MOD_VIDSTAB "Enable vid.stab module (GPL)" ON)
 option(MOD_VORBIS "Enable Vorbis module" ON)
+option(MOD_WSOLA "Enable WSOLA time stretch module" ON)
 option(MOD_XINE "Enable XINE module (GPL)" ON)
 option(MOD_XML "Enable XML module" ON)
 
@@ -438,6 +439,10 @@ if(MOD_VORBIS)
   pkg_check_modules(vorbis REQUIRED IMPORTED_TARGET vorbis)
   pkg_check_modules(vorbisfile REQUIRED IMPORTED_TARGET vorbisfile)
   list(APPEND MLT_SUPPORTED_COMPONENTS vorbis)
+endif()
+
+if(MOD_WSOLA)
+  list(APPEND MLT_SUPPORTED_COMPONENTS wsola)
 endif()
 
 if(MOD_XINE)

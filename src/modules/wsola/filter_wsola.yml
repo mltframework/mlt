@@ -1,0 +1,43 @@
+schema_version: 7.2
+type: filter
+identifier: wsola
+title: WSOLA Time Stretch
+version: 1
+copyright: Matheus Salvalagio
+license: LGPLv2.1
+language: en
+tags:
+  - Audio
+  - Hidden
+description: >
+  Change the tempo of the audio while preserving pitch, using the WSOLA
+  (Waveform Similarity Overlap-and-Add) algorithm ported from Chromium.
+
+  The incoming audio is interpreted as having been played back "speed" times
+  faster than its original rate, which is how the timewarp producer delivers
+  it: the samples are the original ones but the frequency is labeled
+  original * speed. The filter time stretches the samples by 1/speed and
+  labels the result with the original frequency, so the duration of the
+  audio does not change and the pitch is restored.
+audio_formats:
+  - float
+parameters:
+  - identifier: speed
+    title: Speed
+    type: float
+    description: >
+      The playback rate the incoming audio was sped up (or slowed down) by.
+      Values close to 1.0 pass the audio through unchanged.
+    readonly: no
+    mutable: yes
+    default: 1.0
+    minimum: 0.0625
+    maximum: 16.0
+
+  - identifier: latency
+    title: Latency
+    type: float
+    description: >
+      The audio delay introduced by the filter, in milliseconds of output.
+    readonly: yes
+    unit: ms
