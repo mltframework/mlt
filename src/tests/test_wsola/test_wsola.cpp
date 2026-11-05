@@ -140,6 +140,24 @@ private Q_SLOTS:
         QVERIFY2(qAbs(measured - 2.0 * TONE) < TONE * 0.04, qPrintable(QString::number(measured)));
     }
 
+    void OtherAudioPassesThrough()
+    {
+        Profile profile("dv_pal");
+        Producer producer(profile, "tone:");
+        QVERIFY(producer.is_valid());
+        Filter filter(profile, "wsola");
+        QVERIFY(filter.is_valid());
+        filter.set("speed", 0.75);
+        producer.attach(filter);
+
+        int frequency = 0;
+        const std::vector<float> audio = playAudio(producer, &frequency);
+        QCOMPARE(frequency, FREQUENCY);
+        QCOMPARE(int(audio.size()), int((FRAMES - SETTLE_FRAMES) * FREQUENCY / profile.fps() + 0.5));
+        const double measured = pitch(audio, frequency);
+        QVERIFY2(qAbs(measured - TONE) < TONE * 0.02, qPrintable(QString::number(measured)));
+    }
+
     void SeekDoesNotChangePitch()
     {
         Profile profile("dv_pal");
