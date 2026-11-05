@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
 #include "vulkan_frame.h"
@@ -379,6 +380,17 @@ static int filter_get_image(mlt_frame frame,
     if (is_tex && !placebo_image_get_tex(*image))
         return 1;
 
+    /* A linear texture stays linear so the shader runs in linear light.
+       A Vulkan frame still in its source transfer is encoded to rgba8 sRGB. */
+    struct pl_color_space dst_color = pl_color_space_srgb;
+    pl_fmt dst_fmt = rgba_fmt;
+    if (!is_vulkan || placebo_frame_is_linear(frame)) {
+        pl_fmt encoded = NULL;
+        placebo_tex_encoding(gpu, frame, &dst_color, &encoded);
+        if (encoded)
+            dst_fmt = encoded;
+    }
+
     /* Hold the render lock for the entire shader-reload + render sequence.
      * Without this, concurrent worker threads can race on priv->hooks:
      * one thread destroys and replaces hooks[0] while another thread is
@@ -397,7 +409,7 @@ static int filter_get_image(mlt_frame frame,
     pl_tex dst_tex = pl_tex_create(gpu,
                                    pl_tex_params(.w = w,
                                                  .h = h,
-                                                 .format = rgba_fmt,
+                                                 .format = dst_fmt,
                                                  .sampleable = true,
                                                  .renderable = true,
                                                  .host_readable = true, ));
@@ -432,7 +444,7 @@ static int filter_get_image(mlt_frame frame,
                 .component_mapping = {0, 1, 2, 3},
             }},
             .repr = pl_color_repr_rgb,
-            .color = pl_color_space_srgb,
+            .color = dst_color,
         };
     }
 
@@ -444,7 +456,7 @@ static int filter_get_image(mlt_frame frame,
             .component_mapping = {0, 1, 2, 3},
         }},
         .repr = pl_color_repr_rgb,
-        .color = pl_color_space_srgb,
+        .color = dst_color,
     };
 
     /* Override DYNAMIC shader parameters with values from MLT properties.

@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
 #include "vulkan_frame.h"
@@ -181,13 +182,24 @@ static int filter_get_image(mlt_frame frame,
     if (is_tex && !placebo_image_get_tex(*image))
         return 1;
 
+    /* A linear texture stays linear. A Vulkan frame still in its source
+       transfer is encoded to rgba8 sRGB, as before. */
+    struct pl_color_space dst_color = pl_color_space_srgb;
+    pl_fmt dst_fmt = rgba_fmt;
+    if (!is_vulkan || placebo_frame_is_linear(frame)) {
+        pl_fmt encoded = NULL;
+        placebo_tex_encoding(gpu, frame, &dst_color, &encoded);
+        if (encoded)
+            dst_fmt = encoded;
+    }
+
     /* sampleable is needed so a subsequent placebo filter can bind this
      * texture as its source without re-uploading from RAM. */
     placebo_render_lock();
     pl_tex dst_tex = pl_tex_create(gpu,
                                    pl_tex_params(.w = w,
                                                  .h = h,
-                                                 .format = rgba_fmt,
+                                                 .format = dst_fmt,
                                                  .sampleable = true,
                                                  .renderable = true,
                                                  .host_readable = true, ));
@@ -219,12 +231,12 @@ static int filter_get_image(mlt_frame frame,
                 .component_mapping = {0, 1, 2, 3},
             }},
             .repr = pl_color_repr_rgb,
-            .color = pl_color_space_srgb,
+            .color = dst_color,
         };
     }
 
-    /* Destination stays rgba8 sRGB. The mapped Vulkan frame keeps the
-       AVFrame's YUV color; pl_render_image converts it. */
+    /* The mapped Vulkan frame keeps the AVFrame's YUV color. pl_render_image
+       converts it into dst_color. A linear texture stays linear. */
     struct pl_frame pl_dst = {
         .num_planes = 1,
         .planes = {{
@@ -233,7 +245,7 @@ static int filter_get_image(mlt_frame frame,
             .component_mapping = {0, 1, 2, 3},
         }},
         .repr = pl_color_repr_rgb,
-        .color = pl_color_space_srgb,
+        .color = dst_color,
     };
 
     if (render_frame(filter, renderer, src, &pl_dst)) {

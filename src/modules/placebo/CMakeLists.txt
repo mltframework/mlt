@@ -5,8 +5,10 @@ if(NOT libplacebo_FOUND)
 endif()
 
 add_library(mltplacebo MODULE
+  color_space.c color_space.h
   convert.c convert.h
   factory.c
+  filter_placebo_color_transform.c
   filter_placebo_render.c
   filter_placebo_scale.c
   filter_placebo_shader.c
@@ -62,6 +64,7 @@ set_target_properties(mltplacebo PROPERTIES
 install(TARGETS mltplacebo LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 install(FILES
+  filter_placebo_color_transform.yml
   filter_placebo_render.yml
   filter_placebo_scale.yml
   filter_placebo_shader.yml

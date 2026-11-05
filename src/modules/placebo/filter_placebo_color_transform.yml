@@ -1,0 +1,37 @@
+schema_version: 7.2
+type: filter
+identifier: placebo.color_transform
+title: GPU Color Transfer
+version: 1
+copyright: D-Ogi
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+  - Hidden
+description: >
+  Convert the transfer characteristic of a Vulkan frame or a placebo texture.
+  color_transform factories this filter and runs it before its CPU converter.
+  It is usually the first filter after avformat, so the picture is still the
+  decoded Vulkan AVFrame. A placebo texture is handled the same way when one
+  already exists.
+
+  The filter runs when the request is mlt_image_private for placebo or
+  Vulkan, or when force_trc is set. Any other image is left for
+  color_transform. When it does convert, it asks avformat for a Vulkan frame.
+
+  When consumer.mlt_color_trc is set, this filter converts to that transfer.
+  Linear light is kept in a half-float texture. color_transform copies
+  force_trc onto this filter so the image is encoded back to color_trc
+  before it is downloaded.
+parameters:
+  - identifier: force_trc
+    title: Force TRC
+    type: string
+    description: >
+      Convert to this transfer instead of consumer.mlt_color_trc.
+      The consumer sets this to color_trc when it delinearizes.
+    required: no
+    readonly: no
+    mutable: no
+    default: unset

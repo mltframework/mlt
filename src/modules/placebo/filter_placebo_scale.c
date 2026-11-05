@@ -17,6 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
 #include "vulkan_frame.h"
@@ -229,11 +230,22 @@ static int filter_get_image(mlt_frame frame,
     if (is_tex && !placebo_image_get_tex(*image))
         return 1;
 
+    /* A linear texture stays linear. A Vulkan frame still in its source
+       transfer is encoded to rgba8 sRGB, as before. */
+    struct pl_color_space dst_color = pl_color_space_srgb;
+    pl_fmt dst_fmt = rgba_fmt;
+    if (!is_vulkan || placebo_frame_is_linear(frame)) {
+        pl_fmt encoded = NULL;
+        placebo_tex_encoding(gpu, frame, &dst_color, &encoded);
+        if (encoded)
+            dst_fmt = encoded;
+    }
+
     placebo_render_lock();
     pl_tex dst_tex = pl_tex_create(gpu,
                                    pl_tex_params(.w = out_w,
                                                  .h = out_h,
-                                                 .format = rgba_fmt,
+                                                 .format = dst_fmt,
                                                  .sampleable = true,
                                                  .renderable = true,
                                                  .host_readable = true, ));
@@ -265,7 +277,7 @@ static int filter_get_image(mlt_frame frame,
                 .component_mapping = {0, 1, 2, 3},
             }},
             .repr = pl_color_repr_rgb,
-            .color = pl_color_space_srgb,
+            .color = dst_color,
         };
     }
 
@@ -277,7 +289,7 @@ static int filter_get_image(mlt_frame frame,
             .component_mapping = {0, 1, 2, 3},
         }},
         .repr = pl_color_repr_rgb,
-        .color = pl_color_space_srgb,
+        .color = dst_color,
     };
     const float black[3] = {0.f, 0.f, 0.f};
     pl_frame_clear(gpu, &pl_dst, black);

@@ -34,6 +34,10 @@ extern mlt_filter filter_placebo_scale_init(mlt_profile profile,
                                             mlt_service_type type,
                                             const char *id,
                                             char *arg);
+extern mlt_filter filter_placebo_color_transform_init(mlt_profile profile,
+                                                      mlt_service_type type,
+                                                      const char *id,
+                                                      char *arg);
 
 static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
 {
@@ -47,6 +51,9 @@ MLTPLACEBO_EXPORT MLT_REPOSITORY
     MLT_REGISTER(mlt_service_filter_type, "placebo.render", filter_placebo_render_init);
     MLT_REGISTER(mlt_service_filter_type, "placebo.shader", filter_placebo_shader_init);
     MLT_REGISTER(mlt_service_filter_type, "placebo.scale", filter_placebo_scale_init);
+    MLT_REGISTER(mlt_service_filter_type,
+                 "placebo.color_transform",
+                 filter_placebo_color_transform_init);
     MLT_REGISTER(mlt_service_link_type, "placebo.scale", mlt_link_filter_init);
     MLT_REGISTER_METADATA(mlt_service_filter_type,
                           "placebo.render",
@@ -60,5 +67,9 @@ MLTPLACEBO_EXPORT MLT_REPOSITORY
                           "placebo.scale",
                           metadata,
                           "filter_placebo_scale.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type,
+                          "placebo.color_transform",
+                          metadata,
+                          "filter_placebo_color_transform.yml");
     MLT_REGISTER_METADATA(mlt_service_link_type, "placebo.scale", mlt_link_filter_metadata, NULL);
 }
