@@ -66,7 +66,7 @@ if(MOD_VORBIS)
   add_qt_test(TEST_NAME vorbis)
 endif()
 
-if(MOD_WSOLA)
+if(MOD_PLUS)
   add_qt_test(TEST_NAME wsola)
 endif()
 

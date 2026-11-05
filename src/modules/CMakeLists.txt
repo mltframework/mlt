@@ -108,10 +108,6 @@ if(MOD_VORBIS)
   add_subdirectory(vorbis)
 endif()
 
-if(MOD_WSOLA)
-  add_subdirectory(wsola)
-endif()
-
 if(MOD_XINE)
   add_subdirectory(xine)
 endif()
