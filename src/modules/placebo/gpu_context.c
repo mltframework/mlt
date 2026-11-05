@@ -333,13 +333,13 @@ static void publish_get_proc_addr(mlt_properties props)
     publish_fn(props, "get_proc_addr", &published);
 }
 
-static void find_decode_queue(pl_vulkan vk, int *index, int *count)
+/* flags is a queue capability bit such as VK_QUEUE_VIDEO_DECODE_BIT_KHR.
+   index is -1 when no family has that bit. */
+static void find_queue_with_flags(pl_vulkan vk, VkQueueFlags flags, int *index, int *count)
 {
     *index = -1;
     *count = 0;
-    /* VK_QUEUE_VIDEO_DECODE_BIT_KHR is an enum constant, not a macro. */
-#ifdef VK_KHR_video_decode_queue
-    if (!vk || !vk->get_proc_addr || !vk->instance || !vk->phys_device)
+    if (!flags || !vk || !vk->get_proc_addr || !vk->instance || !vk->phys_device)
         return;
 
     PFN_vkGetPhysicalDeviceQueueFamilyProperties get_qf
@@ -358,16 +358,13 @@ static void find_decode_queue(pl_vulkan vk, int *index, int *count)
         return;
     get_qf(vk->phys_device, &num, families);
     for (uint32_t i = 0; i < num; i++) {
-        if (families[i].queueFlags & VK_QUEUE_VIDEO_DECODE_BIT_KHR) {
+        if (families[i].queueFlags & flags) {
             *index = (int) i;
             *count = (int) families[i].queueCount;
             break;
         }
     }
     free(families);
-#else
-    (void) vk;
-#endif
 }
 
 /* Caller holds s_mutex. Publishes only after the properties object is complete. */
@@ -382,7 +379,14 @@ static void publish_vulkan_locked(void)
 
     int decode_index = -1;
     int decode_count = 0;
-    find_decode_queue(s_vulkan, &decode_index, &decode_count);
+    int encode_index = -1;
+    int encode_count = 0;
+#ifdef VK_KHR_video_decode_queue
+    find_queue_with_flags(s_vulkan, VK_QUEUE_VIDEO_DECODE_BIT_KHR, &decode_index, &decode_count);
+#endif
+#ifdef VK_KHR_video_encode_queue
+    find_queue_with_flags(s_vulkan, VK_QUEUE_VIDEO_ENCODE_BIT_KHR, &encode_index, &encode_count);
+#endif
 
     mlt_properties props = mlt_properties_new();
     if (!props)
@@ -405,6 +409,8 @@ static void publish_vulkan_locked(void)
     mlt_properties_set_int(props, "queue_transfer_count", (int) s_vulkan->queue_transfer.count);
     mlt_properties_set_int(props, "queue_decode_index", decode_index);
     mlt_properties_set_int(props, "queue_decode_count", decode_count);
+    mlt_properties_set_int(props, "queue_encode_index", encode_index);
+    mlt_properties_set_int(props, "queue_encode_count", encode_count);
     publish_fn(props, "lock_queue", &s_vulkan->lock_queue);
     publish_fn(props, "unlock_queue", &s_vulkan->unlock_queue);
     mlt_properties_set_data(props, "lock_ctx", (void *) s_vulkan, 0, NULL, NULL);
@@ -416,13 +422,19 @@ static void publish_vulkan_locked(void)
                             0,
                             (mlt_destructor) mlt_properties_close,
                             NULL);
-    if (decode_count > 0)
-        mlt_log_info(NULL,
-                     "[placebo] GPU initialized via Vulkan (decode queue %d x %d)\n",
-                     decode_index,
-                     decode_count);
-    else
-        mlt_log_info(NULL, "[placebo] GPU initialized via Vulkan (no video decode queue)\n");
+    mlt_log_info(NULL,
+                 "[placebo] GPU initialized via Vulkan (decode queue %d x %d, encode queue %d x %d)\n",
+                 decode_index,
+                 decode_count,
+                 encode_index,
+                 encode_count);
+    if (s_vulkan->extensions) {
+        for (int i = 0; i < s_vulkan->num_extensions; i++) {
+            const char *ext = s_vulkan->extensions[i];
+            if (ext && strstr(ext, "video_encode"))
+                mlt_log_info(NULL, "[placebo] Vulkan device extension %s\n", ext);
+        }
+    }
 }
 
 static int vulkan_loader(PFN_vkGetInstanceProcAddr *vk_get_proc)
@@ -453,7 +465,7 @@ static int vulkan_loader(PFN_vkGetInstanceProcAddr *vk_get_proc)
 
 static int create_vulkan_device(PFN_vkGetInstanceProcAddr vk_get_proc, int with_decode)
 {
-    const char *opt_exts[8] = {0};
+    const char *opt_exts[16] = {0};
     int num_opt = 0;
     VkQueueFlags extra_queues = 0;
 #if defined(VK_KHR_video_decode_queue) && defined(VK_KHR_video_maintenance1)
@@ -491,6 +503,20 @@ static int create_vulkan_device(PFN_vkGetInstanceProcAddr vk_get_proc, int with_
         opt_exts[num_opt++] = VK_KHR_VIDEO_MAINTENANCE_1_EXTENSION_NAME;
         features = &extra_features;
 #endif
+#ifdef VK_KHR_video_encode_queue
+        extra_queues |= VK_QUEUE_VIDEO_ENCODE_BIT_KHR;
+        opt_exts[num_opt++] = VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME;
+#ifdef VK_KHR_video_encode_h264
+        opt_exts[num_opt++] = VK_KHR_VIDEO_ENCODE_H264_EXTENSION_NAME;
+#endif
+#ifdef VK_KHR_video_encode_h265
+        opt_exts[num_opt++] = VK_KHR_VIDEO_ENCODE_H265_EXTENSION_NAME;
+#endif
+#endif
+        if (num_opt > (int) (sizeof(opt_exts) / sizeof(opt_exts[0]))) {
+            mlt_log_error(NULL, "[placebo] too many Vulkan device extensions\n");
+            return 0;
+        }
     }
 #else
     (void) with_decode;

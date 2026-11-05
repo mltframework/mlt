@@ -18,6 +18,7 @@
  */
 
 #include "common.h"
+#include "vulkan_image.h"
 
 // mlt Header files
 #include <framework/mlt_consumer.h>
@@ -287,16 +288,41 @@ static int init_vaapi(mlt_properties properties, AVCodecContext *codec_context)
 }
 
 #if HAVE_FFMPEG_VULKAN
+static int init_vulkan_frames(mlt_properties properties, AVCodecContext *codec_context)
+{
+    AVBufferRef *frames = av_hwframe_ctx_alloc(codec_context->hw_device_ctx);
+    AVHWFramesContext *hwfc;
+    int err;
+
+    if (!frames)
+        return AVERROR(ENOMEM);
+    hwfc = (AVHWFramesContext *) frames->data;
+    hwfc->format = AV_PIX_FMT_VULKAN;
+    hwfc->sw_format = hwupload_pix_fmt(properties);
+    hwfc->width = codec_context->width;
+    hwfc->height = codec_context->height;
+    err = av_hwframe_ctx_init(frames);
+    if (err < 0) {
+        av_buffer_unref(&frames);
+        mlt_log_error(NULL, "Vulkan encoder frames init failed: %d\n", err);
+        return err;
+    }
+    codec_context->hw_frames_ctx = frames;
+    codec_context->color_range = mlt_image_full_range(mlt_properties_get(properties, "color_range"))
+                                     ? AVCOL_RANGE_JPEG
+                                     : AVCOL_RANGE_MPEG;
+    mlt_properties_set_int(properties, "vulkan_image_encode", 1);
+    return 0;
+}
+
 static int init_vulkan(mlt_properties properties, AVCodecContext *codec_context)
 {
-    int err = 0;
-    const char *vaapi_device = mlt_properties_get(properties, "vulkan_device");
-    AVDictionary *opts = NULL;
+    const char *img_fmt = mlt_properties_get(properties, "mlt_image_format");
+    int want_image = img_fmt && !strcmp(img_fmt, "vulkan");
+    AVBufferRef *adopted = avformat_vulkan_adopt_placebo(1);
 
-    if ((err = av_hwdevice_ctx_create(&hw_device_ctx, AV_HWDEVICE_TYPE_VULKAN, vaapi_device, opts, 0))
-        < 0) {
-        mlt_log_warning(NULL, "Failed to create Vulkan device.\n");
-    } else {
+    if (adopted) {
+        hw_device_ctx = adopted;
         codec_context->hw_device_ctx = av_buffer_ref(hw_device_ctx);
         mlt_properties_set_data(properties,
                                 "hw_device_ctx",
@@ -304,9 +330,42 @@ static int init_vulkan(mlt_properties properties, AVCodecContext *codec_context)
                                 0,
                                 (mlt_destructor) av_buffer_unref,
                                 NULL);
+        mlt_properties_set_int(properties, "vulkan_shared_device", 1);
+        if (want_image)
+            return init_vulkan_frames(properties, codec_context);
+        return 0;
     }
-    av_dict_free(&opts);
-    return err;
+    if (want_image) {
+        mlt_log_error(NULL,
+                      "mlt_image_format vulkan requires the shared placebo Vulkan device with an "
+                      "encode queue\n");
+        return -1;
+    }
+
+    {
+        int err = 0;
+        const char *vaapi_device = mlt_properties_get(properties, "vulkan_device");
+        AVDictionary *opts = NULL;
+
+        if ((err = av_hwdevice_ctx_create(&hw_device_ctx,
+                                          AV_HWDEVICE_TYPE_VULKAN,
+                                          vaapi_device,
+                                          opts,
+                                          0))
+            < 0) {
+            mlt_log_warning(NULL, "Failed to create Vulkan device.\n");
+        } else {
+            codec_context->hw_device_ctx = av_buffer_ref(hw_device_ctx);
+            mlt_properties_set_data(properties,
+                                    "hw_device_ctx",
+                                    &hw_device_ctx,
+                                    0,
+                                    (mlt_destructor) av_buffer_unref,
+                                    NULL);
+        }
+        av_dict_free(&opts);
+        return err;
+    }
 }
 #endif
 
@@ -1045,13 +1104,13 @@ static AVStream *add_video_stream(mlt_consumer consumer,
 #if HAVE_FFMPEG_VULKAN
         else if (AV_PIX_FMT_VULKAN == c->pix_fmt) {
             int result = init_vulkan(properties, c);
-            if (result >= 0) {
+            if (result >= 0 && !mlt_properties_get_int(properties, "vulkan_image_encode")) {
                 int result = setup_hwupload_filter(properties, st, c);
                 if (result < 0)
                     mlt_log_error(MLT_CONSUMER_SERVICE(consumer),
                                   "Failed to setup hwfilter: %d\n",
                                   result);
-            } else {
+            } else if (result < 0) {
                 mlt_log_error(MLT_CONSUMER_SERVICE(consumer),
                               "Failed to initialize Vulkan: %d\n",
                               result);
@@ -2092,7 +2151,50 @@ static int encode_video(encode_ctx_t *enc_ctx,
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
     mlt_service service = MLT_CONSUMER_SERVICE(enc_ctx->consumer);
 
-    if (mlt_properties_get_int(frame_properties, "rendered")) {
+    if (mlt_properties_get_int(frame_properties, "rendered")
+        && mlt_properties_get_int(properties, "vulkan_image_encode")) {
+        uint8_t *image = NULL;
+        int width = mlt_properties_get_int(properties, "width");
+        int height = mlt_properties_get_int(properties, "height");
+        int img_width = width;
+        int img_height = height;
+        avformat_vulkan_encoder *venc;
+        int av_colorspace = mlt_to_av_colorspace(dst_colorspace, height);
+
+        mlt_frame_get_image(frame, &image, &img_fmt, &img_width, &img_height, 0);
+        if (img_fmt != mlt_image_vulkan || !image) {
+            mlt_log_error(service,
+                          "Vulkan encode expected an mlt_image_vulkan frame, got %s\n",
+                          mlt_image_format_name(img_fmt));
+            return -1;
+        }
+        if (av_colorspace <= AVCOL_SPC_RGB || av_colorspace == AVCOL_SPC_UNSPECIFIED)
+            av_colorspace = AVCOL_SPC_BT709;
+        venc = mlt_properties_get_data(properties, "vulkan_encoder", NULL);
+        if (!venc) {
+            venc = avformat_vulkan_encoder_new();
+            if (!venc)
+                return -1;
+            mlt_properties_set_data(properties,
+                                    "vulkan_encoder",
+                                    venc,
+                                    0,
+                                    (mlt_destructor) avformat_vulkan_encoder_close,
+                                    NULL);
+        }
+        ret = avformat_vulkan_encoder_frame(venc,
+                                            c->hw_device_ctx,
+                                            width,
+                                            height,
+                                            hwupload_pix_fmt(properties),
+                                            dst_full_range,
+                                            av_colorspace,
+                                            (mlt_vulkan_image *) image,
+                                            &avframe);
+        if (ret < 0)
+            return -1;
+        mlt_events_fire(properties, "consumer-frame-show", mlt_event_data_from_frame(frame));
+    } else if (mlt_properties_get_int(frame_properties, "rendered")) {
         uint8_t *image;
         int width = mlt_properties_get_int(properties, "width");
         int height = mlt_properties_get_int(properties, "height");
@@ -2730,17 +2832,21 @@ static void *consumer_thread(void *arg)
     // Allocate picture
     enum AVPixelFormat pix_fmt = AV_PIX_FMT_YUV420P;
     if (enc_ctx->video_st) {
-        const int need_hwupload = enc_ctx->vcodec_ctx->pix_fmt == AV_PIX_FMT_VAAPI
+        const int vulkan_image_encode = mlt_properties_get_int(properties, "vulkan_image_encode");
+        const int need_hwupload = !vulkan_image_encode
+                                  && (enc_ctx->vcodec_ctx->pix_fmt == AV_PIX_FMT_VAAPI
 #if HAVE_FFMPEG_VULKAN
-                                  || enc_ctx->vcodec_ctx->pix_fmt == AV_PIX_FMT_VULKAN
+                                      || enc_ctx->vcodec_ctx->pix_fmt == AV_PIX_FMT_VULKAN
 #endif
-            ;
-        pix_fmt = need_hwupload ? hwupload_pix_fmt(properties) : enc_ctx->vcodec_ctx->pix_fmt;
-        converted_avframe = alloc_picture(pix_fmt, width, height);
-        if (!converted_avframe) {
-            mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "failed to allocate video AVFrame\n");
-            mlt_events_fire(properties, "consumer-fatal-error", mlt_event_data_none());
-            goto on_fatal_error;
+                                     );
+        if (!vulkan_image_encode) {
+            pix_fmt = need_hwupload ? hwupload_pix_fmt(properties) : enc_ctx->vcodec_ctx->pix_fmt;
+            converted_avframe = alloc_picture(pix_fmt, width, height);
+            if (!converted_avframe) {
+                mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "failed to allocate video AVFrame\n");
+                mlt_events_fire(properties, "consumer-fatal-error", mlt_event_data_none());
+                goto on_fatal_error;
+            }
         }
     }
 

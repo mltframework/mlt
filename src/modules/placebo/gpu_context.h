@@ -57,8 +57,9 @@ void placebo_gpu_release(void);
    inst_extensions, nb_inst_extensions, dev_extensions, nb_dev_extensions,
    queue_graphics_index/count, queue_compute_index/count,
    queue_transfer_index/count, queue_decode_index/count (decode index is -1
-   when the device has no video decode queue), lock_queue, unlock_queue,
-   lock_ctx. */
+   when the device has no video decode queue), queue_encode_index/count
+   (encode index is -1 when the device has no video encode queue),
+   lock_queue, unlock_queue, lock_ctx. */
 void placebo_vulkan_publish(void);
 
 /* Non-zero when a published Vulkan device has a video decode queue. */

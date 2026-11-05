@@ -22,10 +22,15 @@
 #include "common.h"
 
 #if HAVE_FFMPEG_VULKAN
+#include <libavfilter/avfilter.h>
+#include <libavfilter/buffersink.h>
+#include <libavfilter/buffersrc.h>
 #include <libavutil/hwcontext.h>
 #include <libavutil/hwcontext_vulkan.h>
+#include <libavutil/opt.h>
 #include <libavutil/pixdesc.h>
 
+#include <pthread.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -226,6 +231,747 @@ static void fill_vulkan_plane(mlt_vulkan_plane *plane,
     for (c = plane->components; c < 4; c++)
         plane->component_mapping[c] = -1;
 }
+
+/* FFmpeg allocates AVVkFrame.internal and puts a pthread mutex first.
+   The rest is private and stays unused for a frame we never export. */
+typedef struct
+{
+    pthread_mutex_t update_mutex;
+} vulkan_frame_mutex;
+
+typedef struct
+{
+    void *ctx;
+    void (*lock_queue)(void *, uint32_t, uint32_t);
+    void (*unlock_queue)(void *, uint32_t, uint32_t);
+} vulkan_queue_lock;
+
+typedef struct
+{
+    mlt_vulkan_image *image;
+} vulkan_wrap_owner;
+
+struct avformat_vulkan_encoder_s
+{
+    AVFilterGraph *graph;
+    AVFilterContext *src;
+    AVFilterContext *sink;
+    AVBufferRef *in_frames;
+    int src_w;
+    int src_h;
+    enum AVPixelFormat src_sw;
+    int src_full;
+    int dst_w;
+    int dst_h;
+    enum AVPixelFormat dst_sw;
+    int dst_full;
+    int logged;
+};
+
+static void load_fn_ptr(void *ptr, void *dest, size_t size)
+{
+    if (!ptr || size != sizeof(ptr))
+        return;
+    memcpy(dest, &ptr, size);
+}
+
+static void placebo_lock_queue(struct AVHWDeviceContext *dev_ctx, uint32_t queue_family, uint32_t index)
+{
+    vulkan_queue_lock *lock = dev_ctx->user_opaque;
+
+    if (lock && lock->lock_queue && lock->ctx)
+        lock->lock_queue(lock->ctx, queue_family, index);
+}
+
+static void placebo_unlock_queue(struct AVHWDeviceContext *dev_ctx,
+                                 uint32_t queue_family,
+                                 uint32_t index)
+{
+    vulkan_queue_lock *lock = dev_ctx->user_opaque;
+
+    if (lock && lock->unlock_queue && lock->ctx)
+        lock->unlock_queue(lock->ctx, queue_family, index);
+}
+
+static void free_adopted_lock(struct AVHWDeviceContext *ctx)
+{
+    free(ctx->user_opaque);
+    ctx->user_opaque = NULL;
+}
+
+static void add_queue_family(AVVulkanDeviceContext *vk, int *nb, int idx, int num, VkQueueFlags flags)
+{
+    int i;
+
+    if (idx < 0 || num <= 0 || !flags)
+        return;
+    for (i = 0; i < *nb; i++) {
+        if (vk->qf[i].idx == idx) {
+            vk->qf[i].flags |= (VkQueueFlagBits) flags;
+            if (num > vk->qf[i].num)
+                vk->qf[i].num = num;
+            return;
+        }
+    }
+    if (*nb >= (int) (sizeof(vk->qf) / sizeof(vk->qf[0])))
+        return;
+    vk->qf[*nb] = (AVVulkanDeviceQueueFamily){
+        .idx = idx,
+        .num = num,
+        .flags = (VkQueueFlagBits) flags,
+    };
+    (*nb)++;
+}
+
+static void destroy_wrapped_vkframe(AVVkFrame *vkf)
+{
+    if (!vkf)
+        return;
+    if (vkf->internal) {
+        vulkan_frame_mutex *internal = (vulkan_frame_mutex *) vkf->internal;
+        pthread_mutex_destroy(&internal->update_mutex);
+        av_freep(&vkf->internal);
+    }
+    av_free(vkf);
+}
+
+/* image->lock would copy the original semaphore over the value this submit
+   just produced. Lock the decoded frame directly when there is one. */
+static void write_sync_back(mlt_vulkan_image *image, AVVkFrame *vkf)
+{
+    vulkan_export_sync *sync;
+    int i;
+
+    if (!image || !vkf)
+        return;
+    for (i = 0; i < image->nb_planes && i < AV_NUM_DATA_POINTERS; i++) {
+        if (!image->planes[i].image && !image->planes[i].semaphore)
+            continue;
+        image->planes[i].layout = (int) vkf->layout[i];
+        image->planes[i].sem_value = vkf->sem_value[i];
+    }
+    sync = image->sync_opaque;
+    if (!sync || !sync->vkf)
+        return;
+    if (sync->vkfc && sync->vkfc->lock_frame)
+        sync->vkfc->lock_frame(sync->hwfc, sync->vkf);
+    push_vulkan_sync(image);
+    if (sync->vkfc && sync->vkfc->unlock_frame)
+        sync->vkfc->unlock_frame(sync->hwfc, sync->vkf);
+}
+
+static void free_wrapped_vkframe(void *opaque, uint8_t *data)
+{
+    vulkan_wrap_owner *owner = opaque;
+
+    if (owner && owner->image)
+        write_sync_back(owner->image, (AVVkFrame *) data);
+    destroy_wrapped_vkframe((AVVkFrame *) data);
+    free(owner);
+}
+
+static int plane_format_matches(const mlt_vulkan_image *image, enum AVPixelFormat pix)
+{
+    const VkFormat *fmts = av_vkfmt_from_pixfmt(pix);
+    int planes;
+    int i;
+
+    if (!fmts || !image)
+        return 0;
+    if (fmts[0] != (VkFormat) image->planes[0].format)
+        return 0;
+    planes = av_pix_fmt_count_planes(pix);
+    for (i = 1; i < planes && i < image->nb_planes; i++) {
+        if (!image->planes[i].format)
+            continue;
+        if (fmts[i] != VK_FORMAT_UNDEFINED && fmts[i] != (VkFormat) image->planes[i].format)
+            return 0;
+    }
+    return 1;
+}
+
+static enum AVPixelFormat vulkan_sw_format(const mlt_vulkan_image *image)
+{
+    static const enum AVPixelFormat candidates[] = {
+        AV_PIX_FMT_RGBA,    AV_PIX_FMT_BGRA,     AV_PIX_FMT_RGB0,     AV_PIX_FMT_BGR0,
+        AV_PIX_FMT_RGBA64,  AV_PIX_FMT_BGRA64,   AV_PIX_FMT_RGBAF16,  AV_PIX_FMT_RGBAF32,
+        AV_PIX_FMT_NV12,    AV_PIX_FMT_P010,     AV_PIX_FMT_P016,     AV_PIX_FMT_NV16,
+        AV_PIX_FMT_NV24,    AV_PIX_FMT_YUV420P,  AV_PIX_FMT_YUV422P,  AV_PIX_FMT_YUV444P,
+        AV_PIX_FMT_YUV420P10,
+        AV_PIX_FMT_YUV422P10,
+        AV_PIX_FMT_YUV444P10,
+        AV_PIX_FMT_NONE,
+    };
+    int bgra = image->planes[0].component_mapping[0] == 2;
+    int i;
+
+    for (i = 0; candidates[i] != AV_PIX_FMT_NONE; i++) {
+        int is_bgr = candidates[i] == AV_PIX_FMT_BGRA || candidates[i] == AV_PIX_FMT_BGR0
+                     || candidates[i] == AV_PIX_FMT_BGRA64;
+        if (bgra != is_bgr)
+            continue;
+        if (plane_format_matches(image, candidates[i]))
+            return candidates[i];
+    }
+    return AV_PIX_FMT_NONE;
+}
+
+static int colorspace_matrix(const mlt_vulkan_image *image, int dst_colorspace)
+{
+    int matrix = dst_colorspace;
+
+    if (!image->rgb) {
+        int from_image = mlt_to_av_colorspace(image->colorspace, image->height);
+        if (from_image > AVCOL_SPC_RGB && from_image != AVCOL_SPC_UNSPECIFIED
+            && from_image != AVCOL_SPC_RESERVED)
+            matrix = from_image;
+    }
+    if (matrix <= AVCOL_SPC_RGB || matrix == AVCOL_SPC_UNSPECIFIED || matrix == AVCOL_SPC_RESERVED)
+        matrix = AVCOL_SPC_BT709;
+    return matrix;
+}
+
+static void release_input_frame(AVFrame *in, vulkan_wrap_owner *owner, mlt_vulkan_image *image)
+{
+    if (in && in->data[0] && image)
+        write_sync_back(image, (AVVkFrame *) in->data[0]);
+    if (owner)
+        owner->image = NULL;
+    av_frame_free(&in);
+}
+
+static int alloc_input_frames(AVBufferRef *device,
+                              const mlt_vulkan_image *image,
+                              enum AVPixelFormat sw,
+                              int coded_w,
+                              int coded_h,
+                              AVBufferRef **out)
+{
+    AVBufferRef *ref = av_hwframe_ctx_alloc(device);
+    AVHWFramesContext *hwfc;
+    AVVulkanFramesContext *vkfc;
+    int i;
+    int err;
+
+    if (!ref)
+        return AVERROR(ENOMEM);
+    hwfc = (AVHWFramesContext *) ref->data;
+    vkfc = hwfc->hwctx;
+    hwfc->format = AV_PIX_FMT_VULKAN;
+    hwfc->sw_format = sw;
+    hwfc->width = coded_w;
+    hwfc->height = coded_h;
+    vkfc->tiling = VK_IMAGE_TILING_OPTIMAL;
+    for (i = 0; i < image->nb_planes && i < AV_NUM_DATA_POINTERS; i++) {
+        if (image->planes[i].format)
+            vkfc->format[i] = (VkFormat) image->planes[i].format;
+    }
+    err = av_hwframe_ctx_init(ref);
+    if (err < 0) {
+        av_buffer_unref(&ref);
+        return err;
+    }
+    /* The wrapped images were not allocated as encode sources. Clearing this
+       stops the conversion filter from reusing the description for its output. */
+    vkfc->usage &= ~(VkImageUsageFlags) VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
+    *out = ref;
+    return 0;
+}
+
+static int configure_encoder_graph(avformat_vulkan_encoder *enc,
+                                   AVBufferRef *device,
+                                   const mlt_vulkan_image *image,
+                                   int src_w,
+                                   int src_h,
+                                   enum AVPixelFormat src_sw,
+                                   int src_full,
+                                   int dst_w,
+                                   int dst_h,
+                                   enum AVPixelFormat dst_sw,
+                                   int dst_full,
+                                   int colorspace)
+{
+    AVFilterGraph *graph;
+    AVFilterContext *src;
+    AVFilterContext *convert;
+    AVFilterContext *sink;
+    AVBufferSrcParameters *par;
+    AVBufferRef *in_frames = NULL;
+    enum AVPixelFormat pix_fmts[] = {AV_PIX_FMT_VULKAN, AV_PIX_FMT_NONE};
+    char args[512];
+    const char *dst_name;
+    const char *matrix_name;
+    const char *trc_name;
+    const char *pri_name;
+    int trc;
+    int pri;
+    int err;
+
+    avfilter_graph_free(&enc->graph);
+    av_buffer_unref(&enc->in_frames);
+    enc->src = NULL;
+    enc->sink = NULL;
+
+    err = alloc_input_frames(device, image, src_sw, src_w, src_h, &in_frames);
+    if (err < 0) {
+        mlt_log_error(NULL, "Vulkan input frames init failed: %d\n", err);
+        return err;
+    }
+
+    graph = avfilter_graph_alloc();
+    if (!graph) {
+        av_buffer_unref(&in_frames);
+        return AVERROR(ENOMEM);
+    }
+
+    /* parameters_set must run before init. A hardware pix_fmt in the
+       create-filter args is rejected while hw_frames_ctx is still null. */
+    src = avfilter_graph_alloc_filter(graph, avfilter_get_by_name("buffer"), "mlt_vulkan_buffer");
+    if (!src) {
+        err = AVERROR_FILTER_NOT_FOUND;
+        goto fail;
+    }
+    par = av_buffersrc_parameters_alloc();
+    if (!par) {
+        err = AVERROR(ENOMEM);
+        goto fail;
+    }
+    par->format = AV_PIX_FMT_VULKAN;
+    par->width = image->width;
+    par->height = image->height;
+    par->time_base = (AVRational){1, 1};
+    par->sample_aspect_ratio = (AVRational){1, 1};
+    par->hw_frames_ctx = in_frames;
+    par->color_space = (enum AVColorSpace) colorspace;
+    par->color_range = src_full ? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
+    err = av_buffersrc_parameters_set(src, par);
+    av_free(par);
+    if (err < 0) {
+        mlt_log_error(NULL, "Vulkan buffer parameters failed: %d\n", err);
+        goto fail;
+    }
+    err = avfilter_init_dict(src, NULL);
+    if (err < 0) {
+        mlt_log_error(NULL, "Vulkan buffer source failed: %d\n", err);
+        goto fail;
+    }
+
+    /* scale_vulkan only converts RGB to YUV in its compute shader when both
+       dimensions change. A same-size change goes through swscale, which cannot
+       run this hardware conversion. libplacebo samples the Vulkan image and
+       writes the encoder format on the same device. */
+    dst_name = av_get_pix_fmt_name(dst_sw);
+    matrix_name = av_color_space_name(colorspace);
+    if (!matrix_name || !strcmp(matrix_name, "unknown") || !strcmp(matrix_name, "unspecified"))
+        matrix_name = "bt709";
+    trc = mlt_to_av_color_trc(image->color_trc);
+    if (trc == AVCOL_TRC_UNSPECIFIED)
+        trc = AVCOL_TRC_BT709;
+    trc_name = av_color_transfer_name(trc);
+    if (!trc_name || !strcmp(trc_name, "unknown") || !strcmp(trc_name, "unspecified"))
+        trc_name = "bt709";
+    pri = mlt_to_av_color_primaries(image->color_primaries);
+    if (pri == AVCOL_PRI_UNSPECIFIED)
+        pri = AVCOL_PRI_BT709;
+    pri_name = av_color_primaries_name(pri);
+    if (!pri_name || !strcmp(pri_name, "unknown") || !strcmp(pri_name, "unspecified"))
+        pri_name = "bt709";
+    snprintf(args,
+             sizeof(args),
+             "w=%d:h=%d:format=%s:colorspace=%s:color_trc=%s:color_primaries=%s:range=%s",
+             dst_w,
+             dst_h,
+             dst_name ? dst_name : "nv12",
+             matrix_name,
+             trc_name,
+             pri_name,
+             dst_full ? "pc" : "tv");
+    convert = avfilter_graph_alloc_filter(graph, avfilter_get_by_name("libplacebo"), "mlt_libplacebo");
+    if (!convert) {
+        mlt_log_error(NULL, "libplacebo filter is not available\n");
+        err = AVERROR_FILTER_NOT_FOUND;
+        goto fail;
+    }
+    convert->hw_device_ctx = av_buffer_ref(device);
+    err = avfilter_init_str(convert, args);
+    if (err < 0) {
+        mlt_log_error(NULL, "libplacebo init failed: %d\n", err);
+        goto fail;
+    }
+
+    sink = avfilter_graph_alloc_filter(graph, avfilter_get_by_name("buffersink"), "mlt_vulkan_sink");
+    if (!sink) {
+        err = AVERROR_FILTER_NOT_FOUND;
+        goto fail;
+    }
+#if LIBAVFILTER_VERSION_INT >= ((10 << 16) + (6 << 8) + 100)
+    err = av_opt_set_array(sink,
+                           "pixel_formats",
+                           AV_OPT_SEARCH_CHILDREN,
+                           0,
+                           1,
+                           AV_OPT_TYPE_PIXEL_FMT,
+                           pix_fmts);
+#else
+    err = av_opt_set_int_list(sink, "pix_fmts", pix_fmts, AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN);
+#endif
+    if (err < 0)
+        goto fail;
+    err = avfilter_init_dict(sink, NULL);
+    if (err < 0)
+        goto fail;
+
+    err = avfilter_link(src, 0, convert, 0);
+    if (err < 0)
+        goto fail;
+    err = avfilter_link(convert, 0, sink, 0);
+    if (err < 0)
+        goto fail;
+    err = avfilter_graph_config(graph, NULL);
+    if (err < 0) {
+        mlt_log_error(NULL, "Vulkan conversion graph failed: %d\n", err);
+        goto fail;
+    }
+
+    enc->graph = graph;
+    enc->src = src;
+    enc->sink = sink;
+    enc->in_frames = in_frames;
+    enc->src_w = src_w;
+    enc->src_h = src_h;
+    enc->src_sw = src_sw;
+    enc->src_full = src_full;
+    enc->dst_w = dst_w;
+    enc->dst_h = dst_h;
+    enc->dst_sw = dst_sw;
+    enc->dst_full = dst_full;
+    return 0;
+
+fail:
+    avfilter_graph_free(&graph);
+    av_buffer_unref(&in_frames);
+    return err;
+}
+
+static int wrap_vulkan_image(mlt_vulkan_image *image,
+                             AVBufferRef *in_frames,
+                             int colorspace,
+                             int src_full,
+                             AVFrame **frame_out,
+                             vulkan_wrap_owner **owner_out)
+{
+    AVVkFrame *vkf;
+    AVFrame *frame;
+    vulkan_wrap_owner *owner;
+    int i;
+    static int shift_logged;
+
+    *frame_out = NULL;
+    *owner_out = NULL;
+    if (image->bit_shift && !shift_logged) {
+        shift_logged = 1;
+        mlt_log_warning(NULL,
+                        "Vulkan image bit_shift %d is not applied by the encoder\n",
+                        image->bit_shift);
+    }
+
+    vkf = av_vk_frame_alloc();
+    frame = av_frame_alloc();
+    owner = calloc(1, sizeof(*owner));
+    if (!vkf || !frame || !owner) {
+        destroy_wrapped_vkframe(vkf);
+        av_frame_free(&frame);
+        free(owner);
+        return AVERROR(ENOMEM);
+    }
+    owner->image = image;
+    vkf->tiling = VK_IMAGE_TILING_OPTIMAL;
+    for (i = 0; i < image->nb_planes && i < AV_NUM_DATA_POINTERS; i++) {
+        if (!image->planes[i].image)
+            continue;
+        if (!image->planes[i].semaphore) {
+            mlt_log_error(NULL, "Vulkan image plane %d has no timeline semaphore\n", i);
+            destroy_wrapped_vkframe(vkf);
+            av_frame_free(&frame);
+            free(owner);
+            return AVERROR(EINVAL);
+        }
+        vkf->img[i] = (VkImage) (uintptr_t) image->planes[i].image;
+        vkf->layout[i] = (VkImageLayout) image->planes[i].layout;
+        vkf->sem[i] = (VkSemaphore) (uintptr_t) image->planes[i].semaphore;
+        vkf->sem_value[i] = image->planes[i].sem_value;
+        vkf->access[i] = 0;
+        vkf->queue_family[i] = VK_QUEUE_FAMILY_IGNORED;
+    }
+
+    frame->buf[0] = av_buffer_create((uint8_t *) vkf,
+                                     sizeof(*vkf),
+                                     free_wrapped_vkframe,
+                                     owner,
+                                     0);
+    if (!frame->buf[0]) {
+        destroy_wrapped_vkframe(vkf);
+        av_frame_free(&frame);
+        free(owner);
+        return AVERROR(ENOMEM);
+    }
+    frame->data[0] = (uint8_t *) vkf;
+    frame->format = AV_PIX_FMT_VULKAN;
+    frame->width = image->width;
+    frame->height = image->height;
+    frame->crop_left = image->crop_left;
+    frame->crop_top = image->crop_top;
+    frame->crop_right = image->crop_right;
+    frame->crop_bottom = image->crop_bottom;
+    frame->colorspace = colorspace;
+    frame->color_range = src_full ? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
+    /* Unspecified primaries make swscale insert a hardware LUT it cannot run.
+       The output frame copies these, so source and destination stay matched. */
+    frame->color_primaries = mlt_to_av_color_primaries(image->color_primaries);
+    if (frame->color_primaries == AVCOL_PRI_UNSPECIFIED)
+        frame->color_primaries = AVCOL_PRI_BT709;
+    frame->color_trc = mlt_to_av_color_trc(image->color_trc);
+    if (frame->color_trc == AVCOL_TRC_UNSPECIFIED)
+        frame->color_trc = AVCOL_TRC_BT709;
+    if (image->chroma_location > 0)
+        frame->chroma_location = image->chroma_location;
+    frame->hw_frames_ctx = av_buffer_ref(in_frames);
+    if (!frame->hw_frames_ctx) {
+        av_frame_free(&frame);
+        return AVERROR(ENOMEM);
+    }
+    *frame_out = frame;
+    *owner_out = owner;
+    return 0;
+}
+
+AVBufferRef *avformat_vulkan_adopt_placebo(int need_encode)
+{
+    mlt_properties published = mlt_properties_get_data(mlt_global_properties(), "placebo.vulkan", NULL);
+    vulkan_queue_lock *lock;
+    void *instance;
+    void *phys_dev;
+    void *device;
+    void *features;
+    void (*lock_queue)(void *, uint32_t, uint32_t) = NULL;
+    void (*unlock_queue)(void *, uint32_t, uint32_t) = NULL;
+    PFN_vkGetInstanceProcAddr get_proc_addr = NULL;
+    AVBufferRef *ref;
+    AVHWDeviceContext *device_ctx;
+    AVVulkanDeviceContext *vk;
+    int encode_index;
+    int encode_count;
+    int decode_index;
+    int decode_count;
+    int nb_qf = 0;
+    int ret;
+
+    if (!published)
+        return NULL;
+
+    encode_count = mlt_properties_get_int(published, "queue_encode_count");
+    encode_index = mlt_properties_get_int(published, "queue_encode_index");
+    decode_count = mlt_properties_get_int(published, "queue_decode_count");
+    decode_index = mlt_properties_get_int(published, "queue_decode_index");
+    if (need_encode && (encode_count <= 0 || encode_index < 0)) {
+        mlt_log_error(NULL, "shared placebo Vulkan device has no encode queue\n");
+        return NULL;
+    }
+
+    instance = mlt_properties_get_data(published, "instance", NULL);
+    phys_dev = mlt_properties_get_data(published, "phys_dev", NULL);
+    device = mlt_properties_get_data(published, "device", NULL);
+    features = mlt_properties_get_data(published, "features", NULL);
+    load_fn_ptr(mlt_properties_get_data(published, "lock_queue", NULL), &lock_queue, sizeof(lock_queue));
+    load_fn_ptr(mlt_properties_get_data(published, "unlock_queue", NULL),
+                &unlock_queue,
+                sizeof(unlock_queue));
+    load_fn_ptr(mlt_properties_get_data(published, "get_proc_addr", NULL),
+                &get_proc_addr,
+                sizeof(get_proc_addr));
+    if (!instance || !phys_dev || !device || !features || !lock_queue || !unlock_queue) {
+        mlt_log_error(NULL, "shared placebo Vulkan device is incomplete\n");
+        return NULL;
+    }
+
+    lock = calloc(1, sizeof(*lock));
+    ref = av_hwdevice_ctx_alloc(AV_HWDEVICE_TYPE_VULKAN);
+    if (!lock || !ref) {
+        free(lock);
+        av_buffer_unref(&ref);
+        return NULL;
+    }
+    lock->ctx = mlt_properties_get_data(published, "lock_ctx", NULL);
+    lock->lock_queue = lock_queue;
+    lock->unlock_queue = unlock_queue;
+    if (!lock->ctx) {
+        mlt_log_error(NULL, "shared placebo Vulkan device is incomplete\n");
+        free(lock);
+        av_buffer_unref(&ref);
+        return NULL;
+    }
+
+    device_ctx = (AVHWDeviceContext *) ref->data;
+    device_ctx->user_opaque = lock;
+    device_ctx->free = free_adopted_lock;
+    vk = device_ctx->hwctx;
+#if FF_API_VULKAN_SYNC_QUEUES
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#endif
+    vk->lock_queue = placebo_lock_queue;
+    vk->unlock_queue = placebo_unlock_queue;
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
+#endif
+    vk->get_proc_addr = get_proc_addr;
+    vk->inst = (VkInstance) instance;
+    vk->phys_dev = (VkPhysicalDevice) phys_dev;
+    vk->act_dev = (VkDevice) device;
+    vk->device_features = *(const VkPhysicalDeviceFeatures2 *) features;
+    vk->enabled_inst_extensions = mlt_properties_get_data(published, "inst_extensions", NULL);
+    vk->nb_enabled_inst_extensions = mlt_properties_get_int(published, "nb_inst_extensions");
+    vk->enabled_dev_extensions = mlt_properties_get_data(published, "dev_extensions", NULL);
+    vk->nb_enabled_dev_extensions = mlt_properties_get_int(published, "nb_dev_extensions");
+
+    add_queue_family(vk,
+                     &nb_qf,
+                     mlt_properties_get_int(published, "queue_graphics_index"),
+                     mlt_properties_get_int(published, "queue_graphics_count"),
+                     VK_QUEUE_GRAPHICS_BIT);
+    add_queue_family(vk,
+                     &nb_qf,
+                     mlt_properties_get_int(published, "queue_transfer_index"),
+                     mlt_properties_get_int(published, "queue_transfer_count"),
+                     VK_QUEUE_TRANSFER_BIT);
+    add_queue_family(vk,
+                     &nb_qf,
+                     mlt_properties_get_int(published, "queue_compute_index"),
+                     mlt_properties_get_int(published, "queue_compute_count"),
+                     VK_QUEUE_COMPUTE_BIT);
+    if (decode_count > 0 && decode_index >= 0)
+        add_queue_family(vk, &nb_qf, decode_index, decode_count, VK_QUEUE_VIDEO_DECODE_BIT_KHR);
+    if (encode_count > 0 && encode_index >= 0)
+        add_queue_family(vk, &nb_qf, encode_index, encode_count, VK_QUEUE_VIDEO_ENCODE_BIT_KHR);
+    vk->nb_qf = nb_qf;
+
+    ret = av_hwdevice_ctx_init(ref);
+    if (ret < 0) {
+        mlt_log_error(NULL, "shared placebo Vulkan device init failed: %d\n", ret);
+        av_buffer_unref(&ref);
+        return NULL;
+    }
+    mlt_log_info(NULL, "hwaccel vulkan using shared placebo device\n");
+    return ref;
+}
+
+avformat_vulkan_encoder *avformat_vulkan_encoder_new(void)
+{
+    return calloc(1, sizeof(avformat_vulkan_encoder));
+}
+
+void avformat_vulkan_encoder_close(avformat_vulkan_encoder *enc)
+{
+    if (!enc)
+        return;
+    avfilter_graph_free(&enc->graph);
+    av_buffer_unref(&enc->in_frames);
+    free(enc);
+}
+
+int avformat_vulkan_encoder_frame(avformat_vulkan_encoder *enc,
+                                 AVBufferRef *device,
+                                 int dst_w,
+                                 int dst_h,
+                                 int dst_sw_fmt,
+                                 int dst_full_range,
+                                 int dst_colorspace,
+                                 mlt_vulkan_image *image,
+                                 AVFrame **out)
+{
+    enum AVPixelFormat src_sw;
+    enum AVPixelFormat dst_sw = (enum AVPixelFormat) dst_sw_fmt;
+    int src_full;
+    int colorspace;
+    int coded_w;
+    int coded_h;
+    int err;
+    AVFrame *in = NULL;
+    AVFrame *filtered = NULL;
+    vulkan_wrap_owner *owner = NULL;
+
+    if (out)
+        *out = NULL;
+    if (!enc || !device || !image || !out || image->nb_planes < 1 || !image->planes[0].image)
+        return AVERROR(EINVAL);
+
+    src_sw = vulkan_sw_format(image);
+    if (src_sw == AV_PIX_FMT_NONE) {
+        mlt_log_error(NULL, "Vulkan image VkFormat %d has no software format\n", image->planes[0].format);
+        return AVERROR(EINVAL);
+    }
+    src_full = image->full_range || image->rgb;
+    colorspace = colorspace_matrix(image, dst_colorspace);
+    coded_w = image->planes[0].width > 0
+                  ? image->planes[0].width
+                  : image->width + image->crop_left + image->crop_right;
+    coded_h = image->planes[0].height > 0
+                  ? image->planes[0].height
+                  : image->height + image->crop_top + image->crop_bottom;
+    if (coded_w < image->width)
+        coded_w = image->width;
+    if (coded_h < image->height)
+        coded_h = image->height;
+
+    if (!enc->graph || enc->src_w != coded_w || enc->src_h != coded_h || enc->src_sw != src_sw
+        || enc->src_full != src_full || enc->dst_w != dst_w || enc->dst_h != dst_h
+        || enc->dst_sw != dst_sw || enc->dst_full != dst_full_range) {
+        err = configure_encoder_graph(enc,
+                                      device,
+                                      image,
+                                      coded_w,
+                                      coded_h,
+                                      src_sw,
+                                      src_full,
+                                      dst_w,
+                                      dst_h,
+                                      dst_sw,
+                                      dst_full_range,
+                                      colorspace);
+        if (err < 0)
+            return err;
+    }
+
+    err = wrap_vulkan_image(image, enc->in_frames, colorspace, src_full, &in, &owner);
+    if (err < 0)
+        return err;
+    err = av_buffersrc_add_frame_flags(enc->src, in, AV_BUFFERSRC_FLAG_KEEP_REF);
+    if (err >= 0) {
+        filtered = av_frame_alloc();
+        if (!filtered)
+            err = AVERROR(ENOMEM);
+        else
+            err = av_buffersink_get_frame(enc->sink, filtered);
+    }
+    release_input_frame(in, owner, image);
+    if (err < 0) {
+        mlt_log_error(NULL, "Vulkan image conversion failed: %d\n", err);
+        av_frame_free(&filtered);
+        return err;
+    }
+    if (!enc->logged) {
+        enc->logged = 1;
+        mlt_log_info(NULL,
+                     "encoding Vulkan image %dx%d as %s\n",
+                     image->width,
+                     image->height,
+                     av_get_pix_fmt_name(dst_sw));
+    }
+    *out = filtered;
+    return 0;
+}
 #endif
 
 /* Copy the decoded VkImages into an mlt_image_vulkan. The AVFrame stays alive
@@ -354,3 +1100,44 @@ int avformat_export_vulkan_frame(mlt_producer producer,
     return 0;
 #endif
 }
+
+#if !HAVE_FFMPEG_VULKAN
+struct AVBufferRef *avformat_vulkan_adopt_placebo(int need_encode)
+{
+    (void) need_encode;
+    return NULL;
+}
+
+avformat_vulkan_encoder *avformat_vulkan_encoder_new(void)
+{
+    return NULL;
+}
+
+void avformat_vulkan_encoder_close(avformat_vulkan_encoder *enc)
+{
+    (void) enc;
+}
+
+int avformat_vulkan_encoder_frame(avformat_vulkan_encoder *enc,
+                                 struct AVBufferRef *device,
+                                 int dst_w,
+                                 int dst_h,
+                                 int dst_sw_fmt,
+                                 int dst_full_range,
+                                 int dst_colorspace,
+                                 mlt_vulkan_image *image,
+                                 struct AVFrame **out)
+{
+    (void) enc;
+    (void) device;
+    (void) dst_w;
+    (void) dst_h;
+    (void) dst_sw_fmt;
+    (void) dst_full_range;
+    (void) dst_colorspace;
+    (void) image;
+    if (out)
+        *out = NULL;
+    return -1;
+}
+#endif
