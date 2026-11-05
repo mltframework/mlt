@@ -449,6 +449,7 @@ static int generate_test_image(mlt_properties properties,
         case mlt_image_movit:
         case mlt_image_opengl_texture:
         case mlt_image_private:
+        case mlt_image_vulkan:
             *format = mlt_image_yuv422;
             break;
         case mlt_image_invalid:
@@ -1419,7 +1420,8 @@ mlt_frame mlt_frame_clone(mlt_frame self, int is_deep)
         size = 0;
         data = mlt_properties_get_data(properties, "image", &size);
         mlt_image_format format = mlt_properties_get_int(properties, "format");
-        if (data && format != mlt_image_movit && format != mlt_image_private) {
+        if (data && format != mlt_image_movit && format != mlt_image_private
+            && format != mlt_image_vulkan) {
             int width = mlt_properties_get_int(properties, "width");
             int height = mlt_properties_get_int(properties, "height");
 
@@ -1559,7 +1561,8 @@ mlt_frame mlt_frame_clone_image(mlt_frame self, int is_deep)
     if (is_deep) {
         data = mlt_properties_get_data(properties, "image", &size);
         mlt_image_format format = mlt_properties_get_int(properties, "format");
-        if (data && format != mlt_image_movit && format != mlt_image_private) {
+        if (data && format != mlt_image_movit && format != mlt_image_private
+            && format != mlt_image_vulkan) {
             int width = mlt_properties_get_int(properties, "width");
             int height = mlt_properties_get_int(properties, "height");
 

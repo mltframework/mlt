@@ -153,6 +153,7 @@ static void ensure_color_properties(mlt_filter self, mlt_frame frame)
         case mlt_image_movit:
         case mlt_image_opengl_texture:
         case mlt_image_private:
+        case mlt_image_vulkan:
             full_range = 1;
             break;
         case mlt_image_yuv422:
@@ -249,7 +250,7 @@ static int convert_downloaded_linear(mlt_frame frame,
     int height;
 
     if (!image_is_rgb(*format) || image_is_rgb(output) || output == mlt_image_private
-        || output == mlt_image_none || output == mlt_image_movit)
+        || output == mlt_image_vulkan || output == mlt_image_none || output == mlt_image_movit)
         return 1;
     self = mlt_properties_get_data(MLT_FRAME_PROPERTIES(frame), "_color_transform", NULL);
     if (!self || mlt_properties_get_int(MLT_FILTER_PROPERTIES(self), "_trc_apply"))
@@ -302,7 +303,7 @@ static int filter_get_image(mlt_frame frame,
     }
     int ret = mlt_frame_get_image(frame, image, format, width, height, writable);
     if (ret || requested_format == mlt_image_none || *format == mlt_image_movit
-        || *format == mlt_image_none || *format == mlt_image_private)
+        || *format == mlt_image_none || *format == mlt_image_private || *format == mlt_image_vulkan)
         return ret;
 
     const char *out_trc_str = force_trc;

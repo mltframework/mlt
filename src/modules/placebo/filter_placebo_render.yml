@@ -14,9 +14,11 @@ description: >
   Uses D3D11 on Windows, Vulkan elsewhere, unless MLT_AVFORMAT_HWACCEL=vulkan,
   in which case Vulkan is used first so the device can be shared.
   On creation the filter initializes the GPU. A Vulkan device is published for
-  an avformat producer to decode into. The producer can hand that frame over as
-  an mlt_image_private image with subtype "vulkan". This filter renders it on
-  the GPU and downloads to RAM only when the caller asks for a normal image
+  an avformat producer to decode into. The producer can hand that picture over
+  as mlt_image_vulkan, a Vulkan texture rather than an FFmpeg frame. This
+  filter renders it on the GPU. A caller that asks for mlt_image_vulkan receives
+  another Vulkan texture, so a later Vulkan filter can use it. Any other image
+  format is downloaded to RAM.
   format. Useful as a finishing pass to reduce banding artifacts and improve
   gradient quality before output.
   The compiled shader cache is stored in a platform-specific location and can

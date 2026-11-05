@@ -32,9 +32,9 @@
 #include <string.h>
 
 /* color_transform factories this and runs it ahead of its CPU converter.
-   CPU images stay on that converter. A Vulkan AVFrame is the usual input:
-   this filter is the first one after avformat, so the decoded picture is
-   still the producer's frame and not yet a placebo texture. */
+   CPU images stay on that converter. An mlt_image_vulkan texture is the usual
+   input: this filter is the first one after avformat, so the decoded picture
+   is still the producer's VkImage and not yet a placebo texture. */
 
 static int subtype_is_foreign(const char *subtype)
 {
@@ -45,17 +45,18 @@ static int request_is_gpu(mlt_frame frame, mlt_image_format format)
 {
     const char *subtype;
 
+    if (format == mlt_image_vulkan)
+        return 1;
     if (format != mlt_image_private)
         return 0;
     if (placebo_frame_wants_tex(frame, format))
         return 1;
     subtype = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), MLT_PLACEBO_IMAGE_PRIVATE);
-    return subtype && (!strcmp(subtype, "placebo") || !strcmp(subtype, "vulkan"));
+    return subtype && !strcmp(subtype, "placebo");
 }
 
-/* avformat keeps the decoded frame in VRAM only when the request asks for
-   a vulkan private image. Ask for that frame unless another module already
-   claimed mlt_image_private. */
+/* avformat keeps the decoded picture in VRAM only for mlt_image_vulkan.
+   Ask for that unless another module already claimed mlt_image_private. */
 static void request_vulkan_frame(mlt_frame frame, mlt_image_format *format)
 {
     mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
@@ -63,9 +64,7 @@ static void request_vulkan_frame(mlt_frame frame, mlt_image_format *format)
 
     if (subtype_is_foreign(subtype))
         return;
-    *format = mlt_image_private;
-    if (!subtype || strcmp(subtype, "vulkan"))
-        mlt_properties_set(properties, MLT_PLACEBO_IMAGE_PRIVATE, "vulkan");
+    placebo_request_gpu_image(frame, format);
 }
 
 static int target_trc(mlt_filter filter, mlt_frame frame, mlt_color_trc *out)
@@ -133,7 +132,8 @@ static pl_fmt output_tex_format(mlt_filter filter,
                                 mlt_color_trc out_trc,
                                 mlt_image_format requested)
 {
-    if (requested == mlt_image_private && out_trc == mlt_color_trc_linear) {
+    if ((requested == mlt_image_private || requested == mlt_image_vulkan)
+        && out_trc == mlt_color_trc_linear) {
         pl_fmt linear = placebo_linear_format(gpu);
         if (linear)
             return linear;
@@ -293,15 +293,8 @@ static int convert_trc(mlt_filter filter,
         placebo_unmap_vulkan_image(gpu, &mapped);
     placebo_render_unlock();
 
-    *format = mlt_image_private;
-    *image = (uint8_t *) dst_tex;
-    if (placebo_frame_set_tex(frame, dst_tex)) {
-        placebo_render_lock();
-        pl_tex_destroy(gpu, &dst_tex);
-        placebo_render_unlock();
-        *image = NULL;
+    if (placebo_frame_publish_tex(frame, dst_tex, requested, image, format))
         return 1;
-    }
     mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "color_trc", out_trc);
     log_trc(filter, in_trc, out_trc);
     return 0;

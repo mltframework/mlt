@@ -35,8 +35,9 @@ notes: >
   Hardware decoding gracefully falls back to software decoding.
   When MLT_AVFORMAT_HWACCEL=vulkan and placebo.render has published its Vulkan
   device, that device is used for decoding and MLT_AVFORMAT_HWACCEL_DEVICE is
-  ignored. A caller that requests mlt_image_private with subtype "vulkan"
-  receives the decoded frame still in VRAM. The device must already be
+  ignored. A caller that requests mlt_image_vulkan receives the decoded
+  picture as a Vulkan texture (VkImage planes and timeline semaphores), not
+  an FFmpeg frame. The device must already be
   published when the codec opens, which an explicit profile and an attached
   placebo.render filter provide. Otherwise decoding uses its own device and
   downloads the frame.

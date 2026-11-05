@@ -745,9 +745,19 @@ int placebo_frame_is_tex(mlt_frame frame, mlt_image_format format)
 
 int placebo_frame_is_vulkan(mlt_frame frame, mlt_image_format format)
 {
-    const char *image_format = mlt_properties_get(MLT_FRAME_PROPERTIES(frame),
-                                                  MLT_PLACEBO_IMAGE_PRIVATE);
-    return format == mlt_image_private && image_format && !strcmp(image_format, "vulkan");
+    (void) frame;
+    return format == mlt_image_vulkan;
+}
+
+void placebo_request_gpu_image(mlt_frame frame, mlt_image_format *format)
+{
+    (void) frame;
+    if (!format || *format == mlt_image_vulkan)
+        return;
+    if (placebo_vulkan_has_decode_queue())
+        *format = mlt_image_vulkan;
+    else
+        *format = mlt_image_private;
 }
 
 int placebo_frame_set_tex(mlt_frame frame, pl_tex tex)

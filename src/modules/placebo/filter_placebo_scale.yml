@@ -17,7 +17,7 @@ notes: >
   This is not intended to be created directly. The loader producer and chain
   normalizers prefer it, and fall through to the next scaler when the GPU is
   unavailable.
-  A decoded Vulkan frame (mlt_image_private subtype "vulkan") stays in VRAM.
+  A decoded mlt_image_vulkan texture stays in VRAM.
   The result is a placebo texture at the full requested size. placebo.render
   downloads that texture when a caller asks for a normal image format.
   The fit matches the resize filter. The picture is scaled to fit inside the

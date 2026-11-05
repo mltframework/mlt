@@ -156,16 +156,12 @@ static int filter_get_image(mlt_frame frame,
         return mlt_frame_get_image(frame, image, format, width, height, writable);
     }
 
-    /* Request a private image. "vulkan" asks avformat to keep the decoded
-       frame in VRAM. A software frame is uploaded by placebo_convert_image
-       because _placebo_requested is set. requested is the caller's format
-       (rgba64 stays 16-bit); the pull itself asks for a texture. */
+    /* Ask for a Vulkan texture when the device can decode into one. A software
+       frame is uploaded by placebo_convert_image because _placebo_requested is
+       set. requested is the caller's format (rgba64 stays 16-bit). */
     mlt_image_format requested = *format;
-    int want_vulkan = placebo_vulkan_frame_supported() && placebo_vulkan_has_decode_queue();
     placebo_frame_set_requested_tex(frame, 1);
-    *format = mlt_image_private;
-    if (want_vulkan)
-        mlt_properties_set(MLT_FRAME_PROPERTIES(frame), MLT_PLACEBO_IMAGE_PRIVATE, "vulkan");
+    placebo_request_gpu_image(frame, format);
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
     placebo_frame_set_requested_tex(frame, 0);
     if (error || !*image)
@@ -177,7 +173,7 @@ static int filter_get_image(mlt_frame frame,
     int is_vulkan = placebo_frame_is_vulkan(frame, *format);
     if (!is_tex && !is_vulkan) {
         mlt_log_error(MLT_FILTER_SERVICE(filter),
-                      "Expected placebo or vulkan private input, got %s (%s)\n",
+                      "Expected a placebo texture or Vulkan texture, got %s (%s)\n",
                       mlt_image_format_name(*format),
                       mlt_properties_get(MLT_FRAME_PROPERTIES(frame), MLT_PLACEBO_IMAGE_PRIVATE));
         return 1;
@@ -264,15 +260,8 @@ static int filter_get_image(mlt_frame frame,
 
     placebo_render_unlock();
 
-    *format = mlt_image_private;
-    *image = (uint8_t *) dst_tex;
-    if (placebo_frame_set_tex(frame, dst_tex)) {
-        placebo_render_lock();
-        pl_tex_destroy(gpu, &dst_tex);
-        placebo_render_unlock();
-        *image = NULL;
+    if (placebo_frame_publish_tex(frame, dst_tex, requested, image, format))
         return 1;
-    }
 
     return 0;
 }

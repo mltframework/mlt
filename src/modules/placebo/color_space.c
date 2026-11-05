@@ -95,21 +95,30 @@ int placebo_frame_is_linear(mlt_frame frame)
     return mlt_image_color_trc_id(name) == mlt_color_trc_linear;
 }
 
-struct pl_color_space placebo_color_space_for_trc(mlt_frame frame, enum pl_color_transfer transfer)
+struct pl_color_space placebo_color_space(mlt_color_primaries primaries,
+                                          mlt_colorspace colorspace,
+                                          int height,
+                                          enum pl_color_transfer transfer)
 {
     struct pl_color_space color = {0};
-    mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
-    const char *primaries_name = mlt_properties_get(properties, "color_primaries");
-    mlt_color_primaries primaries = mlt_image_color_pri_id(primaries_name);
-    if (primaries == mlt_color_pri_none || primaries == mlt_color_pri_invalid) {
-        mlt_colorspace colorspace = mlt_image_colorspace_id(
-            mlt_properties_get(properties, "colorspace"));
-        int height = mlt_properties_get_int(properties, "height");
+
+    if (primaries == mlt_color_pri_none || primaries == mlt_color_pri_invalid)
         primaries = mlt_image_default_primaries(colorspace, height);
-    }
     color.primaries = primaries_from_mlt(primaries);
     color.transfer = transfer;
     return color;
+}
+
+struct pl_color_space placebo_color_space_for_trc(mlt_frame frame, enum pl_color_transfer transfer)
+{
+    mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
+    mlt_color_primaries primaries = mlt_image_color_pri_id(
+        mlt_properties_get(properties, "color_primaries"));
+    mlt_colorspace colorspace = mlt_image_colorspace_id(
+        mlt_properties_get(properties, "colorspace"));
+    int height = mlt_properties_get_int(properties, "height");
+
+    return placebo_color_space(primaries, colorspace, height, transfer);
 }
 
 pl_fmt placebo_linear_format(pl_gpu gpu)

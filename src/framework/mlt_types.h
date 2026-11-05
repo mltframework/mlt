@@ -50,7 +50,8 @@ typedef enum {
     mlt_image_yuv444p10, /**< planar YUV 4:4:4, 30bpp, (1 Cr & Cb sample per 1x1 Y samples), little-endian */
     mlt_image_rgba64, /**< 16-bit RGB with alpha channel */
     mlt_image_invalid,
-    mlt_image_private /**< modules may exchange this when the "mlt_image_private" property names the payload */
+    mlt_image_private, /**< modules may exchange this when the "mlt_image_private" property names the payload */
+    mlt_image_vulkan /**< a Vulkan texture; the image pointer is an mlt_vulkan_image */
 } mlt_image_format;
 
 /** The set of supported audio formats */

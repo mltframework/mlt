@@ -1,5 +1,5 @@
 /*
- * vulkan_frame.h -- map an FFmpeg Vulkan frame onto a libplacebo frame
+ * vulkan_frame.h -- map an mlt_image_vulkan texture onto a libplacebo frame
  * Copyright (C) 2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
@@ -20,15 +20,23 @@
 #ifndef VULKAN_FRAME_H
 #define VULKAN_FRAME_H
 
+#include <framework/mlt_frame.h>
+
 #include <libplacebo/renderer.h>
 
-/* Non-zero when this build can map an AV_PIX_FMT_VULKAN AVFrame. */
-int placebo_vulkan_frame_supported(void);
-
-/* Map a vulkan mlt_image_private payload (an AVFrame *) into out.
-   Returns non-zero on success. tex may be NULL; hw frames do not need one. */
+/* Map an mlt_image_vulkan payload into out. Returns non-zero on success.
+   The VkImages stay owned by the payload. Call unmap before replacing it. */
 int placebo_map_vulkan_image(pl_gpu gpu, const uint8_t *image, struct pl_frame *out);
 
 void placebo_unmap_vulkan_image(pl_gpu gpu, struct pl_frame *frame);
+
+/* Store tex on the frame. A caller that asked for mlt_image_vulkan receives a
+   Vulkan texture (VkImage plus a timeline semaphore). Any other request keeps
+   the libplacebo texture as mlt_image_private. On failure tex is destroyed. */
+int placebo_frame_publish_tex(mlt_frame frame,
+                              pl_tex tex,
+                              mlt_image_format requested,
+                              uint8_t **image,
+                              mlt_image_format *format);
 
 #endif /* VULKAN_FRAME_H */

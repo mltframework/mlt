@@ -361,7 +361,7 @@ static int filter_get_image(mlt_frame frame,
      * format; rgba64 is rendered to rgba16 instead of rgba8. */
     mlt_image_format requested = *format;
     placebo_frame_set_requested_tex(frame, 1);
-    *format = mlt_image_private;
+    placebo_request_gpu_image(frame, format);
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
     placebo_frame_set_requested_tex(frame, 0);
     if (error || !*image)
@@ -375,7 +375,7 @@ static int filter_get_image(mlt_frame frame,
     int is_vulkan = placebo_frame_is_vulkan(frame, *format);
     if (!is_tex && !is_vulkan) {
         mlt_log_error(MLT_FILTER_SERVICE(filter),
-                      "Expected placebo or vulkan private input, got %s (%s)\n",
+                      "Expected a placebo texture or Vulkan texture, got %s (%s)\n",
                       mlt_image_format_name(*format),
                       mlt_properties_get(MLT_FRAME_PROPERTIES(frame), MLT_PLACEBO_IMAGE_PRIVATE));
         return 1;
@@ -400,7 +400,7 @@ static int filter_get_image(mlt_frame frame,
     placebo_render_lock();
 
     /* Reload shader if path/text/mtime changed; returns 0 if unavailable.
-       The upstream image, including a vulkan AVFrame, stays on the frame. */
+       The upstream image, including a Vulkan texture, stays on the frame. */
     if (!ensure_shader(filter, priv, gpu)) {
         placebo_render_unlock();
         return 0;
@@ -421,9 +421,9 @@ static int filter_get_image(mlt_frame frame,
         return 1;
     }
 
-    /* A vulkan AVFrame stays mapped only for this render. Unmap before
-       placebo_frame_set_tex replaces the image and frees the AVFrame.
-       The mapped frame keeps its YUV color; a placebo texture is rgba8. */
+    /* A Vulkan texture stays mapped only for this render. Unmap before
+       publish replaces the image. The mapped frame keeps its YUV color;
+       a placebo texture is rgba. */
     struct pl_frame mapped = {0};
     struct pl_frame pl_src = {0};
     const struct pl_frame *src = &pl_src;
@@ -486,15 +486,8 @@ static int filter_get_image(mlt_frame frame,
 
     placebo_render_unlock();
 
-    *format = mlt_image_private;
-    *image = (uint8_t *) dst_tex;
-    if (placebo_frame_set_tex(frame, dst_tex)) {
-        placebo_render_lock();
-        pl_tex_destroy(gpu, &dst_tex);
-        placebo_render_unlock();
-        *image = NULL;
+    if (placebo_frame_publish_tex(frame, dst_tex, requested, image, format))
         return 1;
-    }
 
     return 0;
 }

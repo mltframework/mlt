@@ -35,6 +35,12 @@ int placebo_frame_is_linear(mlt_frame frame);
 /* Color space with the frame's primaries and an explicit transfer. */
 struct pl_color_space placebo_color_space_for_trc(mlt_frame frame, enum pl_color_transfer transfer);
 
+/* Same mapping when the caller already has the ids (a Vulkan texture). */
+struct pl_color_space placebo_color_space(mlt_color_primaries primaries,
+                                          mlt_colorspace colorspace,
+                                          int height,
+                                          enum pl_color_transfer transfer);
+
 /* Half-float RGBA for linear light, or NULL when the GPU has none. */
 pl_fmt placebo_linear_format(pl_gpu gpu);
 

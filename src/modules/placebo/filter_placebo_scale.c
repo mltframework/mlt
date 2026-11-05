@@ -170,17 +170,14 @@ static int filter_get_image(mlt_frame frame,
     mlt_properties_set_int(properties, "resize_height", out_h);
     mlt_properties_set_int(properties, "distort", 0);
 
-    /* Ask avformat for a Vulkan frame. A software frame is uploaded by
+    /* Ask avformat for a Vulkan texture. A software frame is uploaded by
        placebo_convert_image because _placebo_requested is set. The producer
        overwrites the requested size with the decoded size; the fit above
        uses the profile size, not that request. requested is the caller's
        format so an rgba64 consumer is fitted into rgba16. */
     mlt_image_format requested = *format;
-    int want_vulkan = placebo_vulkan_frame_supported() && placebo_vulkan_has_decode_queue();
     placebo_frame_set_requested_tex(frame, 1);
-    *format = mlt_image_private;
-    if (want_vulkan)
-        mlt_properties_set(properties, MLT_PLACEBO_IMAGE_PRIVATE, "vulkan");
+    placebo_request_gpu_image(frame, format);
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
     placebo_frame_set_requested_tex(frame, 0);
     if (error || !*image)
@@ -224,7 +221,7 @@ static int filter_get_image(mlt_frame frame,
     int is_vulkan = placebo_frame_is_vulkan(frame, *format);
     if (!is_tex && !is_vulkan) {
         mlt_log_error(MLT_FILTER_SERVICE(filter),
-                      "Expected placebo or vulkan private input, got %s (%s)\n",
+                      "Expected a placebo texture or Vulkan texture, got %s (%s)\n",
                       mlt_image_format_name(*format),
                       mlt_properties_get(properties, MLT_PLACEBO_IMAGE_PRIVATE));
         return 1;
@@ -315,21 +312,14 @@ static int filter_get_image(mlt_frame frame,
         placebo_unmap_vulkan_image(gpu, &mapped);
     placebo_render_unlock();
 
-    *format = mlt_image_private;
     *width = out_w;
     *height = out_h;
-    *image = (uint8_t *) dst_tex;
     if (!distort)
         mlt_frame_set_aspect_ratio(frame, consumer_aspect);
     mlt_properties_set_int(properties, "width", out_w);
     mlt_properties_set_int(properties, "height", out_h);
-    if (placebo_frame_set_tex(frame, dst_tex)) {
-        placebo_render_lock();
-        pl_tex_destroy(gpu, &dst_tex);
-        placebo_render_unlock();
-        *image = NULL;
+    if (placebo_frame_publish_tex(frame, dst_tex, requested, image, format))
         return 1;
-    }
     return 0;
 }
 

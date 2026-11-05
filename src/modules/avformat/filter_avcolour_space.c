@@ -155,9 +155,10 @@ static int convert_image(mlt_frame frame,
     if (*format != output_format || out_width) {
         if (*format == mlt_image_none || *format == mlt_image_movit
             || *format == mlt_image_opengl_texture || *format == mlt_image_private
-            || *format == mlt_image_invalid || output_format == mlt_image_none
-            || output_format == mlt_image_movit || output_format == mlt_image_opengl_texture
-            || output_format == mlt_image_private || output_format == mlt_image_invalid) {
+            || *format == mlt_image_vulkan || *format == mlt_image_invalid
+            || output_format == mlt_image_none || output_format == mlt_image_movit
+            || output_format == mlt_image_opengl_texture || output_format == mlt_image_private
+            || output_format == mlt_image_vulkan || output_format == mlt_image_invalid) {
             return 1;
         }
 

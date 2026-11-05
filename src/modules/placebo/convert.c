@@ -271,16 +271,16 @@ int placebo_convert_image(mlt_frame frame,
     if (*format == output_format && *format != mlt_image_private)
         return 0;
 
-    // Fail fast if not converting to or from mlt_image_private
-    if (*format != mlt_image_private && output_format != mlt_image_private)
+    // Fail fast if not converting to or from a GPU image.
+    if (*format != mlt_image_private && *format != mlt_image_vulkan
+        && output_format != mlt_image_private && output_format != mlt_image_vulkan)
         return 1;
 
-    /* A Vulkan AVFrame is not RGBA and not a pl_tex. Pass it through when the
-       caller still wants a private image (placebo.render maps it). Refuse a
-       CPU format so it cannot be read as pixels; the render filter downloads
-       after it has replaced the image with a pl_tex. */
+    /* A Vulkan texture is not a pixel buffer and not a pl_tex. Pass it
+       through when the caller still wants a private image (the next placebo
+       filter maps it). Refuse a CPU format so it cannot be read as pixels. */
     if (placebo_frame_is_vulkan(frame, *format)) {
-        if (output_format == mlt_image_private)
+        if (output_format == mlt_image_private || output_format == mlt_image_vulkan)
             return 0;
         return 1;
     }
@@ -292,7 +292,8 @@ int placebo_convert_image(mlt_frame frame,
        texture as rgba8 before the consumer has encoded it. Upload still
        requires _placebo_requested, so a CPU image is not pulled onto the GPU
        just because some other module asked for private. */
-    if (output_format == mlt_image_private && placebo_frame_is_tex(frame, *format))
+    if ((output_format == mlt_image_private || output_format == mlt_image_vulkan)
+        && placebo_frame_is_tex(frame, *format))
         return 0;
 
     pl_gpu gpu = placebo_gpu_get();
@@ -304,7 +305,7 @@ int placebo_convert_image(mlt_frame frame,
     if (!gpu || !rgba8 || !image || width < 1 || height < 1)
         return 1;
 
-    if (placebo_frame_wants_tex(frame, output_format)) {
+    if (output_format == mlt_image_vulkan || placebo_frame_wants_tex(frame, output_format)) {
         pl_fmt upload_fmt = rgba8;
         if (*format == mlt_image_rgba64) {
             pl_fmt rgba16 = placebo_rgba16_format(gpu);

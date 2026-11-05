@@ -32,6 +32,78 @@
  */
 #define MLT_IMAGE_MAX_PLANES 4
 
+/** Maximum VkImages in one mlt_image_vulkan payload. */
+#define MLT_VULKAN_MAX_PLANES 4
+
+/** One VkImage inside an mlt_vulkan_image.
+ *
+ * image is a VkImage cast to uint64_t. Zero means this entry is a subplane of
+ * planes[0] (one multi-planar Vulkan image). format is the VkFormat used to
+ * interpret it. layout is the VkImageLayout. semaphore is a timeline
+ * VkSemaphore, or zero when the image needs no wait. sem_value is the value to
+ * wait on; the user signals sem_value + 1 and stores that new value.
+ * component_mapping[n] is the color channel for that component, or -1.
+ */
+typedef struct
+{
+    uint64_t image;
+    int format;
+    int width;
+    int height;
+    int layout;
+    uint64_t semaphore;
+    uint64_t sem_value;
+    int components;
+    int component_mapping[4];
+} mlt_vulkan_plane;
+
+/** mlt_image_vulkan payload. The frame image pointer is this struct.
+ *
+ * The VkImages belong to the shared device published on mlt_global_properties()
+ * as "placebo.vulkan". They stay on the GPU. A caller waits on each plane's
+ * timeline semaphore, submits its work, then signals the next value and updates
+ * layout and sem_value. Call lock before reading or writing those fields and
+ * unlock afterwards, when the callbacks are set. Do not free the VkImage; the
+ * image destructor does that.
+ *
+ * chroma_location uses the same order as AVChromaLocation: 0 unknown, 1 left,
+ * 2 center, 3 top-left, 4 top, 5 bottom-left, 6 bottom. colorspace, color_trc,
+ * and color_primaries are mlt_colorspace, mlt_color_trc, and mlt_color_primaries.
+ * rgb is non-zero for RGB and zero for YCbCr. bit_shift is the number of unused
+ * low bits when a 10-bit or 12-bit sample is stored in 16 bits.
+ *
+ * module_data is private to the module that created the image. Other modules
+ * use the planes and the semaphore only.
+ */
+typedef struct mlt_vulkan_image_s
+{
+    int width;
+    int height;
+    int crop_left;
+    int crop_top;
+    int crop_right;
+    int crop_bottom;
+    int nb_planes;
+    uint32_t usage;
+    int rgb;
+    int full_range;
+    int alpha;
+    int bit_depth;
+    int bit_shift;
+    int colorspace;
+    int color_trc;
+    int color_primaries;
+    int chroma_location;
+    int log2_chroma_w;
+    int log2_chroma_h;
+    mlt_vulkan_plane planes[MLT_VULKAN_MAX_PLANES];
+    void (*lock)(void *opaque);
+    void (*unlock)(void *opaque);
+    void *sync_opaque;
+    void *module_data;
+    void (*module_close)(void *module_data);
+} mlt_vulkan_image;
+
 struct mlt_image_s
 {
     mlt_image_format format;

@@ -84,9 +84,12 @@ int placebo_frame_wants_tex(mlt_frame frame, mlt_image_format format);
    This checks the actual image payload marker, not the transient request state. */
 int placebo_frame_is_tex(mlt_frame frame, mlt_image_format format);
 
-/* Return non-zero when the frame currently stores a Vulkan AVFrame.
-   The subtype string is "vulkan"; the payload is owned by the frame image. */
+/* Return non-zero when the frame currently stores an mlt_image_vulkan texture. */
 int placebo_frame_is_vulkan(mlt_frame frame, mlt_image_format format);
+
+/* Ask upstream for a GPU image. An mlt_image_vulkan request is kept. Otherwise
+   ask for one when this device can decode, else a placebo private texture. */
+void placebo_request_gpu_image(mlt_frame frame, mlt_image_format *format);
 
 /* Store a libplacebo texture on the frame as mlt_image_private.
    The texture lifetime is owned by the frame image property. */
