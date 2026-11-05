@@ -1,6 +1,6 @@
 /*
  * filter_wsola.cpp -- pitch preserving speed change with WSOLA
- * Copyright (C) 2026 Matheus Salvalagio
+ * Copyright (C) 2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,7 +17,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
-#include "wsola_algorithm.h"
+#include "wsola/wsola_algorithm.h"
 
 #include <framework/mlt.h>
 #include <framework/mlt_log.h>

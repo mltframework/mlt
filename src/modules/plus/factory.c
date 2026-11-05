@@ -153,6 +153,11 @@ extern mlt_filter filter_fft_init(mlt_profile profile,
                                   char *arg);
 #endif
 
+extern mlt_filter filter_wsola_init(mlt_profile profile,
+                                    mlt_service_type type,
+                                    const char *id,
+                                    char *arg);
+
 static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
 {
     char file[PATH_MAX];
@@ -187,6 +192,7 @@ MLTPLUS_EXPORT MLT_REPOSITORY
     MLT_REGISTER(mlt_service_filter_type, "text", filter_text_init);
     MLT_REGISTER(mlt_service_filter_type, "threshold", filter_threshold_init);
     MLT_REGISTER(mlt_service_filter_type, "timer", filter_timer_init);
+    MLT_REGISTER(mlt_service_filter_type, "wsola", filter_wsola_init);
     MLT_REGISTER(mlt_service_producer_type, "blipflash", producer_blipflash_init);
     MLT_REGISTER(mlt_service_producer_type, "count", producer_count_init);
     MLT_REGISTER(mlt_service_producer_type, "pgm", producer_pgm_init);
@@ -252,6 +258,7 @@ MLTPLUS_EXPORT MLT_REPOSITORY
     MLT_REGISTER_METADATA(mlt_service_filter_type, "text", metadata, "filter_text.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "threshold", metadata, "filter_threshold.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type, "timer", metadata, "filter_timer.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type, "wsola", metadata, "filter_wsola.yml");
     MLT_REGISTER_METADATA(mlt_service_producer_type,
                           "blipflash",
                           metadata,
