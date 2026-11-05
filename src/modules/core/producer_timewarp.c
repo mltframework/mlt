@@ -120,10 +120,6 @@ static int producer_get_audio(mlt_frame frame,
     // Scale the frequency to account for the speed change.
     // The resample normalizer will convert it to the requested frequency
     audio.frequency = (double) audio.frequency * fabs(pdata->speed);
-    // Tell the wsola filter that this audio is labeled with the sped up frequency.
-    mlt_properties_set_double(MLT_FRAME_PROPERTIES(frame),
-                              "_timewarp_audio_speed",
-                              fabs(pdata->speed));
 
     if (pdata->speed < 0.0) {
         mlt_audio_reverse(&audio);
@@ -196,14 +192,9 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
                     pdata->pitch_wsola = wsola;
                 }
                 if (pdata->pitch_filter) {
-                    mlt_properties filter_properties = MLT_FILTER_PROPERTIES(pdata->pitch_filter);
-                    if (!strcmp(mlt_properties_get(filter_properties, "mlt_service"), "wsola")) {
-                        mlt_properties_set_double(filter_properties, "speed", fabs(pdata->speed));
-                    } else {
-                        mlt_properties_set_double(filter_properties,
-                                                  "pitchscale",
-                                                  1.0 / fabs(pdata->speed));
-                    }
+                    mlt_properties_set_double(MLT_FILTER_PROPERTIES(pdata->pitch_filter),
+                                              "pitchscale",
+                                              1.0 / fabs(pdata->speed));
                     mlt_filter_process(pdata->pitch_filter, *frame);
                 }
             }
