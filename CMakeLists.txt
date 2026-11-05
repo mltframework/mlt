@@ -581,6 +581,10 @@ if(UNIX AND NOT APPLE)
   )
 endif()
 
+if (UNIX)
+  add_compile_definitions(LIBDIR="${CMAKE_INSTALL_FULL_LIBDIR}")
+endif()
+
 add_subdirectory(src)
 
 install(EXPORT MltTargets
