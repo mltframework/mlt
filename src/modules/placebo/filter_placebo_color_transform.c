@@ -1,6 +1,6 @@
 /*
  * filter_placebo_color_transform.c -- GPU transfer conversion
- * Copyright (C) 2026 D-Ogi
+ * Copyright (C) 2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -117,19 +117,53 @@ static void log_trc(mlt_filter filter, mlt_color_trc in_trc, mlt_color_trc out_t
                  mlt_image_color_trc_name(out_trc));
 }
 
-static int tex_is_rgba8(pl_tex tex)
-{
-    pl_fmt fmt = tex ? tex->params.format : NULL;
-    return fmt && fmt->type == PL_FMT_UNORM && fmt->num_components >= 4
-           && fmt->component_depth[0] == 8 && fmt->texel_size == 4;
-}
-
 static int transfers_match(struct pl_color_space src, enum pl_color_transfer transfer)
 {
     struct pl_color_space dst = src;
     dst.transfer = transfer;
     pl_color_space_infer_map(&src, &dst);
     return src.transfer == dst.transfer;
+}
+
+/* Pixel requests have to land in a texture download_rgba can read.
+   rgba64 is 16-bit unorm. Everything else is rgba8. A private request keeps
+   half-float when the output transfer is linear. */
+static pl_fmt output_tex_format(mlt_filter filter,
+                                pl_gpu gpu,
+                                mlt_color_trc out_trc,
+                                mlt_image_format requested)
+{
+    if (requested == mlt_image_private && out_trc == mlt_color_trc_linear) {
+        pl_fmt linear = placebo_linear_format(gpu);
+        if (linear)
+            return linear;
+        if (!mlt_properties_get_int(MLT_FILTER_PROPERTIES(filter), "_logged_rgba8")) {
+            mlt_properties_set_int(MLT_FILTER_PROPERTIES(filter), "_logged_rgba8", 1);
+            mlt_log_warning(MLT_FILTER_SERVICE(filter),
+                            "No half-float texture; linear light stays in rgba8\n");
+        }
+    }
+    if (requested == mlt_image_rgba64) {
+        pl_fmt rgba16 = placebo_rgba16_format(gpu);
+        if (rgba16)
+            return rgba16;
+        if (!mlt_properties_get_int(MLT_FILTER_PROPERTIES(filter), "_logged_rgba16")) {
+            mlt_properties_set_int(MLT_FILTER_PROPERTIES(filter), "_logged_rgba16", 1);
+            mlt_log_warning(MLT_FILTER_SERVICE(filter),
+                            "No rgba16 texture; rgba64 is encoded as rgba8\n");
+        }
+    }
+    return placebo_rgba8_format(gpu);
+}
+
+static int tex_matches_request(pl_tex tex, pl_gpu gpu, mlt_image_format requested)
+{
+    pl_fmt want;
+
+    if (requested == mlt_image_private)
+        return 1;
+    want = requested == mlt_image_rgba64 ? placebo_rgba16_format(gpu) : placebo_rgba8_format(gpu);
+    return placebo_tex_is(tex, want);
 }
 
 static int convert_trc(mlt_filter filter,
@@ -139,7 +173,7 @@ static int convert_trc(mlt_filter filter,
                        int *width,
                        int *height,
                        mlt_color_trc out_trc,
-                       int need_rgba8)
+                       mlt_image_format requested)
 {
     pl_gpu gpu = placebo_gpu_get();
     pl_renderer renderer = placebo_renderer_get();
@@ -153,12 +187,13 @@ static int convert_trc(mlt_filter filter,
     if (is_tex && !placebo_image_get_tex(*image))
         return 1;
 
+    int need_pixels = requested != mlt_image_private;
     enum pl_color_transfer dst_transfer = placebo_transfer_from_mlt(out_trc);
     if (dst_transfer == PL_COLOR_TRC_UNKNOWN) {
         mlt_log_info(MLT_FILTER_SERVICE(filter),
                      "No libplacebo curve for %s\n",
                      mlt_image_color_trc_name(out_trc));
-        return need_rgba8 && is_vulkan ? 1 : 0;
+        return need_pixels && is_vulkan ? 1 : 0;
     }
 
     mlt_color_trc in_trc = source_trc(frame);
@@ -182,8 +217,8 @@ static int convert_trc(mlt_filter filter,
 
     pl_tex current = is_tex ? placebo_image_get_tex(*image) : NULL;
     int same = transfers_match(src_color, dst_transfer);
-    int tex_usable = is_tex && (!need_rgba8 || tex_is_rgba8(current));
-    if (same && (tex_usable || (is_vulkan && !need_rgba8))) {
+    int tex_usable = is_tex && tex_matches_request(current, gpu, requested);
+    if (same && (tex_usable || (is_vulkan && !need_pixels))) {
         if (mapped_vulkan)
             placebo_unmap_vulkan_image(gpu, &mapped);
         placebo_render_unlock();
@@ -192,20 +227,7 @@ static int convert_trc(mlt_filter filter,
         return 0;
     }
 
-    /* Linear light stays in half float until the consumer asks for pixels.
-       An 8-bit texture is what download_rgba can read. */
-    pl_fmt dst_fmt = NULL;
-    if (out_trc == mlt_color_trc_linear && !need_rgba8)
-        dst_fmt = placebo_linear_format(gpu);
-    if (!dst_fmt) {
-        if (out_trc == mlt_color_trc_linear && !need_rgba8
-            && !mlt_properties_get_int(MLT_FILTER_PROPERTIES(filter), "_logged_rgba8")) {
-            mlt_properties_set_int(MLT_FILTER_PROPERTIES(filter), "_logged_rgba8", 1);
-            mlt_log_warning(MLT_FILTER_SERVICE(filter),
-                            "No half-float texture; linear light stays in rgba8\n");
-        }
-        dst_fmt = placebo_rgba8_format(gpu);
-    }
+    pl_fmt dst_fmt = output_tex_format(filter, gpu, out_trc, requested);
     if (!dst_fmt) {
         if (mapped_vulkan)
             placebo_unmap_vulkan_image(gpu, &mapped);
@@ -338,14 +360,7 @@ static int filter_get_image(mlt_frame frame,
     if (!placebo_frame_is_tex(frame, *format) && !placebo_frame_is_vulkan(frame, *format))
         return 0;
 
-    return convert_trc(filter,
-                       frame,
-                       image,
-                       format,
-                       width,
-                       height,
-                       out_trc,
-                       requested != mlt_image_private);
+    return convert_trc(filter, frame, image, format, width, height, out_trc, requested);
 }
 
 static mlt_frame filter_process(mlt_filter filter, mlt_frame frame)

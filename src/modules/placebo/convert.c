@@ -1,6 +1,7 @@
 /*
  * convert.c -- libplacebo image format converter
  * Copyright (C) 2026 D-Ogi
+ * Copyright (C) 2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -28,28 +29,57 @@
 #include <libplacebo/gpu.h>
 #include <libplacebo/renderer.h>
 
-static pl_fmt rgba_texture_format(pl_gpu gpu)
+static const char *tex_name(pl_tex tex)
 {
-    return gpu ? pl_find_named_fmt(gpu, "rgba8") : NULL;
+    pl_fmt fmt = tex ? tex->params.format : NULL;
+    return fmt && fmt->name ? fmt->name : "unknown";
 }
 
-static int upload_rgba(mlt_frame frame,
-                       uint8_t **image,
-                       mlt_image_format *format,
-                       int width,
-                       int height,
-                       pl_gpu gpu,
-                       pl_fmt rgba_fmt)
+/* Debug on every frame. The first rgba64 conversion in each direction is
+   info, so -verbose shows it once. */
+static void log_conversion(mlt_image_format from,
+                           const char *from_layout,
+                           mlt_image_format to,
+                           const char *to_layout)
 {
-    if (*format != mlt_image_rgba) {
-        if (mlt_frame_next_convert_image(frame, image, format, mlt_image_rgba))
-            return 1;
+    int level = MLT_LOG_DEBUG;
+    if (from == mlt_image_rgba64 || to == mlt_image_rgba64) {
+        static int logged_to_rgba64;
+        static int logged_from_rgba64;
+        int *slot = to == mlt_image_rgba64 ? &logged_to_rgba64 : &logged_from_rgba64;
+        if (!*slot) {
+            *slot = 1;
+            level = MLT_LOG_INFO;
+        }
     }
-    if (!*image)
+    mlt_log(NULL,
+            level,
+            "[placebo] Converting from format %s (%s) to %s (%s)\n",
+            mlt_image_format_name(from),
+            from_layout ? from_layout : "cpu",
+            mlt_image_format_name(to),
+            to_layout ? to_layout : "cpu");
+}
+
+static int output_is_rgb8(mlt_image_format format)
+{
+    return format == mlt_image_rgb || format == mlt_image_rgba;
+}
+
+static int upload_tex(mlt_frame frame,
+                      uint8_t **image,
+                      mlt_image_format *format,
+                      int width,
+                      int height,
+                      pl_gpu gpu,
+                      pl_fmt rgba_fmt)
+{
+    if (!*image || !rgba_fmt)
         return 1;
 
-    size_t stride = width * 4;
+    size_t stride = (size_t) width * rgba_fmt->texel_size;
     pl_tex tex = NULL;
+    mlt_image_format src_format = *format;
 
     placebo_render_lock();
     tex = pl_tex_create(gpu,
@@ -72,6 +102,7 @@ static int upload_rgba(mlt_frame frame,
     }
     placebo_render_unlock();
 
+    log_conversion(src_format, "cpu", mlt_image_private, rgba_fmt->name);
     *format = mlt_image_private;
     *image = (uint8_t *) tex;
     if (placebo_frame_set_tex(frame, tex)) {
@@ -84,37 +115,32 @@ static int upload_rgba(mlt_frame frame,
     return 0;
 }
 
-static int tex_is_rgba8(pl_tex tex)
+/* Copy into dst_fmt without changing the transfer. An rgba64 download is
+   rgba16 unorm. An 8-bit RGB download is rgba8. */
+static int render_to_format(
+    mlt_frame frame, pl_gpu gpu, pl_tex src, pl_fmt dst_fmt, int width, int height, pl_tex *out)
 {
-    pl_fmt fmt = tex ? tex->params.format : NULL;
-    return fmt && fmt->type == PL_FMT_UNORM && fmt->num_components >= 4
-           && fmt->component_depth[0] == 8 && fmt->texel_size == 4;
-}
-
-static int output_is_rgb(mlt_image_format format)
-{
-    return format == mlt_image_rgb || format == mlt_image_rgba || format == mlt_image_rgba64;
-}
-
-/* Quantize to rgba8 without changing the transfer. A CPU filter that writes
-   the image (box_blur) can then run, and color_transform encodes the TRC. */
-static int quantize_to_rgba8(
-    mlt_frame frame, pl_gpu gpu, pl_tex src, int width, int height, pl_tex *out)
-{
-    pl_fmt rgba8 = rgba_texture_format(gpu);
     pl_renderer renderer = placebo_renderer_get();
     const char *trc_name = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "color_trc");
     mlt_color_trc trc = trc_name ? mlt_image_color_trc_id(trc_name) : mlt_color_trc_none;
     enum pl_color_transfer transfer = placebo_transfer_from_mlt(trc);
-    if (!rgba8 || !renderer || !src || transfer == PL_COLOR_TRC_UNKNOWN)
+    pl_fmt src_fmt = src ? src->params.format : NULL;
+    if (!dst_fmt || !renderer || !src)
         return 1;
+    /* Unorm bit-depth changes have no curve to apply. A float texture with
+       no transfer is linear light, and guessing sRGB would encode it. */
+    if (transfer == PL_COLOR_TRC_UNKNOWN) {
+        if (!src_fmt || src_fmt->type != PL_FMT_UNORM)
+            return 1;
+        transfer = PL_COLOR_TRC_SRGB;
+    }
 
     struct pl_color_space color = placebo_color_space_for_trc(frame, transfer);
     placebo_render_lock();
     pl_tex dst = pl_tex_create(gpu,
                                pl_tex_params(.w = width,
                                              .h = height,
-                                             .format = rgba8,
+                                             .format = dst_fmt,
                                              .sampleable = true,
                                              .renderable = true,
                                              .host_readable = true, ));
@@ -154,32 +180,53 @@ static int download_rgba(mlt_frame frame,
                          pl_gpu gpu)
 {
     pl_tex tex = placebo_image_get_tex(*image);
-    pl_tex quantized = NULL;
+    pl_tex converted = NULL;
+    mlt_image_format produced = mlt_image_rgba;
+    const char *src_layout;
     if (!tex)
         return 1;
-    /* Half-float is linear light. Bit-casting it to rgba8 scrambles the
-       picture. An RGB request is a CPU filter, so quantize and leave
-       color_trc alone for color_transform. A YUV request stays on the GPU
-       until the consumer has encoded the transfer. */
-    if (!tex_is_rgba8(tex)) {
-        if (!output_is_rgb(output_format)
-            || quantize_to_rgba8(frame, gpu, tex, width, height, &quantized)) {
-            pl_fmt fmt = tex->params.format;
+    src_layout = tex_name(tex);
+
+    /* Half-float is linear light. Bit-casting it to rgba8 or rgba64 scrambles
+       the picture. rgba64 is 16-bit unorm, so render into rgba16 and leave
+       color_trc alone. An 8-bit RGB request quantizes to rgba8 for the CPU
+       filter. A YUV request stays on the GPU until the consumer has encoded
+       the transfer. */
+    if (output_format == mlt_image_rgba64) {
+        pl_fmt rgba16 = placebo_rgba16_format(gpu);
+        produced = mlt_image_rgba64;
+        if (!rgba16
+            || (!placebo_tex_is(tex, rgba16)
+                && render_to_format(frame, gpu, tex, rgba16, width, height, &converted))) {
             mlt_log_error(NULL,
-                          "[placebo] Refusing to download %s as rgba8 for %s\n",
-                          fmt && fmt->name ? fmt->name : "unknown",
+                          "[placebo] Refusing to download %s as rgba16 for %s\n",
+                          src_layout,
                           mlt_image_format_name(output_format));
             return 1;
         }
-        tex = quantized;
+        if (converted)
+            tex = converted;
+    } else if (!placebo_tex_is(tex, placebo_rgba8_format(gpu))) {
+        pl_fmt rgba8 = placebo_rgba8_format(gpu);
+        if (!output_is_rgb8(output_format) || !rgba8
+            || render_to_format(frame, gpu, tex, rgba8, width, height, &converted)) {
+            mlt_log_error(NULL,
+                          "[placebo] Refusing to download %s as rgba8 for %s\n",
+                          src_layout,
+                          mlt_image_format_name(output_format));
+            return 1;
+        }
+        tex = converted;
     }
 
-    int size = mlt_image_format_size(mlt_image_rgba, width, height, NULL);
+    log_conversion(*format, src_layout, output_format, tex_name(tex));
+
+    int size = mlt_image_format_size(produced, width, height, NULL);
     uint8_t *output = mlt_pool_alloc(size);
     if (!output) {
-        if (quantized) {
+        if (converted) {
             placebo_render_lock();
-            pl_tex_destroy(gpu, &quantized);
+            pl_tex_destroy(gpu, &converted);
             placebo_render_unlock();
         }
         return 1;
@@ -188,10 +235,11 @@ static int download_rgba(mlt_frame frame,
     placebo_render_lock();
     int ok = pl_tex_download(gpu,
                              pl_tex_transfer_params(.tex = tex,
-                                                    .row_pitch = width * 4,
+                                                    .row_pitch = (size_t) width
+                                                                 * tex->params.format->texel_size,
                                                     .ptr = output, ));
-    if (quantized)
-        pl_tex_destroy(gpu, &quantized);
+    if (converted)
+        pl_tex_destroy(gpu, &converted);
     placebo_render_unlock();
     if (!ok) {
         mlt_pool_release(output);
@@ -199,17 +247,17 @@ static int download_rgba(mlt_frame frame,
     }
 
     *image = output;
-    *format = mlt_image_rgba;
+    *format = produced;
     mlt_properties_set(MLT_FRAME_PROPERTIES(frame), "mlt_image_format", NULL);
     if (mlt_frame_set_image(frame, output, size, mlt_pool_release)) {
         mlt_pool_release(output);
         *image = NULL;
         return 1;
     }
-    /* RGBA is only an intermediate. Returning 0 here tells mlt_frame_convert_image
-       the request is satisfied, so a yuv422 consumer (sdl2) is handed RGBA.
-       Return an error and let the later converters finish the request. */
-    if (output_format != mlt_image_rgba)
+    /* Returning 0 tells mlt_frame_convert_image the request is satisfied.
+       rgba is only an intermediate for a yuv422 consumer (sdl2), which would
+       upload it as YUY2. rgba64 is the requested format, so it is finished. */
+    if (output_format != produced)
         return 1;
     return 0;
 }
@@ -248,20 +296,28 @@ int placebo_convert_image(mlt_frame frame,
         return 0;
 
     pl_gpu gpu = placebo_gpu_get();
-    pl_fmt rgba_fmt = rgba_texture_format(gpu);
+    pl_fmt rgba8 = placebo_rgba8_format(gpu);
     mlt_properties props = MLT_FRAME_PROPERTIES(frame);
     int width = mlt_properties_get_int(props, "width");
     int height = mlt_properties_get_int(props, "height");
 
-    if (!gpu || !rgba_fmt || !image || width < 1 || height < 1)
+    if (!gpu || !rgba8 || !image || width < 1 || height < 1)
         return 1;
 
-    mlt_log_debug(NULL,
-                  "[placebo] Converting from format %s to %s\n",
-                  mlt_image_format_name(*format),
-                  mlt_image_format_name(output_format));
-    if (placebo_frame_wants_tex(frame, output_format))
-        return upload_rgba(frame, image, format, width, height, gpu, rgba_fmt);
+    if (placebo_frame_wants_tex(frame, output_format)) {
+        pl_fmt upload_fmt = rgba8;
+        if (*format == mlt_image_rgba64) {
+            pl_fmt rgba16 = placebo_rgba16_format(gpu);
+            if (rgba16)
+                upload_fmt = rgba16;
+            else if (mlt_frame_next_convert_image(frame, image, format, mlt_image_rgba))
+                return 1;
+        } else if (*format != mlt_image_rgba) {
+            if (mlt_frame_next_convert_image(frame, image, format, mlt_image_rgba))
+                return 1;
+        }
+        return upload_tex(frame, image, format, width, height, gpu, upload_fmt);
+    }
 
     if (placebo_frame_is_tex(frame, *format))
         return download_rgba(frame, image, format, output_format, width, height, gpu);

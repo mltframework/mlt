@@ -1,6 +1,7 @@
 /*
  * filter_placebo_shader.c -- custom .hook shader loader via libplacebo
  * Copyright (C) 2025-2026 D-Ogi
+ * Copyright (C) 2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -356,7 +357,9 @@ static int filter_get_image(mlt_frame frame,
 
     /* Fetch the upstream image before acquiring the render lock so the
      * potentially-expensive upstream pipeline runs concurrently with other
-     * frames that are already inside the lock. */
+     * frames that are already inside the lock. requested is the caller's
+     * format; rgba64 is rendered to rgba16 instead of rgba8. */
+    mlt_image_format requested = *format;
     placebo_frame_set_requested_tex(frame, 1);
     *format = mlt_image_private;
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
@@ -381,15 +384,14 @@ static int filter_get_image(mlt_frame frame,
         return 1;
 
     /* A linear texture stays linear so the shader runs in linear light.
-       A Vulkan frame still in its source transfer is encoded to rgba8 sRGB. */
+       A Vulkan frame still in its source transfer is encoded to sRGB.
+       rgba64 is rgba16; a private linear frame stays half-float. */
     struct pl_color_space dst_color = pl_color_space_srgb;
     pl_fmt dst_fmt = rgba_fmt;
-    if (!is_vulkan || placebo_frame_is_linear(frame)) {
-        pl_fmt encoded = NULL;
-        placebo_tex_encoding(gpu, frame, &dst_color, &encoded);
-        if (encoded)
-            dst_fmt = encoded;
-    }
+    pl_fmt encoded = NULL;
+    placebo_output_format(gpu, frame, requested, &dst_color, &encoded);
+    if (encoded)
+        dst_fmt = encoded;
 
     /* Hold the render lock for the entire shader-reload + render sequence.
      * Without this, concurrent worker threads can race on priv->hooks:

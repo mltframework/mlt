@@ -287,10 +287,10 @@ static int filter_get_image(mlt_frame frame,
     mlt_image_format requested_format = *format;
     /* The GPU child converts a Vulkan frame or a placebo texture. It has to
        run before the pull: the consumer wrapper copies the track's converters
-       during that pull, and a half-float texture must already be rgba8 by
-       then. Pixels already in memory (box_blur) skip the child and use
-       method, chosen at init from avfilter.zscale, sws_colortransform, or
-       avfilter.scale. */
+       during that pull, and the texture must already be one download can read
+       (rgba16 for rgba64, rgba8 otherwise). Pixels already in memory
+       (box_blur) skip the child and use method, chosen at init from
+       avfilter.zscale, sws_colortransform, or avfilter.scale. */
     mlt_filter gpu = mlt_properties_get_data(filter_properties, "_gpu_color", NULL);
     const char *force_trc = mlt_properties_get(filter_properties, "force_trc");
     if (gpu) {

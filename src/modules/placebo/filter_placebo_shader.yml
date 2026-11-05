@@ -3,7 +3,7 @@ type: filter
 identifier: placebo.shader
 title: GPU Shader (libplacebo)
 version: 1
-copyright: Copyright (C) 2025-2026 D-Ogi
+copyright: D-Ogi and Meltytech, LLC
 creator: D-Ogi
 license: LGPLv2.1
 language: en

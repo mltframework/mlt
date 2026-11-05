@@ -1,6 +1,7 @@
 /*
  * factory.c -- module registration for libplacebo filters
  * Copyright (C) 2025-2026 D-Ogi
+ * Copyright (C) 2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public

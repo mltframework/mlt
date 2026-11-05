@@ -1,6 +1,7 @@
 /*
  * filter_placebo_render.c -- GPU-accelerated renderer via libplacebo
  * Copyright (C) 2025-2026 D-Ogi
+ * Copyright (C) 2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -157,7 +158,9 @@ static int filter_get_image(mlt_frame frame,
 
     /* Request a private image. "vulkan" asks avformat to keep the decoded
        frame in VRAM. A software frame is uploaded by placebo_convert_image
-       because _placebo_requested is set. */
+       because _placebo_requested is set. requested is the caller's format
+       (rgba64 stays 16-bit); the pull itself asks for a texture. */
+    mlt_image_format requested = *format;
     int want_vulkan = placebo_vulkan_frame_supported() && placebo_vulkan_has_decode_queue();
     placebo_frame_set_requested_tex(frame, 1);
     *format = mlt_image_private;
@@ -183,15 +186,14 @@ static int filter_get_image(mlt_frame frame,
         return 1;
 
     /* A linear texture stays linear. A Vulkan frame still in its source
-       transfer is encoded to rgba8 sRGB, as before. */
+       transfer is encoded to sRGB. rgba64 is rgba16; otherwise rgba8, or
+       half-float while the frame stays linear and private. */
     struct pl_color_space dst_color = pl_color_space_srgb;
     pl_fmt dst_fmt = rgba_fmt;
-    if (!is_vulkan || placebo_frame_is_linear(frame)) {
-        pl_fmt encoded = NULL;
-        placebo_tex_encoding(gpu, frame, &dst_color, &encoded);
-        if (encoded)
-            dst_fmt = encoded;
-    }
+    pl_fmt encoded = NULL;
+    placebo_output_format(gpu, frame, requested, &dst_color, &encoded);
+    if (encoded)
+        dst_fmt = encoded;
 
     /* sampleable is needed so a subsequent placebo filter can bind this
      * texture as its source without re-uploading from RAM. */

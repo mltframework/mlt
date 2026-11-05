@@ -3,7 +3,7 @@ type: filter
 identifier: placebo.color_transform
 title: GPU Color Transfer
 version: 1
-copyright: D-Ogi
+copyright: Meltytech, LLC
 license: LGPLv2.1
 language: en
 tags:
@@ -23,7 +23,8 @@ description: >
   When consumer.mlt_color_trc is set, this filter converts to that transfer.
   Linear light is kept in a half-float texture. color_transform copies
   force_trc onto this filter so the image is encoded back to color_trc
-  before it is downloaded.
+  before it is downloaded. An rgba64 request is encoded to 16-bit unorm.
+  Any other pixel request is rgba8.
 parameters:
   - identifier: force_trc
     title: Force TRC

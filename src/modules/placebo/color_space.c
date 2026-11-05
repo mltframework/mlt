@@ -1,6 +1,6 @@
 /*
  * color_space.c -- map MLT color metadata onto libplacebo
- * Copyright (C) 2026 D-Ogi
+ * Copyright (C) 2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -125,6 +125,16 @@ pl_fmt placebo_rgba8_format(pl_gpu gpu)
     return gpu ? pl_find_named_fmt(gpu, "rgba8") : NULL;
 }
 
+pl_fmt placebo_rgba16_format(pl_gpu gpu)
+{
+    return gpu ? pl_find_named_fmt(gpu, "rgba16") : NULL;
+}
+
+int placebo_tex_is(pl_tex tex, pl_fmt fmt)
+{
+    return tex && fmt && tex->params.format == fmt;
+}
+
 void placebo_tex_encoding(pl_gpu gpu, mlt_frame frame, struct pl_color_space *color, pl_fmt *fmt)
 {
     pl_fmt rgba8 = placebo_rgba8_format(gpu);
@@ -136,4 +146,20 @@ void placebo_tex_encoding(pl_gpu gpu, mlt_frame frame, struct pl_color_space *co
     }
     *color = pl_color_space_srgb;
     *fmt = rgba8;
+}
+
+void placebo_output_format(pl_gpu gpu,
+                           mlt_frame frame,
+                           mlt_image_format requested,
+                           struct pl_color_space *color,
+                           pl_fmt *fmt)
+{
+    pl_fmt rgba16;
+
+    placebo_tex_encoding(gpu, frame, color, fmt);
+    if (requested != mlt_image_rgba64)
+        return;
+    rgba16 = placebo_rgba16_format(gpu);
+    if (rgba16)
+        *fmt = rgba16;
 }
