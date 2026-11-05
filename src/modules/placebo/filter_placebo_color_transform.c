@@ -219,10 +219,20 @@ static int convert_trc(mlt_filter filter,
     int same = transfers_match(src_color, dst_transfer);
     int tex_usable = is_tex && tex_matches_request(current, gpu, requested);
     if (same && (tex_usable || (is_vulkan && !need_pixels))) {
+        int image_matches = 0;
+        if (is_vulkan) {
+            mlt_vulkan_image *vulkan = (mlt_vulkan_image *) *image;
+            image_matches = vulkan && vulkan->color_trc == (int) out_trc;
+        } else {
+            image_matches = in_trc == out_trc;
+        }
         if (mapped_vulkan)
             placebo_unmap_vulkan_image(gpu, &mapped);
         placebo_render_unlock();
-        mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "color_trc", out_trc);
+        /* No new image. bt709 and smpte170m share one libplacebo curve, so
+           only write the property when the image already has this enum. */
+        if (image_matches)
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "color_trc", out_trc);
         log_trc(filter, in_trc, out_trc);
         return 0;
     }
@@ -293,9 +303,8 @@ static int convert_trc(mlt_filter filter,
         placebo_unmap_vulkan_image(gpu, &mapped);
     placebo_render_unlock();
 
-    if (placebo_frame_publish_tex(frame, dst_tex, requested, image, format))
+    if (placebo_frame_publish_tex(frame, dst_tex, requested, image, format, out_trc))
         return 1;
-    mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "color_trc", out_trc);
     log_trc(filter, in_trc, out_trc);
     return 0;
 }

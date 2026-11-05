@@ -318,7 +318,12 @@ static int filter_get_image(mlt_frame frame,
         mlt_frame_set_aspect_ratio(frame, consumer_aspect);
     mlt_properties_set_int(properties, "width", out_w);
     mlt_properties_set_int(properties, "height", out_h);
-    if (placebo_frame_publish_tex(frame, dst_tex, requested, image, format))
+    if (placebo_frame_publish_tex(frame,
+                                  dst_tex,
+                                  requested,
+                                  image,
+                                  format,
+                                  placebo_frame_color_trc(frame, *image, *format)))
         return 1;
     return 0;
 }

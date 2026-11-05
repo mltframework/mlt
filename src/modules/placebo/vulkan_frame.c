@@ -344,7 +344,8 @@ static void destroy_placebo_vulkan(void *p)
     free(image);
 }
 
-static int publish_vulkan(mlt_frame frame, pl_tex tex, uint8_t **image, mlt_image_format *format)
+static int publish_vulkan(
+    mlt_frame frame, pl_tex tex, uint8_t **image, mlt_image_format *format, mlt_color_trc color_trc)
 {
     pl_gpu gpu = placebo_gpu_get();
     mlt_properties props = MLT_FRAME_PROPERTIES(frame);
@@ -357,7 +358,6 @@ static int publish_vulkan(mlt_frame frame, pl_tex tex, uint8_t **image, mlt_imag
     VkImage vk_image;
     mlt_color_primaries primaries;
     mlt_colorspace colorspace;
-    mlt_color_trc trc;
     static int logged;
 
     vulkan = calloc(1, sizeof(*vulkan));
@@ -399,7 +399,6 @@ static int publish_vulkan(mlt_frame frame, pl_tex tex, uint8_t **image, mlt_imag
 
     primaries = mlt_image_color_pri_id(mlt_properties_get(props, "color_primaries"));
     colorspace = mlt_image_colorspace_id(mlt_properties_get(props, "colorspace"));
-    trc = mlt_image_color_trc_id(mlt_properties_get(props, "color_trc"));
     owner->tex = tex;
     owner->sem = sem;
     vulkan->width = tex->params.w;
@@ -412,7 +411,6 @@ static int publish_vulkan(mlt_frame frame, pl_tex tex, uint8_t **image, mlt_imag
     vulkan->bit_depth = tex->params.format ? tex->params.format->component_depth[0] : 8;
     vulkan->colorspace = colorspace != mlt_colorspace_invalid ? (int) colorspace
                                                               : (int) mlt_colorspace_rgb;
-    vulkan->color_trc = (int) trc;
     vulkan->color_primaries = (int) primaries;
     vulkan->planes[0].image = (uint64_t) (uintptr_t) vk_image;
     vulkan->planes[0].format = (int) vk_format;
@@ -441,6 +439,8 @@ static int publish_vulkan(mlt_frame frame, pl_tex tex, uint8_t **image, mlt_imag
         *image = NULL;
         return 1;
     }
+    vulkan->color_trc = (int) color_trc;
+    mlt_properties_set_int(props, "color_trc", color_trc);
     return 0;
 }
 
@@ -448,14 +448,15 @@ int placebo_frame_publish_tex(mlt_frame frame,
                               pl_tex tex,
                               mlt_image_format requested,
                               uint8_t **image,
-                              mlt_image_format *format)
+                              mlt_image_format *format,
+                              mlt_color_trc color_trc)
 {
     pl_gpu gpu = placebo_gpu_get();
 
     if (!tex || !image || !format)
         return 1;
     if (requested == mlt_image_vulkan && gpu && pl_vulkan_get(gpu))
-        return publish_vulkan(frame, tex, image, format);
+        return publish_vulkan(frame, tex, image, format, color_trc);
 
     *format = mlt_image_private;
     *image = (uint8_t *) tex;
@@ -466,5 +467,6 @@ int placebo_frame_publish_tex(mlt_frame frame,
         *image = NULL;
         return 1;
     }
+    mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "color_trc", color_trc);
     return 0;
 }

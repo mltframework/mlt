@@ -260,7 +260,12 @@ static int filter_get_image(mlt_frame frame,
 
     placebo_render_unlock();
 
-    if (placebo_frame_publish_tex(frame, dst_tex, requested, image, format))
+    if (placebo_frame_publish_tex(frame,
+                                  dst_tex,
+                                  requested,
+                                  image,
+                                  format,
+                                  placebo_frame_color_trc(frame, *image, *format)))
         return 1;
 
     return 0;
