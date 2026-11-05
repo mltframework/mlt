@@ -46,8 +46,9 @@
 #endif
 #else
 #define FREI0R_PLUGIN_PATH \
-    LIBDIR "/frei0r-1:/usr/lib/frei0r-1:/usr/lib64/frei0r-1:/opt/local/lib/frei0r-1:/usr/local/lib/frei0r-1:$HOME/" \
-    ".frei0r-1/lib"
+    LIBDIR "/frei0r-1:/usr/lib/frei0r-1:/usr/lib64/frei0r-1:/opt/local/lib/frei0r-1:/usr/local/" \
+           "lib/frei0r-1:$HOME/" \
+           ".frei0r-1/lib"
 #endif
 #endif
 
