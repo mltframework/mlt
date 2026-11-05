@@ -63,9 +63,9 @@ parameters:
     title: Pitch Compensation Method
     type: string
     description: >
-      The algorithm used when warp_pitch is enabled: "rubberband" (shifts the
-      pitch of the resampled audio) or "wsola" (time stretches the original
-      audio).
+      The filter used to shift the pitch of the resampled audio when
+      warp_pitch is enabled: "rubberband" (filter rbpitch) or "wsola" (filter
+      wsola, which needs no external library).
     readonly: no
     mutable: yes
     values:

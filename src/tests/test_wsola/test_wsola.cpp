@@ -23,6 +23,8 @@ extern "C" {
 }
 #include <mlt++/Mlt.h>
 
+#include <algorithm>
+#include <cmath>
 #include <memory>
 #include <vector>
 using namespace Mlt;
@@ -87,6 +89,18 @@ private:
         return last > first ? crossings * double(frequency) / (last - first) : 0.0;
     }
 
+    // The longest run of samples that are practically zero: a gap in the audio.
+    int longestSilence(const std::vector<float> &audio)
+    {
+        int longest = 0;
+        int run = 0;
+        for (float sample : audio) {
+            run = std::fabs(sample) < 1e-4f ? run + 1 : 0;
+            longest = std::max(longest, run);
+        }
+        return longest;
+    }
+
     Producer *createProducer(Profile &profile, double speed, bool pitchCompensation)
     {
         auto *producer = new Producer(profile,
@@ -122,7 +136,9 @@ private Q_SLOTS:
 
         int frequency = 0;
         const std::vector<float> audio = playAudio(*producer, &frequency);
-        QCOMPARE(frequency, FREQUENCY);
+        // Like rbpitch, the filter keeps the frequency that timewarp labels its audio with.
+        QCOMPARE(frequency, int(FREQUENCY * speed));
+        QVERIFY2(longestSilence(audio) < 4, qPrintable(QString::number(longestSilence(audio))));
         const double measured = pitch(audio, frequency);
         QVERIFY2(qAbs(measured - TONE) < TONE * 0.02, qPrintable(QString::number(measured)));
     }
@@ -140,22 +156,37 @@ private Q_SLOTS:
         QVERIFY2(qAbs(measured - 2.0 * TONE) < TONE * 0.04, qPrintable(QString::number(measured)));
     }
 
-    void OtherAudioPassesThrough()
+    void ShiftsPitchOnItsOwn_data()
     {
+        QTest::addColumn<QByteArray>("property");
+        QTest::addColumn<double>("value");
+        QTest::addColumn<double>("expected");
+        QTest::newRow("pitchscale 2") << QByteArray("pitchscale") << 2.0 << 2.0 * TONE;
+        QTest::newRow("pitchscale 0.5") << QByteArray("pitchscale") << 0.5 << 0.5 * TONE;
+        QTest::newRow("pitchscale 1.5") << QByteArray("pitchscale") << 1.5 << 1.5 * TONE;
+        QTest::newRow("octaveshift -1") << QByteArray("octaveshift") << -1.0 << 0.5 * TONE;
+    }
+
+    void ShiftsPitchOnItsOwn()
+    {
+        QFETCH(QByteArray, property);
+        QFETCH(double, value);
+        QFETCH(double, expected);
         Profile profile("dv_pal");
         Producer producer(profile, "tone:");
         QVERIFY(producer.is_valid());
         Filter filter(profile, "wsola");
         QVERIFY(filter.is_valid());
-        filter.set("speed", 0.75);
+        filter.set(property.constData(), value);
         producer.attach(filter);
 
         int frequency = 0;
         const std::vector<float> audio = playAudio(producer, &frequency);
         QCOMPARE(frequency, FREQUENCY);
         QCOMPARE(int(audio.size()), int((FRAMES - SETTLE_FRAMES) * FREQUENCY / profile.fps() + 0.5));
+        QVERIFY2(longestSilence(audio) < 4, qPrintable(QString::number(longestSilence(audio))));
         const double measured = pitch(audio, frequency);
-        QVERIFY2(qAbs(measured - TONE) < TONE * 0.02, qPrintable(QString::number(measured)));
+        QVERIFY2(qAbs(measured - expected) < expected * 0.02, qPrintable(QString::number(measured)));
     }
 
     void SeekDoesNotChangePitch()

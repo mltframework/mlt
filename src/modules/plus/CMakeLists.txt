@@ -33,6 +33,7 @@ add_library(mltplus MODULE
   producer_pgm.c
   producer_subtitle.c
   transition_affine.c
+  wsola/sinc_resampler.cpp
   wsola/wsola_algorithm.cpp
 )
 
@@ -68,7 +69,7 @@ endif()
 
 # Keep the floating point behavior of the Chromium original (no -ffast-math).
 if(NOT MSVC)
-  set_source_files_properties(filter_wsola.cpp wsola/wsola_algorithm.cpp
+  set_source_files_properties(filter_wsola.cpp wsola/sinc_resampler.cpp wsola/wsola_algorithm.cpp
     PROPERTIES COMPILE_OPTIONS -fno-fast-math)
 endif()
 
