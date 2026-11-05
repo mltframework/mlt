@@ -66,10 +66,20 @@ private Q_SLOTS:
         QTest::addColumn<double>("speed");
         QTest::addColumn<int>("start");
         QTest::addColumn<QList<int>>("positions");
-        QTest::newRow("one and a half") << 1.5 << 0 << QList<int>{0, 1, 3, 4, 6};
-        QTest::newRow("half") << 0.5 << 0 << QList<int>{0, 0, 1, 1, 2};
-        QTest::newRow("double") << 2.0 << 0 << QList<int>{0, 2, 4, 6, 8};
-        QTest::newRow("minus one and a half") << -1.5 << 10 << QList<int>{10, 8, 7, 5, 4};
+        QTest::addColumn<bool>("previousNext");
+        for (bool previousNext : {false, true}) {
+            // Filters like the yadif deinterlacer make the service also fetch the previous and
+            // next frames, which must not lose the fraction.
+            const char *suffix = previousNext ? " with previous and next" : "";
+            QTest::newRow(QByteArray("one and a half").append(suffix))
+                << 1.5 << 0 << QList<int>{0, 1, 3, 4, 6} << previousNext;
+            QTest::newRow(QByteArray("half").append(suffix))
+                << 0.5 << 0 << QList<int>{0, 0, 1, 1, 2} << previousNext;
+            QTest::newRow(QByteArray("double").append(suffix))
+                << 2.0 << 0 << QList<int>{0, 2, 4, 6, 8} << previousNext;
+            QTest::newRow(QByteArray("minus one and a half").append(suffix))
+                << -1.5 << 10 << QList<int>{10, 8, 7, 5, 4} << previousNext;
+        }
     }
 
     void FractionalSpeedAdvances()
@@ -77,9 +87,11 @@ private Q_SLOTS:
         QFETCH(double, speed);
         QFETCH(int, start);
         QFETCH(QList<int>, positions);
+        QFETCH(bool, previousNext);
         Profile profile("dv_pal");
         Producer producer(profile, "noise");
         QVERIFY(producer.is_valid());
+        producer.set("_need_previous_next", previousNext);
         producer.seek(start);
         producer.set_speed(speed);
         for (int expected : positions) {
