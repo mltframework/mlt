@@ -34,6 +34,7 @@ typedef struct
     int out_frequency;
     mlt_position expected_position;
     double out_remainder;
+    bool warned;
 } private_data;
 
 static const int MAX_CHANNELS = 32;
@@ -62,6 +63,21 @@ static int wsola_get_audio(mlt_frame frame,
     int error = mlt_frame_get_audio(frame, buffer, format, frequency, channels, samples);
     if (error || *samples <= 0 || *frequency <= 0)
         return error;
+
+    // Only the audio delivered by timewarp is labeled with the sped up frequency that this
+    // filter expects. Pass any other audio through unchanged: stretching it would label it
+    // with a wrong frequency. Clear the mark so that it does not reach another filter.
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
+    double timewarp_speed = mlt_properties_get_double(frame_properties, "_timewarp_audio_speed");
+    mlt_properties_clear(frame_properties, "_timewarp_audio_speed");
+    if (!(timewarp_speed > 0.0)) {
+        if (!pdata->warned) {
+            mlt_log_warning(MLT_FILTER_SERVICE(filter),
+                            "The audio does not come from timewarp, passing it through\n");
+            pdata->warned = true;
+        }
+        return error;
+    }
     if (*channels > MAX_CHANNELS) {
         mlt_log_error(MLT_FILTER_SERVICE(filter),
                       "Too many channels: %d > %d\n",

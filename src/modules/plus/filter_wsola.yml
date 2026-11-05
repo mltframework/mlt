@@ -19,6 +19,8 @@ description: >
   original * speed. The filter time stretches the samples by 1/speed and
   labels the result with the original frequency, so the duration of the
   audio does not change and the pitch is restored.
+
+  Audio that does not come from timewarp passes through unchanged.
 audio_formats:
   - float
 parameters:
