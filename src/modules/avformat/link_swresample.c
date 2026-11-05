@@ -1,6 +1,6 @@
 /*
  * link_swresample.c
- * Copyright (C) 2022-2024 Meltytech, LLC
+ * Copyright (C) 2022-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,7 +36,16 @@ typedef struct
 {
     mlt_position expected_frame;
     mlt_position continuity_frame;
+    mlt_position speed_frame;
+    int speed_backwards;
 } private_data;
+
+// With producer_consumer_fps the audio of a frame spans a different duration than the frame of
+// this producer: a nested producer at a higher frame rate (producer_consumer), or a consumer that
+// fetches the audio of several frames at once. Each fetch continues where the previous one ended,
+// so the position may move forward by more than one frame. Larger jumps or backward moves are
+// seeks.
+#define FORCED_FPS_MAX_GAP 16
 
 static void destroy_swr_data(mlt_swr_private_data *swr)
 {
@@ -70,8 +79,12 @@ static int link_get_audio(mlt_frame frame,
 
     int src_frequency = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "audio_frequency");
     src_frequency = src_frequency <= 0 ? *frequency : src_frequency;
-    int src_samples = mlt_audio_calculate_frame_samples(mlt_producer_get_fps(
-                                                            MLT_LINK_PRODUCER(self)),
+    int forced_fps = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "producer_consumer_fps")
+                     != NULL;
+    double src_fps = forced_fps ? mlt_properties_get_double(MLT_FRAME_PROPERTIES(frame),
+                                                            "producer_consumer_fps")
+                                : mlt_producer_get_fps(MLT_LINK_PRODUCER(self));
+    int src_samples = mlt_audio_calculate_frame_samples(src_fps,
                                                         src_frequency,
                                                         mlt_frame_get_position(frame));
     int src_channels = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "audio_channels");
@@ -136,12 +149,16 @@ static int link_get_audio(mlt_frame frame,
         cache_miss = 1;
     }
 
+    mlt_position position = mlt_frame_get_position(frame);
+    int discontinuity = forced_fps ? (position <= pdata->speed_frame
+                                      || position - pdata->speed_frame > FORCED_FPS_MAX_GAP)
+                                   : pdata->expected_frame != position;
+
     // Detect configuration change
     if (cache_miss || swr->in_format != in.format || swr->out_format != out.format
         || swr->in_frequency != in.frequency || swr->out_frequency != out.frequency
         || swr->in_channels != in.channels || swr->out_channels != out.channels
-        || swr->in_layout != in.layout || swr->out_layout != out.layout
-        || pdata->expected_frame != mlt_frame_get_position(frame)) {
+        || swr->in_layout != in.layout || swr->out_layout != out.layout || discontinuity) {
         mlt_cache_item_close(cache_item);
         swr = calloc(1, sizeof(mlt_swr_private_data));
         // Save the configuration
@@ -166,7 +183,52 @@ static int link_get_audio(mlt_frame frame,
         pdata->expected_frame = mlt_frame_get_position(frame);
     }
 
-    if (swr && !error) {
+    if (swr && !error && forced_fps) {
+        // The producer delivered the audio of the whole span. Convert it all, keeping the context
+        // across fetches, and return what came out: the frame by frame path below would size the
+        // input by the frame rate of this producer and restart the context at every jump of
+        // position, which repeats or skips audio (a click at every frame).
+        // Played backwards, each fetch is a separate piece: flush what the resampler holds back,
+        // it would be lost.
+        pdata->speed_backwards = pdata->speed_frame >= 0 && position < pdata->speed_frame;
+        out.samples = swr_get_out_samples(swr->ctx, in.samples)
+                      + (pdata->speed_backwards ? 256 : 0);
+        mlt_audio_alloc_data(&out);
+        mlt_audio_get_planes(&in, swr->in_buffers);
+        mlt_audio_get_planes(&out, swr->out_buffers);
+        int received_samples = swr_convert(swr->ctx,
+                                           swr->out_buffers,
+                                           out.samples,
+                                           (const uint8_t **) swr->in_buffers,
+                                           in.samples);
+        if (received_samples < 0) {
+            mlt_log_error(MLT_LINK_SERVICE(self),
+                          "swr_convert() failed. In: %d\tOut: %d\n",
+                          in.samples,
+                          received_samples);
+            received_samples = 0;
+        } else if (pdata->speed_backwards && received_samples < out.samples) {
+            int plane_size = mlt_audio_plane_size(&out);
+            int step = plane_size / out.samples;
+            for (int p = 0; p < mlt_audio_plane_count(&out); p++) {
+                swr->out_buffers[p] = (uint8_t *) out.data + p * plane_size
+                                      + step * received_samples;
+            }
+            int flushed
+                = swr_convert(swr->ctx, swr->out_buffers, out.samples - received_samples, NULL, 0);
+            if (flushed > 0) {
+                received_samples += flushed;
+            }
+        }
+        mlt_audio_shrink(&out, received_samples);
+        mlt_frame_set_audio(frame, out.data, out.format, 0, out.release_data);
+        mlt_audio_get_values(&out, buffer, frequency, format, samples, channels);
+        mlt_properties_set(frame_properties,
+                           "channel_layout",
+                           mlt_audio_channel_layout_name(out.layout));
+        pdata->speed_frame = position;
+        pdata->expected_frame = -1;
+    } else if (swr && !error) {
         int total_received_samples = 0;
         out.samples = requested_samples;
         mlt_audio_alloc_data(&out);
@@ -276,6 +338,7 @@ static int link_get_audio(mlt_frame frame,
                            "channel_layout",
                            mlt_audio_channel_layout_name(out.layout));
         pdata->expected_frame = mlt_frame_get_position(frame) + 1;
+        pdata->speed_frame = -1;
     }
 
     mlt_cache_item_close(cache_item);
@@ -344,6 +407,7 @@ mlt_link link_swresample_init(mlt_profile profile, mlt_service_type type, const 
     if (self && pdata) {
         pdata->continuity_frame = -1;
         pdata->expected_frame = -1;
+        pdata->speed_frame = -1;
         self->child = pdata;
 
         // Callback registration

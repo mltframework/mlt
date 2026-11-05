@@ -607,6 +607,12 @@ int mlt_service_get_frame(mlt_service self, mlt_frame_ptr frame, int index)
                 && mlt_properties_get_int(MLT_SERVICE_PROPERTIES(self), "_need_previous_next")) {
                 // Save the new position from self->get_frame
                 mlt_position new_position = mlt_producer_position(MLT_PRODUCER(self));
+                // and the fractional position kept by mlt_producer_prepare_next(), which the
+                // extra frames below would overwrite
+                mlt_properties producer_properties = MLT_SERVICE_PROPERTIES(self);
+                double fraction = mlt_properties_get_double(producer_properties, "_fraction");
+                mlt_position fraction_position = mlt_properties_get_position(producer_properties,
+                                                                             "_fraction_position");
 
                 // Get the preceding frame, unfiltered
                 mlt_frame previous_frame;
@@ -635,6 +641,10 @@ int mlt_service_get_frame(mlt_service self, mlt_frame_ptr frame, int index)
 
                 // Restore the new position
                 mlt_producer_seek(MLT_PRODUCER(self), new_position);
+                mlt_properties_set_double(producer_properties, "_fraction", fraction);
+                mlt_properties_set_position(producer_properties,
+                                            "_fraction_position",
+                                            fraction_position);
             }
         }
     }
