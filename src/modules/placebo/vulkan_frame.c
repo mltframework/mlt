@@ -212,12 +212,16 @@ int placebo_map_vulkan_image(pl_gpu gpu, const uint8_t *bytes, struct pl_frame *
 
     memset(out, 0, sizeof(*out));
     out->num_planes = image->nb_planes;
-    if (image->crop_left || image->crop_top || image->crop_right || image->crop_bottom) {
-        out->crop.x0 = image->crop_left;
-        out->crop.y0 = image->crop_top;
-        out->crop.x1 = image->width - image->crop_right;
-        out->crop.y1 = image->height - image->crop_bottom;
-    }
+    /* width and height are the visible picture. FFmpeg already subtracts a
+       hwaccel crop_right and crop_bottom from them and clears those fields.
+       The VkImage is still the aligned coded size, so a zero crop samples the
+       padding (an 8-row bar under a 1080 picture stored in 1088). Left and
+       top remain in crop_left and crop_top. Same rectangle as
+       pl_frame_from_avframe. */
+    out->crop.x0 = image->crop_left;
+    out->crop.y0 = image->crop_top;
+    out->crop.x1 = image->width - image->crop_right;
+    out->crop.y1 = image->height - image->crop_bottom;
     transfer = placebo_transfer_from_mlt((mlt_color_trc) image->color_trc);
     out->color = placebo_color_space((mlt_color_primaries) image->color_primaries,
                                      (mlt_colorspace) image->colorspace,
