@@ -422,12 +422,13 @@ static void publish_vulkan_locked(void)
                             0,
                             (mlt_destructor) mlt_properties_close,
                             NULL);
-    mlt_log_info(NULL,
-                 "[placebo] GPU initialized via Vulkan (decode queue %d x %d, encode queue %d x %d)\n",
-                 decode_index,
-                 decode_count,
-                 encode_index,
-                 encode_count);
+    mlt_log_info(
+        NULL,
+        "[placebo] GPU initialized via Vulkan (decode queue %d x %d, encode queue %d x %d)\n",
+        decode_index,
+        decode_count,
+        encode_index,
+        encode_count);
     if (s_vulkan->extensions) {
         for (int i = 0; i < s_vulkan->num_extensions; i++) {
             const char *ext = s_vulkan->extensions[i];

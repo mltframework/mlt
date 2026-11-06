@@ -347,11 +347,8 @@ static int init_vulkan(mlt_properties properties, AVCodecContext *codec_context)
         const char *vaapi_device = mlt_properties_get(properties, "vulkan_device");
         AVDictionary *opts = NULL;
 
-        if ((err = av_hwdevice_ctx_create(&hw_device_ctx,
-                                          AV_HWDEVICE_TYPE_VULKAN,
-                                          vaapi_device,
-                                          opts,
-                                          0))
+        if ((err
+             = av_hwdevice_ctx_create(&hw_device_ctx, AV_HWDEVICE_TYPE_VULKAN, vaapi_device, opts, 0))
             < 0) {
             mlt_log_warning(NULL, "Failed to create Vulkan device.\n");
         } else {
@@ -2850,7 +2847,7 @@ static void *consumer_thread(void *arg)
 #if HAVE_FFMPEG_VULKAN
                                       || enc_ctx->vcodec_ctx->pix_fmt == AV_PIX_FMT_VULKAN
 #endif
-                                     );
+                                  );
         if (!vulkan_image_encode) {
             pix_fmt = need_hwupload ? hwupload_pix_fmt(properties) : enc_ctx->vcodec_ctx->pix_fmt;
             converted_avframe = alloc_picture(pix_fmt, width, height);

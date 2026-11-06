@@ -275,7 +275,9 @@ static void load_fn_ptr(void *ptr, void *dest, size_t size)
     memcpy(dest, &ptr, size);
 }
 
-static void placebo_lock_queue(struct AVHWDeviceContext *dev_ctx, uint32_t queue_family, uint32_t index)
+static void placebo_lock_queue(struct AVHWDeviceContext *dev_ctx,
+                               uint32_t queue_family,
+                               uint32_t index)
 {
     vulkan_queue_lock *lock = dev_ctx->user_opaque;
 
@@ -393,14 +395,11 @@ static int plane_format_matches(const mlt_vulkan_image *image, enum AVPixelForma
 static enum AVPixelFormat vulkan_sw_format(const mlt_vulkan_image *image)
 {
     static const enum AVPixelFormat candidates[] = {
-        AV_PIX_FMT_RGBA,    AV_PIX_FMT_BGRA,     AV_PIX_FMT_RGB0,     AV_PIX_FMT_BGR0,
-        AV_PIX_FMT_RGBA64,  AV_PIX_FMT_BGRA64,   AV_PIX_FMT_RGBAF16,  AV_PIX_FMT_RGBAF32,
-        AV_PIX_FMT_NV12,    AV_PIX_FMT_P010,     AV_PIX_FMT_P016,     AV_PIX_FMT_NV16,
-        AV_PIX_FMT_NV24,    AV_PIX_FMT_YUV420P,  AV_PIX_FMT_YUV422P,  AV_PIX_FMT_YUV444P,
-        AV_PIX_FMT_YUV420P10,
-        AV_PIX_FMT_YUV422P10,
-        AV_PIX_FMT_YUV444P10,
-        AV_PIX_FMT_NONE,
+        AV_PIX_FMT_RGBA,      AV_PIX_FMT_BGRA,      AV_PIX_FMT_RGB0,      AV_PIX_FMT_BGR0,
+        AV_PIX_FMT_RGBA64,    AV_PIX_FMT_BGRA64,    AV_PIX_FMT_RGBAF16,   AV_PIX_FMT_RGBAF32,
+        AV_PIX_FMT_NV12,      AV_PIX_FMT_P010,      AV_PIX_FMT_P016,      AV_PIX_FMT_NV16,
+        AV_PIX_FMT_NV24,      AV_PIX_FMT_YUV420P,   AV_PIX_FMT_YUV422P,   AV_PIX_FMT_YUV444P,
+        AV_PIX_FMT_YUV420P10, AV_PIX_FMT_YUV422P10, AV_PIX_FMT_YUV444P10, AV_PIX_FMT_NONE,
     };
     int bgra = image->planes[0].component_mapping[0] == 2;
     int i;
@@ -586,7 +585,9 @@ static int configure_encoder_graph(avformat_vulkan_encoder *enc,
              trc_name,
              pri_name,
              dst_full ? "pc" : "tv");
-    convert = avfilter_graph_alloc_filter(graph, avfilter_get_by_name("libplacebo"), "mlt_libplacebo");
+    convert = avfilter_graph_alloc_filter(graph,
+                                          avfilter_get_by_name("libplacebo"),
+                                          "mlt_libplacebo");
     if (!convert) {
         mlt_log_error(NULL, "libplacebo filter is not available\n");
         err = AVERROR_FILTER_NOT_FOUND;
@@ -704,11 +705,7 @@ static int wrap_vulkan_image(mlt_vulkan_image *image,
         vkf->queue_family[i] = VK_QUEUE_FAMILY_IGNORED;
     }
 
-    frame->buf[0] = av_buffer_create((uint8_t *) vkf,
-                                     sizeof(*vkf),
-                                     free_wrapped_vkframe,
-                                     owner,
-                                     0);
+    frame->buf[0] = av_buffer_create((uint8_t *) vkf, sizeof(*vkf), free_wrapped_vkframe, owner, 0);
     if (!frame->buf[0]) {
         destroy_wrapped_vkframe(vkf);
         av_frame_free(&frame);
@@ -747,7 +744,9 @@ static int wrap_vulkan_image(mlt_vulkan_image *image,
 
 AVBufferRef *avformat_vulkan_adopt_placebo(int need_encode)
 {
-    mlt_properties published = mlt_properties_get_data(mlt_global_properties(), "placebo.vulkan", NULL);
+    mlt_properties published = mlt_properties_get_data(mlt_global_properties(),
+                                                       "placebo.vulkan",
+                                                       NULL);
     vulkan_queue_lock *lock;
     void *instance;
     void *phys_dev;
@@ -782,7 +781,9 @@ AVBufferRef *avformat_vulkan_adopt_placebo(int need_encode)
     phys_dev = mlt_properties_get_data(published, "phys_dev", NULL);
     device = mlt_properties_get_data(published, "device", NULL);
     features = mlt_properties_get_data(published, "features", NULL);
-    load_fn_ptr(mlt_properties_get_data(published, "lock_queue", NULL), &lock_queue, sizeof(lock_queue));
+    load_fn_ptr(mlt_properties_get_data(published, "lock_queue", NULL),
+                &lock_queue,
+                sizeof(lock_queue));
     load_fn_ptr(mlt_properties_get_data(published, "unlock_queue", NULL),
                 &unlock_queue,
                 sizeof(unlock_queue));
@@ -882,14 +883,14 @@ void avformat_vulkan_encoder_close(avformat_vulkan_encoder *enc)
 }
 
 int avformat_vulkan_encoder_frame(avformat_vulkan_encoder *enc,
-                                 AVBufferRef *device,
-                                 int dst_w,
-                                 int dst_h,
-                                 int dst_sw_fmt,
-                                 int dst_full_range,
-                                 int dst_colorspace,
-                                 mlt_vulkan_image *image,
-                                 AVFrame **out)
+                                  AVBufferRef *device,
+                                  int dst_w,
+                                  int dst_h,
+                                  int dst_sw_fmt,
+                                  int dst_full_range,
+                                  int dst_colorspace,
+                                  mlt_vulkan_image *image,
+                                  AVFrame **out)
 {
     enum AVPixelFormat src_sw;
     enum AVPixelFormat dst_sw = (enum AVPixelFormat) dst_sw_fmt;
@@ -909,17 +910,17 @@ int avformat_vulkan_encoder_frame(avformat_vulkan_encoder *enc,
 
     src_sw = vulkan_sw_format(image);
     if (src_sw == AV_PIX_FMT_NONE) {
-        mlt_log_error(NULL, "Vulkan image VkFormat %d has no software format\n", image->planes[0].format);
+        mlt_log_error(NULL,
+                      "Vulkan image VkFormat %d has no software format\n",
+                      image->planes[0].format);
         return AVERROR(EINVAL);
     }
     src_full = image->full_range || image->rgb;
     colorspace = colorspace_matrix(image, dst_colorspace);
-    coded_w = image->planes[0].width > 0
-                  ? image->planes[0].width
-                  : image->width + image->crop_left + image->crop_right;
-    coded_h = image->planes[0].height > 0
-                  ? image->planes[0].height
-                  : image->height + image->crop_top + image->crop_bottom;
+    coded_w = image->planes[0].width > 0 ? image->planes[0].width
+                                         : image->width + image->crop_left + image->crop_right;
+    coded_h = image->planes[0].height > 0 ? image->planes[0].height
+                                          : image->height + image->crop_top + image->crop_bottom;
     if (coded_w < image->width)
         coded_w = image->width;
     if (coded_h < image->height)
@@ -1119,14 +1120,14 @@ void avformat_vulkan_encoder_close(avformat_vulkan_encoder *enc)
 }
 
 int avformat_vulkan_encoder_frame(avformat_vulkan_encoder *enc,
-                                 struct AVBufferRef *device,
-                                 int dst_w,
-                                 int dst_h,
-                                 int dst_sw_fmt,
-                                 int dst_full_range,
-                                 int dst_colorspace,
-                                 mlt_vulkan_image *image,
-                                 struct AVFrame **out)
+                                  struct AVBufferRef *device,
+                                  int dst_w,
+                                  int dst_h,
+                                  int dst_sw_fmt,
+                                  int dst_full_range,
+                                  int dst_colorspace,
+                                  mlt_vulkan_image *image,
+                                  struct AVFrame **out)
 {
     (void) enc;
     (void) device;

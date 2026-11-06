@@ -3159,7 +3159,8 @@ static int producer_get_image(mlt_frame frame,
                                     is_interlaced = !mlt_properties_get_int(properties,
                                                                             "force_progressive");
                                 }
-                                if (!is_interlaced && consumer_scale > 0.0 && consumer_scale < 1.0) {
+                                if (!is_interlaced && consumer_scale > 0.0 && consumer_scale < 1.0
+                                    && *format != mlt_image_vulkan) {
                                     try_setup_hwaccel_filters(self, producer, consumer_scale);
                                 }
 

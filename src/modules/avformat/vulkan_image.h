@@ -50,13 +50,13 @@ void avformat_vulkan_encoder_close(avformat_vulkan_encoder *enc);
 /* dst_sw_fmt is an AVPixelFormat. dst_colorspace is an AVColorSpace used as
    the RGB to YUV matrix. On success *out holds a new AVFrame. */
 int avformat_vulkan_encoder_frame(avformat_vulkan_encoder *enc,
-                                 struct AVBufferRef *device,
-                                 int dst_w,
-                                 int dst_h,
-                                 int dst_sw_fmt,
-                                 int dst_full_range,
-                                 int dst_colorspace,
-                                 mlt_vulkan_image *image,
-                                 struct AVFrame **out);
+                                  struct AVBufferRef *device,
+                                  int dst_w,
+                                  int dst_h,
+                                  int dst_sw_fmt,
+                                  int dst_full_range,
+                                  int dst_colorspace,
+                                  mlt_vulkan_image *image,
+                                  struct AVFrame **out);
 
 #endif
