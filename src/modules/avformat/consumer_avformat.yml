@@ -516,6 +516,9 @@ parameters:
       See 'ffmpeg -pix_fmts' to see a list of values.
       Normally, this is not required, but some codecs support multiple pixel
       formats, especially chroma bit-depth.
+      For a hardware encoder such as hevc_vulkan, the codec format stays vulkan
+      and this names the software format of those frames, for example nv12
+      or p010le.
 
   - identifier: sample_fmt
     title: Audio sample format

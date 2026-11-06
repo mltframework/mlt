@@ -1086,6 +1086,13 @@ static AVStream *add_video_stream(mlt_consumer consumer,
 
         if (strstr(codec->name, "_vaapi"))
             c->pix_fmt = AV_PIX_FMT_VAAPI;
+#if HAVE_FFMPEG_VULKAN
+        /* hevc_vulkan accepts only the vulkan pixel format. pix_fmt names the
+           software format of those frames (nv12, p010le), the same way VA-API
+           keeps the property for the upload format. */
+        else if (strstr(codec->name, "_vulkan"))
+            c->pix_fmt = AV_PIX_FMT_VULKAN;
+#endif
 
         if (AV_PIX_FMT_VAAPI == c->pix_fmt) {
             int result = init_vaapi(properties, c);
@@ -2349,6 +2356,11 @@ static int encode_video(encode_ctx_t *enc_ctx,
         } else {
             avframe = converted_avframe;
         }
+    }
+
+    if (!avframe) {
+        mlt_log_error(service, "No video frame to encode\n");
+        return -1;
     }
 
 #ifdef AVFMT_RAWPICTURE
