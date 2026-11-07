@@ -26,12 +26,15 @@ add_library(mltplus MODULE
   filter_text.c
   filter_threshold.c
   filter_timer.c
+  filter_wsola.cpp
   interp.h
   producer_blipflash.c
   producer_count.c
   producer_pgm.c
   producer_subtitle.c
   transition_affine.c
+  wsola/sinc_resampler.cpp
+  wsola/wsola_algorithm.cpp
 )
 
 file(GLOB YML "*.yml")
@@ -64,6 +67,12 @@ else()
   target_compile_definitions(mltplus PRIVATE USE_INTERNAL_LIBEBUR128)
 endif()
 
+# Keep the floating point behavior of the Chromium original (no -ffast-math).
+if(NOT MSVC)
+  set_source_files_properties(filter_wsola.cpp wsola/sinc_resampler.cpp wsola/wsola_algorithm.cpp
+    PROPERTIES COMPILE_OPTIONS -fno-fast-math)
+endif()
+
 set_target_properties(mltplus PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltplus LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
@@ -94,6 +103,7 @@ install(FILES
   filter_text.yml
   filter_threshold.yml
   filter_timer.yml
+  filter_wsola.yml
   producer_blipflash.yml
   producer_count.yml
   producer_pgm.yml

@@ -66,6 +66,10 @@ if(MOD_VORBIS)
   add_qt_test(TEST_NAME vorbis)
 endif()
 
+if(MOD_PLUS)
+  add_qt_test(TEST_NAME wsola)
+endif()
+
 if(MOD_QT6)
   add_qt_test(
     TEST_NAME mod_qt_gps

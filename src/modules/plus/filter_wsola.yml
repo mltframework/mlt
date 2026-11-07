@@ -1,0 +1,72 @@
+schema_version: 7.2
+type: filter
+identifier: wsola
+title: WSOLA Pitch
+version: 2
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Audio
+description: >
+  Adjust the audio pitch using WSOLA (Waveform Similarity Overlap-and-Add),
+  ported from Chromium. The audio is resampled to change the pitch and then
+  time stretched back to its duration with WSOLA. It takes the same
+  parameters as the rbpitch filter and needs no external library.
+audio_formats:
+  - float
+parameters:
+  - identifier: octaveshift
+    title: Octave Shift
+    type: float
+    description: >
+      The octave shift. This is the octave shift of the source frequency. For
+      example, a shift of +1 would double the frequency; -1 would halve the
+      frequency and 0 would leave the pitch unaffected. To put this in frequency
+      terms, a frequency shift f (where f greater than one for upwards shift and
+      less than one for downwards) is: o = log(f) / log(2).
+
+      Ignored if pitchscale is set.
+    readonly: no
+    mutable: yes
+    animation: yes
+    default: 0.0
+    minimum: -4.0
+    maximum: 4.0
+    unit: octaves
+
+  - identifier: pitchscale
+    title: Pitch Scale
+    type: float
+    description: >
+      The pitch scaling ratio. This is the ratio of target frequency to source
+      frequency. For example, a ratio of 2.0 would shift up by one octave; 0.5
+      down by one octave; or 1.0 leave the pitch unaffected. To put this in
+      musical terms, a pitch scaling ratio corresponding to a shift of o
+      octaves (where o is positive for an upwards shift and
+      negative for downwards) is: f = pow(2.0, o).
+
+      Overrides octaveshift.
+    readonly: no
+    mutable: yes
+    animation: yes
+    default: 1.0
+    minimum: 0.05
+    maximum: 16
+
+  - identifier: stretch
+    title: Stretch
+    type: boolean
+    description: >
+      Stretch the audio to fill the requested samples. This option will have no
+      effect if the requested sample size is the same as the received sample
+      size.
+    readonly: yes
+
+  - identifier: latency
+    title: Latency
+    type: float
+    description: >
+      The amount of delay for each sample from the input to the output.
+    readonly: yes
+    unit: ms
