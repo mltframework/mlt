@@ -65,13 +65,14 @@ parameters:
     description: >
       The filter used to shift the pitch of the resampled audio when
       warp_pitch is enabled: "rubberband" (filter rbpitch) or "wsola" (filter
-      wsola, which needs no external library).
+      wsola, which needs no external library). When it is not set, rubberband
+      is used if it is available and wsola otherwise. If the selected filter is
+      not available, the other one is used.
     readonly: no
     mutable: yes
     values:
       - rubberband
       - wsola
-    default: rubberband
 
   - identifier: warp_speed
     title: Warp Speed

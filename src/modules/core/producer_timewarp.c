@@ -90,8 +90,9 @@ static int producer_probe(mlt_producer parent)
     return 1;
 }
 
-// "wsola" selects the WSOLA filter for pitch compensation, anything else
-// rubberband.
+// "wsola" prefers the WSOLA filter for pitch compensation. Anything else,
+// including no value, prefers rubberband. Either way, the other filter is used
+// when the preferred one is not available.
 static int use_wsola_pitch(mlt_properties producer_properties)
 {
     const char *method = mlt_properties_get(producer_properties, "warp_pitch_method");
@@ -185,10 +186,11 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
                 }
                 if (!pdata->pitch_filter) {
                     mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(producer));
-                    if (wsola)
-                        pdata->pitch_filter = mlt_factory_filter(profile, "wsola", NULL);
+                    const char *preferred = wsola ? "wsola" : "rbpitch";
+                    const char *fallback = wsola ? "rbpitch" : "wsola";
+                    pdata->pitch_filter = mlt_factory_filter(profile, preferred, NULL);
                     if (!pdata->pitch_filter)
-                        pdata->pitch_filter = mlt_factory_filter(profile, "rbpitch", NULL);
+                        pdata->pitch_filter = mlt_factory_filter(profile, fallback, NULL);
                     pdata->pitch_wsola = wsola;
                 }
                 if (pdata->pitch_filter) {
