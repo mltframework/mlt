@@ -46,19 +46,22 @@ public:
     ~TestWsola() {}
 
 private:
-    // Plays the producer from its first frame and returns the first channel.
-    std::vector<float> playAudio(Producer &producer, int *audioFrequency = nullptr)
+    // Plays the producer from the start position and returns the audio.
+    std::vector<float> playAudio(Producer &producer,
+                                 int *audioFrequency = nullptr,
+                                 int start = 0,
+                                 int frames = FRAMES)
     {
         std::vector<float> audio;
-        producer.seek(0);
+        producer.seek(start);
         Profile *profile = producer.profile();
         const double fps = profile->fps();
-        for (int i = 0; i < FRAMES; i++) {
+        for (int i = 0; i < frames; i++) {
             std::unique_ptr<Frame> frame(producer.get_frame());
             mlt_audio_format format = mlt_audio_float;
             int frequency = FREQUENCY;
             int channels = CHANNELS;
-            int samples = mlt_audio_calculate_frame_samples(fps, FREQUENCY, i);
+            int samples = mlt_audio_calculate_frame_samples(fps, FREQUENCY, start + i);
             const float *data = static_cast<const float *>(
                 frame->get_audio(format, frequency, channels, samples));
             if (data && i >= SETTLE_FRAMES && format == mlt_audio_float) {
@@ -66,7 +69,7 @@ private:
                 if (audioFrequency)
                     *audioFrequency = frequency;
             }
-            producer.seek(i + 1);
+            producer.seek(start + i + 1);
         }
         return audio;
     }
@@ -124,6 +127,8 @@ private Q_SLOTS:
         QTest::newRow("half") << 0.5;
         QTest::newRow("double") << 2.0;
         QTest::newRow("triple") << 3.0;
+        // The fastest speed that timewarp supports.
+        QTest::newRow("twenty") << 20.0;
     }
 
     void PreservesPitch()
@@ -164,6 +169,7 @@ private Q_SLOTS:
         QTest::newRow("pitchscale 2") << QByteArray("pitchscale") << 2.0 << 2.0 * TONE;
         QTest::newRow("pitchscale 0.5") << QByteArray("pitchscale") << 0.5 << 0.5 * TONE;
         QTest::newRow("pitchscale 1.5") << QByteArray("pitchscale") << 1.5 << 1.5 * TONE;
+        QTest::newRow("pitchscale 0.05") << QByteArray("pitchscale") << 0.05 << 0.05 * TONE;
         QTest::newRow("octaveshift -1") << QByteArray("octaveshift") << -1.0 << 0.5 * TONE;
     }
 
@@ -197,7 +203,39 @@ private Q_SLOTS:
         producer->set("warp_pitch_method", "wsola");
 
         playAudio(*producer);
-        producer->seek(10);
+        int frequency = 0;
+        const std::vector<float> audio = playAudio(*producer, &frequency, 10);
+        const double measured = pitch(audio, frequency);
+        QVERIFY2(qAbs(measured - TONE) < TONE * 0.02, qPrintable(QString::number(measured)));
+    }
+
+    // A pitch scale close to 1 must still give exactly the requested number of samples,
+    // or the queued audio runs out (or piles up) over time.
+    void PitchscaleNearOneDoesNotDrift()
+    {
+        Profile profile("dv_pal");
+        Producer producer(profile, "tone:");
+        QVERIFY(producer.is_valid());
+        Filter filter(profile, "wsola");
+        QVERIFY(filter.is_valid());
+        filter.set("pitchscale", 1.001);
+        producer.attach(filter);
+
+        int frequency = 0;
+        const std::vector<float> audio = playAudio(producer, &frequency, 0, 1000);
+        QVERIFY2(longestSilence(audio) < 4, qPrintable(QString::number(longestSilence(audio))));
+        const double measured = pitch(audio, frequency);
+        QVERIFY2(qAbs(measured - 1.001 * TONE) < TONE * 0.02, qPrintable(QString::number(measured)));
+    }
+
+    // Without warp_pitch_method, timewarp uses rubberband if it is available
+    // and wsola otherwise. Either one keeps the pitch.
+    void UnsetMethodPreservesPitch()
+    {
+        Profile profile("dv_pal");
+        std::unique_ptr<Producer> producer(createProducer(profile, 2.0, true));
+        QVERIFY(producer->is_valid());
+
         int frequency = 0;
         const std::vector<float> audio = playAudio(*producer, &frequency);
         const double measured = pitch(audio, frequency);

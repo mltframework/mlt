@@ -40,7 +40,7 @@
 // frequency it is labeled with, so its windows have the intended length.
 
 static const int MAX_CHANNELS = 32;
-static const double MIN_PITCHSCALE = 0.0625;
+static const double MIN_PITCHSCALE = 0.05;
 static const double MAX_PITCHSCALE = 16.0;
 // Frames that the resamplers request from the input at a time.
 static const int REQUEST_FRAMES = wsola::SincResampler::kSmallRequestSize;
@@ -305,6 +305,9 @@ static void close_filter(mlt_filter filter)
 {
     delete (private_data *) filter->child;
     filter->child = NULL;
+    filter->close = NULL;
+    filter->parent.close = NULL;
+    mlt_service_close(&filter->parent);
 }
 
 extern "C" {
