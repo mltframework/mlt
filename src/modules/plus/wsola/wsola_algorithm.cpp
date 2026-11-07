@@ -517,7 +517,7 @@ size_t FullSearch(size_t low_limit,
     const size_t block_size = static_cast<size_t>(target_block->frames());
     std::vector<float> dot_prod(channels);
 
-    float best_similarity = std::numeric_limits<float>::min();
+    float best_similarity = std::numeric_limits<float>::lowest();
     size_t optimal_index = 0;
 
     for (size_t n = low_limit; n <= high_limit; ++n) {
@@ -773,15 +773,10 @@ int AudioRendererAlgorithm::FillBuffer(AudioBus *dest,
 
 AudioRendererAlgorithm::FillBufferMode AudioRendererAlgorithm::ChooseBufferMode(double playback_rate)
 {
-    int slower_step = ceil(ola_window_size_ * playback_rate);
-    int faster_step = ceil(ola_window_size_ / playback_rate);
-
-    const bool is_playback_rate_almost_one = ola_window_size_ <= faster_step
-                                             && slower_step >= ola_window_size_;
-
-    // Optimize the most common `playback_rate` ~= 1 case to use a single copy
-    // instead of copying frame by frame.
-    if (is_playback_rate_almost_one) {
+    // Optimize the `playback_rate` == 1 case to use a single copy instead of
+    // copying frame by frame. Chromium also passes through rates that are only
+    // close to 1, but here the output must have exactly the requested length.
+    if (playback_rate == 1.0) {
         return FillBufferMode::kPassthrough;
     }
 
@@ -832,11 +827,8 @@ void AudioRendererAlgorithm::EnqueueInterleaved(const float *interleaved, int fr
 
 double AudioRendererAlgorithm::DelayInFrames(double playback_rate) const
 {
-    int slower_step = std::ceil(ola_window_size_ * playback_rate);
-    int faster_step = std::ceil(ola_window_size_ / playback_rate);
-
-    // When |playback_rate| ~= 1, we read directly from |audio_buffer_|.
-    if (ola_window_size_ <= faster_step && slower_step >= ola_window_size_)
+    // When |playback_rate| == 1, we read directly from |audio_buffer_|.
+    if (playback_rate == 1.0)
         return audio_buffer_.frames();
 
     const float buffered_output_frames = BufferedFrames() / playback_rate;
