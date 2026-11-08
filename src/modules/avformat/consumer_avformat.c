@@ -576,11 +576,11 @@ static int consumer_start(mlt_consumer consumer)
         // Assign the thread to properties
         mlt_properties_set_data(properties, "thread", thread, sizeof(pthread_t), free, NULL);
 
+        // Set the running state before the thread checks it
+        mlt_properties_set_int(properties, "running", 1);
+
         // Create the thread
         pthread_create(thread, NULL, consumer_thread, consumer);
-
-        // Set the running state
-        mlt_properties_set_int(properties, "running", 1);
     }
     return error;
 }
