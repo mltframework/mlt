@@ -28,6 +28,8 @@
 
 #include <framework/mlt_frame.h>
 
+#include <stdint.h>
+
 #define MLT_PLACEBO_IMAGE_PRIVATE "mlt_image_private"
 
 /* Return the singleton pl_gpu, lazily initialized on first call.
@@ -48,6 +50,20 @@ void placebo_render_unlock(void);
 
 /* Tear down all GPU resources. Registered for cleanup on first init. */
 void placebo_gpu_release(void);
+
+/* Create the singleton as a presentable Vulkan device and publish it.
+   extensions are Vulkan instance extensions (the SDL surface extensions).
+   make_surface is called with the new VkInstance while the GPU lock is held
+   and returns a VkSurfaceKHR as uint64_t. The surface is destroyed by this
+   function if device creation fails, and the caller must drop its copy.
+   Returns 0 when the singleton is a Vulkan device, including when one was
+   already published. Returns non-zero when the singleton is another backend
+   or Vulkan setup fails. Does not set the permanent failure flag, so a later
+   headless init can still run. The device survives consumer close. */
+int placebo_vulkan_init_display(const char *const *extensions,
+                                int count,
+                                uint64_t (*make_surface)(void *instance, void *opaque),
+                                void *opaque);
 
 /* Publish the singleton Vulkan device on mlt_global_properties() as
    "placebo.vulkan" so avformat can decode with the same VkDevice.

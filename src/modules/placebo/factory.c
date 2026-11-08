@@ -39,6 +39,12 @@ extern mlt_filter filter_placebo_color_transform_init(mlt_profile profile,
                                                       mlt_service_type type,
                                                       const char *id,
                                                       char *arg);
+#ifdef PLACEBO_SDL
+extern mlt_consumer consumer_placebo_sdl_init(mlt_profile profile,
+                                              mlt_service_type type,
+                                              const char *id,
+                                              char *arg);
+#endif
 
 static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
 {
@@ -73,4 +79,11 @@ MLTPLACEBO_EXPORT MLT_REPOSITORY
                           metadata,
                           "filter_placebo_color_transform.yml");
     MLT_REGISTER_METADATA(mlt_service_link_type, "placebo.scale", mlt_link_filter_metadata, NULL);
+#ifdef PLACEBO_SDL
+    MLT_REGISTER(mlt_service_consumer_type, "placebo.sdl", consumer_placebo_sdl_init);
+    MLT_REGISTER_METADATA(mlt_service_consumer_type,
+                          "placebo.sdl",
+                          metadata,
+                          "consumer_placebo_sdl.yml");
+#endif
 }

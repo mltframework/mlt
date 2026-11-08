@@ -464,7 +464,26 @@ static int vulkan_loader(PFN_vkGetInstanceProcAddr *vk_get_proc)
 #endif
 }
 
-static int create_vulkan_device(PFN_vkGetInstanceProcAddr vk_get_proc, int with_decode)
+static void destroy_vk_surface(VkSurfaceKHR surface)
+{
+    PFN_vkDestroySurfaceKHR destroy_surface = NULL;
+
+    if (!surface || !s_vk_inst || !s_vk_inst->instance)
+        return;
+    if (s_vk_inst->get_proc_addr)
+        destroy_surface = (PFN_vkDestroySurfaceKHR)
+            s_vk_inst->get_proc_addr(s_vk_inst->instance, "vkDestroySurfaceKHR");
+#ifdef PL_HAVE_VK_PROC_ADDR
+    if (!destroy_surface)
+        destroy_surface = vkDestroySurfaceKHR;
+#endif
+    if (destroy_surface)
+        destroy_surface(s_vk_inst->instance, surface, NULL);
+}
+
+static int create_vulkan_device(PFN_vkGetInstanceProcAddr vk_get_proc,
+                                int with_decode,
+                                VkSurfaceKHR surface)
 {
     const char *opt_exts[16] = {0};
     int num_opt = 0;
@@ -526,6 +545,7 @@ static int create_vulkan_device(PFN_vkGetInstanceProcAddr vk_get_proc, int with_
     s_vulkan = pl_vulkan_create(s_log,
                                 pl_vulkan_params(.instance = s_vk_inst->instance,
                                                  .get_proc_addr = vk_get_proc,
+                                                 .surface = surface,
                                                  .extra_queues = extra_queues,
                                                  .opt_extensions = num_opt ? opt_exts : NULL,
                                                  .num_opt_extensions = num_opt,
@@ -546,11 +566,11 @@ static int try_vulkan(void)
         return 0;
     }
 
-    if (!create_vulkan_device(vk_get_proc, 1)) {
+    if (!create_vulkan_device(vk_get_proc, 1, VK_NULL_HANDLE)) {
         mlt_log_warning(NULL,
                         "[placebo] Vulkan device with video decode queues failed; retrying "
                         "without them\n");
-        if (!create_vulkan_device(vk_get_proc, 0)) {
+        if (!create_vulkan_device(vk_get_proc, 0, VK_NULL_HANDLE)) {
             pl_vk_inst_destroy(&s_vk_inst);
             s_vk_inst = NULL;
             mlt_log_warning(NULL, "[placebo] Vulkan init failed\n");
@@ -559,6 +579,103 @@ static int try_vulkan(void)
     }
 
     s_gpu = s_vulkan->gpu;
+    return 1;
+}
+
+int placebo_vulkan_init_display(const char *const *extensions,
+                                int count,
+                                uint64_t (*make_surface)(void *instance, void *opaque),
+                                void *opaque)
+{
+    PFN_vkGetInstanceProcAddr vk_get_proc = NULL;
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    int created_here = 0;
+
+    LOCK();
+    if (s_gpu_shutdown) {
+        UNLOCK();
+        return 1;
+    }
+    if (s_initialized) {
+        int ok = s_vulkan != NULL;
+        UNLOCK();
+        return ok ? 0 : 1;
+    }
+
+    if (!s_log)
+        s_log = pl_log_create(PL_API_VER, pl_log_params(.log_level = PL_LOG_WARN, ));
+    if (!s_log) {
+        UNLOCK();
+        return 1;
+    }
+    if (!s_cache)
+        s_cache = pl_cache_create(pl_cache_params(.log = s_log, ));
+
+    if (!vulkan_loader(&vk_get_proc))
+        goto fail;
+
+    s_vk_inst = pl_vk_inst_create(s_log,
+                                  pl_vk_inst_params(.get_proc_addr = vk_get_proc,
+                                                    .debug = false,
+                                                    .extensions = extensions,
+                                                    .num_extensions = count, ));
+    if (!s_vk_inst) {
+        mlt_log_warning(NULL, "[placebo] Vulkan instance for display failed\n");
+        goto fail;
+    }
+    created_here = 1;
+
+    if (make_surface) {
+        uint64_t raw = make_surface((void *) s_vk_inst->instance, opaque);
+        surface = (VkSurfaceKHR) raw;
+    }
+    if (!surface) {
+        mlt_log_warning(NULL, "[placebo] Vulkan display surface failed\n");
+        goto fail;
+    }
+
+    if (!create_vulkan_device(vk_get_proc, 1, surface)) {
+        mlt_log_warning(NULL,
+                        "[placebo] Vulkan display device with video decode queues failed; "
+                        "retrying without them\n");
+        if (!create_vulkan_device(vk_get_proc, 0, surface)) {
+            mlt_log_warning(NULL, "[placebo] Vulkan display device failed\n");
+            goto fail;
+        }
+    }
+
+    s_gpu = s_vulkan->gpu;
+    if (s_cache) {
+        pl_gpu_set_cache(s_gpu, s_cache);
+        load_cache();
+    }
+    publish_vulkan_locked();
+    mlt_factory_register_for_clean_up(NULL, (mlt_destructor) placebo_gpu_release);
+    s_initialized = 1;
+    UNLOCK();
+    return 0;
+
+fail:
+    /* The caller drops its surface handle when this returns failure. */
+    if (surface)
+        destroy_vk_surface(surface);
+    if (created_here || s_vk_inst || s_vulkan || s_log)
+        release_gpu_locked();
+    UNLOCK();
+    return 1;
+}
+#endif
+
+#ifndef PL_HAVE_VULKAN
+int placebo_vulkan_init_display(const char *const *extensions,
+                                int count,
+                                uint64_t (*make_surface)(void *instance, void *opaque),
+                                void *opaque)
+{
+    (void) extensions;
+    (void) count;
+    (void) make_surface;
+    (void) opaque;
     return 1;
 }
 #endif

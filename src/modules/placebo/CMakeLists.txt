@@ -48,15 +48,24 @@ if(MSVC)
   target_link_libraries(mltplacebo PRIVATE PThreads4W::PThreads4W)
 endif()
 
+if(SDL2_FOUND)
+  target_sources(mltplacebo PRIVATE consumer_placebo_sdl.c)
+  target_compile_definitions(mltplacebo PRIVATE PLACEBO_SDL)
+  target_link_libraries(mltplacebo PRIVATE SDL2::SDL2)
+endif()
+
 set_target_properties(mltplacebo PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltplacebo LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
-install(FILES
+set(PLACEBO_YML
   filter_placebo_color_transform.yml
   filter_placebo_render.yml
   filter_placebo_scale.yml
   filter_placebo_shader.yml
-  DESTINATION ${MLT_INSTALL_DATA_DIR}/placebo
 )
+if(SDL2_FOUND)
+  list(APPEND PLACEBO_YML consumer_placebo_sdl.yml)
+endif()
+install(FILES ${PLACEBO_YML} DESTINATION ${MLT_INSTALL_DATA_DIR}/placebo)
