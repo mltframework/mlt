@@ -1,4 +1,4 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: placebo.render
 title: GPU Render (libplacebo)
@@ -24,6 +24,11 @@ description: >
   The compiled shader cache is stored in a platform-specific location and can
   be overridden by setting the MLT_PLACEBO_CACHE_PATH environment variable to
   an absolute path for the cache file.
+
+image_formats:
+  - rgb
+  - rgba
+  - rgba64
 
 parameters:
   - identifier: preset

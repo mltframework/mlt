@@ -169,7 +169,7 @@ static time_t file_mtime(const char *path)
  * (par->data->f / .i / .u) that can be written before every render call.
  *
  * The NLE (Kdenlive) stores user values as MLT animated properties with
- * the prefix "shader_param." — e.g. "shader_param.color_r".  Animated
+ * the prefix "param." — e.g. "param.color_r".  Animated
  * properties use MLT's keyframe string format ("0=200;50=100"), so we
  * must resolve them at the current frame position via the anim_get API.
  * Using plain atof() would parse only the frame number before '=' and
@@ -191,10 +191,10 @@ static void apply_shader_params(mlt_filter filter,
     int n = mlt_properties_count(props);
     for (int i = 0; i < n; i++) {
         const char *key = mlt_properties_get_name(props, i);
-        if (!key || strncmp(key, "shader_param.", 13) != 0)
+        if (!key || strncmp(key, "param.", 6) != 0)
             continue;
 
-        const char *param_name = key + 13; /* bare name after prefix */
+        const char *param_name = key + 6; /* bare name after prefix */
 
         /* Match against the hook's exported parameters by name */
         for (int j = 0; j < hook->num_parameters; j++) {
@@ -222,7 +222,7 @@ static void apply_shader_params(mlt_filter filter,
 static int ensure_shader(mlt_filter filter, shader_private *priv, pl_gpu gpu)
 {
     mlt_properties props = MLT_FILTER_PROPERTIES(filter);
-    const char *shader_path = mlt_properties_get(props, "shader_path");
+    const char *shader_path = mlt_properties_get(props, "resource");
     const char *shader_text = mlt_properties_get(props, "shader_text");
 
     /* Check if we need to reload from file */
@@ -350,7 +350,7 @@ static int filter_get_image(mlt_frame frame,
 
     /* Fast path: skip the GPU pipeline entirely when no shader is configured.
      * Property reads are safe here; we only mutate priv under placebo_render_lock. */
-    const char *shader_path = mlt_properties_get(filter_props, "shader_path");
+    const char *shader_path = mlt_properties_get(filter_props, "resource");
     const char *shader_text = mlt_properties_get(filter_props, "shader_text");
     if ((!shader_path || !*shader_path) && (!shader_text || !*shader_text))
         return mlt_frame_get_image(frame, image, format, width, height, writable);
@@ -514,8 +514,7 @@ mlt_filter filter_placebo_shader_init(mlt_profile profile,
     if (filter) {
         filter->process = filter_process;
         mlt_properties props = MLT_FILTER_PROPERTIES(filter);
-        mlt_properties_set(props, "shader_path", arg ? arg : "");
-        mlt_properties_set(props, "shader_text", "");
+        mlt_properties_set(props, "resource", arg ? arg : NULL);
         shader_private *priv = calloc(1, sizeof(shader_private));
         if (!priv) {
             mlt_filter_close(filter);

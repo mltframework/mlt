@@ -13,6 +13,9 @@ tags:
 description: >
   Preview on an SDL Vulkan window. Frames whose image format is vulkan stay
   in VRAM. Other frames are uploaded once.
+image_formats:
+  - rgba
+  - yuv422
 parameters:
   - identifier: resolution
     title: Resolution

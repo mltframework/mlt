@@ -1,8 +1,8 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: placebo.shader
 title: GPU Shader (libplacebo)
-version: 1
+version: 2
 copyright: D-Ogi and Meltytech, LLC
 creator: D-Ogi
 license: LGPLv2.1
@@ -22,9 +22,19 @@ description: >
   The compiled shader cache is stored in a platform-specific location and can
   be overridden by setting the MLT_PLACEBO_CACHE_PATH environment variable to
   an absolute path for the cache file.
+  Shader parameters declared with //!PARAM and //!TYPE DYNAMIC float (or int)
+  can be set using animated MLT properties named param.<name>.
+  Names are case-sensitive; omitted properties retain the shader defaults.
+  Installed shader YAML files are discovered recursively in
+  MLT_DATA/placebo/shaders and registered as placebo.<basename> filters.
+  Each YAML file must have a sibling .hook file with the same basename.
+
+image_formats:
+  - rgba
+  - rgba64
 
 parameters:
-  - identifier: shader_path
+  - identifier: resource
     title: Shader File
     type: string
     description: >
@@ -40,8 +50,8 @@ parameters:
     title: Shader Text
     type: string
     description: >
-      Inline shader source code as an alternative to shader_path.
-      If both are set, shader_path takes priority.
+      Inline shader source code as an alternative to resource.
+      If both are set, resource takes priority.
     default: ""
     mutable: yes
     readonly: no

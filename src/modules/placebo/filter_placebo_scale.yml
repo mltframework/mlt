@@ -1,4 +1,4 @@
-schema_version: 7.0
+schema_version: 7.2
 type: filter
 identifier: placebo.scale
 title: GPU Scale and Pad (libplacebo)
@@ -26,3 +26,6 @@ notes: >
   frame distort property is set.
   The kernel follows consumer.rescale: nearest, bilinear, or the libplacebo
   default for any other value.
+image_formats:
+  - rgba
+  - rgba64

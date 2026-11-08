@@ -93,6 +93,8 @@ endif()
 
 if(Kwalify_FOUND)
   file(GLOB YML_FILES "${CMAKE_SOURCE_DIR}/src/modules/*/*.yml")
+  file(GLOB_RECURSE SHADER_YML_FILES "${CMAKE_SOURCE_DIR}/src/modules/placebo/shaders/*.yml")
+  list(APPEND YML_FILES ${SHADER_YML_FILES})
   foreach(YML_FILE ${YML_FILES})
     get_filename_component(FILE_NAME ${YML_FILE} NAME)
     file(RELATIVE_PATH KWALIFY_TEST_NAME "${CMAKE_SOURCE_DIR}/src/modules" ${YML_FILE})

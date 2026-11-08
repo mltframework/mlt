@@ -1,0 +1,39 @@
+schema_version: 7.2
+type: filter
+identifier: placebo.gaussian_blur
+title: Gaussian Blur (libplacebo)
+version: 1
+copyright: 2022-2023 Ivan Bjelis
+creator: Ivan Bjelis
+license: MIT
+language: en
+tags:
+  - Video
+description: >
+  Apply a separable Gaussian blur in linear light on the GPU.
+  Place this filter ahead of placebo.render to download the result to RAM.
+  The same sigma and radius are used for the horizontal and vertical passes.
+
+image_formats:
+  - rgba
+  - rgba64
+
+parameters:
+  - identifier: param.sigma
+    title: Sigma
+    type: float
+    description: Blur spread. Must be greater than zero.
+    default: 10.0
+    animation: yes
+    mutable: yes
+    readonly: no
+
+  - identifier: param.radius
+    title: Radius
+    type: float
+    description: Kernel radius in pixels, specified as an integer expressed as a float.
+    minimum: 0.0
+    default: 10.0
+    animation: yes
+    mutable: yes
+    readonly: no

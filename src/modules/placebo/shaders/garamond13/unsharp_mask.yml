@@ -1,0 +1,60 @@
+schema_version: 7.2
+type: filter
+identifier: placebo.unsharp_mask
+title: Unsharp Mask (libplacebo)
+version: 1
+copyright: 2022-2023 Ivan Bjelis
+creator: Ivan Bjelis
+license: MIT
+language: en
+tags:
+  - Video
+description: >
+  Sharpen the image using a separable Gaussian unsharp mask in linear light
+  on the GPU. Place this filter ahead of placebo.render to download the result
+  to RAM. The same sigma and radius are used for both blur passes.
+
+image_formats:
+  - rgba
+  - rgba64
+
+parameters:
+  - identifier: param.sigma
+    title: Sigma
+    type: float
+    description: Blur spread. Must be greater than zero.
+    default: 1.0
+    animation: yes
+    mutable: yes
+    readonly: no
+
+  - identifier: param.radius
+    title: Radius
+    type: float
+    description: Kernel radius in pixels, specified as an integer expressed as a float.
+    minimum: 0.0
+    default: 2.0
+    animation: yes
+    mutable: yes
+    readonly: no
+
+  - identifier: param.amount
+    title: Amount
+    type: float
+    description: Amount of sharpening.
+    minimum: 0.0
+    default: 0.5
+    animation: yes
+    mutable: yes
+    readonly: no
+
+  - identifier: param.threshold
+    title: Threshold
+    type: float
+    description: Minimum contrast for sharpening.
+    minimum: 0.0
+    maximum: 1.0
+    default: 0.0
+    animation: yes
+    mutable: yes
+    readonly: no
