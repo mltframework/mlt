@@ -86,6 +86,7 @@ static pl_cache s_cache = NULL;
 static int s_initialized = 0;
 static int s_gpu_failed = 0;   /* permanent failure flag; suppresses retries */
 static int s_gpu_shutdown = 0; /* set during placebo_gpu_release(); prevents reinit */
+static int s_published = 0;    /* set by a publisher, not by scale or color_transform */
 static void release_gpu_locked(void);
 
 /* ---------- Mutex (SRWLOCK on Windows is statically initializable, unlike CRITICAL_SECTION) ---------- */
@@ -436,6 +437,8 @@ static void publish_vulkan_locked(void)
                 mlt_log_info(NULL, "[placebo] Vulkan device extension %s\n", ext);
         }
     }
+    if (s_gpu)
+        s_published = 1;
 }
 
 static int vulkan_loader(PFN_vkGetInstanceProcAddr *vk_get_proc)
@@ -805,11 +808,23 @@ pl_renderer placebo_renderer_get(void)
 
 void placebo_vulkan_publish(void)
 {
-#ifdef PL_HAVE_VULKAN
     LOCK();
+#ifdef PL_HAVE_VULKAN
     publish_vulkan_locked();
-    UNLOCK();
 #endif
+    /* OpenGL and D3D11 never write placebo.vulkan. The flag still marks that
+       a placebo service created this GPU, so scale and color_transform can init. */
+    if (s_gpu)
+        s_published = 1;
+    UNLOCK();
+}
+
+int placebo_context_is_published(void)
+{
+    LOCK();
+    int published = s_published;
+    UNLOCK();
+    return published;
 }
 
 int placebo_vulkan_has_decode_queue(void)
@@ -977,6 +992,7 @@ static void release_gpu_locked(void)
 
     s_gpu = NULL;
     s_initialized = 0;
+    s_published = 0;
     s_gpu_failed = 0;
     s_gpu_shutdown = 0;
 }

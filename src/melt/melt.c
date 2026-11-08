@@ -293,6 +293,55 @@ static int consumer_is_xml(mlt_consumer consumer)
     return service && !strcmp(service, "xml");
 }
 
+/* True when an argument is a placebo service id, including "placebo.name:arg". */
+static int argv_requests_placebo(int argc, char **argv)
+{
+    int i;
+    for (i = 1; i < argc; i++) {
+        if (!strncmp(argv[i], "placebo.", 8))
+            return 1;
+    }
+    return 0;
+}
+
+/* Multi puts each sub-consumer's properties on "0", "1", ... */
+static int consumer_requests_vulkan_image(mlt_consumer consumer)
+{
+    mlt_properties properties = consumer ? MLT_CONSUMER_PROPERTIES(consumer) : NULL;
+    const char *format = properties ? mlt_properties_get(properties, "mlt_image_format") : NULL;
+    int i;
+
+    if (format && !strcmp(format, "vulkan"))
+        return 1;
+    if (!properties)
+        return 0;
+    for (i = 0;; i++) {
+        char key[20];
+        mlt_properties sub;
+        snprintf(key, sizeof(key), "%d", i);
+        sub = mlt_properties_get_data(properties, key, NULL);
+        if (!sub)
+            break;
+        format = mlt_properties_get(sub, "mlt_image_format");
+        if (format && !strcmp(format, "vulkan"))
+            return 1;
+    }
+    return 0;
+}
+
+/* The loader attaches placebo.scale when it opens the file. -attach and
+   -filter are parsed during that walk, so publish first when any placebo
+   service appears anywhere on the command line. The avformat consumer is
+   already built; mlt_image_format=vulkan asks for the same device. A
+   *_vulkan codec without that image format does not. The device stays up
+   after this filter is closed. */
+static void preflight_placebo(mlt_profile profile, mlt_consumer consumer, int argc, char **argv)
+{
+    if (!argv_requests_placebo(argc, argv) && !consumer_requests_vulkan_image(consumer))
+        return;
+    mlt_filter_close(mlt_factory_filter(profile, "placebo.render", NULL));
+}
+
 static int load_consumer(mlt_consumer *consumer, mlt_profile profile, int argc, char **argv)
 {
     int i;
@@ -975,6 +1024,7 @@ int main(int argc, char **argv)
     // Other paths keep the main-thread Qt preflight for filters used during rendering.
     if (!consumer_is_xml(consumer))
         mlt_filter_close(mlt_factory_filter(profile, "qtcrop", NULL));
+    preflight_placebo(profile, consumer, argc, argv);
 
     // If the consumer changed the profile, then it is explicit.
     if (backup_profile && !profile->is_explicit

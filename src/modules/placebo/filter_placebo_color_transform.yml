@@ -11,7 +11,9 @@ tags:
   - Hidden
 description: >
   Convert the transfer characteristic of a Vulkan texture or a placebo texture.
-  color_transform factories this filter and runs it before its CPU converter.
+  color_transform factories this filter only after another placebo service
+  has published the GPU context, and runs it before its CPU converter.
+  This filter does not publish that context.
   It is usually the first filter after avformat, so the picture is still the
   decoded mlt_image_vulkan texture. A placebo texture is handled the same way
   when one already exists.

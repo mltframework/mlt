@@ -385,11 +385,12 @@ mlt_filter filter_placebo_color_transform_init(mlt_profile profile,
     mlt_filter filter = mlt_filter_new();
     if (!filter)
         return NULL;
-    if (!placebo_gpu_get()) {
+    /* Do not create or publish the GPU. color_transform ignores NULL and
+       keeps the CPU converter when no other placebo service has published. */
+    if (!placebo_context_is_published()) {
         mlt_filter_close(filter);
         return NULL;
     }
-    placebo_vulkan_publish();
     filter->process = filter_process;
     return filter;
 }

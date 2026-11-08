@@ -522,6 +522,10 @@ mlt_filter filter_placebo_shader_init(mlt_profile profile,
             return NULL;
         }
         mlt_properties_set_data(props, "_shader_priv", priv, 0, shader_private_destroy, NULL);
+        /* Create the GPU before the loader opens a producer. video_codec_init()
+           adopts a device published here; publishing from get_image is too late. */
+        if (placebo_gpu_get())
+            placebo_vulkan_publish();
     }
     return filter;
 }

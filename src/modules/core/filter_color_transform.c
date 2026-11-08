@@ -383,9 +383,8 @@ mlt_filter filter_color_transform_init(mlt_profile profile,
         self->close = filter_close;
         mlt_properties properties = MLT_FILTER_PROPERTIES(self);
         mlt_properties_set(properties, "method", method);
-        /* Absent when the placebo module or the GPU cannot be created.
-           Created here so the shared Vulkan device is published before
-           avformat initializes a decoder. */
+        /* Absent unless another placebo service has already published the
+           GPU context. This filter does not publish that context. */
         mlt_filter gpu = mlt_factory_filter(profile, "placebo.color_transform", NULL);
         if (gpu)
             mlt_properties_set_data(properties,

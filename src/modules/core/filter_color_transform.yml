@@ -16,8 +16,10 @@ description: >
   the output trc to be "force_trc";
   Otherwise, if a property "consumer.mlt_color_trc" exists on the frame, then it
   normalizes the image to the trc requested by the consumer.
-  When placebo.color_transform can be created, that filter converts a Vulkan
+  When another placebo service has already published the GPU context,
+  placebo.color_transform can be created. That filter converts a Vulkan
   frame from avformat, or a placebo texture, before this CPU conversion.
+  This filter does not publish that context.
   An image that is already pixels skips that GPU filter and uses method.
 image_formats:
   - rgb

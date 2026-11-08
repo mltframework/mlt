@@ -67,8 +67,11 @@ int placebo_vulkan_init_display(const char *const *extensions,
 
 /* Publish the singleton Vulkan device on mlt_global_properties() as
    "placebo.vulkan" so avformat can decode with the same VkDevice.
-   No-op when the backend is not Vulkan or the property is already set.
-   Handles inside the properties are not owned (destructor NULL).
+   No-op for the properties object when the backend is not Vulkan or the
+   property is already set. When a GPU is already up, also marks the placebo
+   context published so placebo.scale and placebo.color_transform can init.
+   Those two filters must not call this. Handles inside the properties are
+   not owned (destructor NULL).
    Keys: instance, phys_dev, device, get_proc_addr, features,
    inst_extensions, nb_inst_extensions, dev_extensions, nb_dev_extensions,
    queue_graphics_index/count, queue_compute_index/count,
@@ -77,6 +80,10 @@ int placebo_vulkan_init_display(const char *const *extensions,
    (encode index is -1 when the device has no video encode queue),
    lock_queue, unlock_queue, lock_ctx. */
 void placebo_vulkan_publish(void);
+
+/* Non-zero after placebo_vulkan_publish() or a Vulkan display init has
+   published a live GPU. Does not create a device. */
+int placebo_context_is_published(void);
 
 /* Non-zero when a published Vulkan device has a video decode queue. */
 int placebo_vulkan_has_decode_queue(void);

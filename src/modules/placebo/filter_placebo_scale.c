@@ -345,12 +345,12 @@ mlt_filter filter_placebo_scale_init(mlt_profile profile,
     mlt_filter filter = mlt_filter_new();
     if (!filter)
         return NULL;
-    /* Returning NULL lets the loader fall through to swscale. */
-    if (!placebo_gpu_get()) {
+    /* Returning NULL lets the loader fall through to swscale. Do not create
+       or publish the GPU here. Another placebo service has to publish first. */
+    if (!placebo_context_is_published()) {
         mlt_filter_close(filter);
         return NULL;
     }
-    placebo_vulkan_publish();
     filter->process = filter_process;
     /* producer_loader skips the resizer line when this is set. */
     mlt_properties_set_int(MLT_FILTER_PROPERTIES(filter), "_loader_no_resize", 1);

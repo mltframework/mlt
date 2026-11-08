@@ -15,8 +15,9 @@ description: >
   place of swscale. When this filter is attached, resize is not attached.
 notes: >
   This is not intended to be created directly. The loader producer and chain
-  normalizers prefer it, and fall through to the next scaler when the GPU is
-  unavailable.
+  normalizers prefer it, and fall through to the next scaler unless another
+  placebo service has already published the GPU context. This filter does
+  not publish that context.
   A decoded mlt_image_vulkan texture stays in VRAM.
   The result is a placebo texture at the full requested size. placebo.render
   downloads that texture when a caller asks for a normal image format.
