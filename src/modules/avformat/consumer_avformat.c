@@ -316,6 +316,57 @@ static int consumer_start(mlt_consumer consumer);
 static int consumer_stop(mlt_consumer consumer);
 static int consumer_is_stopped(mlt_consumer consumer);
 static void *consumer_thread(void *arg);
+
+/** Start/stop synchronization.
+ *
+ * start_mutex serializes consumer_start() and consumer_stop(), so a stop cannot
+ * run while a start is in progress. The consumer thread reports the outcome of
+ * its startup through state (guarded by state_mutex, signalled on state_cond),
+ * and consumer_start() does not return until it has.
+ */
+
+enum { STARTUP_PENDING, STARTUP_RUNNING, STARTUP_FAILED };
+
+typedef struct
+{
+    pthread_mutex_t start_mutex;
+    pthread_mutex_t state_mutex;
+    pthread_cond_t state_cond;
+    int state;
+} startup_sync;
+
+static void startup_sync_close(startup_sync *sync)
+{
+    pthread_mutex_destroy(&sync->start_mutex);
+    pthread_mutex_destroy(&sync->state_mutex);
+    pthread_cond_destroy(&sync->state_cond);
+    free(sync);
+}
+
+static startup_sync *get_startup_sync(mlt_properties properties)
+{
+    return mlt_properties_get_data(properties, "_startup_sync", NULL);
+}
+
+/** Called by the consumer thread: report whether startup succeeded.
+ *
+ * Only the first report counts. On success it sets "running" before waking
+ * consumer_start(), so the consumer never reads as stopped between a
+ * successful start and the thread's own mlt_consumer_stopped().
+ */
+
+static void startup_report(mlt_properties properties, int ok)
+{
+    startup_sync *sync = get_startup_sync(properties);
+    pthread_mutex_lock(&sync->state_mutex);
+    if (sync->state == STARTUP_PENDING) {
+        if (ok)
+            mlt_properties_set_int(properties, "running", 1);
+        sync->state = ok ? STARTUP_RUNNING : STARTUP_FAILED;
+        pthread_cond_broadcast(&sync->state_cond);
+    }
+    pthread_mutex_unlock(&sync->state_mutex);
+}
 static void consumer_close(mlt_consumer consumer);
 
 /** Initialise the consumer.
@@ -375,6 +426,17 @@ mlt_consumer consumer_avformat_init(mlt_profile profile, char *arg)
                                             "property-changed",
                                             (mlt_listener) property_changed);
         mlt_properties_set_data(properties, "property-changed event", event, 0, NULL, NULL);
+
+        startup_sync *sync = calloc(1, sizeof(*sync));
+        pthread_mutex_init(&sync->start_mutex, NULL);
+        pthread_mutex_init(&sync->state_mutex, NULL);
+        pthread_cond_init(&sync->state_cond, NULL);
+        mlt_properties_set_data(properties,
+                                "_startup_sync",
+                                sync,
+                                0,
+                                (mlt_destructor) startup_sync_close,
+                                NULL);
     }
 
     // Return consumer
@@ -559,6 +621,9 @@ static int consumer_start(mlt_consumer consumer)
         error = 1;
     }
 
+    startup_sync *sync = get_startup_sync(properties);
+    pthread_mutex_lock(&sync->start_mutex);
+
     // Check that we're not already running
     if (!error && !mlt_properties_get_int(properties, "running")) {
         // Allocate a thread
@@ -576,12 +641,35 @@ static int consumer_start(mlt_consumer consumer)
         // Assign the thread to properties
         mlt_properties_set_data(properties, "thread", thread, sizeof(pthread_t), free, NULL);
 
-        // Set the running state before the thread checks it
-        mlt_properties_set_int(properties, "running", 1);
+        pthread_mutex_lock(&sync->state_mutex);
+        sync->state = STARTUP_PENDING;
+        pthread_mutex_unlock(&sync->state_mutex);
 
-        // Create the thread
-        pthread_create(thread, NULL, consumer_thread, consumer);
+        // Create the thread; it sets "running" itself once it is ready to encode
+        if (pthread_create(thread, NULL, consumer_thread, consumer)) {
+            mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "failed to create the consumer thread\n");
+            error = 1;
+        } else {
+            // Wait until the thread is running or has given up
+            pthread_mutex_lock(&sync->state_mutex);
+            while (sync->state == STARTUP_PENDING)
+                pthread_cond_wait(&sync->state_cond, &sync->state_mutex);
+            if (sync->state == STARTUP_FAILED)
+                error = 1;
+            pthread_mutex_unlock(&sync->state_mutex);
+
+            // A thread that failed to start has already exited; reap it
+            if (error)
+                pthread_join(*thread, NULL);
+        }
+
+        if (error) {
+            mlt_properties_set_data(properties, "thread", NULL, 0, NULL, NULL);
+            mlt_event_unblock(mlt_properties_get_data(properties, "property-changed event", NULL));
+        }
     }
+
+    pthread_mutex_unlock(&sync->start_mutex);
     return error;
 }
 
@@ -593,6 +681,18 @@ static int consumer_stop(mlt_consumer consumer)
     // Get the properties
     mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
     pthread_t *thread = mlt_properties_get_data(properties, "thread", NULL);
+
+    // Called from the consumer thread itself (e.g. by an event listener):
+    // it cannot join itself, and a start may be waiting on it, so only ask it
+    // to stop. The next stop from another thread joins it.
+    if (thread && pthread_equal(*thread, pthread_self())) {
+        mlt_properties_set_int(properties, "running", 0);
+        return 0;
+    }
+
+    startup_sync *sync = get_startup_sync(properties);
+    pthread_mutex_lock(&sync->start_mutex);
+    thread = mlt_properties_get_data(properties, "thread", NULL);
 
     // Check that we're running
     if (thread) {
@@ -606,6 +706,7 @@ static int consumer_stop(mlt_consumer consumer)
         mlt_event_unblock(mlt_properties_get_data(properties, "property-changed event", NULL));
     }
 
+    pthread_mutex_unlock(&sync->start_mutex);
     return 0;
 }
 
@@ -2764,6 +2865,9 @@ static void *consumer_thread(void *arg)
         }
     }
 
+    // Ready to encode: set "running" and let consumer_start() return
+    startup_report(properties, 1);
+
     // Get the starting time (can ignore the times above)
     gettimeofday(&ante, NULL);
 
@@ -3017,6 +3121,9 @@ static void *consumer_thread(void *arg)
     mlt_log_verbose(MLT_CONSUMER_SERVICE(consumer), "finished processing %ld frames\n", frames - 1);
 
 on_fatal_error:
+
+    // If startup never completed, tell consumer_start() it failed
+    startup_report(properties, 0);
 
     if (frame)
         mlt_frame_close(frame);
