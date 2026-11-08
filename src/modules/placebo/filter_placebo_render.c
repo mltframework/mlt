@@ -181,9 +181,9 @@ static int filter_get_image(mlt_frame frame,
     if (is_tex && !placebo_image_get_tex(*image))
         return 1;
 
-    /* A linear texture stays linear. A Vulkan frame still in its source
-       transfer is encoded to sRGB. rgba64 is rgba16; otherwise rgba8, or
-       half-float while the frame stays linear and private. */
+    /* A linear texture stays linear. Any other known transfer is kept, so
+       rendering does not re-encode BT.709 as sRGB. rgba64 is rgba16; otherwise
+       rgba8, or half-float while the frame stays linear and private. */
     struct pl_color_space dst_color = pl_color_space_srgb;
     pl_fmt dst_fmt = rgba_fmt;
     pl_fmt encoded = NULL;

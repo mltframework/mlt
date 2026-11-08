@@ -164,11 +164,23 @@ void placebo_output_format(pl_gpu gpu,
                            pl_fmt *fmt)
 {
     pl_fmt rgba16;
+    const char *name;
+    mlt_color_trc trc;
+    enum pl_color_transfer transfer;
 
     placebo_tex_encoding(gpu, frame, color, fmt);
-    if (requested != mlt_image_rgba64)
+    if (requested == mlt_image_rgba64) {
+        rgba16 = placebo_rgba16_format(gpu);
+        if (rgba16)
+            *fmt = rgba16;
+    }
+    // If the frame is linear keep the encoding determined by placebo_tex_encoding.
+    if (!frame || placebo_frame_is_linear(frame))
         return;
-    rgba16 = placebo_rgba16_format(gpu);
-    if (rgba16)
-        *fmt = rgba16;
+    name = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "color_trc");
+    trc = name ? mlt_image_color_trc_id(name) : mlt_color_trc_none;
+    transfer = placebo_transfer_from_mlt(trc);
+    if (transfer == PL_COLOR_TRC_UNKNOWN)
+        return;
+    *color = placebo_color_space_for_trc(frame, transfer);
 }

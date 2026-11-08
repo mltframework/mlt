@@ -229,9 +229,9 @@ static int filter_get_image(mlt_frame frame,
     if (is_tex && !placebo_image_get_tex(*image))
         return 1;
 
-    /* A linear texture stays linear. A Vulkan frame still in its source
-       transfer is encoded to sRGB. rgba64 is rgba16; otherwise rgba8, or
-       half-float while the frame stays linear and private. */
+    /* A linear texture stays linear. Any other known transfer is kept, so
+       scaling does not re-encode BT.709 as sRGB. rgba64 is rgba16; otherwise
+       rgba8, or half-float while the frame stays linear and private. */
     struct pl_color_space dst_color = pl_color_space_srgb;
     pl_fmt dst_fmt = rgba_fmt;
     pl_fmt encoded = NULL;
@@ -239,6 +239,8 @@ static int filter_get_image(mlt_frame frame,
     if (encoded)
         dst_fmt = encoded;
 
+    /* blit_dst is required by pl_frame_clear; without it the clear is a no-op
+       and the padding keeps whatever a recycled allocation held before. */
     placebo_render_lock();
     pl_tex dst_tex = pl_tex_create(gpu,
                                    pl_tex_params(.w = out_w,
@@ -246,6 +248,7 @@ static int filter_get_image(mlt_frame frame,
                                                  .format = dst_fmt,
                                                  .sampleable = true,
                                                  .renderable = true,
+                                                 .blit_dst = true,
                                                  .host_readable = true, ));
     if (!dst_tex) {
         mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to create dest texture\n");

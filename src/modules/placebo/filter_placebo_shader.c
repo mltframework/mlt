@@ -384,7 +384,7 @@ static int filter_get_image(mlt_frame frame,
         return 1;
 
     /* A linear texture stays linear so the shader runs in linear light.
-       A Vulkan frame still in its source transfer is encoded to sRGB.
+       Any other known transfer is kept, so linearize() matches the samples.
        rgba64 is rgba16; a private linear frame stays half-float. */
     struct pl_color_space dst_color = pl_color_space_srgb;
     pl_fmt dst_fmt = rgba_fmt;

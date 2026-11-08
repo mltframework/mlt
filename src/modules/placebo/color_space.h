@@ -53,15 +53,17 @@ pl_fmt placebo_rgba16_format(pl_gpu gpu);
 /* Non-zero when tex was created with this exact pl_fmt. */
 int placebo_tex_is(pl_tex tex, pl_fmt fmt);
 
-/* Encoding to keep a placebo texture's current transfer.
-   Linear frames use rgba16hf. Every other frame stays rgba8 sRGB, which is
-   what the scale, shader, and render filters wrote before linear light.
-   *fmt is NULL only when rgba8 itself is missing. */
+/* How a finished texture is read back for display. Linear frames use
+   rgba16hf. Every other frame is rgba8 and tagged sRGB, so the present pass
+   does not apply a second transfer. The bytes themselves stay in the transfer
+   placebo_output_format wrote. *fmt is NULL only when rgba8 itself is missing. */
 void placebo_tex_encoding(pl_gpu gpu, mlt_frame frame, struct pl_color_space *color, pl_fmt *fmt);
 
-/* Output texture for one filter. The transfer comes from placebo_tex_encoding.
-   An rgba64 request uses rgba16 unorm instead of rgba8 or half-float, so the
-   download is 16-bit. *fmt is NULL only when rgba8 is missing. */
+/* Output texture for one filter. The format comes from placebo_tex_encoding.
+   A linear frame stays linear. Any other known transfer is kept (bt709 is
+   BT.1886); an unknown curve stays sRGB. An rgba64 request uses rgba16 unorm
+   instead of rgba8 or half-float, so the download is 16-bit. *fmt is NULL
+   only when rgba8 is missing. */
 void placebo_output_format(pl_gpu gpu,
                            mlt_frame frame,
                            mlt_image_format requested,
