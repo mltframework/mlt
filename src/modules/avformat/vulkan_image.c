@@ -415,6 +415,21 @@ static enum AVPixelFormat vulkan_sw_format(const mlt_vulkan_image *image)
     return AV_PIX_FMT_NONE;
 }
 
+static void vulkan_coded_size(const mlt_vulkan_image *image, int *coded_w, int *coded_h)
+{
+    int w = image->planes[0].width > 0 ? image->planes[0].width
+                                       : image->width + image->crop_left + image->crop_right;
+    int h = image->planes[0].height > 0 ? image->planes[0].height
+                                        : image->height + image->crop_top + image->crop_bottom;
+
+    if (w < image->width)
+        w = image->width;
+    if (h < image->height)
+        h = image->height;
+    *coded_w = w;
+    *coded_h = h;
+}
+
 static int colorspace_matrix(const mlt_vulkan_image *image, int dst_colorspace)
 {
     int matrix = dst_colorspace;
@@ -917,14 +932,7 @@ int avformat_vulkan_encoder_frame(avformat_vulkan_encoder *enc,
     }
     src_full = image->full_range || image->rgb;
     colorspace = colorspace_matrix(image, dst_colorspace);
-    coded_w = image->planes[0].width > 0 ? image->planes[0].width
-                                         : image->width + image->crop_left + image->crop_right;
-    coded_h = image->planes[0].height > 0 ? image->planes[0].height
-                                          : image->height + image->crop_top + image->crop_bottom;
-    if (coded_w < image->width)
-        coded_w = image->width;
-    if (coded_h < image->height)
-        coded_h = image->height;
+    vulkan_coded_size(image, &coded_w, &coded_h);
 
     if (!enc->graph || enc->src_w != coded_w || enc->src_h != coded_h || enc->src_sw != src_sw
         || enc->src_full != src_full || enc->dst_w != dst_w || enc->dst_h != dst_h
@@ -973,19 +981,395 @@ int avformat_vulkan_encoder_frame(avformat_vulkan_encoder *enc,
     *out = filtered;
     return 0;
 }
+
+struct avformat_vulkan_avfilter_s
+{
+    AVFilterGraph *graph;
+    AVFilterContext *src;
+    AVFilterContext *filter;
+    AVFilterContext *sink;
+    AVBufferRef *device;
+    AVBufferRef *in_frames;
+    int width;
+    int height;
+    int coded_w;
+    int coded_h;
+    enum AVPixelFormat sw;
+    int full;
+    int colorspace;
+    int sar_num;
+    int sar_den;
+    int tb_num;
+    int tb_den;
+    int fps_num;
+    int fps_den;
+    int logged;
+};
+
+avformat_vulkan_avfilter *avformat_vulkan_avfilter_new(void)
+{
+    return calloc(1, sizeof(avformat_vulkan_avfilter));
+}
+
+void avformat_vulkan_avfilter_close(avformat_vulkan_avfilter *self)
+{
+    if (!self)
+        return;
+    avfilter_graph_free(&self->graph);
+    av_buffer_unref(&self->in_frames);
+    av_buffer_unref(&self->device);
+    free(self);
+}
+
+AVFilterGraph *avformat_vulkan_avfilter_graph(avformat_vulkan_avfilter *self)
+{
+    return self ? self->graph : NULL;
+}
+
+AVFilterContext *avformat_vulkan_avfilter_ctx(avformat_vulkan_avfilter *self)
+{
+    return self ? self->filter : NULL;
+}
+
+static int configure_user_filter(avformat_vulkan_avfilter *self,
+                                 const AVFilter *filter,
+                                 const mlt_vulkan_image *image,
+                                 int sar_num,
+                                 int sar_den,
+                                 int tb_num,
+                                 int tb_den,
+                                 int fps_num,
+                                 int fps_den,
+                                 int threads,
+                                 avformat_vulkan_avfilter_init_fn init_filter,
+                                 void *opaque)
+{
+    AVFilterGraph *graph = NULL;
+    AVFilterContext *src = NULL;
+    AVFilterContext *user = NULL;
+    AVFilterContext *sink = NULL;
+    AVBufferSrcParameters *par = NULL;
+    AVBufferRef *in_frames = NULL;
+    enum AVPixelFormat pix_fmts[] = {AV_PIX_FMT_VULKAN, AV_PIX_FMT_NONE};
+    int coded_w = 0;
+    int coded_h = 0;
+    int full;
+    int colorspace;
+    int err;
+
+    if (sar_den == 0) {
+        sar_num = 1;
+        sar_den = 1;
+    }
+    if (tb_den == 0) {
+        tb_num = 1;
+        tb_den = 1;
+    }
+    if (fps_den == 0) {
+        fps_num = 0;
+        fps_den = 1;
+    }
+
+    full = image->full_range || image->rgb;
+    colorspace = colorspace_matrix(image, mlt_to_av_colorspace(image->colorspace, image->height));
+    vulkan_coded_size(image, &coded_w, &coded_h);
+
+    if (!self->device) {
+        self->device = avformat_vulkan_adopt_placebo(0);
+        if (!self->device)
+            return AVERROR(ENODEV);
+    }
+
+    err = alloc_input_frames(self->device, image, vulkan_sw_format(image), coded_w, coded_h, &in_frames);
+    if (err < 0) {
+        mlt_log_error(NULL, "Vulkan avfilter input frames init failed: %d\n", err);
+        return err;
+    }
+
+    graph = avfilter_graph_alloc();
+    if (!graph) {
+        av_buffer_unref(&in_frames);
+        return AVERROR(ENOMEM);
+    }
+    if (threads >= 0)
+        av_opt_set_int(graph, "threads", threads, 0);
+
+    src = avfilter_graph_alloc_filter(graph, avfilter_get_by_name("buffer"), "in");
+    if (!src) {
+        err = AVERROR_FILTER_NOT_FOUND;
+        goto fail;
+    }
+    par = av_buffersrc_parameters_alloc();
+    if (!par) {
+        err = AVERROR(ENOMEM);
+        goto fail;
+    }
+    par->format = AV_PIX_FMT_VULKAN;
+    par->width = image->width;
+    par->height = image->height;
+    par->time_base = (AVRational){tb_num, tb_den};
+    par->frame_rate = (AVRational){fps_num, fps_den};
+    par->sample_aspect_ratio = (AVRational){sar_num, sar_den};
+    par->hw_frames_ctx = in_frames;
+    par->color_space = (enum AVColorSpace) colorspace;
+    par->color_range = full ? AVCOL_RANGE_JPEG : AVCOL_RANGE_MPEG;
+    err = av_buffersrc_parameters_set(src, par);
+    av_free(par);
+    par = NULL;
+    if (err < 0) {
+        mlt_log_error(NULL, "Vulkan avfilter buffer parameters failed: %d\n", err);
+        goto fail;
+    }
+    err = avfilter_init_dict(src, NULL);
+    if (err < 0) {
+        mlt_log_error(NULL, "Vulkan avfilter buffer source failed: %d\n", err);
+        goto fail;
+    }
+
+    user = avfilter_graph_alloc_filter(graph, filter, filter->name);
+    if (!user) {
+        err = AVERROR_FILTER_NOT_FOUND;
+        goto fail;
+    }
+    user->hw_device_ctx = av_buffer_ref(self->device);
+    if (!user->hw_device_ctx) {
+        err = AVERROR(ENOMEM);
+        goto fail;
+    }
+    user->extra_hw_frames = 4;
+    if (!init_filter) {
+        err = AVERROR(EINVAL);
+        goto fail;
+    }
+    err = init_filter(user, opaque);
+    if (err < 0) {
+        mlt_log_error(NULL, "Vulkan avfilter %s init failed: %d\n", filter->name, err);
+        goto fail;
+    }
+
+    sink = avfilter_graph_alloc_filter(graph, avfilter_get_by_name("buffersink"), "out");
+    if (!sink) {
+        err = AVERROR_FILTER_NOT_FOUND;
+        goto fail;
+    }
+#if LIBAVFILTER_VERSION_INT >= ((10 << 16) + (6 << 8) + 100)
+    err = av_opt_set_array(sink,
+                           "pixel_formats",
+                           AV_OPT_SEARCH_CHILDREN,
+                           0,
+                           1,
+                           AV_OPT_TYPE_PIXEL_FMT,
+                           pix_fmts);
+#else
+    err = av_opt_set_int_list(sink, "pix_fmts", pix_fmts, AV_PIX_FMT_NONE, AV_OPT_SEARCH_CHILDREN);
 #endif
+    if (err < 0)
+        goto fail;
+    err = avfilter_init_dict(sink, NULL);
+    if (err < 0)
+        goto fail;
+
+    err = avfilter_link(src, 0, user, 0);
+    if (err < 0)
+        goto fail;
+    err = avfilter_link(user, 0, sink, 0);
+    if (err < 0)
+        goto fail;
+    err = avfilter_graph_config(graph, NULL);
+    if (err < 0) {
+        mlt_log_error(NULL, "Vulkan avfilter graph failed: %d\n", err);
+        goto fail;
+    }
+
+    avfilter_graph_free(&self->graph);
+    av_buffer_unref(&self->in_frames);
+    self->graph = graph;
+    self->src = src;
+    self->filter = user;
+    self->sink = sink;
+    self->in_frames = in_frames;
+    self->width = image->width;
+    self->height = image->height;
+    self->coded_w = coded_w;
+    self->coded_h = coded_h;
+    self->sw = vulkan_sw_format(image);
+    self->full = full;
+    self->colorspace = colorspace;
+    self->sar_num = sar_num;
+    self->sar_den = sar_den;
+    self->tb_num = tb_num;
+    self->tb_den = tb_den;
+    self->fps_num = fps_num;
+    self->fps_den = fps_den;
+    if (!self->logged) {
+        self->logged = 1;
+        mlt_log_info(NULL,
+                     "Vulkan avfilter %s %dx%d\n",
+                     filter->name,
+                     image->width,
+                     image->height);
+    }
+    return 0;
+
+fail:
+    avfilter_graph_free(&graph);
+    av_buffer_unref(&in_frames);
+    return err;
+}
+
+int avformat_vulkan_avfilter_configure(avformat_vulkan_avfilter *self,
+                                       const AVFilter *filter,
+                                       mlt_vulkan_image *image,
+                                       int sar_num,
+                                       int sar_den,
+                                       int tb_num,
+                                       int tb_den,
+                                       int fps_num,
+                                       int fps_den,
+                                       int threads,
+                                       int force,
+                                       avformat_vulkan_avfilter_init_fn init_filter,
+                                       void *opaque)
+{
+    enum AVPixelFormat sw;
+    int coded_w = 0;
+    int coded_h = 0;
+    int full;
+    int colorspace;
+
+    if (!self || !filter || !image || image->nb_planes < 1 || !image->planes[0].image)
+        return AVERROR(EINVAL);
+    sw = vulkan_sw_format(image);
+    if (sw == AV_PIX_FMT_NONE) {
+        mlt_log_error(NULL,
+                      "Vulkan image VkFormat %d has no software format\n",
+                      image->planes[0].format);
+        return AVERROR(EINVAL);
+    }
+    full = image->full_range || image->rgb;
+    colorspace = colorspace_matrix(image, mlt_to_av_colorspace(image->colorspace, image->height));
+    vulkan_coded_size(image, &coded_w, &coded_h);
+    if (sar_den == 0) {
+        sar_num = 1;
+        sar_den = 1;
+    }
+    if (tb_den == 0) {
+        tb_num = 1;
+        tb_den = 1;
+    }
+    if (fps_den == 0) {
+        fps_num = 0;
+        fps_den = 1;
+    }
+    if (!force && self->graph && self->width == image->width && self->height == image->height
+        && self->coded_w == coded_w && self->coded_h == coded_h && self->sw == sw
+        && self->full == full && self->colorspace == colorspace && self->sar_num == sar_num
+        && self->sar_den == sar_den && self->tb_num == tb_num && self->tb_den == tb_den
+        && self->fps_num == fps_num && self->fps_den == fps_den)
+        return 0;
+    return configure_user_filter(self,
+                                 filter,
+                                 image,
+                                 sar_num,
+                                 sar_den,
+                                 tb_num,
+                                 tb_den,
+                                 fps_num,
+                                 fps_den,
+                                 threads,
+                                 init_filter,
+                                 opaque);
+}
+
+int avformat_vulkan_avfilter_frame(avformat_vulkan_avfilter *self,
+                                   mlt_vulkan_image *image,
+                                   int64_t pts,
+                                   int sar_num,
+                                   int sar_den,
+                                   int interlaced,
+                                   int top_field_first,
+                                   AVFrame **out)
+{
+    AVFrame *in = NULL;
+    AVFrame *filtered = NULL;
+    vulkan_wrap_owner *owner = NULL;
+    int err;
+
+    if (out)
+        *out = NULL;
+    if (!self || !self->graph || !self->src || !self->sink || !image || !out)
+        return AVERROR(EINVAL);
+    if (sar_den == 0) {
+        sar_num = 1;
+        sar_den = 1;
+    }
+
+    err = wrap_vulkan_image(image, self->in_frames, self->colorspace, self->full, &in, &owner);
+    if (err < 0)
+        return err;
+    in->pts = pts;
+    in->sample_aspect_ratio = (AVRational){sar_num, sar_den};
+#if LIBAVUTIL_VERSION_INT >= ((58 << 16) + (7 << 8) + 100)
+    if (interlaced)
+        in->flags |= AV_FRAME_FLAG_INTERLACED;
+    else
+        in->flags &= ~AV_FRAME_FLAG_INTERLACED;
+    if (top_field_first)
+        in->flags |= AV_FRAME_FLAG_TOP_FIELD_FIRST;
+    else
+        in->flags &= ~AV_FRAME_FLAG_TOP_FIELD_FIRST;
+#else
+    in->interlaced_frame = interlaced;
+    in->top_field_first = top_field_first;
+#endif
+    err = av_buffersrc_add_frame_flags(self->src, in, AV_BUFFERSRC_FLAG_KEEP_REF);
+    if (err >= 0) {
+        filtered = av_frame_alloc();
+        if (!filtered)
+            err = AVERROR(ENOMEM);
+        else
+            err = av_buffersink_get_frame(self->sink, filtered);
+    }
+    release_input_frame(in, owner, image);
+    if (err < 0) {
+        mlt_log_error(NULL,
+                      "Vulkan avfilter %s failed: %d\n",
+                      self->filter ? self->filter->name : "filter",
+                      err);
+        av_frame_free(&filtered);
+        return err;
+    }
+    *out = filtered;
+    return 0;
+}
+#endif
+
+int avformat_avfilter_is_vulkan(const char *name)
+{
+#if !HAVE_FFMPEG_VULKAN
+    (void) name;
+    return 0;
+#else
+    size_t len;
+
+    if (!name)
+        return 0;
+    len = strlen(name);
+    return len > 7 && strcmp(name + len - 7, "_vulkan") == 0;
+#endif
+}
 
 /* Copy the decoded VkImages into an mlt_image_vulkan. The AVFrame stays alive
    so the pool images and timeline semaphores do. This does not use
    allocate_buffer(): the payload is not a pixel buffer. */
-int avformat_export_vulkan_frame(mlt_producer producer,
-                                 struct AVFrame *video_frame,
-                                 mlt_frame frame,
-                                 uint8_t **buffer,
-                                 mlt_image_format *format)
+int avformat_install_vulkan_frame(mlt_service service,
+                                  struct AVFrame *video_frame,
+                                  mlt_frame frame,
+                                  uint8_t **buffer,
+                                  mlt_image_format *format)
 {
 #if !HAVE_FFMPEG_VULKAN
-    (void) producer;
+    (void) service;
     (void) video_frame;
     (void) frame;
     (void) buffer;
@@ -1077,6 +1461,10 @@ int avformat_export_vulkan_frame(mlt_producer producer,
         return 1;
     }
 
+    if (mlt_frame_set_image(frame, (uint8_t *) image, 0, destroy_vulkan_image)) {
+        destroy_vulkan_image(image);
+        return 1;
+    }
     *format = mlt_image_vulkan;
     *buffer = (uint8_t *) image;
     mlt_properties_set_int(props, "format", mlt_image_vulkan);
@@ -1087,19 +1475,27 @@ int avformat_export_vulkan_frame(mlt_producer producer,
     mlt_properties_set_int(props, "full_range", image->full_range);
     if (!logged) {
         logged = 1;
-        mlt_log_info(MLT_PRODUCER_SERVICE(producer),
+        mlt_log_info(service,
                      "Vulkan texture %dx%d (%d planes)\n",
                      image->width,
                      image->height,
                      image->nb_planes);
     }
-    if (mlt_frame_set_image(frame, (uint8_t *) image, 0, destroy_vulkan_image)) {
-        destroy_vulkan_image(image);
-        *buffer = NULL;
-        return 1;
-    }
     return 0;
 #endif
+}
+
+int avformat_export_vulkan_frame(mlt_producer producer,
+                                 struct AVFrame *video_frame,
+                                 mlt_frame frame,
+                                 uint8_t **buffer,
+                                 mlt_image_format *format)
+{
+    return avformat_install_vulkan_frame(producer ? MLT_PRODUCER_SERVICE(producer) : NULL,
+                                         video_frame,
+                                         frame,
+                                         buffer,
+                                         format);
 }
 
 #if !HAVE_FFMPEG_VULKAN
@@ -1137,6 +1533,79 @@ int avformat_vulkan_encoder_frame(avformat_vulkan_encoder *enc,
     (void) dst_full_range;
     (void) dst_colorspace;
     (void) image;
+    if (out)
+        *out = NULL;
+    return -1;
+}
+
+avformat_vulkan_avfilter *avformat_vulkan_avfilter_new(void)
+{
+    return NULL;
+}
+
+void avformat_vulkan_avfilter_close(avformat_vulkan_avfilter *self)
+{
+    (void) self;
+}
+
+int avformat_vulkan_avfilter_configure(avformat_vulkan_avfilter *self,
+                                       const struct AVFilter *filter,
+                                       mlt_vulkan_image *image,
+                                       int sar_num,
+                                       int sar_den,
+                                       int tb_num,
+                                       int tb_den,
+                                       int fps_num,
+                                       int fps_den,
+                                       int threads,
+                                       int force,
+                                       avformat_vulkan_avfilter_init_fn init_filter,
+                                       void *opaque)
+{
+    (void) self;
+    (void) filter;
+    (void) image;
+    (void) sar_num;
+    (void) sar_den;
+    (void) tb_num;
+    (void) tb_den;
+    (void) fps_num;
+    (void) fps_den;
+    (void) threads;
+    (void) force;
+    (void) init_filter;
+    (void) opaque;
+    return -1;
+}
+
+struct AVFilterGraph *avformat_vulkan_avfilter_graph(avformat_vulkan_avfilter *self)
+{
+    (void) self;
+    return NULL;
+}
+
+struct AVFilterContext *avformat_vulkan_avfilter_ctx(avformat_vulkan_avfilter *self)
+{
+    (void) self;
+    return NULL;
+}
+
+int avformat_vulkan_avfilter_frame(avformat_vulkan_avfilter *self,
+                                   mlt_vulkan_image *image,
+                                   int64_t pts,
+                                   int sar_num,
+                                   int sar_den,
+                                   int interlaced,
+                                   int top_field_first,
+                                   struct AVFrame **out)
+{
+    (void) self;
+    (void) image;
+    (void) pts;
+    (void) sar_num;
+    (void) sar_den;
+    (void) interlaced;
+    (void) top_field_first;
     if (out)
         *out = NULL;
     return -1;
