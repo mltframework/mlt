@@ -48,6 +48,10 @@ extern mlt_transition transition_placebo_blend_init(mlt_profile profile,
                                                     mlt_service_type type,
                                                     const char *id,
                                                     char *arg);
+extern mlt_transition transition_placebo_luma_mix_init(mlt_profile profile,
+                                                       mlt_service_type type,
+                                                       const char *id,
+                                                       char *arg);
 #ifdef PLACEBO_SDL
 extern mlt_consumer consumer_placebo_sdl_init(mlt_profile profile,
                                               mlt_service_type type,
@@ -153,6 +157,7 @@ MLTPLACEBO_EXPORT MLT_REPOSITORY
     MLT_REGISTER(mlt_service_link_type, "placebo.scale", mlt_link_filter_init);
     MLT_REGISTER(mlt_service_filter_type, "placebo.blend_mode", filter_placebo_blend_mode_init);
     MLT_REGISTER(mlt_service_transition_type, "placebo.blend", transition_placebo_blend_init);
+    MLT_REGISTER(mlt_service_transition_type, "placebo.luma_mix", transition_placebo_luma_mix_init);
     MLT_REGISTER_METADATA(mlt_service_filter_type,
                           "placebo.render",
                           metadata,
@@ -178,6 +183,10 @@ MLTPLACEBO_EXPORT MLT_REPOSITORY
                           "placebo.blend",
                           metadata,
                           "transition_placebo_blend.yml");
+    MLT_REGISTER_METADATA(mlt_service_transition_type,
+                          "placebo.luma_mix",
+                          metadata,
+                          "transition_placebo_luma_mix.yml");
 #ifdef PLACEBO_SDL
     MLT_REGISTER(mlt_service_consumer_type, "placebo.sdl", consumer_placebo_sdl_init);
     MLT_REGISTER_METADATA(mlt_service_consumer_type,

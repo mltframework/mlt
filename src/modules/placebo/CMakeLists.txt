@@ -14,6 +14,8 @@ add_library(mltplacebo MODULE
   filter_placebo_scale.c
   filter_placebo_shader.c
   transition_placebo_blend.c
+  transition_placebo_luma_mix.c
+  transition_common.c transition_common.h
   gpu_context.c gpu_context.h
   vulkan_frame.c vulkan_frame.h
 )
@@ -27,7 +29,7 @@ include(GenerateExportHeader)
 generate_export_header(mltplacebo)
 target_compile_options(mltplacebo PRIVATE ${MLT_COMPILE_OPTIONS})
 target_include_directories(mltplacebo PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(mltplacebo PRIVATE mlt PkgConfig::libplacebo)
+target_link_libraries(mltplacebo PRIVATE mlt Threads::Threads PkgConfig::libplacebo)
 
 # Only link D3D11 if libplacebo was built with D3D11 support
 include(CheckCSourceCompiles)
@@ -68,6 +70,7 @@ set(PLACEBO_YML
   filter_placebo_scale.yml
   filter_placebo_shader.yml
   transition_placebo_blend.yml
+  transition_placebo_luma_mix.yml
 )
 if(SDL2_FOUND)
   list(APPEND PLACEBO_YML consumer_placebo_sdl.yml)

@@ -79,6 +79,16 @@ endif()
 if(MOD_PLACEBO)
   add_qt_test(TEST_NAME placebo_blend)
   add_qt_test(TEST_NAME color_transform)
+  if(TARGET mltplacebo)
+    add_qt_test(TEST_NAME placebo_luma_mix LINK_LIBRARIES Threads::Threads)
+    add_dependencies(test_placebo_luma_mix mltplacebo mltcore)
+    set_property(
+      TEST "QtTest:placebo_luma_mix"
+      APPEND PROPERTY ENVIRONMENT
+        "MLT_REPOSITORY=${MLT_MODULE_OUTPUT_DIRECTORY}"
+        "MLT_DATA=${MLT_DATA_OUTPUT_DIRECTORY}"
+    )
+  endif()
   set_property(
     TEST "QtTest:placebo_blend" "QtTest:color_transform"
     APPEND PROPERTY ENVIRONMENT
