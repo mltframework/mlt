@@ -230,20 +230,6 @@ static int mix_textures(pl_gpu gpu,
                : 1;
 }
 
-static int get_gpu_image(mlt_frame frame,
-                         uint8_t **image,
-                         mlt_image_format *format,
-                         int *width,
-                         int *height,
-                         int writable)
-{
-    placebo_frame_set_requested_tex(frame, 1);
-    placebo_request_gpu_image(frame, format);
-    int error = mlt_frame_get_image(frame, image, format, width, height, writable);
-    placebo_frame_set_requested_tex(frame, 0);
-    return error || !*image;
-}
-
 static int get_image(mlt_frame a_frame,
                      uint8_t **image,
                      mlt_image_format *format,
@@ -290,7 +276,7 @@ static int get_image(mlt_frame a_frame,
         mlt_log_error(service, "GPU not available for luma transition\n");
         return 1;
     }
-    if (get_gpu_image(a_frame, &a_image, &a_format, &out_w, &out_h, writable)) {
+    if (placebo_frame_get_gpu_image(a_frame, &a_image, &a_format, &out_w, &out_h, writable)) {
         mlt_log_error(service, "Failed to obtain lower image\n");
         return 1;
     }
@@ -300,14 +286,19 @@ static int get_image(mlt_frame a_frame,
     }
     b_w = out_w;
     b_h = out_h;
-    if (get_gpu_image(b_frame, &b_image, &b_format, &b_w, &b_h, writable)) {
+    if (placebo_frame_get_gpu_image(b_frame, &b_image, &b_format, &b_w, &b_h, writable)) {
         mlt_log_error(service, "Failed to obtain upper image\n");
         return 1;
     }
     if (state->wipe) {
         mask_w = out_w;
         mask_h = out_h;
-        if (get_gpu_image(state->wipe, &mask_image, &mask_format, &mask_w, &mask_h, writable)) {
+        if (placebo_frame_get_gpu_image(state->wipe,
+                                        &mask_image,
+                                        &mask_format,
+                                        &mask_w,
+                                        &mask_h,
+                                        writable)) {
             mlt_log_error(service, "Failed to obtain wipe image\n");
             return 1;
         }

@@ -27,6 +27,7 @@
 #include <framework/mlt_log.h>
 #include <framework/mlt_profile.h>
 
+#include <libplacebo/config.h>
 #include <libplacebo/filters.h>
 #include <libplacebo/gpu.h>
 #include <libplacebo/renderer.h>
@@ -183,10 +184,7 @@ static int filter_get_image(mlt_frame frame,
        uses the profile size, not that request. requested is the caller's
        format so an rgba64 consumer is fitted into rgba16. */
     mlt_image_format requested = *format;
-    placebo_frame_set_requested_tex(frame, 1);
-    placebo_request_gpu_image(frame, format);
-    int error = mlt_frame_get_image(frame, image, format, width, height, 1);
-    placebo_frame_set_requested_tex(frame, 0);
+    int error = placebo_frame_get_gpu_image(frame, image, format, width, height, 1);
     if (error || !*image)
         return error;
 
@@ -316,7 +314,11 @@ static int filter_get_image(mlt_frame frame,
     struct pl_render_params params = pl_render_default_params;
     /* Default background composites partial alpha onto black. Letterbox
        padding is still cleared to opaque black before this render. */
+#if PL_API_VER >= 346
     params.background = PL_CLEAR_SKIP;
+#else
+    params.skip_target_clearing = true;
+#endif
     apply_consumer_scaler(&params, rescale);
     if (!pl_render_image(renderer, src, &pl_dst, &params)) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "pl_render_image failed\n");

@@ -23,6 +23,8 @@
 #include "gpu_context.h"
 #include "vulkan_frame.h"
 
+#include <libplacebo/config.h>
+
 const float placebo_transition_uv[4][2] = {
     {0.f, 0.f},
     {1.f, 0.f},
@@ -54,8 +56,12 @@ int placebo_transition_render(pl_renderer renderer,
     params.dither_params = NULL;
     params.deband_params = NULL;
     /* Preserve partial alpha instead of compositing onto the background. */
+#if PL_API_VER >= 346
     params.background = PL_CLEAR_SKIP;
     params.border = PL_CLEAR_SKIP;
+#else
+    params.skip_target_clearing = true;
+#endif
     params.background_transparency = 1.f;
     return pl_render_image(renderer, source, target, &params) ? 0 : 1;
 };

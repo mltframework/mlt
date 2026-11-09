@@ -919,6 +919,24 @@ void placebo_request_gpu_image(mlt_frame frame, mlt_image_format *format)
         *format = mlt_image_private;
 }
 
+int placebo_frame_get_gpu_image(mlt_frame frame,
+                                uint8_t **image,
+                                mlt_image_format *format,
+                                int *width,
+                                int *height,
+                                int writable)
+{
+    placebo_frame_set_requested_tex(frame, 1);
+    placebo_request_gpu_image(frame, format);
+    int error = mlt_frame_get_image(frame, image, format, width, height, writable);
+    placebo_frame_set_requested_tex(frame, 0);
+    if (!error && !*image) {
+        mlt_log_error(NULL, "[placebo] GPU image request returned no image\n");
+        return 1;
+    }
+    return error;
+}
+
 int placebo_frame_set_tex(mlt_frame frame, pl_tex tex)
 {
     mlt_properties props = MLT_FRAME_PROPERTIES(frame);

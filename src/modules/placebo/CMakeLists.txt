@@ -7,12 +7,16 @@ endif()
 add_library(mltplacebo MODULE
   color_space.c color_space.h
   convert.c convert.h
+  deinterlace.c
+  deinterlace.h
   factory.c
   filter_placebo_blend_mode.c
   filter_placebo_color_transform.c
+  filter_placebo_deinterlace.c
   filter_placebo_render.c
   filter_placebo_scale.c
   filter_placebo_shader.c
+  link_placebo_deinterlace.c
   transition_placebo_blend.c
   transition_placebo_luma_mix.c
   transition_common.c transition_common.h
@@ -66,9 +70,11 @@ install(TARGETS mltplacebo LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 set(PLACEBO_YML
   filter_placebo_blend_mode.yml
   filter_placebo_color_transform.yml
+  filter_placebo_deinterlace.yml
   filter_placebo_render.yml
   filter_placebo_scale.yml
   filter_placebo_shader.yml
+  link_placebo_deinterlace.yml
   transition_placebo_blend.yml
   transition_placebo_luma_mix.yml
 )

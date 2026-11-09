@@ -76,6 +76,9 @@ add_custom_target("Other_mlt_Files" SOURCES
 
 add_library(Mlt${MLT_VERSION_MAJOR}::mlt ALIAS mlt)
 
+# Let uninstalled builds, including tests, find chain normalizers through MLT_DATA.
+configure_file(chain_normalizers.ini "${MLT_DATA_OUTPUT_DIRECTORY}/chain_normalizers.ini" COPYONLY)
+
 include(CheckFunctionExists)
 include(CheckSymbolExists)
 check_function_exists(vsnprintf_l HAVE_VSNPRINTF_L)

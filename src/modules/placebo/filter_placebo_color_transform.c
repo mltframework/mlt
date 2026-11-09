@@ -27,6 +27,7 @@
 #include <framework/mlt_image.h>
 #include <framework/mlt_log.h>
 
+#include <libplacebo/config.h>
 #include <libplacebo/renderer.h>
 
 #include <string.h>
@@ -299,7 +300,11 @@ static int convert_trc(mlt_filter filter,
     /* A YUV frame has no alpha. An RGBA frame, such as qtext, does. The
        default background composites that coverage onto black and leaves an
        opaque card, which hides the picture under a source-over blend. */
+#if PL_API_VER >= 346
     params.background = PL_CLEAR_SKIP;
+#else
+    params.skip_target_clearing = true;
+#endif
     params.background_transparency = 1.f;
     if (!pl_render_image(renderer, src, &pl_dst, &params)) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "pl_render_image failed\n");

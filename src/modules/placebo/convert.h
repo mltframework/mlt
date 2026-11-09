@@ -23,6 +23,25 @@
 
 #include <framework/mlt_frame.h>
 
+typedef struct
+{
+    uint8_t *image;
+    mlt_image_format format;
+    mlt_frame frame;
+    char property[64];
+} placebo_image_source;
+
+/* Retain source identity across automatic upload. Release after validation.
+   The captured pointer is for identity comparisons only, not dereferencing. */
+int placebo_frame_get_gpu_image_source(mlt_frame frame,
+                                       uint8_t **image,
+                                       mlt_image_format *format,
+                                       int *width,
+                                       int *height,
+                                       int writable,
+                                       placebo_image_source *source);
+void placebo_image_source_release(placebo_image_source *source);
+
 int placebo_convert_image(mlt_frame frame,
                           uint8_t **image,
                           mlt_image_format *format,

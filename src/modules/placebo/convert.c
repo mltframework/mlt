@@ -18,6 +18,8 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "convert.h"
+
 #include "color_space.h"
 #include "gpu_context.h"
 
@@ -26,8 +28,37 @@
 #include <framework/mlt_log.h>
 #include <framework/mlt_pool.h>
 
+#include <libplacebo/config.h>
 #include <libplacebo/gpu.h>
 #include <libplacebo/renderer.h>
+#include <stdio.h>
+
+void placebo_image_source_release(placebo_image_source *source)
+{
+    if (source->frame)
+        mlt_properties_clear(MLT_FRAME_PROPERTIES(source->frame), source->property);
+    *source = (placebo_image_source){0};
+}
+
+int placebo_frame_get_gpu_image_source(mlt_frame frame,
+                                       uint8_t **image,
+                                       mlt_image_format *format,
+                                       int *width,
+                                       int *height,
+                                       int writable,
+                                       placebo_image_source *source)
+{
+    mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
+    void *outer = mlt_properties_get_data(properties, "_placebo_upload_source", NULL);
+    *source = (placebo_image_source){0};
+    if (mlt_properties_set_data(properties, "_placebo_upload_source", source, 0, NULL, NULL)) {
+        mlt_log_error(NULL, "[placebo] Failed to capture upload source\n");
+        return 1;
+    }
+    int error = placebo_frame_get_gpu_image(frame, image, format, width, height, writable);
+    mlt_properties_set_data(properties, "_placebo_upload_source", outer, 0, NULL, NULL);
+    return error;
+}
 
 static const char *tex_name(pl_tex tex)
 {
@@ -164,7 +195,11 @@ static int render_to_format(
     struct pl_frame pl_dst = pl_src;
     pl_dst.planes[0].texture = dst;
     struct pl_render_params params = pl_render_default_params;
+#if PL_API_VER >= 346
     params.background = PL_CLEAR_SKIP;
+#else
+    params.skip_target_clearing = true;
+#endif
     params.background_transparency = 1.f;
     int ok = pl_render_image(renderer, &pl_src, &pl_dst, &params);
     if (!ok)
@@ -174,6 +209,12 @@ static int render_to_format(
         return 1;
     *out = dst;
     return 0;
+}
+
+static inline int placebo_is_high_depth_yuv(mlt_image_format format)
+{
+    return format == mlt_image_yuv422p16 || format == mlt_image_yuv420p10
+           || format == mlt_image_yuv444p10;
 }
 
 static int download_rgba(mlt_frame frame,
@@ -192,12 +233,9 @@ static int download_rgba(mlt_frame frame,
         return 1;
     src_layout = tex_name(tex);
 
-    /* Half-float is linear light. Bit-casting it to rgba8 or rgba64 scrambles
-       the picture. rgba64 is 16-bit unorm, so render into rgba16 and leave
-       color_trc alone. An 8-bit RGB request quantizes to rgba8 for the CPU
-       filter. A YUV request stays on the GPU until the consumer has encoded
-       the transfer. */
-    if (output_format == mlt_image_rgba64) {
+    /* Half-float cannot be read as integer RGB. High-bit-depth YUV uses
+       rgba64 as an intermediate so the CPU converter keeps its precision. */
+    if (output_format == mlt_image_rgba64 || placebo_is_high_depth_yuv(output_format)) {
         pl_fmt rgba16 = placebo_rgba16_format(gpu);
         produced = mlt_image_rgba64;
         if (!rgba16
@@ -259,9 +297,7 @@ static int download_rgba(mlt_frame frame,
         *image = NULL;
         return 1;
     }
-    /* Returning 0 tells mlt_frame_convert_image the request is satisfied.
-       rgba is only an intermediate for a yuv422 consumer (sdl2), which would
-       upload it as YUY2. rgba64 is the requested format, so it is finished. */
+    /* Return nonzero when another converter must produce the final format. */
     if (output_format != produced)
         return 1;
     return 0;
@@ -311,8 +347,33 @@ int placebo_convert_image(mlt_frame frame,
         return 1;
 
     if (output_format == mlt_image_vulkan || placebo_frame_wants_tex(frame, output_format)) {
+        placebo_image_source *source = mlt_properties_get_data(props,
+                                                               "_placebo_upload_source",
+                                                               NULL);
+        if (source && !source->image) {
+            *source = (placebo_image_source){.image = *image, .format = *format};
+            // Keep the allocation alive so a later reference cannot reuse its address.
+            if (mlt_properties_get_data(props, "image", NULL) == *image) {
+                snprintf(source->property,
+                         sizeof(source->property),
+                         "_placebo_upload_source_%d",
+                         mlt_properties_count(props));
+                if (mlt_properties_rename(props, "image", source->property)) {
+                    mlt_log_error(NULL, "[placebo] Failed to retain upload source\n");
+                    return 1;
+                }
+                source->frame = frame;
+            }
+        }
         pl_fmt upload_fmt = rgba8;
-        if (*format == mlt_image_rgba64) {
+        if (placebo_is_high_depth_yuv(*format)) {
+            pl_fmt rgba16 = placebo_rgba16_format(gpu);
+            if (!rgba16 || mlt_frame_next_convert_image(frame, image, format, mlt_image_rgba64)) {
+                mlt_log_error(NULL, "[placebo] Failed to upload high-bit-depth YUV as rgba16\n");
+                return 1;
+            }
+            upload_fmt = rgba16;
+        } else if (*format == mlt_image_rgba64) {
             pl_fmt rgba16 = placebo_rgba16_format(gpu);
             if (rgba16)
                 upload_fmt = rgba16;

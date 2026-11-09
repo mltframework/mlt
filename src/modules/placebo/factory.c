@@ -36,6 +36,14 @@ extern mlt_filter filter_placebo_scale_init(mlt_profile profile,
                                             mlt_service_type type,
                                             const char *id,
                                             char *arg);
+extern mlt_filter filter_placebo_deinterlace_init(mlt_profile profile,
+                                                  mlt_service_type type,
+                                                  const char *id,
+                                                  char *arg);
+extern mlt_link link_placebo_deinterlace_init(mlt_profile profile,
+                                              mlt_service_type type,
+                                              const char *id,
+                                              char *arg);
 extern mlt_filter filter_placebo_color_transform_init(mlt_profile profile,
                                                       mlt_service_type type,
                                                       const char *id,
@@ -151,6 +159,8 @@ MLTPLACEBO_EXPORT MLT_REPOSITORY
     MLT_REGISTER(mlt_service_filter_type, "placebo.render", filter_placebo_render_init);
     MLT_REGISTER(mlt_service_filter_type, "placebo.shader", filter_placebo_shader_init);
     MLT_REGISTER(mlt_service_filter_type, "placebo.scale", filter_placebo_scale_init);
+    MLT_REGISTER(mlt_service_filter_type, "placebo.deinterlace", filter_placebo_deinterlace_init);
+    MLT_REGISTER(mlt_service_link_type, "placebo.deinterlace", link_placebo_deinterlace_init);
     MLT_REGISTER(mlt_service_filter_type,
                  "placebo.color_transform",
                  filter_placebo_color_transform_init);
@@ -170,6 +180,14 @@ MLTPLACEBO_EXPORT MLT_REPOSITORY
                           "placebo.scale",
                           metadata,
                           "filter_placebo_scale.yml");
+    MLT_REGISTER_METADATA(mlt_service_filter_type,
+                          "placebo.deinterlace",
+                          metadata,
+                          "filter_placebo_deinterlace.yml");
+    MLT_REGISTER_METADATA(mlt_service_link_type,
+                          "placebo.deinterlace",
+                          metadata,
+                          "link_placebo_deinterlace.yml");
     MLT_REGISTER_METADATA(mlt_service_filter_type,
                           "placebo.color_transform",
                           metadata,

@@ -1,0 +1,31 @@
+schema_version: 7.2
+type: link
+identifier: placebo.deinterlace
+title: GPU Deinterlacer (libplacebo)
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+  - Hidden
+description: >
+  Deinterlace interlaced video on the GPU as a chain normalizer.
+notes: >
+  This link is selected only when another placebo service has already
+  published the GPU context. The consumer's progressive and deinterlacer
+  properties control processing. It produces one output frame per input frame.
+  Active deinterlacing requests GPU images upstream independently of the
+  caller's requested output image format.
+  Progressive GPU input is not deinterlaced, but is rendered when needed
+  to provide CPU output.
+  Supported methods are yadif (the default), yadif-nospatial, bob, weave,
+  none, and bwdif when supported by libplacebo. Weave preserves pixels and
+  marks the result progressive when progressive output was requested.
+  Unsupported methods use GPU yadif, except onefield, which uses bob.
+  Older libplacebo versions use yadif for bwdif. Substitutions are logged.
+  Missing or incompatible temporal references use bob.
+  Known progressive frames do not fetch neighboring frames.
+image_formats:
+  - rgba
+  - rgba64

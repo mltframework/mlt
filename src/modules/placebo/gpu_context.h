@@ -115,6 +115,15 @@ int placebo_frame_is_vulkan(mlt_frame frame, mlt_image_format format);
    ask for one when this device can decode, else a placebo private texture. */
 void placebo_request_gpu_image(mlt_frame frame, mlt_image_format *format);
 
+/* Pull a GPU image with a balanced, nestable placebo request marker.
+   The caller retains its original requested format separately for output. */
+int placebo_frame_get_gpu_image(mlt_frame frame,
+                                uint8_t **image,
+                                mlt_image_format *format,
+                                int *width,
+                                int *height,
+                                int writable);
+
 /* Store a libplacebo texture on the frame as mlt_image_private.
    The texture lifetime is owned by the frame image property. */
 int placebo_frame_set_tex(mlt_frame frame, pl_tex tex);

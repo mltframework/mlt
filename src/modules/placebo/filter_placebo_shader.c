@@ -360,10 +360,7 @@ static int filter_get_image(mlt_frame frame,
      * frames that are already inside the lock. requested is the caller's
      * format; rgba64 is rendered to rgba16 instead of rgba8. */
     mlt_image_format requested = *format;
-    placebo_frame_set_requested_tex(frame, 1);
-    placebo_request_gpu_image(frame, format);
-    int error = mlt_frame_get_image(frame, image, format, width, height, 1);
-    placebo_frame_set_requested_tex(frame, 0);
+    int error = placebo_frame_get_gpu_image(frame, image, format, width, height, 1);
     if (error || !*image)
         return error;
 

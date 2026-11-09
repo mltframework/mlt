@@ -80,14 +80,32 @@ if(MOD_PLACEBO)
   add_qt_test(TEST_NAME placebo_blend)
   add_qt_test(TEST_NAME color_transform)
   if(TARGET mltplacebo)
+    add_qt_test(
+      TEST_NAME placebo_deinterlace
+      LINK_LIBRARIES Threads::Threads
+      SOURCE_FILES
+        test_placebo_deinterlace/test_placebo_deinterlace.h
+        test_placebo_deinterlace/test_filter.cpp
+        test_placebo_deinterlace/test_link.cpp
+    )
     add_qt_test(TEST_NAME placebo_luma_mix LINK_LIBRARIES Threads::Threads)
-    add_dependencies(test_placebo_luma_mix mltplacebo mltcore)
+    foreach(_test placebo_deinterlace placebo_luma_mix)
+      add_dependencies(test_${_test} mltplacebo mltcore)
+    endforeach()
     set_property(
-      TEST "QtTest:placebo_luma_mix"
+      TEST "QtTest:placebo_deinterlace" "QtTest:placebo_luma_mix"
       APPEND PROPERTY ENVIRONMENT
         "MLT_REPOSITORY=${MLT_MODULE_OUTPUT_DIRECTORY}"
         "MLT_DATA=${MLT_DATA_OUTPUT_DIRECTORY}"
     )
+    # Load the built libmlt rather than an installed one on the library path.
+    if(UNIX AND NOT APPLE AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.22)
+      set_property(
+        TEST "QtTest:placebo_deinterlace" "QtTest:placebo_luma_mix"
+        APPEND PROPERTY ENVIRONMENT_MODIFICATION
+          "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
+      )
+    endif()
   endif()
   set_property(
     TEST "QtTest:placebo_blend" "QtTest:color_transform"
