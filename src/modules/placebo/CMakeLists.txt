@@ -8,10 +8,12 @@ add_library(mltplacebo MODULE
   color_space.c color_space.h
   convert.c convert.h
   factory.c
+  filter_placebo_blend_mode.c
   filter_placebo_color_transform.c
   filter_placebo_render.c
   filter_placebo_scale.c
   filter_placebo_shader.c
+  transition_placebo_blend.c
   gpu_context.c gpu_context.h
   vulkan_frame.c vulkan_frame.h
 )
@@ -60,10 +62,12 @@ set_target_properties(mltplacebo PROPERTIES
 install(TARGETS mltplacebo LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
 set(PLACEBO_YML
+  filter_placebo_blend_mode.yml
   filter_placebo_color_transform.yml
   filter_placebo_render.yml
   filter_placebo_scale.yml
   filter_placebo_shader.yml
+  transition_placebo_blend.yml
 )
 if(SDL2_FOUND)
   list(APPEND PLACEBO_YML consumer_placebo_sdl.yml)

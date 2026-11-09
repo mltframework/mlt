@@ -1080,7 +1080,12 @@ static int configure_user_filter(avformat_vulkan_avfilter *self,
             return AVERROR(ENODEV);
     }
 
-    err = alloc_input_frames(self->device, image, vulkan_sw_format(image), coded_w, coded_h, &in_frames);
+    err = alloc_input_frames(self->device,
+                             image,
+                             vulkan_sw_format(image),
+                             coded_w,
+                             coded_h,
+                             &in_frames);
     if (err < 0) {
         mlt_log_error(NULL, "Vulkan avfilter input frames init failed: %d\n", err);
         return err;
@@ -1203,11 +1208,7 @@ static int configure_user_filter(avformat_vulkan_avfilter *self,
     self->fps_den = fps_den;
     if (!self->logged) {
         self->logged = 1;
-        mlt_log_info(NULL,
-                     "Vulkan avfilter %s %dx%d\n",
-                     filter->name,
-                     image->width,
-                     image->height);
+        mlt_log_info(NULL, "Vulkan avfilter %s %dx%d\n", filter->name, image->width, image->height);
     }
     return 0;
 

@@ -474,8 +474,8 @@ static void destroy_vk_surface(VkSurfaceKHR surface)
     if (!surface || !s_vk_inst || !s_vk_inst->instance)
         return;
     if (s_vk_inst->get_proc_addr)
-        destroy_surface = (PFN_vkDestroySurfaceKHR)
-            s_vk_inst->get_proc_addr(s_vk_inst->instance, "vkDestroySurfaceKHR");
+        destroy_surface = (PFN_vkDestroySurfaceKHR) s_vk_inst->get_proc_addr(s_vk_inst->instance,
+                                                                             "vkDestroySurfaceKHR");
 #ifdef PL_HAVE_VK_PROC_ADDR
     if (!destroy_surface)
         destroy_surface = vkDestroySurfaceKHR;

@@ -76,6 +76,17 @@ if(MOD_QT6)
 endif()
 
 
+if(MOD_PLACEBO)
+  add_qt_test(TEST_NAME placebo_blend)
+  add_qt_test(TEST_NAME color_transform)
+  set_property(
+    TEST "QtTest:placebo_blend" "QtTest:color_transform"
+    APPEND PROPERTY ENVIRONMENT
+      "MLT_REPOSITORY=${MLT_MODULE_OUTPUT_DIRECTORY}"
+      "MLT_DATA=${MLT_DATA_OUTPUT_DIRECTORY}"
+  )
+endif()
+
 if(MOD_QT6 AND BUILD_TESTS_WITH_QT6)
   add_qt_test(
     TEST_NAME richtextgradient

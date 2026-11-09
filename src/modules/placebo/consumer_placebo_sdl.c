@@ -93,7 +93,8 @@ static int ensure_display(consumer_sdl self);
 
 static SDL_AudioDeviceID open_audio(const SDL_AudioSpec *desired, SDL_AudioSpec *obtained)
 {
-    SDL_AudioDeviceID dev = SDL_OpenAudioDevice(NULL, 0, desired, obtained, SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
+    SDL_AudioDeviceID dev
+        = SDL_OpenAudioDevice(NULL, 0, desired, obtained, SDL_AUDIO_ALLOW_CHANNELS_CHANGE);
     int i;
 
     if (dev != 0)
@@ -147,8 +148,8 @@ static void destroy_surface(consumer_sdl self)
     gpu = placebo_gpu_get();
     vk = gpu ? pl_vulkan_get(gpu) : NULL;
     if (vk && vk->get_proc_addr)
-        destroy_surface_fn = (PFN_vkDestroySurfaceKHR)
-            vk->get_proc_addr(vk->instance, "vkDestroySurfaceKHR");
+        destroy_surface_fn = (PFN_vkDestroySurfaceKHR) vk->get_proc_addr(vk->instance,
+                                                                         "vkDestroySurfaceKHR");
     if (destroy_surface_fn)
         destroy_surface_fn(vk->instance, self->surface, NULL);
     self->surface = VK_NULL_HANDLE;
@@ -197,7 +198,8 @@ static int create_window(consumer_sdl self)
                                         SDL_WINDOWPOS_UNDEFINED,
                                         width,
                                         height,
-                                        SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIDDEN);
+                                        SDL_WINDOW_VULKAN | SDL_WINDOW_RESIZABLE
+                                            | SDL_WINDOW_HIDDEN);
     if (!self->sdl_window) {
         mlt_log_error(MLT_CONSUMER_SERVICE(&self->parent),
                       "Failed to create SDL Vulkan window: %s\n",
@@ -286,14 +288,13 @@ static int create_swapchain(consumer_sdl self)
        waits inside pl_swapchain_start_frame while placebo_render_lock is
        held, so the real_time=1 read-ahead misses the frame and starts
        dropping. Unsupported mailbox falls back to FIFO inside libplacebo. */
-    self->swapchain = pl_vulkan_create_swapchain(
-        vk,
-        pl_vulkan_swapchain_params(.surface = self->surface,
-                                   .present_mode = VK_PRESENT_MODE_MAILBOX_KHR,
-                                   .swapchain_depth = 3, ));
+    self->swapchain = pl_vulkan_create_swapchain(vk,
+                                                 pl_vulkan_swapchain_params(
+                                                         .surface = self->surface,
+                                                         .present_mode = VK_PRESENT_MODE_MAILBOX_KHR,
+                                                         .swapchain_depth = 3, ));
     if (!self->swapchain) {
-        mlt_log_error(MLT_CONSUMER_SERVICE(&self->parent),
-                      "Failed to create Vulkan swapchain\n");
+        mlt_log_error(MLT_CONSUMER_SERVICE(&self->parent), "Failed to create Vulkan swapchain\n");
         return 1;
     }
     mlt_log_info(MLT_CONSUMER_SERVICE(&self->parent), "Vulkan swapchain ready\n");
@@ -318,7 +319,8 @@ static void letterbox(consumer_sdl self, mlt_frame frame, int img_w, int img_h, 
     mlt_properties properties = self->properties;
     double this_aspect = dst_h > 0 ? (double) dst_w / dst_h : 1.0;
     double display_ratio = mlt_properties_get_double(properties, "display_ratio");
-    double frame_aspect = img_h > 0 ? mlt_frame_get_aspect_ratio(frame) * img_w / img_h : this_aspect;
+    double frame_aspect = img_h > 0 ? mlt_frame_get_aspect_ratio(frame) * img_w / img_h
+                                    : this_aspect;
     const char *rescale = mlt_properties_get(properties, "rescale");
 
     if (rescale && !strcmp(rescale, "none")) {
@@ -397,7 +399,8 @@ static uint8_t *yuv422_to_rgba(const uint8_t *src, int width, int height)
     return rgba;
 }
 
-static int upload_rgba(consumer_sdl self, pl_gpu gpu, const uint8_t *rgba, int width, int height, struct pl_frame *src)
+static int upload_rgba(
+    consumer_sdl self, pl_gpu gpu, const uint8_t *rgba, int width, int height, struct pl_frame *src)
 {
     struct pl_plane_data data = {
         .type = PL_FMT_UNORM,
@@ -419,7 +422,12 @@ static int upload_rgba(consumer_sdl self, pl_gpu gpu, const uint8_t *rgba, int w
     return 0;
 }
 
-static int present_image(consumer_sdl self, mlt_frame frame, uint8_t *image, mlt_image_format format, int width, int height)
+static int present_image(consumer_sdl self,
+                         mlt_frame frame,
+                         uint8_t *image,
+                         mlt_image_format format,
+                         int width,
+                         int height)
 {
     pl_gpu gpu = placebo_gpu_get();
     pl_renderer renderer;
@@ -644,7 +652,8 @@ static int consumer_play_audio(consumer_sdl self, mlt_frame frame, int init_audi
             mlt_log_error(MLT_CONSUMER_SERVICE(&self->parent), "SDL failed to open audio\n");
             return 2;
         }
-        audio_queue_size = got.size > SDL_AUDIO_BUFFER_MIN_BYTES ? got.size : SDL_AUDIO_BUFFER_MIN_BYTES;
+        audio_queue_size = got.size > SDL_AUDIO_BUFFER_MIN_BYTES ? got.size
+                                                                 : SDL_AUDIO_BUFFER_MIN_BYTES;
         if (ensure_buffer_capacity(&self->audio_buffer, &self->audio_buffer_size, audio_queue_size)) {
             SDL_CloseAudioDevice(self->audio_dev);
             self->audio_dev = 0;
@@ -815,7 +824,8 @@ static void *consumer_thread(void *arg)
 {
     consumer_sdl self = arg;
     mlt_consumer consumer = &self->parent;
-    int terminate_on_pause = mlt_properties_get_int(MLT_CONSUMER_PROPERTIES(consumer), "terminate_on_pause");
+    int terminate_on_pause = mlt_properties_get_int(MLT_CONSUMER_PROPERTIES(consumer),
+                                                    "terminate_on_pause");
     int terminated = 0;
     pthread_t thread;
     int init_audio = 1;
@@ -992,7 +1002,10 @@ static void consumer_close(mlt_consumer parent)
     free(self);
 }
 
-mlt_consumer consumer_placebo_sdl_init(mlt_profile profile, mlt_service_type type, const char *id, char *arg)
+mlt_consumer consumer_placebo_sdl_init(mlt_profile profile,
+                                       mlt_service_type type,
+                                       const char *id,
+                                       char *arg)
 {
     consumer_sdl self = calloc(1, sizeof(*self));
     (void) profile;

@@ -158,9 +158,14 @@ static int render_to_format(
         .repr = pl_color_repr_rgb,
         .color = color,
     };
+    /* Stored samples are straight. The default background would composite
+       coverage onto black while quantizing a half-float texture. */
+    pl_src.repr.alpha = PL_ALPHA_INDEPENDENT;
     struct pl_frame pl_dst = pl_src;
     pl_dst.planes[0].texture = dst;
     struct pl_render_params params = pl_render_default_params;
+    params.background = PL_CLEAR_SKIP;
+    params.background_transparency = 1.f;
     int ok = pl_render_image(renderer, &pl_src, &pl_dst, &params);
     if (!ok)
         pl_tex_destroy(gpu, &dst);

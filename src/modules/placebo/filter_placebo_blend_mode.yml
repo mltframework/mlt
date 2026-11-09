@@ -1,0 +1,52 @@
+schema_version: 7.2
+type: filter
+identifier: placebo.blend_mode
+title: Blend Mode (libplacebo)
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  Set the blend mode placebo.blend uses for this clip.
+  The filter writes placebo.blend.mode on the frame, and the transition
+  prefers that value over its own mode.
+
+parameters:
+  - identifier: mode
+    argument: yes
+    title: Blend mode
+    type: integer
+    description: >
+      The Porter-Duff operation or SVG 1.2 blend mode for this clip
+      when placebo.blend composites it. The values match placebo.blend mode.
+    default: 0
+    minimum: 0
+    maximum: 23
+    widget: combo
+    values:
+      - 0 (source over)
+      - 1 (destination over)
+      - 2 (clear)
+      - 3 (source)
+      - 4 (destination)
+      - 5 (source in)
+      - 6 (destination in)
+      - 7 (source out)
+      - 8 (destination out)
+      - 9 (source atop)
+      - 10 (destination atop)
+      - 11 (xor)
+      - 12 (plus)
+      - 13 (multiply)
+      - 14 (screen)
+      - 15 (overlay)
+      - 16 (darken)
+      - 17 (lighten)
+      - 18 (color dodge)
+      - 19 (color burn)
+      - 20 (hard light)
+      - 21 (soft light)
+      - 22 (difference)
+      - 23 (exclusion)

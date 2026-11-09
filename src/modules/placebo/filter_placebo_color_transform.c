@@ -275,6 +275,10 @@ static int convert_trc(mlt_filter filter,
             .repr = pl_color_repr_rgb,
             .color = src_color,
         };
+        /* Uploads are straight RGBA. Unknown alpha is independent on input
+           and premultiplied on output, and the default background then
+           composites the coverage onto opaque black. */
+        pl_src.repr.alpha = PL_ALPHA_INDEPENDENT;
     }
 
     struct pl_color_space dst_color = src_color;
@@ -289,8 +293,14 @@ static int convert_trc(mlt_filter filter,
         .repr = pl_color_repr_rgb,
         .color = dst_color,
     };
+    pl_dst.repr.alpha = PL_ALPHA_INDEPENDENT;
 
     struct pl_render_params params = pl_render_default_params;
+    /* A YUV frame has no alpha. An RGBA frame, such as qtext, does. The
+       default background composites that coverage onto black and leaves an
+       opaque card, which hides the picture under a source-over blend. */
+    params.background = PL_CLEAR_SKIP;
+    params.background_transparency = 1.f;
     if (!pl_render_image(renderer, src, &pl_dst, &params)) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "pl_render_image failed\n");
         if (mapped_vulkan)

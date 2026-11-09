@@ -166,6 +166,13 @@ static int filter_get_image(mlt_frame frame,
             mlt_properties_set_int(properties, "consumer.progressive", 1);
     }
 
+    /* qtext and pango rasterize at rescale_width/height. Ask for the fitted
+       size so glyphs are drawn where they are shown. Otherwise a small
+       bitmap is filtered up and the edges go soft. Decoders ignore this and
+       are fitted from the picture they return. */
+    mlt_properties_set_int(properties, "rescale_width", have_aspect ? content_w : out_w);
+    mlt_properties_set_int(properties, "rescale_height", have_aspect ? content_h : out_h);
+
     mlt_properties_set_int(properties, "resize_width", out_w);
     mlt_properties_set_int(properties, "resize_height", out_h);
     mlt_properties_set_int(properties, "distort", 0);
@@ -280,6 +287,9 @@ static int filter_get_image(mlt_frame frame,
             .repr = pl_color_repr_rgb,
             .color = dst_color,
         };
+        /* Uploads are straight RGBA. Unknown alpha would be treated as
+           independent on input and premultiplied on output. */
+        pl_src.repr.alpha = PL_ALPHA_INDEPENDENT;
     }
 
     struct pl_frame pl_dst = {
@@ -292,6 +302,8 @@ static int filter_get_image(mlt_frame frame,
         .repr = pl_color_repr_rgb,
         .color = dst_color,
     };
+    if (src->repr.alpha != PL_ALPHA_NONE)
+        pl_dst.repr.alpha = PL_ALPHA_INDEPENDENT;
     const float black[3] = {0.f, 0.f, 0.f};
     pl_frame_clear(gpu, &pl_dst, black);
     pl_dst.crop = (pl_rect2df){
@@ -302,6 +314,9 @@ static int filter_get_image(mlt_frame frame,
     };
 
     struct pl_render_params params = pl_render_default_params;
+    /* Default background composites partial alpha onto black. Letterbox
+       padding is still cleared to opaque black before this render. */
+    params.background = PL_CLEAR_SKIP;
     apply_consumer_scaler(&params, rescale);
     if (!pl_render_image(renderer, src, &pl_dst, &params)) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "pl_render_image failed\n");
