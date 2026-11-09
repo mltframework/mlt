@@ -106,11 +106,16 @@ static int av_convert_image(uint8_t *out,
     int error = -1;
 
     if (in_fmt == AV_PIX_FMT_YUV422P16LE)
-        mlt_image_format_planes(in_fmt, in_width, in_height, in, in_data, in_stride);
+        mlt_image_format_planes(mlt_image_yuv422p16, in_width, in_height, in, in_data, in_stride);
     else
         av_image_fill_arrays(in_data, in_stride, in, in_fmt, in_width, in_height, IMAGE_ALIGN);
     if (out_fmt == AV_PIX_FMT_YUV422P16LE)
-        mlt_image_format_planes(out_fmt, out_width, out_height, out, out_data, out_stride);
+        mlt_image_format_planes(mlt_image_yuv422p16,
+                                out_width,
+                                out_height,
+                                out,
+                                out_data,
+                                out_stride);
     else
         av_image_fill_arrays(out_data, out_stride, out, out_fmt, out_width, out_height, IMAGE_ALIGN);
     struct SwsContext *context = sws_getContext(
