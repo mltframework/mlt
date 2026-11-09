@@ -1155,7 +1155,8 @@ static void copy_image_state(mlt_frame dst, mlt_frame src)
     mlt_properties_pass_list(
         dst_properties,
         src_properties,
-        "progressive,distort,colorspace,full_range,force_full_luma,top_field_first,color_trc");
+        "progressive,distort,colorspace,full_range,force_full_luma,top_field_first,color_trc,"
+        "color_primaries");
 
     share_data(dst_properties,
                "movit.convert.fence",
