@@ -1563,6 +1563,10 @@ static void on_start_element(void *ctx, const xmlChar *name, const xmlChar **att
 
         // Check for a service beginning with glsl. or movit.
         for (; atts != NULL && *atts != NULL; atts += 2) {
+            if (!xmlStrcmp(atts[0], _x("mlt_image_format")) && !xmlStrcmp(atts[1], _x("vulkan"))) {
+                mlt_properties_set_int(context->params, "placebo", 1);
+                break;
+            }
             if (!xmlStrncmp(atts[1], _x("glsl."), 5) || !xmlStrncmp(atts[1], _x("movit."), 6)) {
                 mlt_properties_set_int(context->params, "qglsl", 1);
                 break;
@@ -2101,9 +2105,22 @@ mlt_producer producer_xml_init(mlt_profile profile,
 
     // Bad xml - clean up and return NULL
     if (!well_formed) {
+        free(context->property);
         context_close(context);
         free(sax);
         return NULL;
+    }
+
+    // Normalizers are selected while loading producers, before the consumer starts.
+    if (mlt_properties_get_int(context->params, "placebo")) {
+        mlt_filter render = mlt_factory_filter(profile, "placebo.render", NULL);
+        if (!render) {
+            mlt_log_error(NULL, "[producer_xml] Failed to initialize Vulkan image processing\n");
+            context_close(context);
+            free(sax);
+            return NULL;
+        }
+        mlt_filter_close(render);
     }
 
     // Setup the second pass

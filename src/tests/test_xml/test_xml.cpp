@@ -19,6 +19,8 @@
 #include <QString>
 #include <QtTest>
 
+#include <cstring>
+
 #include <mlt++/Mlt.h>
 using namespace Mlt;
 
@@ -48,6 +50,76 @@ private:
     }
 
 private Q_SLOTS:
+
+    void VulkanConsumerPreflight_data()
+    {
+        QTest::addColumn<QString>("consumer");
+        QTest::addColumn<bool>("afterSource");
+        QTest::addColumn<bool>("expected");
+        QTest::newRow("attribute")
+            << QStringLiteral("<consumer mlt_service='null' mlt_image_format='vulkan'/>") << false
+            << true;
+        QTest::newRow("consumer-after-source")
+            << QStringLiteral("<consumer mlt_service='null' mlt_image_format='vulkan'/>") << true
+            << true;
+        QTest::newRow("multi-consumer")
+            << QStringLiteral("<consumer mlt_service='null'/><consumer "
+                              "mlt_service='null' mlt_image_format='vulkan'/>")
+            << true << true;
+        QTest::newRow("software-format")
+            << QStringLiteral("<consumer mlt_service='null' mlt_image_format='yuv420p' "
+                              "vcodec='hevc_vulkan'/>")
+            << false << false;
+        QTest::newRow("hardware-decode-only")
+            << QStringLiteral("<consumer mlt_service='null'><property name='hwaccel'>vulkan"
+                              "</property></consumer>")
+            << false << false;
+    }
+
+    void VulkanConsumerPreflight()
+    {
+        QFETCH(QString, consumer);
+        QFETCH(bool, afterSource);
+        QFETCH(bool, expected);
+        struct PreflightState
+        {
+            int renderRequests = 0;
+            int requestsBeforeSource = -1;
+        } state;
+        mlt_properties events = mlt_factory_event_object();
+        const auto disconnect = qScopeGuard([&]() { mlt_events_disconnect(events, &state); });
+        mlt_events_listen(events,
+                          &state,
+                          "filter-create-request",
+                          [](mlt_properties, void *opaque, mlt_event_data event) {
+                              auto &state = *static_cast<PreflightState *>(opaque);
+                              auto data = static_cast<mlt_factory_event_data *>(
+                                  mlt_event_data_to_object(event));
+                              if (!strcmp(data->name, "placebo.render")) {
+                                  ++state.renderRequests;
+                                  *static_cast<mlt_filter *>(data->service) = mlt_filter_new();
+                              }
+                          });
+        mlt_events_listen(events,
+                          &state,
+                          "producer-create-request",
+                          [](mlt_properties, void *opaque, mlt_event_data event) {
+                              auto &state = *static_cast<PreflightState *>(opaque);
+                              auto data = static_cast<mlt_factory_event_data *>(
+                                  mlt_event_data_to_object(event));
+                              if (!strcmp(data->name, "colour"))
+                                  state.requestsBeforeSource = state.renderRequests;
+                          });
+        const QString source = "<producer mlt_service='colour'><property name='resource'>red"
+                               "</property></producer>";
+        const QByteArray xml
+            = ("<mlt>" + (afterSource ? source + consumer : consumer + source) + "</mlt>").toUtf8();
+        Profile profile;
+        Producer producer(profile, "xml-string", xml.constData());
+        QVERIFY(producer.is_valid());
+        QCOMPARE(state.renderRequests, expected ? 1 : 0);
+        QCOMPARE(state.requestsBeforeSource, expected ? 1 : 0);
+    }
 
     void NestedPropertiesRoundTrip()
     {
