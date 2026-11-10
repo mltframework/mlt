@@ -1417,6 +1417,11 @@ static int setup_filters(producer_avformat self)
     const char *transpose = vulkan ? "transpose_vulkan" : "transpose";
     const char *hflip = vulkan ? "hflip_vulkan" : "hflip";
     const char *vflip = vulkan ? "vflip_vulkan" : "vflip";
+    int legacy_vulkan_transpose = 0;
+#if LIBAVFILTER_VERSION_INT < AV_VERSION_INT(12, 6, 100)
+    // Before FFmpeg 9.1, cclock rotates clockwise and clock is not a valid rotation.
+    legacy_vulkan_transpose = vulkan;
+#endif
 
     if (self->vfilter_graph && self->video_frame
         && self->vfilter_in->outputs[0]->format != self->video_frame->format) {
@@ -1444,7 +1449,10 @@ static int setup_filters(producer_avformat self)
                 error = (setup_video_filters(self) < 0);
                 last_filter = self->vfilter_out;
                 if (!error)
-                    error = (insert_filter(self->vfilter_graph, &last_filter, transpose, "clock")
+                    error = (insert_filter(self->vfilter_graph,
+                                           &last_filter,
+                                           transpose,
+                                           legacy_vulkan_transpose ? "cclock" : "clock")
                              < 0);
             } else if (fabs(theta - 180) < 1.0) {
                 error = (setup_video_filters(self) < 0);
@@ -1459,6 +1467,10 @@ static int setup_filters(producer_avformat self)
                 if (!error)
                     error = (insert_filter(self->vfilter_graph, &last_filter, transpose, "cclock")
                              < 0);
+                if (!error && legacy_vulkan_transpose)
+                    error = (insert_filter(self->vfilter_graph, &last_filter, hflip, NULL) < 0);
+                if (!error && legacy_vulkan_transpose)
+                    error = (insert_filter(self->vfilter_graph, &last_filter, vflip, NULL) < 0);
             }
         }
         if (use_lut && !error) {
