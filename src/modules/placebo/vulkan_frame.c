@@ -285,12 +285,15 @@ int placebo_map_vulkan_image(pl_gpu gpu, const uint8_t *bytes, struct pl_frame *
         }
     }
 
-    /* libplacebo infers the sampled depth only for UNORM textures. For a
-       half-float texture a color_depth of 16 with no sample_depth scales the
-       image by 255/65535, which renders black. Float samples are normalized. */
-    if (out->planes[0].texture && out->planes[0].texture->params.format
-        && out->planes[0].texture->params.format->type == PL_FMT_FLOAT)
+    pl_fmt fmt = out->planes[0].texture ? out->planes[0].texture->params.format : NULL;
+    if (fmt && fmt->type == PL_FMT_UNORM) {
+        /* Inference also adds sample_depth - color_depth to bit_shift.
+           The Vulkan exporter already supplied the actual sample shift. */
+        out->repr.bits.sample_depth = fmt->component_depth[0];
+    } else if (fmt && fmt->type == PL_FMT_FLOAT) {
+        /* Float samples are normalized, not integer code values. */
         memset(&out->repr.bits, 0, sizeof(out->repr.bits));
+    }
 
     out->user_data = state;
     out->acquire = acquire_vulkan;
