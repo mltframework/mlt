@@ -142,6 +142,7 @@ struct producer_avformat_s
     AVFilterContext *vfilter_out;
     int autorotate;
     double rotation;
+    int software_rotation;
     int is_audio_synchronizing;
     int video_send_result;
     int reset_image_cache;
@@ -859,6 +860,7 @@ static mlt_image_format pick_image_format(enum AVPixelFormat pix_fmt,
         case AV_PIX_FMT_YUV420P:
         case AV_PIX_FMT_YUVJ420P:
         case AV_PIX_FMT_YUVA420P:
+        case AV_PIX_FMT_NV12:
             return mlt_image_yuv420p;
         case AV_PIX_FMT_RGB24:
         case AV_PIX_FMT_BGR24:
@@ -870,6 +872,7 @@ static mlt_image_format pick_image_format(enum AVPixelFormat pix_fmt,
         case AV_PIX_FMT_BAYER_RGGB16LE:
             return mlt_image_rgb;
         case AV_PIX_FMT_YUV420P10LE:
+        case AV_PIX_FMT_P010LE:
             return mlt_image_yuv420p10;
         case AV_PIX_FMT_YUV422P10LE:
         case AV_PIX_FMT_YUV444P10LE:
@@ -889,6 +892,17 @@ static mlt_image_format pick_image_format(enum AVPixelFormat pix_fmt,
         return mlt_image_rgba;
     }
     return current_format;
+}
+
+static enum AVPixelFormat video_software_format(producer_avformat self)
+{
+    if (self->vfilter_out) {
+        AVBufferRef *frames = av_buffersink_get_hw_frames_ctx(self->vfilter_out);
+        if (frames)
+            return ((AVHWFramesContext *) frames->data)->sw_format;
+        return av_buffersink_get_format(self->vfilter_out);
+    }
+    return self->video_format->streams[self->video_index]->codecpar->format;
 }
 
 static int get_basic_info(producer_avformat self, mlt_profile profile, const char *filename)
@@ -962,7 +976,7 @@ static int get_basic_info(producer_avformat self, mlt_profile profile, const cha
         mlt_properties_set_int(properties, "height", codec_params->height);
         get_aspect_ratio(properties, format->streams[self->video_index], codec_params);
 
-        int pix_fmt = self->vfilter_out ? av_buffersink_get_format(self->vfilter_out)
+        int pix_fmt = self->vfilter_out ? video_software_format(self)
                       : self->hwaccel.filter_out
                           ? av_buffersink_get_format(self->hwaccel.filter_out)
                           : codec_params->format;
@@ -1322,6 +1336,8 @@ static int setup_video_filters(producer_avformat self)
         pix_fmt = self->video_frame->format;
     }
     self->vfilter_graph = avfilter_graph_alloc();
+    if (!self->vfilter_graph)
+        return AVERROR(ENOMEM);
 
     // From ffplay.c:configure_video_filters().
     char buffersrc_args[256];
@@ -1339,12 +1355,23 @@ static int setup_video_filters(producer_avformat self)
              frame_rate.num,
              FFMAX(frame_rate.den, 1));
 
-    int result = avfilter_graph_create_filter(&self->vfilter_in,
-                                              avfilter_get_by_name("buffer"),
-                                              "mlt_buffer",
-                                              buffersrc_args,
-                                              NULL,
-                                              self->vfilter_graph);
+    self->vfilter_in = avfilter_graph_alloc_filter(self->vfilter_graph,
+                                                   avfilter_get_by_name("buffer"),
+                                                   "mlt_buffer");
+    if (!self->vfilter_in)
+        return AVERROR(ENOMEM);
+
+    int result = 0;
+    if (self->video_frame && self->video_frame->hw_frames_ctx) {
+        AVBufferSrcParameters *params = av_buffersrc_parameters_alloc();
+        if (!params)
+            return AVERROR(ENOMEM);
+        params->hw_frames_ctx = self->video_frame->hw_frames_ctx;
+        result = av_buffersrc_parameters_set(self->vfilter_in, params);
+        av_free(params);
+    }
+    if (result >= 0)
+        result = avfilter_init_str(self->vfilter_in, buffersrc_args);
 
     if (result >= 0) {
         result = avfilter_graph_create_filter(&self->vfilter_out,
@@ -1386,6 +1413,17 @@ static int setup_filters(producer_avformat self)
     const char *lut = mlt_properties_get(properties, "lut");
     int use_lut = lut && *lut;
     double theta = 0.0;
+    int vulkan = self->video_frame && self->video_frame->format == AV_PIX_FMT_VULKAN;
+    const char *transpose = vulkan ? "transpose_vulkan" : "transpose";
+    const char *hflip = vulkan ? "hflip_vulkan" : "hflip";
+    const char *vflip = vulkan ? "vflip_vulkan" : "vflip";
+
+    if (self->vfilter_graph && self->video_frame
+        && self->vfilter_in->outputs[0]->format != self->video_frame->format) {
+        avfilter_graph_free(&self->vfilter_graph);
+        self->vfilter_in = NULL;
+        self->vfilter_out = NULL;
+    }
 
     if (self->video_index != -1 && self->autorotate) {
         theta = get_rotation(properties, self->video_format->streams[self->video_index]);
@@ -1406,20 +1444,20 @@ static int setup_filters(producer_avformat self)
                 error = (setup_video_filters(self) < 0);
                 last_filter = self->vfilter_out;
                 if (!error)
-                    error = (insert_filter(self->vfilter_graph, &last_filter, "transpose", "clock")
+                    error = (insert_filter(self->vfilter_graph, &last_filter, transpose, "clock")
                              < 0);
             } else if (fabs(theta - 180) < 1.0) {
                 error = (setup_video_filters(self) < 0);
                 last_filter = self->vfilter_out;
                 if (!error)
-                    error = (insert_filter(self->vfilter_graph, &last_filter, "hflip", NULL) < 0);
+                    error = (insert_filter(self->vfilter_graph, &last_filter, hflip, NULL) < 0);
                 if (!error)
-                    error = (insert_filter(self->vfilter_graph, &last_filter, "vflip", NULL) < 0);
+                    error = (insert_filter(self->vfilter_graph, &last_filter, vflip, NULL) < 0);
             } else if (fabs(theta - 270) < 1.0) {
                 error = (setup_video_filters(self) < 0);
                 last_filter = self->vfilter_out;
                 if (!error)
-                    error = (insert_filter(self->vfilter_graph, &last_filter, "transpose", "cclock")
+                    error = (insert_filter(self->vfilter_graph, &last_filter, transpose, "cclock")
                              < 0);
             }
         }
@@ -1475,10 +1513,13 @@ static int setup_filters(producer_avformat self)
                 error = (avfilter_graph_config(self->vfilter_graph, NULL) < 0);
         }
     }
-    if (error && self->vfilter_graph) {
+    if (error) {
+        mlt_log_error(MLT_PRODUCER_SERVICE(self->parent), "Failed to configure video filters\n");
         avfilter_graph_free(&self->vfilter_graph);
         self->vfilter_in = NULL;
         self->vfilter_out = NULL;
+    } else {
+        self->rotation = theta;
     }
     return error;
 }
@@ -1743,6 +1784,7 @@ static void prepare_reopen(producer_avformat self)
     self->hwaccel.filter_in = NULL;
     self->hwaccel.filter_out = NULL;
     self->hwaccel.filters_initialized = 0;
+    self->software_rotation = 0;
     pthread_mutex_unlock(&self->open_mutex);
 
     // Cleanup the packet queues
@@ -2082,6 +2124,12 @@ static void property_changed(mlt_service owner, producer_avformat self, char *na
 {
     if (self && name && self->parent) {
         mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
+        if (!strcmp("autorotate", name) || !strcmp("rotate", name) || !strcmp("lut", name)
+            || !strcmp("filtergraph", name)) {
+            mlt_service_lock(MLT_PRODUCER_SERVICE(self->parent));
+            self->software_rotation = 0;
+            mlt_service_unlock(MLT_PRODUCER_SERVICE(self->parent));
+        }
         if (!strcmp("color_range", name)) {
             if (self->video_codec
                 && !av_opt_set(self->video_codec,
@@ -2773,20 +2821,12 @@ static void init_cache(mlt_properties properties, mlt_cache *cache)
 
 static int software_graph_needed(producer_avformat self)
 {
-    if (self->vfilter_graph)
-        return 1;
-
     mlt_properties properties = MLT_PRODUCER_PROPERTIES(self->parent);
     if (mlt_properties_exists(properties, "filtergraph"))
         return 1;
     const char *lut = mlt_properties_get(properties, "lut");
     if (lut && lut[0])
         return 1;
-    if (self->autorotate && self->video_index != -1 && self->video_format) {
-        double theta = get_rotation(properties, self->video_format->streams[self->video_index]);
-        if (fabs(theta - 90) < 1.0 || fabs(theta - 180) < 1.0 || fabs(theta - 270) < 1.0)
-            return 1;
-    }
     return 0;
 }
 
@@ -2803,7 +2843,7 @@ static int producer_wants_vulkan_image(producer_avformat self,
 static int keep_vulkan_frame(producer_avformat self, int requested)
 {
     return requested && self->video_frame && self->video_frame->format == AV_PIX_FMT_VULKAN
-           && self->hwaccel.shared_device && !software_graph_needed(self);
+           && !software_graph_needed(self);
 }
 
 static int transfer_hw_frame(producer_avformat self)
@@ -2835,6 +2875,41 @@ static int transfer_hw_frame(producer_avformat self)
     av_frame_move_ref(self->video_frame, sw_video_frame);
     av_frame_free(&sw_video_frame);
     return 0;
+}
+
+static int filter_video_frame(producer_avformat self)
+{
+    mlt_service service = MLT_PRODUCER_SERVICE(self->parent);
+    if (self->software_rotation && transfer_hw_frame(self) < 0)
+        return -1;
+
+    int error = setup_filters(self);
+    if (error && self->video_frame->format == AV_PIX_FMT_VULKAN) {
+        mlt_log_warning(service, "Retrying video filters in software\n");
+        self->software_rotation = 1;
+        error = transfer_hw_frame(self);
+        if (!error)
+            error = setup_filters(self);
+    }
+    if (error || !self->vfilter_graph)
+        return error;
+
+    mlt_log_debug(service,
+                  "Applying video filters to %s frame\n",
+                  av_get_pix_fmt_name(self->video_frame->format));
+    int ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
+    if (ret < 0) {
+        mlt_log_error(service, "Failed to add video frame to filters: %d\n", ret);
+        return ret;
+    }
+    int got_frame = 0;
+    while ((ret = av_buffersink_get_frame(self->vfilter_out, self->video_frame)) >= 0)
+        got_frame = 1;
+    if (ret != AVERROR(EAGAIN) && ret != AVERROR_EOF) {
+        mlt_log_error(service, "Failed to get filtered video frame: %d\n", ret);
+        return ret;
+    }
+    return got_frame ? 0 : ret;
 }
 
 /** Get an image from a frame.
@@ -2965,9 +3040,7 @@ static int producer_get_image(mlt_frame frame,
     // A vulkan private request stays private so the frame can remain in VRAM.
     int requested_vulkan = producer_wants_vulkan_image(self, frame, *format);
     if (!requested_vulkan) {
-        *format = pick_image_format(self->vfilter_out ? av_buffersink_get_format(self->vfilter_out)
-                                                      : codec_params->format,
-                                    *format);
+        *format = pick_image_format(video_software_format(self), *format);
         if (*format != mlt_image_private)
             mlt_properties_clear(frame_properties, "mlt_image_private");
     }
@@ -3142,6 +3215,9 @@ static int producer_get_image(mlt_frame frame,
                         } else {
                             if (self->hwaccel.device_ctx
                                 && self->video_frame->format == self->hwaccel.pix_fmt) {
+                                mlt_log_debug(MLT_PRODUCER_SERVICE(producer),
+                                              "Decoded hardware frame: %s\n",
+                                              av_get_pix_fmt_name(self->video_frame->format));
                                 // Check if we need to set up hardware scaling filter (only once)
                                 double consumer_scale = mlt_properties_get_double(frame_properties,
                                                                                   "consumer.scale");
@@ -3176,10 +3252,10 @@ static int producer_get_image(mlt_frame frame,
                                     apply_hwaccel_filters(self, producer);
                                 }
 
-                                // Leave a shared-device Vulkan frame in VRAM when the caller
-                                // asked for one and no software filter graph will consume it.
+                                // Keep Vulkan frames in VRAM for rotation or a Vulkan caller
+                                // when no software filter graph will consume them.
                                 // scale_vulkan, if it ran above, keeps AV_PIX_FMT_VULKAN.
-                                if (!keep_vulkan_frame(self, requested_vulkan)
+                                if (!keep_vulkan_frame(self, requested_vulkan || self->autorotate)
                                     && transfer_hw_frame(self) < 0)
                                     goto exit_get_image;
                             }
@@ -3280,22 +3356,10 @@ static int producer_get_image(mlt_frame frame,
                 const char *lut = mlt_properties_get(properties, "lut");
                 if (self->autorotate || mlt_properties_exists(properties, "filtergraph")
                     || (lut && *lut)) {
-                    if (!setup_filters(self) && self->vfilter_graph && self->vfilter_in
-                        && self->vfilter_out) {
-                        int ret = av_buffersrc_add_frame(self->vfilter_in, self->video_frame);
-                        if (ret < 0) {
-                            got_picture = 0;
-                            break;
-                        }
-                        while (ret >= 0) {
-                            ret = av_buffersink_get_frame_flags(self->vfilter_out,
-                                                                self->video_frame,
-                                                                0);
-                            if (ret < 0) {
-                                ret = 0;
-                                break;
-                            }
-                        }
+                    if (filter_video_frame(self)) {
+                        av_frame_unref(self->video_frame);
+                        got_picture = 0;
+                        goto exit_get_image;
                     }
                 }
 
@@ -3311,6 +3375,8 @@ static int producer_get_image(mlt_frame frame,
                     else
                         got_picture = 0;
                 } else {
+                    if (transfer_hw_frame(self) < 0)
+                        goto exit_get_image;
                     if (requested_vulkan) {
                         *format = pick_image_format(self->video_frame->format, mlt_image_none);
                         mlt_properties_clear(frame_properties, "mlt_image_private");

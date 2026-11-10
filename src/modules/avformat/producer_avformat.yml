@@ -41,6 +41,15 @@ notes: >
   published when the codec opens, which an explicit profile and an attached
   placebo.render filter provide. Otherwise decoding uses its own device and
   downloads the frame.
+  Automatic rotation uses Vulkan transpose and flip filters when decoding
+  with Vulkan, including when hardware scaling is not used.
+  If Vulkan rotation filters cannot be configured, frames are downloaded and
+  rotation is retried in software. Video filter setup failures are reported
+  as image retrieval errors rather than returning an unfiltered picture.
+  Software rotation remains selected after a Vulkan setup failure until the
+  decoder is reopened or rotation, filtergraph, or lut settings change.
+  Custom filtergraph and lut processing still download frames for software
+  filtering.
 
 bugs:
   - Audio sync discrepancy with some content.
