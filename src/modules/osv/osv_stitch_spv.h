@@ -1,7 +1,8 @@
 #pragma once
-#include <cstdint>
 #include <cstddef>
+#include <cstdint>
 
+// clang-format off
 alignas(4) static const uint32_t osv_stitch_spv[] = {
     0x07230203u, 0x00010000u, 0x000d000bu, 0x000001efu, 0x00000000u, 0x00020011u, 0x00000001u, 0x0006000bu,
     0x00000001u, 0x4c534c47u, 0x6474732eu, 0x3035342eu, 0x00000000u, 0x0003000eu, 0x00000000u, 0x00000001u,
@@ -384,4 +385,5 @@ alignas(4) static const uint32_t osv_stitch_spv[] = {
     0x00050088u, 0x00000006u, 0x000000a2u, 0x0000009fu, 0x000000a1u, 0x00050050u, 0x00000014u, 0x000000a3u,
     0x0000009eu, 0x000000a2u, 0x000200feu, 0x000000a3u, 0x00010038u,
 };
+// clang-format on
 static const size_t osv_stitch_spv_size = sizeof(osv_stitch_spv);

@@ -5,21 +5,22 @@ extern "C" {
 #include <framework/mlt.h>
 }
 
+#include <chrono>
+#include <cstring>
+#include <filesystem>
 #include <iostream>
 #include <memory>
-#include <cstring>
-#include <string>
-#include <filesystem>
 #include <mutex>
-#include <chrono>
+#include <string>
 
 enum class PreviewMode {
     Auto,
-    Proxy,  // LRF companion
-    Full    // Full dual 4K HEVC compute
+    Proxy, // LRF companion
+    Full   // Full dual 4K HEVC compute
 };
 
-struct ProducerOsvContext {
+struct ProducerOsvContext
+{
     mlt_profile profile = nullptr;
     std::string osv_path;
     std::mutex mutex;
@@ -41,14 +42,15 @@ struct ProducerOsvContext {
     int cached_w = 0;
     int cached_h = 0;
     bool cached_export_mode = false;
+    bool cached_use_lrf = false;
     int cached_stab_mode = -1;
     std::vector<uint8_t> cached_equirect;
 
     mlt_position last_position = -1;
     mlt_position last_lrf_position = -1;
     mlt_position last_audio_position = -1;
-    void* last_active_producer = nullptr;
-    void* last_audio_producer = nullptr;
+    void *last_active_producer = nullptr;
+    void *last_audio_producer = nullptr;
     mlt_position last_cut_in = -1;
     mlt_position last_cut_out = -1;
     mlt_position last_audio_cut_in = -1;
@@ -60,37 +62,42 @@ struct ProducerOsvContext {
     bool dynamic_fallback_to_lrf = false;
     bool perf_warning_logged = false;
 
-    static std::string resolveShaderPath() {
-        const char* env_path = std::getenv("OSV_SHADER_PATH");
+    static std::string resolveShaderPath()
+    {
+        const char *env_path = std::getenv("OSV_SHADER_PATH");
         if (env_path && std::filesystem::exists(env_path)) {
             return env_path;
         }
-        const char* mlt_data = std::getenv("MLT_DATA");
+        const char *mlt_data = std::getenv("MLT_DATA");
         if (mlt_data) {
-            std::filesystem::path p = std::filesystem::path(mlt_data).parent_path().parent_path() / "shaders" / "osv_stitch.spv";
-            if (std::filesystem::exists(p)) return p.string();
+            std::filesystem::path p = std::filesystem::path(mlt_data).parent_path().parent_path()
+                                      / "shaders" / "osv_stitch.spv";
+            if (std::filesystem::exists(p))
+                return p.string();
         }
         try {
-            std::filesystem::path exe_dir = std::filesystem::read_symlink("/proc/self/exe").parent_path();
-            std::vector<std::filesystem::path> exe_candidates = {
-                exe_dir / "shaders" / "osv_stitch.spv",
-                exe_dir / ".." / "shaders" / "osv_stitch.spv"
-            };
-            for (const auto& p : exe_candidates) {
-                if (std::filesystem::exists(p)) return p.string();
+            std::filesystem::path exe_dir
+                = std::filesystem::read_symlink("/proc/self/exe").parent_path();
+            std::vector<std::filesystem::path> exe_candidates
+                = {exe_dir / "shaders" / "osv_stitch.spv",
+                   exe_dir / ".." / "shaders" / "osv_stitch.spv"};
+            for (const auto &p : exe_candidates) {
+                if (std::filesystem::exists(p))
+                    return p.string();
             }
-        } catch (...) {}
-        std::vector<std::string> candidates = {
-            "shaders/osv_stitch.spv",
-            "../shaders/osv_stitch.spv"
-        };
-        for (const auto& path : candidates) {
-            if (std::filesystem::exists(path)) return path;
+        } catch (...) {
+        }
+        std::vector<std::string> candidates = {"shaders/osv_stitch.spv",
+                                               "../shaders/osv_stitch.spv"};
+        for (const auto &path : candidates) {
+            if (std::filesystem::exists(path))
+                return path;
         }
         return "";
     }
 
-    bool ensureStitcher() {
+    bool ensureStitcher()
+    {
         if (!stitcher) {
             stitcher = std::make_unique<OsvVulkanStitcher>();
             std::string shader_path = resolveShaderPath();
@@ -99,7 +106,8 @@ struct ProducerOsvContext {
         return stitcher_initialized;
     }
 
-    bool ensureFullProducers() {
+    bool ensureFullProducers()
+    {
         if (!producer_master) {
             producer_master = mlt_factory_producer(profile, "avformat", osv_path.c_str());
             if (producer_master) {
@@ -126,21 +134,30 @@ struct ProducerOsvContext {
     }
 };
 
-static bool is_render_export(mlt_producer producer) {
+static bool is_render_export(mlt_producer producer)
+{
     mlt_properties props = MLT_PRODUCER_PROPERTIES(producer);
 
     // 1. Explicit property override on producer (osv_mode)
-    const char* prop_mode = mlt_properties_get(props, "osv_mode");
+    const char *prop_mode = mlt_properties_get(props, "osv_mode");
     if (prop_mode) {
-        if (std::strcmp(prop_mode, "full") == 0 || std::strcmp(prop_mode, "render") == 0 || std::strcmp(prop_mode, "export") == 0) return true;
-        if (std::strcmp(prop_mode, "proxy") == 0 || std::strcmp(prop_mode, "lrf") == 0 || std::strcmp(prop_mode, "preview") == 0) return false;
+        if (std::strcmp(prop_mode, "full") == 0 || std::strcmp(prop_mode, "render") == 0
+            || std::strcmp(prop_mode, "export") == 0)
+            return true;
+        if (std::strcmp(prop_mode, "proxy") == 0 || std::strcmp(prop_mode, "lrf") == 0
+            || std::strcmp(prop_mode, "preview") == 0)
+            return false;
     }
 
     // 2. Explicit environment variable override (OSV_MODE)
-    const char* env_mode = std::getenv("OSV_MODE");
+    const char *env_mode = std::getenv("OSV_MODE");
     if (env_mode) {
-        if (std::strcmp(env_mode, "full") == 0 || std::strcmp(env_mode, "render") == 0 || std::strcmp(env_mode, "export") == 0) return true;
-        if (std::strcmp(env_mode, "proxy") == 0 || std::strcmp(env_mode, "lrf") == 0 || std::strcmp(env_mode, "preview") == 0) return false;
+        if (std::strcmp(env_mode, "full") == 0 || std::strcmp(env_mode, "render") == 0
+            || std::strcmp(env_mode, "export") == 0)
+            return true;
+        if (std::strcmp(env_mode, "proxy") == 0 || std::strcmp(env_mode, "lrf") == 0
+            || std::strcmp(env_mode, "preview") == 0)
+            return false;
     }
 
     // 3. Process detection:
@@ -151,14 +168,16 @@ static bool is_render_export(mlt_producer producer) {
         if (exe.find("melt") != std::string::npos) {
             return true;
         }
-    } catch (...) {}
+    } catch (...) {
+    }
 
     // 4. Consumer service check if directly connected
     mlt_service cons = mlt_service_consumer(MLT_PRODUCER_SERVICE(producer));
     if (cons) {
         mlt_properties cp = MLT_SERVICE_PROPERTIES(cons);
-        const char* svc = mlt_properties_get(cp, "mlt_service");
-        if (svc && (std::strcmp(svc, "avformat") == 0 || std::strcmp(svc, "avformat-novalidate") == 0)) {
+        const char *svc = mlt_properties_get(cp, "mlt_service");
+        if (svc
+            && (std::strcmp(svc, "avformat") == 0 || std::strcmp(svc, "avformat-novalidate") == 0)) {
             return true;
         }
     }
@@ -166,50 +185,73 @@ static bool is_render_export(mlt_producer producer) {
     return false;
 }
 
-static PreviewMode resolve_preview_mode(mlt_producer producer) {
+static PreviewMode resolve_preview_mode(mlt_producer producer)
+{
     mlt_properties props = MLT_PRODUCER_PROPERTIES(producer);
 
     // 1. Explicit property override on producer (osv.preview_mode or preview_mode)
-    const char* prop = mlt_properties_get(props, "osv.preview_mode");
-    if (!prop) prop = mlt_properties_get(props, "preview_mode");
+    const char *prop = mlt_properties_get(props, "osv.preview_mode");
+    if (!prop)
+        prop = mlt_properties_get(props, "preview_mode");
     if (prop) {
-        if (std::strcmp(prop, "proxy") == 0 || std::strcmp(prop, "lrf") == 0 || std::strcmp(prop, "low") == 0) return PreviewMode::Proxy;
-        if (std::strcmp(prop, "full") == 0 || std::strcmp(prop, "high") == 0) return PreviewMode::Full;
+        if (std::strcmp(prop, "proxy") == 0 || std::strcmp(prop, "lrf") == 0
+            || std::strcmp(prop, "low") == 0)
+            return PreviewMode::Proxy;
+        if (std::strcmp(prop, "full") == 0 || std::strcmp(prop, "high") == 0)
+            return PreviewMode::Full;
     }
 
     // 2. Explicit environment variable override
-    const char* env_pm = std::getenv("OSV_PREVIEW_MODE");
+    const char *env_pm = std::getenv("OSV_PREVIEW_MODE");
     if (env_pm) {
-        if (std::strcmp(env_pm, "proxy") == 0 || std::strcmp(env_pm, "lrf") == 0 || std::strcmp(env_pm, "1") == 0 || std::strcmp(env_pm, "low") == 0) return PreviewMode::Proxy;
-        if (std::strcmp(env_pm, "full") == 0 || std::strcmp(env_pm, "0") == 0 || std::strcmp(env_pm, "high") == 0) return PreviewMode::Full;
-        if (std::strcmp(env_pm, "auto") == 0) return PreviewMode::Auto;
+        if (std::strcmp(env_pm, "proxy") == 0 || std::strcmp(env_pm, "lrf") == 0
+            || std::strcmp(env_pm, "1") == 0 || std::strcmp(env_pm, "low") == 0)
+            return PreviewMode::Proxy;
+        if (std::strcmp(env_pm, "full") == 0 || std::strcmp(env_pm, "0") == 0
+            || std::strcmp(env_pm, "high") == 0)
+            return PreviewMode::Full;
+        if (std::strcmp(env_pm, "auto") == 0)
+            return PreviewMode::Auto;
     }
 
     // 3. Backwards compatibility with OSV_USE_LRF
-    const char* env_lrf = std::getenv("OSV_USE_LRF");
+    const char *env_lrf = std::getenv("OSV_USE_LRF");
     if (env_lrf) {
-        if (std::strcmp(env_lrf, "1") == 0) return PreviewMode::Proxy;
-        if (std::strcmp(env_lrf, "0") == 0) return PreviewMode::Full;
+        if (std::strcmp(env_lrf, "1") == 0)
+            return PreviewMode::Proxy;
+        if (std::strcmp(env_lrf, "0") == 0)
+            return PreviewMode::Full;
     }
 
     // If property was explicitly "auto" or unset, return Auto
     return PreviewMode::Auto;
 }
 
-static int producer_get_image(mlt_frame frame, uint8_t** image, mlt_image_format* format, int* width, int* height, int writable) {
-    mlt_producer producer = (mlt_producer)mlt_frame_pop_service(frame);
-    if (!producer || !producer->child) return 1;
-    ProducerOsvContext* ctx = (ProducerOsvContext*)producer->child;
+static int producer_get_image(mlt_frame frame,
+                              uint8_t **image,
+                              mlt_image_format *format,
+                              int *width,
+                              int *height,
+                              int writable)
+{
+    mlt_producer producer = (mlt_producer) mlt_frame_pop_service(frame);
+    if (!producer || !producer->child)
+        return 1;
+    ProducerOsvContext *ctx = (ProducerOsvContext *) producer->child;
 
     mlt_position position = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "original_position")
-        ? mlt_frame_original_position(frame)
-        : mlt_frame_get_position(frame);
+                                ? mlt_frame_original_position(frame)
+                                : mlt_frame_get_position(frame);
 
     mlt_position max_pos = mlt_producer_get_length(producer) - 1;
-    if (max_pos <= 0 && ctx->producer_lrf) max_pos = mlt_producer_get_length(ctx->producer_lrf) - 1;
-    if (max_pos <= 0 && ctx->producer_master) max_pos = mlt_producer_get_length(ctx->producer_master) - 1;
-    if (max_pos > 0 && position > max_pos) position = max_pos;
-    if (position < 0) position = 0;
+    if (max_pos <= 0 && ctx->producer_lrf)
+        max_pos = mlt_producer_get_length(ctx->producer_lrf) - 1;
+    if (max_pos <= 0 && ctx->producer_master)
+        max_pos = mlt_producer_get_length(ctx->producer_master) - 1;
+    if (max_pos > 0 && position > max_pos)
+        position = max_pos;
+    if (position < 0)
+        position = 0;
 
     std::lock_guard<std::mutex> lock(ctx->mutex);
 
@@ -218,13 +260,13 @@ static int producer_get_image(mlt_frame frame, uint8_t** image, mlt_image_format
         mlt_producer_set_speed(ctx->producer_lrf, speed);
     }
 
-    void* current_prod = mlt_properties_get_data(MLT_FRAME_PROPERTIES(frame), "_producer", NULL);
-    if (!current_prod) current_prod = producer;
-    mlt_position cut_in = mlt_producer_get_in((mlt_producer)current_prod);
-    mlt_position cut_out = mlt_producer_get_out((mlt_producer)current_prod);
-    bool cut_changed = (current_prod != ctx->last_active_producer) ||
-                       (cut_in != ctx->last_cut_in) ||
-                       (cut_out != ctx->last_cut_out);
+    void *current_prod = mlt_properties_get_data(MLT_FRAME_PROPERTIES(frame), "_producer", NULL);
+    if (!current_prod)
+        current_prod = producer;
+    mlt_position cut_in = mlt_producer_get_in((mlt_producer) current_prod);
+    mlt_position cut_out = mlt_producer_get_out((mlt_producer) current_prod);
+    bool cut_changed = (current_prod != ctx->last_active_producer) || (cut_in != ctx->last_cut_in)
+                       || (cut_out != ctx->last_cut_out);
     ctx->last_active_producer = current_prod;
     ctx->last_cut_in = cut_in;
     ctx->last_cut_out = cut_out;
@@ -238,11 +280,13 @@ static int producer_get_image(mlt_frame frame, uint8_t** image, mlt_image_format
     // Gyro stabilization mode: 0 = Off, 1 = Horizon Lock (default), 2 = Full Lock
     mlt_properties props = MLT_PRODUCER_PROPERTIES(producer);
     int stab_mode = 1;
-    const char* stab_str = mlt_properties_get(props, "osv.stabilization");
+    const char *stab_str = mlt_properties_get(props, "osv.stabilization");
     if (stab_str) {
-        if (std::strcmp(stab_str, "0") == 0 || std::strcmp(stab_str, "off") == 0 || std::strcmp(stab_str, "Off") == 0) {
+        if (std::strcmp(stab_str, "0") == 0 || std::strcmp(stab_str, "off") == 0
+            || std::strcmp(stab_str, "Off") == 0) {
             stab_mode = 0;
-        } else if (std::strcmp(stab_str, "2") == 0 || std::strcmp(stab_str, "full") == 0 || std::strcmp(stab_str, "Full") == 0) {
+        } else if (std::strcmp(stab_str, "2") == 0 || std::strcmp(stab_str, "full") == 0
+                   || std::strcmp(stab_str, "Full") == 0) {
             stab_mode = 2;
         } else {
             stab_mode = 1;
@@ -266,13 +310,15 @@ static int producer_get_image(mlt_frame frame, uint8_t** image, mlt_image_format
     int out_h = (*height > 0) ? *height : (export_mode ? 2880 : 1024);
 
     if (export_mode && (*width <= 0 || *height <= 0)) {
-        const char* export_res = mlt_properties_get(props, "osv.export_res");
-        if (!export_res) export_res = std::getenv("OSV_EXPORT_RES");
+        const char *export_res = mlt_properties_get(props, "osv.export_res");
+        if (!export_res)
+            export_res = std::getenv("OSV_EXPORT_RES");
         if (export_res) {
             if (std::strcmp(export_res, "4k") == 0 || std::strcmp(export_res, "3840") == 0) {
                 out_w = 3840;
                 out_h = 1920;
-            } else if (std::strcmp(export_res, "5.7k") == 0 || std::strcmp(export_res, "5760") == 0) {
+            } else if (std::strcmp(export_res, "5.7k") == 0
+                       || std::strcmp(export_res, "5760") == 0) {
                 out_w = 5760;
                 out_h = 2880;
             } else if (std::strcmp(export_res, "8k") == 0 || std::strcmp(export_res, "7680") == 0) {
@@ -283,15 +329,15 @@ static int producer_get_image(mlt_frame frame, uint8_t** image, mlt_image_format
     }
 
     // Instantaneous cache hit when user pans/rotates/zooms the 360 viewport on the same frame
-    if (!cut_changed && position == ctx->cached_position && export_mode == ctx->cached_export_mode &&
-        stab_mode == ctx->cached_stab_mode &&
-        ctx->cached_w == out_w && ctx->cached_h == out_h &&
-        ctx->cached_equirect.size() == (size_t)out_w * out_h * 4) {
+    if (!cut_changed && position == ctx->cached_position && export_mode == ctx->cached_export_mode
+        && use_lrf == ctx->cached_use_lrf && stab_mode == ctx->cached_stab_mode
+        && ctx->cached_w == out_w && ctx->cached_h == out_h
+        && ctx->cached_equirect.size() == (size_t) out_w * out_h * 4) {
         *width = out_w;
         *height = out_h;
         *format = mlt_image_rgba;
         int buf_size = out_w * out_h * 4;
-        *image = (uint8_t*)mlt_pool_alloc(buf_size);
+        *image = (uint8_t *) mlt_pool_alloc(buf_size);
         std::memcpy(*image, ctx->cached_equirect.data(), buf_size);
         mlt_frame_set_image(frame, *image, buf_size, mlt_pool_release);
         return 0;
@@ -301,8 +347,8 @@ static int producer_get_image(mlt_frame frame, uint8_t** image, mlt_image_format
     double profile_fps = mlt_producer_get_fps(producer);
     double source_fps = ctx->metadata.fps > 0.0 ? ctx->metadata.fps : 25.0;
     int64_t source_frame = (profile_fps > 0.0)
-        ? static_cast<int64_t>(position / profile_fps * source_fps + 0.5)
-        : position;
+                               ? static_cast<int64_t>(position / profile_fps * source_fps + 0.5)
+                               : position;
 
     auto t_start = std::chrono::steady_clock::now();
 
@@ -324,7 +370,7 @@ static int producer_get_image(mlt_frame frame, uint8_t** image, mlt_image_format
         mlt_service_get_frame(MLT_PRODUCER_SERVICE(ctx->producer_lrf), &lrf_frame, 0);
         if (lrf_frame) {
             mlt_image_format fmt = mlt_image_rgba;
-            uint8_t* lrf_img = nullptr;
+            uint8_t *lrf_img = nullptr;
             int lw = 2048;
             int lh = 1024;
             if (mlt_frame_get_image(lrf_frame, &lrf_img, &fmt, &lw, &lh, 0) == 0 && lrf_img) {
@@ -332,19 +378,20 @@ static int producer_get_image(mlt_frame frame, uint8_t** image, mlt_image_format
                 *height = out_h;
                 *format = mlt_image_rgba;
                 int buf_size = out_w * out_h * 4;
-                *image = (uint8_t*)mlt_pool_alloc(buf_size);
+                *image = (uint8_t *) mlt_pool_alloc(buf_size);
 
                 float gyro[4] = {1.0f, 0.0f, 0.0f, 0.0f};
                 ctx->metadata.getStabilizationQuat(source_frame, stab_mode, gyro);
-                bool ok = ctx->stitcher->stitchSideBySide(
-                    lrf_img,
-                    lw, lh,
-                    ctx->metadata.lens_rear,  // Master (Stream 1)
-                    ctx->metadata.lens_front, // Slave (Stream 0)
-                    gyro,
-                    out_w, out_h,
-                    *image
-                );
+                bool ok
+                    = ctx->stitcher->stitchSideBySide(lrf_img,
+                                                      lw,
+                                                      lh,
+                                                      ctx->metadata.lens_rear,  // Master (Stream 1)
+                                                      ctx->metadata.lens_front, // Slave (Stream 0)
+                                                      gyro,
+                                                      out_w,
+                                                      out_h,
+                                                      *image);
 
                 mlt_frame_close(lrf_frame);
 
@@ -353,6 +400,7 @@ static int producer_get_image(mlt_frame frame, uint8_t** image, mlt_image_format
                     ctx->cached_w = out_w;
                     ctx->cached_h = out_h;
                     ctx->cached_export_mode = export_mode;
+                    ctx->cached_use_lrf = true;
                     ctx->cached_stab_mode = stab_mode;
                     ctx->cached_equirect.assign(*image, *image + buf_size);
 
@@ -369,8 +417,9 @@ static int producer_get_image(mlt_frame frame, uint8_t** image, mlt_image_format
         *height = out_h;
         *format = mlt_image_rgba;
         int buf_size = out_w * out_h * 4;
-        *image = (uint8_t*)mlt_pool_alloc(buf_size);
-        if (*image) std::memset(*image, 0, buf_size);
+        *image = (uint8_t *) mlt_pool_alloc(buf_size);
+        if (*image)
+            std::memset(*image, 0, buf_size);
         mlt_frame_set_image(frame, *image, buf_size, mlt_pool_release);
         return 0;
     }
@@ -394,22 +443,25 @@ static int producer_get_image(mlt_frame frame, uint8_t** image, mlt_image_format
     mlt_service_get_frame(MLT_PRODUCER_SERVICE(ctx->producer_slave), &frame_slave, 0);
 
     if (!frame_master || !frame_slave) {
-        if (frame_master) mlt_frame_close(frame_master);
-        if (frame_slave) mlt_frame_close(frame_slave);
+        if (frame_master)
+            mlt_frame_close(frame_master);
+        if (frame_slave)
+            mlt_frame_close(frame_slave);
 
         // Graceful blank fallback instead of hard-failing MLT pipeline
         *width = out_w;
         *height = out_h;
         *format = mlt_image_rgba;
         int buf_size = out_w * out_h * 4;
-        *image = (uint8_t*)mlt_pool_alloc(buf_size);
-        if (*image) std::memset(*image, 0, buf_size);
+        *image = (uint8_t *) mlt_pool_alloc(buf_size);
+        if (*image)
+            std::memset(*image, 0, buf_size);
         mlt_frame_set_image(frame, *image, buf_size, mlt_pool_release);
         return 0;
     }
 
-    uint8_t* img_master = nullptr;
-    uint8_t* img_slave = nullptr;
+    uint8_t *img_master = nullptr;
+    uint8_t *img_slave = nullptr;
     int w1 = 3840, h1 = 3840, w0 = 3840, h0 = 3840;
     mlt_image_format fmt = mlt_image_rgba;
 
@@ -421,24 +473,26 @@ static int producer_get_image(mlt_frame frame, uint8_t** image, mlt_image_format
     *format = mlt_image_rgba;
 
     int buf_size = out_w * out_h * 4;
-    *image = (uint8_t*)mlt_pool_alloc(buf_size);
+    *image = (uint8_t *) mlt_pool_alloc(buf_size);
 
     if (img_master && img_slave && ctx->stitcher_initialized) {
         float gyro[4] = {1.0f, 0.0f, 0.0f, 0.0f};
         ctx->metadata.getStabilizationQuat(source_frame, stab_mode, gyro);
-        if (ctx->stitcher->stitchFrames(
-            img_master, img_slave,
-            w1, h1,
-            ctx->metadata.lens_rear,  // Master (Lens 2)
-            ctx->metadata.lens_front, // Slave (Lens 1)
-            gyro,
-            out_w, out_h,
-            *image
-        )) {
+        if (ctx->stitcher->stitchFrames(img_master,
+                                        img_slave,
+                                        w1,
+                                        h1,
+                                        ctx->metadata.lens_rear,  // Master (Lens 2)
+                                        ctx->metadata.lens_front, // Slave (Lens 1)
+                                        gyro,
+                                        out_w,
+                                        out_h,
+                                        *image)) {
             ctx->cached_position = position;
             ctx->cached_w = out_w;
             ctx->cached_h = out_h;
             ctx->cached_export_mode = export_mode;
+            ctx->cached_use_lrf = false;
             ctx->cached_stab_mode = stab_mode;
             ctx->cached_equirect.assign(*image, *image + buf_size);
         }
@@ -451,28 +505,35 @@ static int producer_get_image(mlt_frame frame, uint8_t** image, mlt_image_format
 
     auto t_end = std::chrono::steady_clock::now();
     double frame_ms = std::chrono::duration<double, std::milli>(t_end - t_start).count();
-    ctx->avg_frame_time_ms = (ctx->avg_frame_time_ms == 0.0) ? frame_ms : (0.85 * ctx->avg_frame_time_ms + 0.15 * frame_ms);
+    ctx->avg_frame_time_ms = (ctx->avg_frame_time_ms == 0.0)
+                                 ? frame_ms
+                                 : (0.85 * ctx->avg_frame_time_ms + 0.15 * frame_ms);
     double budget_ms = (profile_fps > 0.0) ? (1000.0 / profile_fps) : 40.0;
 
     // Dynamic performance check: if dual 4K HEVC decode latency exceeds real-time budget,
     // toggle to LRF companion proxy automatically in auto mode
     if (!use_lrf && !export_mode && ctx->avg_frame_time_ms > budget_ms * 1.25) {
-        if (ctx->has_lrf && ctx->producer_lrf && !ctx->dynamic_fallback_to_lrf && preview_mode == PreviewMode::Auto) {
+        if (ctx->has_lrf && ctx->producer_lrf && !ctx->dynamic_fallback_to_lrf
+            && preview_mode == PreviewMode::Auto) {
             ctx->dynamic_fallback_to_lrf = true;
             std::cout << "[OSV-MLT] Dynamic performance check: Full Dual-4K render time ("
-                      << ctx->avg_frame_time_ms << " ms) exceeded budget ("
-                      << budget_ms << " ms). Toggling to LRF preview proxy." << std::endl;
+                      << ctx->avg_frame_time_ms << " ms) exceeded budget (" << budget_ms
+                      << " ms). Toggling to LRF preview proxy." << std::endl;
             mlt_log_info(MLT_PRODUCER_SERVICE(producer),
-                         "[OSV-MLT] Dynamic performance check: Full Dual-4K render time (%.1f ms) exceeded budget (%.1f ms). Toggled to LRF preview proxy.\n",
-                         ctx->avg_frame_time_ms, budget_ms);
+                         "[OSV-MLT] Dynamic performance check: Full Dual-4K render time (%.1f ms) "
+                         "exceeded budget (%.1f ms). Toggled to LRF preview proxy.\n",
+                         ctx->avg_frame_time_ms,
+                         budget_ms);
         } else if (!ctx->has_lrf && !ctx->perf_warning_logged) {
             ctx->perf_warning_logged = true;
             std::cout << "[OSV-MLT] Host performance warning: Dual-4K HEVC decode latency ("
                       << ctx->avg_frame_time_ms << " ms) exceeds real-time frame budget ("
                       << budget_ms << " ms). No companion .LRF found." << std::endl;
             mlt_log_info(MLT_PRODUCER_SERVICE(producer),
-                         "[OSV-MLT] Host performance warning: Dual-4K HEVC decode latency (%.1f ms) exceeds real-time frame budget (%.1f ms).\n",
-                         ctx->avg_frame_time_ms, budget_ms);
+                         "[OSV-MLT] Host performance warning: Dual-4K HEVC decode latency (%.1f "
+                         "ms) exceeds real-time frame budget (%.1f ms).\n",
+                         ctx->avg_frame_time_ms,
+                         budget_ms);
         }
     }
 
@@ -480,20 +541,31 @@ static int producer_get_image(mlt_frame frame, uint8_t** image, mlt_image_format
     return 0;
 }
 
-static int producer_get_audio(mlt_frame frame, void** buffer, mlt_audio_format* format, int* frequency, int* channels, int* samples) {
-    mlt_producer producer = (mlt_producer)mlt_frame_pop_audio(frame);
-    if (!producer || !producer->child) return 1;
-    ProducerOsvContext* ctx = (ProducerOsvContext*)producer->child;
-    if (!ctx->producer_audio) return 1;
+static int producer_get_audio(mlt_frame frame,
+                              void **buffer,
+                              mlt_audio_format *format,
+                              int *frequency,
+                              int *channels,
+                              int *samples)
+{
+    mlt_producer producer = (mlt_producer) mlt_frame_pop_audio(frame);
+    if (!producer || !producer->child)
+        return 1;
+    ProducerOsvContext *ctx = (ProducerOsvContext *) producer->child;
+    if (!ctx->producer_audio)
+        return 1;
 
     mlt_position position = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "original_position")
-        ? mlt_frame_original_position(frame)
-        : mlt_frame_get_position(frame);
+                                ? mlt_frame_original_position(frame)
+                                : mlt_frame_get_position(frame);
 
     mlt_position max_pos = mlt_producer_get_length(producer) - 1;
-    if (max_pos <= 0 && ctx->producer_audio) max_pos = mlt_producer_get_length(ctx->producer_audio) - 1;
-    if (max_pos > 0 && position > max_pos) position = max_pos;
-    if (position < 0) position = 0;
+    if (max_pos <= 0 && ctx->producer_audio)
+        max_pos = mlt_producer_get_length(ctx->producer_audio) - 1;
+    if (max_pos > 0 && position > max_pos)
+        position = max_pos;
+    if (position < 0)
+        position = 0;
 
     double speed = mlt_properties_get_double(MLT_FRAME_PROPERTIES(frame), "_speed");
 
@@ -503,13 +575,14 @@ static int producer_get_audio(mlt_frame frame, void** buffer, mlt_audio_format* 
         mlt_producer_set_speed(ctx->producer_audio, speed);
     }
 
-    void* current_prod = mlt_properties_get_data(MLT_FRAME_PROPERTIES(frame), "_producer", NULL);
-    if (!current_prod) current_prod = producer;
-    mlt_position cut_in = mlt_producer_get_in((mlt_producer)current_prod);
-    mlt_position cut_out = mlt_producer_get_out((mlt_producer)current_prod);
-    bool cut_changed = (current_prod != ctx->last_audio_producer) ||
-                       (cut_in != ctx->last_audio_cut_in) ||
-                       (cut_out != ctx->last_audio_cut_out);
+    void *current_prod = mlt_properties_get_data(MLT_FRAME_PROPERTIES(frame), "_producer", NULL);
+    if (!current_prod)
+        current_prod = producer;
+    mlt_position cut_in = mlt_producer_get_in((mlt_producer) current_prod);
+    mlt_position cut_out = mlt_producer_get_out((mlt_producer) current_prod);
+    bool cut_changed = (current_prod != ctx->last_audio_producer)
+                       || (cut_in != ctx->last_audio_cut_in)
+                       || (cut_out != ctx->last_audio_cut_out);
     ctx->last_audio_producer = current_prod;
     ctx->last_audio_cut_in = cut_in;
     ctx->last_audio_cut_out = cut_out;
@@ -525,9 +598,10 @@ static int producer_get_audio(mlt_frame frame, void** buffer, mlt_audio_format* 
 
     mlt_frame audio_frame = nullptr;
     int err = mlt_service_get_frame(MLT_PRODUCER_SERVICE(ctx->producer_audio), &audio_frame, 0);
-    if (err != 0 || !audio_frame) return 1;
+    if (err != 0 || !audio_frame)
+        return 1;
 
-    void* audio_buf = nullptr;
+    void *audio_buf = nullptr;
     int ret = mlt_frame_get_audio(audio_frame, &audio_buf, format, frequency, channels, samples);
     if (ret == 0 && audio_buf && *samples > 0) {
         int total_bytes = mlt_audio_format_size(*format, *samples, *channels);
@@ -540,7 +614,8 @@ static int producer_get_audio(mlt_frame frame, void** buffer, mlt_audio_format* 
             mlt_properties_set_int(frame_props, "audio_channels", *channels);
             mlt_properties_set_int(frame_props, "audio_samples", *samples);
             mlt_properties_set_int(frame_props, "audio_format", *format);
-            const char* layout = mlt_properties_get(MLT_FRAME_PROPERTIES(audio_frame), "channel_layout");
+            const char *layout = mlt_properties_get(MLT_FRAME_PROPERTIES(audio_frame),
+                                                    "channel_layout");
             mlt_properties_set(frame_props, "channel_layout", layout ? layout : "stereo");
         } else {
             ret = 1;
@@ -552,7 +627,8 @@ static int producer_get_audio(mlt_frame frame, void** buffer, mlt_audio_format* 
     return ret;
 }
 
-static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int index) {
+static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int index)
+{
     *frame = mlt_frame_init(MLT_PRODUCER_SERVICE(producer));
     if (*frame) {
         mlt_properties frame_props = MLT_FRAME_PROPERTIES(*frame);
@@ -576,37 +652,50 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
         mlt_frame_push_service(*frame, producer);
         mlt_frame_push_get_image(*frame, producer_get_image);
         mlt_frame_push_audio(*frame, producer);
-        mlt_frame_push_audio(*frame, (void*)producer_get_audio);
+        mlt_frame_push_audio(*frame, (void *) producer_get_audio);
         mlt_producer_prepare_next(producer);
         return 0;
     }
     return 1;
 }
 
-static void producer_close(mlt_producer producer) {
+static void producer_close(mlt_producer producer)
+{
     if (producer) {
         if (producer->child) {
-            ProducerOsvContext* ctx = (ProducerOsvContext*)producer->child;
+            ProducerOsvContext *ctx = (ProducerOsvContext *) producer->child;
             std::lock_guard<std::mutex> lock(ctx->mutex);
             std::lock_guard<std::mutex> audio_lock(ctx->audio_mutex);
             producer->child = nullptr;
-            if (ctx->producer_master) mlt_producer_close(ctx->producer_master);
-            if (ctx->producer_slave) mlt_producer_close(ctx->producer_slave);
-            if (ctx->producer_audio) mlt_producer_close(ctx->producer_audio);
-            if (ctx->producer_lrf) mlt_producer_close(ctx->producer_lrf);
+            if (ctx->producer_master)
+                mlt_producer_close(ctx->producer_master);
+            if (ctx->producer_slave)
+                mlt_producer_close(ctx->producer_slave);
+            if (ctx->producer_audio)
+                mlt_producer_close(ctx->producer_audio);
+            if (ctx->producer_lrf)
+                mlt_producer_close(ctx->producer_lrf);
             delete ctx;
         }
+        producer->close = nullptr;
+        mlt_producer_close(producer);
+        free(producer);
     }
 }
 
-extern "C" mlt_producer producer_osv_init(mlt_profile profile, mlt_service_type type, const char* id, const char* filename) {
+extern "C" mlt_producer producer_osv_init(mlt_profile profile,
+                                          mlt_service_type type,
+                                          const char *id,
+                                          const char *filename)
+{
     mlt_producer producer = mlt_producer_new(profile);
-    if (!producer) return nullptr;
+    if (!producer)
+        return nullptr;
 
-    ProducerOsvContext* ctx = new ProducerOsvContext();
+    ProducerOsvContext *ctx = new ProducerOsvContext();
     producer->child = ctx;
     producer->get_frame = producer_get_frame;
-    producer->close = (mlt_destructor)producer_close;
+    producer->close = (mlt_destructor) producer_close;
     producer->close_object = producer;
 
     mlt_properties props = MLT_PRODUCER_PROPERTIES(producer);
@@ -614,7 +703,8 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile, mlt_service_type 
     mlt_properties_set(props, "mlt_service", "osv");
     mlt_properties_set(props, "shotcut:producer", "avformat");
 
-    mlt_log_info(MLT_PRODUCER_SERVICE(producer), "[OSV-MLT] Loaded native OSV plugin (build 2026-11-10 direct-osv-v3)\n");
+    mlt_log_info(MLT_PRODUCER_SERVICE(producer),
+                 "[OSV-MLT] Loaded native OSV plugin (build 2026-11-10 direct-osv-v3)\n");
     std::cout << "[OSV-MLT] Loaded native OSV plugin (build 2026-11-10 direct-osv-v3)" << std::endl;
 
     ctx->profile = profile;
@@ -624,7 +714,9 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile, mlt_service_type 
     if (filename && OsvMetadataParser::parseFromFile(filename, ctx->metadata)) {
         mlt_properties_set(props, "meta.camera.model", ctx->metadata.camera_model.c_str());
         mlt_properties_set(props, "meta.camera.serial", ctx->metadata.serial_number.c_str());
-        mlt_properties_set_int(props, "meta.telemetry.samples", ctx->metadata.telemetry_frames.size());
+        mlt_properties_set_int(props,
+                               "meta.telemetry.samples",
+                               ctx->metadata.telemetry_frames.size());
     }
 
     double fps = ctx->metadata.fps > 0.0 ? ctx->metadata.fps : 29.97002997002997;
@@ -664,7 +756,9 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile, mlt_service_type 
     // Stream 0: Equirectangular Video (Stitched dual fisheye)
     mlt_properties_set(props, "meta.media.0.stream.type", "video");
     mlt_properties_set(props, "meta.media.0.codec.name", "hevc");
-    mlt_properties_set(props, "meta.media.0.codec.long_name", "DJI Osmo 360 Dual-Fisheye (Vulkan Stitched)");
+    mlt_properties_set(props,
+                       "meta.media.0.codec.long_name",
+                       "DJI Osmo 360 Dual-Fisheye (Vulkan Stitched)");
     mlt_properties_set_int(props, "meta.media.0.codec.width", 3840);
     mlt_properties_set_int(props, "meta.media.0.codec.height", 1920);
     mlt_properties_set_double(props, "meta.media.0.codec.aspect_ratio", 1.0);
@@ -697,7 +791,7 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile, mlt_service_type 
             std::string ext = path_str.substr(dot_pos);
             std::string base = path_str.substr(0, dot_pos);
             std::string cand1 = base + (ext == ".OSV" ? ".LRF" : ".lrf");
-            std::string cand2 = base + (ext == ".osv" ? ".lrf" : ".LRF");
+            std::string cand2 = base + (ext == ".OSV" ? ".lrf" : ".LRF");
             if (std::filesystem::exists(cand1)) {
                 ctx->lrf_path = cand1;
                 ctx->has_lrf = true;
@@ -718,21 +812,29 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile, mlt_service_type 
             mlt_producer_probe(ctx->producer_lrf);
         }
         mlt_properties_set(props, "meta.lrf_path", ctx->lrf_path.c_str());
-        std::cout << "[OSV-MLT] Detected companion LRF proxy for editing: " << ctx->lrf_path << std::endl;
-        mlt_log_info(MLT_PRODUCER_SERVICE(producer), "[OSV-MLT] Using companion LRF proxy: %s\n", ctx->lrf_path.c_str());
+        std::cout << "[OSV-MLT] Detected companion LRF proxy for editing: " << ctx->lrf_path
+                  << std::endl;
+        mlt_log_info(MLT_PRODUCER_SERVICE(producer),
+                     "[OSV-MLT] Using companion LRF proxy: %s\n",
+                     ctx->lrf_path.c_str());
     } else {
-        std::cout << "[OSV-MLT] Companion LRF not found, using direct native OSV dual-stream mode" << std::endl;
-        mlt_log_info(MLT_PRODUCER_SERVICE(producer), "[OSV-MLT] Companion LRF not found, using direct native OSV\n");
+        std::cout << "[OSV-MLT] Companion LRF not found, using direct native OSV dual-stream mode"
+                  << std::endl;
+        mlt_log_info(MLT_PRODUCER_SERVICE(producer),
+                     "[OSV-MLT] Companion LRF not found, using direct native OSV\n");
     }
 
     mlt_properties_set(props, "osv.preview_mode", "auto");
     PreviewMode init_pm = resolve_preview_mode(producer);
-    const char* pm_name = (init_pm == PreviewMode::Proxy) ? "proxy" : (init_pm == PreviewMode::Full) ? "full" : "auto";
-    std::cout << "[OSV-MLT] Initialized preview mode: " << pm_name << " (has_lrf=" << (ctx->has_lrf ? "yes" : "no") << ")" << std::endl;
+    const char *pm_name = (init_pm == PreviewMode::Proxy)  ? "proxy"
+                          : (init_pm == PreviewMode::Full) ? "full"
+                                                           : "auto";
+    std::cout << "[OSV-MLT] Initialized preview mode: " << pm_name
+              << " (has_lrf=" << (ctx->has_lrf ? "yes" : "no") << ")" << std::endl;
 
     // Dedicated audio producer using master OSV container (Stream 2, astream=0)
     // Avoids LRF container timescale and metadata demux issues
-    const char* audio_source = filename;
+    const char *audio_source = filename;
     int audio_stream_idx = 2;
 
     ctx->producer_audio = mlt_factory_producer(profile, "avformat", audio_source);
@@ -764,9 +866,13 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile, mlt_service_type 
 
     // Optional auto-reframing filter attachment if requested via reframe=1 property
     if (mlt_properties_get_int(props, "reframe") == 1) {
-        mlt_filter reframe_filter = mlt_factory_filter(profile, "frei0r.bigsh0t_eq_to_rect", nullptr);
+        mlt_filter reframe_filter = mlt_factory_filter(profile,
+                                                       "frei0r.bigsh0t_eq_to_rect",
+                                                       nullptr);
         if (reframe_filter) {
-            mlt_properties_set_double(MLT_FILTER_PROPERTIES(reframe_filter), "fov", 90.0); // 90 degrees
+            mlt_properties_set_double(MLT_FILTER_PROPERTIES(reframe_filter),
+                                      "fov",
+                                      90.0); // 90 degrees
             mlt_service_attach(MLT_PRODUCER_SERVICE(producer), reframe_filter);
         }
     }

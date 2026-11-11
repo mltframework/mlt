@@ -2,11 +2,12 @@
 #define OSV_VULKAN_H
 
 #include "osv_metadata.h"
-#include <vulkan/vulkan.h>
-#include <vector>
 #include <string>
+#include <vector>
+#include <vulkan/vulkan.h>
 
-struct PushConstants {
+struct PushConstants
+{
     float lens_master_intrinsics[4]; // fx, fy, cx, cy
     float lens_master_dist[4];       // k1, k2, k3, k4
     float lens_master_quat[4];       // w, x, y, z
@@ -20,38 +21,35 @@ struct PushConstants {
     float blendOverlapDegrees;
 };
 
-class OsvVulkanStitcher {
+class OsvVulkanStitcher
+{
 public:
     OsvVulkanStitcher();
     ~OsvVulkanStitcher();
 
-    bool initialize(const std::string& spv_shader_path = "");
+    bool initialize(const std::string &spv_shader_path = "");
     void cleanup();
 
-    bool stitchFrames(
-        const uint8_t* master_rgba,
-        const uint8_t* slave_rgba,
-        uint32_t sensor_w,
-        uint32_t sensor_h,
-        const LensCalibration& lens_master,
-        const LensCalibration& lens_slave,
-        const float* gyro_quat,
-        uint32_t out_w,
-        uint32_t out_h,
-        uint8_t* out_equirect_rgba
-    );
+    bool stitchFrames(const uint8_t *master_rgba,
+                      const uint8_t *slave_rgba,
+                      uint32_t sensor_w,
+                      uint32_t sensor_h,
+                      const LensCalibration &lens_master,
+                      const LensCalibration &lens_slave,
+                      const float *gyro_quat,
+                      uint32_t out_w,
+                      uint32_t out_h,
+                      uint8_t *out_equirect_rgba);
 
-    bool stitchSideBySide(
-        const uint8_t* sbs_rgba,
-        uint32_t sbs_w,
-        uint32_t sbs_h,
-        const LensCalibration& lens_master,
-        const LensCalibration& lens_slave,
-        const float* gyro_quat,
-        uint32_t out_w,
-        uint32_t out_h,
-        uint8_t* out_equirect_rgba
-    );
+    bool stitchSideBySide(const uint8_t *sbs_rgba,
+                          uint32_t sbs_w,
+                          uint32_t sbs_h,
+                          const LensCalibration &lens_master,
+                          const LensCalibration &lens_slave,
+                          const float *gyro_quat,
+                          uint32_t out_w,
+                          uint32_t out_h,
+                          uint8_t *out_equirect_rgba);
 
 private:
     VkInstance instance_ = VK_NULL_HANDLE;
@@ -78,9 +76,9 @@ private:
     VkDeviceMemory stageInMasterMem_ = VK_NULL_HANDLE;
     VkDeviceMemory stageInSlaveMem_ = VK_NULL_HANDLE;
     VkDeviceMemory stageOutMem_ = VK_NULL_HANDLE;
-    void* mappedInMaster_ = nullptr;
-    void* mappedInSlave_ = nullptr;
-    void* mappedOut_ = nullptr;
+    void *mappedInMaster_ = nullptr;
+    void *mappedInSlave_ = nullptr;
+    void *mappedOut_ = nullptr;
 
     VkImage imgMaster_ = VK_NULL_HANDLE;
     VkImage imgSlave_ = VK_NULL_HANDLE;
@@ -99,18 +97,16 @@ private:
     VkFence fence_ = VK_NULL_HANDLE;
 
     bool initVulkanCore();
-    bool createPipeline(const std::string& spv_path);
+    bool createPipeline(const std::string &spv_path);
     bool ensureResources(uint32_t sensor_w, uint32_t sensor_h, uint32_t out_w, uint32_t out_h);
-    bool executeStitchPass(
-        uint32_t sensor_w,
-        uint32_t sensor_h,
-        const LensCalibration& lens_master,
-        const LensCalibration& lens_slave,
-        const float* gyro_quat,
-        uint32_t out_w,
-        uint32_t out_h,
-        uint8_t* out_equirect_rgba
-    );
+    bool executeStitchPass(uint32_t sensor_w,
+                           uint32_t sensor_h,
+                           const LensCalibration &lens_master,
+                           const LensCalibration &lens_slave,
+                           const float *gyro_quat,
+                           uint32_t out_w,
+                           uint32_t out_h,
+                           uint8_t *out_equirect_rgba);
     void freeResources();
 };
 

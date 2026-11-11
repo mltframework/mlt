@@ -1,21 +1,29 @@
 #include "osv_vulkan.h"
 #include "osv_stitch_spv.h"
-#include <iostream>
-#include <fstream>
 #include <cstring>
+#include <fstream>
+#include <iostream>
 #include <stdexcept>
 
-static uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFilter, VkMemoryPropertyFlags properties, bool allowFallback = false, VkMemoryPropertyFlags fallbackProperties = 0) {
+static uint32_t findMemoryType(VkPhysicalDevice physicalDevice,
+                               uint32_t typeFilter,
+                               VkMemoryPropertyFlags properties,
+                               bool allowFallback = false,
+                               VkMemoryPropertyFlags fallbackProperties = 0)
+{
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+        if ((typeFilter & (1 << i))
+            && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
             return i;
         }
     }
     if (allowFallback) {
         for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
-            if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & fallbackProperties) == fallbackProperties) {
+            if ((typeFilter & (1 << i))
+                && (memProperties.memoryTypes[i].propertyFlags & fallbackProperties)
+                       == fallbackProperties) {
                 return i;
             }
         }
@@ -25,11 +33,13 @@ static uint32_t findMemoryType(VkPhysicalDevice physicalDevice, uint32_t typeFil
 
 OsvVulkanStitcher::OsvVulkanStitcher() {}
 
-OsvVulkanStitcher::~OsvVulkanStitcher() {
+OsvVulkanStitcher::~OsvVulkanStitcher()
+{
     cleanup();
 }
 
-bool OsvVulkanStitcher::initialize(const std::string& spv_shader_path) {
+bool OsvVulkanStitcher::initialize(const std::string &spv_shader_path)
+{
     if (!initVulkanCore()) {
         std::cerr << "[OSV-Vulkan] Failed to initialize Vulkan core." << std::endl;
         return false;
@@ -41,7 +51,8 @@ bool OsvVulkanStitcher::initialize(const std::string& spv_shader_path) {
     return true;
 }
 
-void OsvVulkanStitcher::cleanup() {
+void OsvVulkanStitcher::cleanup()
+{
     freeResources();
 
     if (device_ != VK_NULL_HANDLE) {
@@ -75,7 +86,8 @@ void OsvVulkanStitcher::cleanup() {
     }
 }
 
-bool OsvVulkanStitcher::initVulkanCore() {
+bool OsvVulkanStitcher::initVulkanCore()
+{
     VkApplicationInfo appInfo{};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     appInfo.pApplicationName = "OSV Native Vulkan Stitcher";
@@ -94,13 +106,14 @@ bool OsvVulkanStitcher::initVulkanCore() {
 
     uint32_t deviceCount = 0;
     vkEnumeratePhysicalDevices(instance_, &deviceCount, nullptr);
-    if (deviceCount == 0) return false;
+    if (deviceCount == 0)
+        return false;
 
     std::vector<VkPhysicalDevice> devices(deviceCount);
     vkEnumeratePhysicalDevices(instance_, &deviceCount, devices.data());
 
     // Prefer dedicated or integrated GPU supporting compute
-    for (const auto& dev : devices) {
+    for (const auto &dev : devices) {
         VkPhysicalDeviceProperties props;
         vkGetPhysicalDeviceProperties(dev, &props);
 
@@ -117,10 +130,12 @@ bool OsvVulkanStitcher::initVulkanCore() {
                 break;
             }
         }
-        if (physical_device_ != VK_NULL_HANDLE) break;
+        if (physical_device_ != VK_NULL_HANDLE)
+            break;
     }
 
-    if (physical_device_ == VK_NULL_HANDLE) return false;
+    if (physical_device_ == VK_NULL_HANDLE)
+        return false;
 
     float queuePriority = 1.0f;
     VkDeviceQueueCreateInfo queueCreateInfo{};
@@ -151,23 +166,25 @@ bool OsvVulkanStitcher::initVulkanCore() {
     return true;
 }
 
-bool OsvVulkanStitcher::createPipeline(const std::string& spv_path) {
-    const uint32_t* code = nullptr;
+bool OsvVulkanStitcher::createPipeline(const std::string &spv_path)
+{
+    const uint32_t *code = nullptr;
     size_t code_size = 0;
     std::vector<char> buffer;
 
     if (!spv_path.empty()) {
         std::ifstream file(spv_path, std::ios::ate | std::ios::binary);
         if (file.is_open()) {
-            size_t fileSize = (size_t)file.tellg();
+            size_t fileSize = (size_t) file.tellg();
             buffer.resize(fileSize);
             file.seekg(0);
             file.read(buffer.data(), fileSize);
             file.close();
-            code = reinterpret_cast<const uint32_t*>(buffer.data());
+            code = reinterpret_cast<const uint32_t *>(buffer.data());
             code_size = buffer.size();
         } else {
-            std::cerr << "[OSV-Vulkan] Shader file not found: " << spv_path << ", falling back to embedded SPIR-V shader." << std::endl;
+            std::cerr << "[OSV-Vulkan] Shader file not found: " << spv_path
+                      << ", falling back to embedded SPIR-V shader." << std::endl;
         }
     }
 
@@ -227,7 +244,8 @@ bool OsvVulkanStitcher::createPipeline(const std::string& spv_path) {
     pipelineLayoutInfo.pushConstantRangeCount = 1;
     pipelineLayoutInfo.pPushConstantRanges = &pushRange;
 
-    if (vkCreatePipelineLayout(device_, &pipelineLayoutInfo, nullptr, &pipeline_layout_) != VK_SUCCESS) {
+    if (vkCreatePipelineLayout(device_, &pipelineLayoutInfo, nullptr, &pipeline_layout_)
+        != VK_SUCCESS) {
         return false;
     }
 
@@ -239,15 +257,18 @@ bool OsvVulkanStitcher::createPipeline(const std::string& spv_path) {
     pipelineInfo.stage.pName = "main";
     pipelineInfo.layout = pipeline_layout_;
 
-    if (vkCreateComputePipelines(device_, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline_) != VK_SUCCESS) {
+    if (vkCreateComputePipelines(device_, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline_)
+        != VK_SUCCESS) {
         return false;
     }
 
     return true;
 }
 
-void OsvVulkanStitcher::freeResources() {
-    if (device_ == VK_NULL_HANDLE) return;
+void OsvVulkanStitcher::freeResources()
+{
+    if (device_ == VK_NULL_HANDLE)
+        return;
 
     if (fence_ != VK_NULL_HANDLE) {
         vkDestroyFence(device_, fence_, nullptr);
@@ -303,17 +324,26 @@ void OsvVulkanStitcher::freeResources() {
         memOut_ = VK_NULL_HANDLE;
     }
     if (stageInMasterMem_ != VK_NULL_HANDLE) {
-        if (mappedInMaster_) { vkUnmapMemory(device_, stageInMasterMem_); mappedInMaster_ = nullptr; }
+        if (mappedInMaster_) {
+            vkUnmapMemory(device_, stageInMasterMem_);
+            mappedInMaster_ = nullptr;
+        }
         vkFreeMemory(device_, stageInMasterMem_, nullptr);
         stageInMasterMem_ = VK_NULL_HANDLE;
     }
     if (stageInSlaveMem_ != VK_NULL_HANDLE) {
-        if (mappedInSlave_) { vkUnmapMemory(device_, stageInSlaveMem_); mappedInSlave_ = nullptr; }
+        if (mappedInSlave_) {
+            vkUnmapMemory(device_, stageInSlaveMem_);
+            mappedInSlave_ = nullptr;
+        }
         vkFreeMemory(device_, stageInSlaveMem_, nullptr);
         stageInSlaveMem_ = VK_NULL_HANDLE;
     }
     if (stageOutMem_ != VK_NULL_HANDLE) {
-        if (mappedOut_) { vkUnmapMemory(device_, stageOutMem_); mappedOut_ = nullptr; }
+        if (mappedOut_) {
+            vkUnmapMemory(device_, stageOutMem_);
+            mappedOut_ = nullptr;
+        }
         vkFreeMemory(device_, stageOutMem_, nullptr);
         stageOutMem_ = VK_NULL_HANDLE;
     }
@@ -336,10 +366,13 @@ void OsvVulkanStitcher::freeResources() {
     alloc_out_h_ = 0;
 }
 
-bool OsvVulkanStitcher::ensureResources(uint32_t sensor_w, uint32_t sensor_h, uint32_t out_w, uint32_t out_h) {
-    if (alloc_sensor_w_ == sensor_w && alloc_sensor_h_ == sensor_h &&
-        alloc_out_w_ == out_w && alloc_out_h_ == out_h &&
-        cmd_ != VK_NULL_HANDLE) {
+bool OsvVulkanStitcher::ensureResources(uint32_t sensor_w,
+                                        uint32_t sensor_h,
+                                        uint32_t out_w,
+                                        uint32_t out_h)
+{
+    if (alloc_sensor_w_ == sensor_w && alloc_sensor_h_ == sensor_h && alloc_out_w_ == out_w
+        && alloc_out_h_ == out_h && cmd_ != VK_NULL_HANDLE) {
         return true;
     }
 
@@ -353,7 +386,13 @@ bool OsvVulkanStitcher::ensureResources(uint32_t sensor_w, uint32_t sensor_h, ui
     size_t inBytes = sensor_w * sensor_h * 4;
     size_t outBytes = out_w * out_h * 4;
 
-    auto createBuf = [&](size_t size, VkBufferUsageFlags usage, VkMemoryPropertyFlags props, VkBuffer& buf, VkDeviceMemory& mem, bool allowFallback = false, VkMemoryPropertyFlags fallbackProps = 0) {
+    auto createBuf = [&](size_t size,
+                         VkBufferUsageFlags usage,
+                         VkMemoryPropertyFlags props,
+                         VkBuffer &buf,
+                         VkDeviceMemory &mem,
+                         bool allowFallback = false,
+                         VkMemoryPropertyFlags fallbackProps = 0) {
         VkBufferCreateInfo bInfo{};
         bInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bInfo.size = size;
@@ -366,53 +405,83 @@ bool OsvVulkanStitcher::ensureResources(uint32_t sensor_w, uint32_t sensor_h, ui
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = req.size;
-        allocInfo.memoryTypeIndex = findMemoryType(physical_device_, req.memoryTypeBits, props, allowFallback, fallbackProps);
+        allocInfo.memoryTypeIndex = findMemoryType(physical_device_,
+                                                   req.memoryTypeBits,
+                                                   props,
+                                                   allowFallback,
+                                                   fallbackProps);
         vkAllocateMemory(device_, &allocInfo, nullptr, &mem);
         vkBindBufferMemory(device_, buf, mem, 0);
     };
 
-    createBuf(inBytes, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stageInMaster_, stageInMasterMem_);
-    createBuf(inBytes, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, stageInSlave_, stageInSlaveMem_);
+    createBuf(inBytes,
+              VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+              stageInMaster_,
+              stageInMasterMem_);
+    createBuf(inBytes,
+              VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+              stageInSlave_,
+              stageInSlaveMem_);
     // Prefer HOST_CACHED memory for GPU->CPU readback to avoid 45ms uncached write-combining read stalls on Intel/AMD GPUs
-    createBuf(outBytes, VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+    createBuf(outBytes,
+              VK_BUFFER_USAGE_TRANSFER_DST_BIT,
               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-              stageOut_, stageOutMem_, true,
+              stageOut_,
+              stageOutMem_,
+              true,
               VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     vkMapMemory(device_, stageInMasterMem_, 0, inBytes, 0, &mappedInMaster_);
     vkMapMemory(device_, stageInSlaveMem_, 0, inBytes, 0, &mappedInSlave_);
-    vkMapMemory(device_, stageOutMem_, 0, outBytes, 0, &mappedOut_);
+    vkMapMemory(device_, stageOutMem_, 0, VK_WHOLE_SIZE, 0, &mappedOut_);
 
-    auto createImg = [&](uint32_t w, uint32_t h, VkImageUsageFlags usage, VkImage& img, VkDeviceMemory& mem) {
-        VkImageCreateInfo iInfo{};
-        iInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        iInfo.imageType = VK_IMAGE_TYPE_2D;
-        iInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-        iInfo.extent = {w, h, 1};
-        iInfo.mipLevels = 1;
-        iInfo.arrayLayers = 1;
-        iInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        iInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        iInfo.usage = usage;
-        iInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        iInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        vkCreateImage(device_, &iInfo, nullptr, &img);
+    auto createImg =
+        [&](uint32_t w, uint32_t h, VkImageUsageFlags usage, VkImage &img, VkDeviceMemory &mem) {
+            VkImageCreateInfo iInfo{};
+            iInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+            iInfo.imageType = VK_IMAGE_TYPE_2D;
+            iInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+            iInfo.extent = {w, h, 1};
+            iInfo.mipLevels = 1;
+            iInfo.arrayLayers = 1;
+            iInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+            iInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+            iInfo.usage = usage;
+            iInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            iInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            vkCreateImage(device_, &iInfo, nullptr, &img);
 
-        VkMemoryRequirements req;
-        vkGetImageMemoryRequirements(device_, img, &req);
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = req.size;
-        allocInfo.memoryTypeIndex = findMemoryType(physical_device_, req.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        vkAllocateMemory(device_, &allocInfo, nullptr, &mem);
-        vkBindImageMemory(device_, img, mem, 0);
-    };
+            VkMemoryRequirements req;
+            vkGetImageMemoryRequirements(device_, img, &req);
+            VkMemoryAllocateInfo allocInfo{};
+            allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            allocInfo.allocationSize = req.size;
+            allocInfo.memoryTypeIndex = findMemoryType(physical_device_,
+                                                       req.memoryTypeBits,
+                                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            vkAllocateMemory(device_, &allocInfo, nullptr, &mem);
+            vkBindImageMemory(device_, img, mem, 0);
+        };
 
-    createImg(sensor_w, sensor_h, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, imgMaster_, memMaster_);
-    createImg(sensor_w, sensor_h, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT, imgSlave_, memSlave_);
-    createImg(out_w, out_h, VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT, imgOut_, memOut_);
+    createImg(sensor_w,
+              sensor_h,
+              VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+              imgMaster_,
+              memMaster_);
+    createImg(sensor_w,
+              sensor_h,
+              VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+              imgSlave_,
+              memSlave_);
+    createImg(out_w,
+              out_h,
+              VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+              imgOut_,
+              memOut_);
 
-    auto createView = [&](VkImage img, VkImageView& view) {
+    auto createView = [&](VkImage img, VkImageView &view) {
         VkImageViewCreateInfo vInfo{};
         vInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         vInfo.image = img;
@@ -509,18 +578,17 @@ bool OsvVulkanStitcher::ensureResources(uint32_t sensor_w, uint32_t sensor_h, ui
     return true;
 }
 
-bool OsvVulkanStitcher::stitchFrames(
-    const uint8_t* master_rgba,
-    const uint8_t* slave_rgba,
-    uint32_t sensor_w,
-    uint32_t sensor_h,
-    const LensCalibration& lens_master,
-    const LensCalibration& lens_slave,
-    const float* gyro_quat,
-    uint32_t out_w,
-    uint32_t out_h,
-    uint8_t* out_equirect_rgba
-) {
+bool OsvVulkanStitcher::stitchFrames(const uint8_t *master_rgba,
+                                     const uint8_t *slave_rgba,
+                                     uint32_t sensor_w,
+                                     uint32_t sensor_h,
+                                     const LensCalibration &lens_master,
+                                     const LensCalibration &lens_slave,
+                                     const float *gyro_quat,
+                                     uint32_t out_w,
+                                     uint32_t out_h,
+                                     uint8_t *out_equirect_rgba)
+{
     if (!ensureResources(sensor_w, sensor_h, out_w, out_h)) {
         return false;
     }
@@ -529,50 +597,62 @@ bool OsvVulkanStitcher::stitchFrames(
     std::memcpy(mappedInMaster_, master_rgba, inBytes);
     std::memcpy(mappedInSlave_, slave_rgba, inBytes);
 
-    return executeStitchPass(sensor_w, sensor_h, lens_master, lens_slave, gyro_quat, out_w, out_h, out_equirect_rgba);
+    return executeStitchPass(sensor_w,
+                             sensor_h,
+                             lens_master,
+                             lens_slave,
+                             gyro_quat,
+                             out_w,
+                             out_h,
+                             out_equirect_rgba);
 }
 
-bool OsvVulkanStitcher::stitchSideBySide(
-    const uint8_t* sbs_rgba,
-    uint32_t sbs_w,
-    uint32_t sbs_h,
-    const LensCalibration& lens_master,
-    const LensCalibration& lens_slave,
-    const float* gyro_quat,
-    uint32_t out_w,
-    uint32_t out_h,
-    uint8_t* out_equirect_rgba
-) {
+bool OsvVulkanStitcher::stitchSideBySide(const uint8_t *sbs_rgba,
+                                         uint32_t sbs_w,
+                                         uint32_t sbs_h,
+                                         const LensCalibration &lens_master,
+                                         const LensCalibration &lens_slave,
+                                         const float *gyro_quat,
+                                         uint32_t out_w,
+                                         uint32_t out_h,
+                                         uint8_t *out_equirect_rgba)
+{
     uint32_t eye_w = sbs_w / 2;
     uint32_t eye_h = sbs_h;
     if (!ensureResources(eye_w, eye_h, out_w, out_h)) {
         return false;
     }
 
-    size_t row_bytes = (size_t)eye_w * 4;
-    size_t sbs_stride = (size_t)sbs_w * 4;
-    uint8_t* dst_slave = static_cast<uint8_t*>(mappedInSlave_);
-    uint8_t* dst_master = static_cast<uint8_t*>(mappedInMaster_);
+    size_t row_bytes = (size_t) eye_w * 4;
+    size_t sbs_stride = (size_t) sbs_w * 4;
+    uint8_t *dst_slave = static_cast<uint8_t *>(mappedInSlave_);
+    uint8_t *dst_master = static_cast<uint8_t *>(mappedInMaster_);
 
     for (uint32_t y = 0; y < eye_h; ++y) {
-        const uint8_t* src_row = sbs_rgba + (size_t)y * sbs_stride;
-        std::memcpy(dst_slave + (size_t)y * row_bytes, src_row, row_bytes);
-        std::memcpy(dst_master + (size_t)y * row_bytes, src_row + row_bytes, row_bytes);
+        const uint8_t *src_row = sbs_rgba + (size_t) y * sbs_stride;
+        std::memcpy(dst_slave + (size_t) y * row_bytes, src_row, row_bytes);
+        std::memcpy(dst_master + (size_t) y * row_bytes, src_row + row_bytes, row_bytes);
     }
 
-    return executeStitchPass(eye_w, eye_h, lens_master, lens_slave, gyro_quat, out_w, out_h, out_equirect_rgba);
+    return executeStitchPass(eye_w,
+                             eye_h,
+                             lens_master,
+                             lens_slave,
+                             gyro_quat,
+                             out_w,
+                             out_h,
+                             out_equirect_rgba);
 }
 
-bool OsvVulkanStitcher::executeStitchPass(
-    uint32_t sensor_w,
-    uint32_t sensor_h,
-    const LensCalibration& lens_master,
-    const LensCalibration& lens_slave,
-    const float* gyro_quat,
-    uint32_t out_w,
-    uint32_t out_h,
-    uint8_t* out_equirect_rgba
-) {
+bool OsvVulkanStitcher::executeStitchPass(uint32_t sensor_w,
+                                          uint32_t sensor_h,
+                                          const LensCalibration &lens_master,
+                                          const LensCalibration &lens_slave,
+                                          const float *gyro_quat,
+                                          uint32_t out_w,
+                                          uint32_t out_h,
+                                          uint8_t *out_equirect_rgba)
+{
     size_t outBytes = out_w * out_h * 4;
 
     vkResetCommandBuffer(cmd_, 0);
@@ -581,7 +661,13 @@ bool OsvVulkanStitcher::executeStitchPass(
     beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     vkBeginCommandBuffer(cmd_, &beginInfo);
 
-    auto transition = [&](VkImage img, VkImageLayout oldL, VkImageLayout newL, VkAccessFlags srcA, VkAccessFlags dstA, VkPipelineStageFlags srcS, VkPipelineStageFlags dstS) {
+    auto transition = [&](VkImage img,
+                          VkImageLayout oldL,
+                          VkImageLayout newL,
+                          VkAccessFlags srcA,
+                          VkAccessFlags dstA,
+                          VkPipelineStageFlags srcS,
+                          VkPipelineStageFlags dstS) {
         VkImageMemoryBarrier b{};
         b.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         b.oldLayout = oldL;
@@ -595,23 +681,70 @@ bool OsvVulkanStitcher::executeStitchPass(
         vkCmdPipelineBarrier(cmd_, srcS, dstS, 0, 0, nullptr, 0, nullptr, 1, &b);
     };
 
-    transition(imgMaster_, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    transition(imgSlave_, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 0, VK_ACCESS_TRANSFER_WRITE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-    transition(imgOut_, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, 0, VK_ACCESS_SHADER_WRITE_BIT, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    transition(imgMaster_,
+               VK_IMAGE_LAYOUT_UNDEFINED,
+               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+               0,
+               VK_ACCESS_TRANSFER_WRITE_BIT,
+               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+               VK_PIPELINE_STAGE_TRANSFER_BIT);
+    transition(imgSlave_,
+               VK_IMAGE_LAYOUT_UNDEFINED,
+               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+               0,
+               VK_ACCESS_TRANSFER_WRITE_BIT,
+               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+               VK_PIPELINE_STAGE_TRANSFER_BIT);
+    transition(imgOut_,
+               VK_IMAGE_LAYOUT_UNDEFINED,
+               VK_IMAGE_LAYOUT_GENERAL,
+               0,
+               VK_ACCESS_SHADER_WRITE_BIT,
+               VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
+               VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
     VkBufferImageCopy region{};
     region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     region.imageSubresource.layerCount = 1;
     region.imageExtent = {sensor_w, sensor_h, 1};
 
-    vkCmdCopyBufferToImage(cmd_, stageInMaster_, imgMaster_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
-    vkCmdCopyBufferToImage(cmd_, stageInSlave_, imgSlave_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+    vkCmdCopyBufferToImage(cmd_,
+                           stageInMaster_,
+                           imgMaster_,
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           1,
+                           &region);
+    vkCmdCopyBufferToImage(cmd_,
+                           stageInSlave_,
+                           imgSlave_,
+                           VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                           1,
+                           &region);
 
-    transition(imgMaster_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-    transition(imgSlave_, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    transition(imgMaster_,
+               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+               VK_ACCESS_TRANSFER_WRITE_BIT,
+               VK_ACCESS_SHADER_READ_BIT,
+               VK_PIPELINE_STAGE_TRANSFER_BIT,
+               VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
+    transition(imgSlave_,
+               VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+               VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
+               VK_ACCESS_TRANSFER_WRITE_BIT,
+               VK_ACCESS_SHADER_READ_BIT,
+               VK_PIPELINE_STAGE_TRANSFER_BIT,
+               VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 
     vkCmdBindPipeline(cmd_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_);
-    vkCmdBindDescriptorSets(cmd_, VK_PIPELINE_BIND_POINT_COMPUTE, pipeline_layout_, 0, 1, &descSet_, 0, nullptr);
+    vkCmdBindDescriptorSets(cmd_,
+                            VK_PIPELINE_BIND_POINT_COMPUTE,
+                            pipeline_layout_,
+                            0,
+                            1,
+                            &descSet_,
+                            0,
+                            nullptr);
 
     PushConstants pc{};
     // Master lens (Stream 1)
@@ -634,7 +767,10 @@ bool OsvVulkanStitcher::executeStitchPass(
         std::memcpy(pc.gyro_quat, gyro_quat, 4 * sizeof(float));
     } else {
         // Identity quaternion in (w, x, y, z): w=1, x=0, y=0, z=0
-        pc.gyro_quat[0] = 1.0f; pc.gyro_quat[1] = 0.0f; pc.gyro_quat[2] = 0.0f; pc.gyro_quat[3] = 0.0f;
+        pc.gyro_quat[0] = 1.0f;
+        pc.gyro_quat[1] = 0.0f;
+        pc.gyro_quat[2] = 0.0f;
+        pc.gyro_quat[3] = 0.0f;
     }
 
     pc.outWidth = out_w;
@@ -642,19 +778,35 @@ bool OsvVulkanStitcher::executeStitchPass(
     pc.maxFovDegrees = 195.18f;
     pc.blendOverlapDegrees = 10.0f;
 
-    vkCmdPushConstants(cmd_, pipeline_layout_, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(PushConstants), &pc);
+    vkCmdPushConstants(cmd_,
+                       pipeline_layout_,
+                       VK_SHADER_STAGE_COMPUTE_BIT,
+                       0,
+                       sizeof(PushConstants),
+                       &pc);
 
     uint32_t groupX = (out_w + 15) / 16;
     uint32_t groupY = (out_h + 15) / 16;
     vkCmdDispatch(cmd_, groupX, groupY, 1);
 
-    transition(imgOut_, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    transition(imgOut_,
+               VK_IMAGE_LAYOUT_GENERAL,
+               VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+               VK_ACCESS_SHADER_WRITE_BIT,
+               VK_ACCESS_TRANSFER_READ_BIT,
+               VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+               VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     VkBufferImageCopy outRegion{};
     outRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     outRegion.imageSubresource.layerCount = 1;
     outRegion.imageExtent = {out_w, out_h, 1};
-    vkCmdCopyImageToBuffer(cmd_, imgOut_, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, stageOut_, 1, &outRegion);
+    vkCmdCopyImageToBuffer(cmd_,
+                           imgOut_,
+                           VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                           stageOut_,
+                           1,
+                           &outRegion);
 
     vkEndCommandBuffer(cmd_);
 

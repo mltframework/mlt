@@ -17,10 +17,10 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "mltosv_export.h"
 #include <framework/mlt.h>
 #include <limits.h>
 #include <stdio.h>
-#include "mltosv_export.h"
 
 extern mlt_producer producer_osv_init(mlt_profile profile,
                                       mlt_service_type type,
