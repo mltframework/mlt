@@ -672,6 +672,7 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile, mlt_service_type 
     mlt_properties_set_double(props, "meta.media.0.stream.frame_rate", fps);
     mlt_properties_set(props, "meta.media.0.codec.pix_fmt", "yuv420p");
     mlt_properties_set_int(props, "meta.media.0.codec.colorspace", 709);
+    mlt_properties_set(props, "meta.media.0.stream.projection", "equirectangular");
 
     // Stream 1: Audio
     mlt_properties_set(props, "meta.media.1.stream.type", "audio");

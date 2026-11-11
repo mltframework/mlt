@@ -18,6 +18,8 @@
  */
 
 #include <framework/mlt.h>
+#include <limits.h>
+#include <stdio.h>
 #include "mltosv_export.h"
 
 extern mlt_producer producer_osv_init(mlt_profile profile,
@@ -25,7 +27,15 @@ extern mlt_producer producer_osv_init(mlt_profile profile,
                                       const char *id,
                                       char *arg);
 
+static mlt_properties metadata(mlt_service_type type, const char *id, void *data)
+{
+    char file[PATH_MAX];
+    snprintf(file, PATH_MAX, "%s/osv/%s", mlt_environment("MLT_DATA"), (char *) data);
+    return mlt_properties_parse_yaml(file);
+}
+
 MLTOSV_EXPORT MLT_REPOSITORY
 {
     MLT_REGISTER(mlt_service_producer_type, "osv", producer_osv_init);
+    MLT_REGISTER_METADATA(mlt_service_producer_type, "osv", metadata, "producer_osv.yml");
 }
