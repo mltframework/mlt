@@ -20,6 +20,7 @@
 #include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
+#include "tex_pool.h"
 #include "transition_common.h"
 #include "vulkan_frame.h"
 
@@ -313,7 +314,6 @@ static int get_image(mlt_frame a_frame,
     mlt_transition transition = mlt_frame_pop_service(a_frame);
     mlt_service service = MLT_TRANSITION_SERVICE(transition);
     pl_gpu gpu = placebo_gpu_get();
-    pl_renderer renderer = placebo_renderer_get();
     pl_dispatch dispatch = placebo_dispatch_get();
     mlt_image_format requested;
     mlt_image_format b_format;
@@ -334,7 +334,7 @@ static int get_image(mlt_frame a_frame,
     pl_fmt dst_fmt = NULL;
     mlt_color_trc trc;
 
-    if (!gpu || !renderer || !dispatch) {
+    if (!gpu || !dispatch) {
         mlt_log_warning(service, "GPU not available, passing the lower frame through\n");
         error = mlt_frame_get_image(a_frame, image, format, width, height, writable);
         b_format = *format;
@@ -377,7 +377,6 @@ static int get_image(mlt_frame a_frame,
 
     placebo_render_lock();
     if (placebo_transition_normalize(gpu,
-                                     renderer,
                                      a_frame,
                                      *image,
                                      *format,
@@ -389,7 +388,6 @@ static int get_image(mlt_frame a_frame,
                                      &a_tex,
                                      &a_owned)
         || placebo_transition_normalize(gpu,
-                                        renderer,
                                         b_frame,
                                         b_image,
                                         b_format,
@@ -404,22 +402,19 @@ static int get_image(mlt_frame a_frame,
         goto fail_locked;
     }
 
-    dst = pl_tex_create(gpu,
-                        pl_tex_params(.w = out_w,
-                                      .h = out_h,
-                                      .format = dst_fmt,
-                                      .sampleable = true,
-                                      .renderable = true,
-                                      .storable = true,
-                                      .host_readable = true, ));
+    dst = placebo_tex_acquire_work(gpu,
+                                   out_w,
+                                   out_h,
+                                   dst_fmt,
+                                   PLACEBO_TEX_STORABLE | PLACEBO_TEX_HOST_READABLE);
     if (!dst || blend(gpu, dispatch, a_tex, b_tex, dst, mode)) {
         mlt_log_error(service, "Blend dispatch failed\n");
         goto fail_locked;
     }
     if (a_owned)
-        pl_tex_destroy(gpu, &a_tex);
+        placebo_tex_recycle(gpu, &a_tex);
     if (b_owned)
-        pl_tex_destroy(gpu, &b_tex);
+        placebo_tex_recycle(gpu, &b_tex);
     placebo_render_unlock();
 
     trc = placebo_frame_color_trc(a_frame, *image, *format);
@@ -433,11 +428,11 @@ static int get_image(mlt_frame a_frame,
 
 fail_locked:
     if (a_owned)
-        pl_tex_destroy(gpu, &a_tex);
+        placebo_tex_recycle(gpu, &a_tex);
     if (b_owned)
-        pl_tex_destroy(gpu, &b_tex);
+        placebo_tex_recycle(gpu, &b_tex);
     if (dst)
-        pl_tex_destroy(gpu, &dst);
+        placebo_tex_recycle(gpu, &dst);
     placebo_render_unlock();
     return 1;
 }

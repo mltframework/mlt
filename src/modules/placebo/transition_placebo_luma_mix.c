@@ -20,6 +20,7 @@
 #include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
+#include "tex_pool.h"
 #include "transition_common.h"
 #include "vulkan_frame.h"
 
@@ -241,7 +242,6 @@ static int get_image(mlt_frame a_frame,
     mlt_frame b_frame = mlt_frame_pop_frame(a_frame);
     mlt_service service = MLT_TRANSITION_SERVICE(state->transition);
     pl_gpu gpu = placebo_gpu_get();
-    pl_renderer renderer = placebo_renderer_get();
     pl_dispatch dispatch = placebo_dispatch_get();
     mlt_image_format requested = *format;
     mlt_image_format a_format = requested;
@@ -272,7 +272,7 @@ static int get_image(mlt_frame a_frame,
 
     if (state->error)
         return 1;
-    if (!gpu || !renderer || !dispatch) {
+    if (!gpu || !dispatch) {
         mlt_log_error(service, "GPU not available for luma transition\n");
         return 1;
     }
@@ -317,7 +317,6 @@ static int get_image(mlt_frame a_frame,
 
     placebo_render_lock();
     if (placebo_transition_normalize(gpu,
-                                     renderer,
                                      a_frame,
                                      a_image,
                                      a_format,
@@ -329,7 +328,6 @@ static int get_image(mlt_frame a_frame,
                                      &a_tex,
                                      &a_owned)
         || placebo_transition_normalize(gpu,
-                                        renderer,
                                         b_frame,
                                         b_image,
                                         b_format,
@@ -342,7 +340,6 @@ static int get_image(mlt_frame a_frame,
                                         &b_owned)
         || (state->wipe
             && placebo_transition_normalize(gpu,
-                                            renderer,
                                             state->wipe,
                                             mask_image,
                                             mask_format,
@@ -357,14 +354,11 @@ static int get_image(mlt_frame a_frame,
         goto fail_locked;
     }
 
-    mixed = pl_tex_create(gpu,
-                          pl_tex_params(.w = out_w,
-                                        .h = out_h,
-                                        .format = working_fmt,
-                                        .sampleable = true,
-                                        .renderable = true,
-                                        .storable = true,
-                                        .host_readable = true, ));
+    mixed = placebo_tex_acquire_work(gpu,
+                                     out_w,
+                                     out_h,
+                                     working_fmt,
+                                     PLACEBO_TEX_STORABLE | PLACEBO_TEX_HOST_READABLE);
     if (!mixed
         || mix_textures(gpu,
                         dispatch,
@@ -383,34 +377,31 @@ static int get_image(mlt_frame a_frame,
         result = mixed;
         mixed = NULL;
     } else {
-        result = pl_tex_create(gpu,
-                               pl_tex_params(.w = out_w,
-                                             .h = out_h,
-                                             .format = output_fmt,
-                                             .sampleable = true,
-                                             .renderable = true,
-                                             .storable = true,
-                                             .host_readable = true, ));
+        result = placebo_tex_acquire_work(gpu,
+                                          out_w,
+                                          out_h,
+                                          output_fmt,
+                                          PLACEBO_TEX_STORABLE | PLACEBO_TEX_HOST_READABLE);
         if (!result) {
             mlt_log_error(service, "Failed to create luma output texture\n");
             goto fail_locked;
         }
         struct pl_frame src = placebo_transition_texture_frame(mixed, &working_color);
         struct pl_frame dst = placebo_transition_texture_frame(result, &output_color);
-        if (placebo_transition_render(renderer, &src, &dst)) {
+        if (placebo_transition_render(PLACEBO_SITE_TRANSITION, &src, &dst)) {
             mlt_log_error(service, "Failed to encode luma output\n");
             goto fail_locked;
         }
     }
 
     if (a_owned)
-        pl_tex_destroy(gpu, &a_tex);
+        placebo_tex_recycle(gpu, &a_tex);
     if (b_owned)
-        pl_tex_destroy(gpu, &b_tex);
+        placebo_tex_recycle(gpu, &b_tex);
     if (mask_owned)
-        pl_tex_destroy(gpu, &mask_tex);
+        placebo_tex_recycle(gpu, &mask_tex);
     if (mixed)
-        pl_tex_destroy(gpu, &mixed);
+        placebo_tex_recycle(gpu, &mixed);
     placebo_render_unlock();
 
     *width = out_w;
@@ -425,15 +416,15 @@ static int get_image(mlt_frame a_frame,
 
 fail_locked:
     if (a_owned)
-        pl_tex_destroy(gpu, &a_tex);
+        placebo_tex_recycle(gpu, &a_tex);
     if (b_owned)
-        pl_tex_destroy(gpu, &b_tex);
+        placebo_tex_recycle(gpu, &b_tex);
     if (mask_owned)
-        pl_tex_destroy(gpu, &mask_tex);
+        placebo_tex_recycle(gpu, &mask_tex);
     if (mixed)
-        pl_tex_destroy(gpu, &mixed);
+        placebo_tex_recycle(gpu, &mixed);
     if (result)
-        pl_tex_destroy(gpu, &result);
+        placebo_tex_recycle(gpu, &result);
     placebo_render_unlock();
     return 1;
 }

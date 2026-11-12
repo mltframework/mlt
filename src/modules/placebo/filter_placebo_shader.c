@@ -21,6 +21,8 @@
 #include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
+#include "render_cache.h"
+#include "tex_pool.h"
 #include "vulkan_frame.h"
 
 #include <framework/mlt_filter.h>
@@ -330,8 +332,7 @@ static int filter_get_image(mlt_frame frame,
     mlt_properties filter_props = MLT_FILTER_PROPERTIES(filter);
 
     pl_gpu gpu = placebo_gpu_get();
-    pl_renderer renderer = placebo_renderer_get();
-    if (!gpu || !renderer) {
+    if (!gpu) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "GPU not available, passing frame through\n");
         return mlt_frame_get_image(frame, image, format, width, height, writable);
     }
@@ -405,13 +406,7 @@ static int filter_get_image(mlt_frame frame,
 
     /* sampleable is needed so a subsequent placebo filter can bind this
      * texture as its source without re-uploading from RAM. */
-    pl_tex dst_tex = pl_tex_create(gpu,
-                                   pl_tex_params(.w = w,
-                                                 .h = h,
-                                                 .format = dst_fmt,
-                                                 .sampleable = true,
-                                                 .renderable = true,
-                                                 .host_readable = true, ));
+    pl_tex dst_tex = placebo_tex_acquire_target(gpu, w, h, dst_fmt);
     if (!dst_tex) {
         mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to create dest texture\n");
         placebo_render_unlock();
@@ -428,7 +423,7 @@ static int filter_get_image(mlt_frame frame,
     if (is_vulkan) {
         if (!placebo_map_vulkan_image(gpu, *image, &mapped)) {
             mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to map Vulkan frame\n");
-            pl_tex_destroy(gpu, &dst_tex);
+            placebo_tex_recycle(gpu, &dst_tex);
             placebo_render_unlock();
             return 1;
         }
@@ -470,11 +465,11 @@ static int filter_get_image(mlt_frame frame,
     params.hooks = priv->hooks;
     params.num_hooks = priv->num_hooks;
 
-    if (!pl_render_image(renderer, src, &pl_dst, &params)) {
+    if (!placebo_render(PLACEBO_SITE_SHADER, src, &pl_dst, &params)) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "pl_render_image with shader hook failed\n");
         if (mapped_vulkan)
             placebo_unmap_vulkan_image(gpu, &mapped);
-        pl_tex_destroy(gpu, &dst_tex);
+        placebo_tex_recycle(gpu, &dst_tex);
         placebo_render_unlock();
         return 1;
     }

@@ -22,6 +22,7 @@
 #include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
+#include "tex_pool.h"
 #include "transition_common.h"
 #include "vulkan_frame.h"
 
@@ -496,15 +497,15 @@ static int dispatch_planes(mlt_service service,
             mlt_log_error(service, "No suitable GPU format for deinterlacing plane %d\n", i);
             return 1;
         }
-        planes[i] = pl_tex_create(gpu,
-                                  pl_tex_params(.w = plane->texture->params.w,
-                                                .h = plane->texture->params.h,
-                                                .format = fmt,
-                                                .sampleable = true,
-                                                .renderable = true,
-                                                .storable = !!(fmt->caps & PL_FMT_CAP_STORABLE),
-                                                .host_readable = !!(fmt->caps
-                                                                    & PL_FMT_CAP_HOST_READABLE), ));
+        planes[i] = placebo_tex_acquire_work(gpu,
+                                             plane->texture->params.w,
+                                             plane->texture->params.h,
+                                             fmt,
+                                             (fmt->caps & PL_FMT_CAP_STORABLE ? PLACEBO_TEX_STORABLE
+                                                                              : 0)
+                                                 | (fmt->caps & PL_FMT_CAP_HOST_READABLE
+                                                        ? PLACEBO_TEX_HOST_READABLE
+                                                        : 0));
         if (!planes[i]) {
             mlt_log_error(service, "Failed to allocate deinterlacing plane %d\n", i);
             return 1;
@@ -534,7 +535,6 @@ static int dispatch_planes(mlt_service service,
 
 static int compose_output(mlt_service service,
                           pl_gpu gpu,
-                          pl_renderer renderer,
                           const gpu_image *current,
                           pl_tex planes[PL_MAX_PLANES],
                           mlt_image_format requested,
@@ -571,19 +571,13 @@ static int compose_output(mlt_service service,
     if (planes)
         for (int i = 0; i < src.num_planes; i++)
             src.planes[i].texture = planes[i];
-    *output = pl_tex_create(gpu,
-                            pl_tex_params(.w = width,
-                                          .h = height,
-                                          .format = output_format,
-                                          .sampleable = true,
-                                          .renderable = true,
-                                          .host_readable = true, ));
+    *output = placebo_tex_acquire_work(gpu, width, height, output_format, PLACEBO_TEX_HOST_READABLE);
     if (!*output) {
         mlt_log_error(service, "Failed to allocate deinterlaced output\n");
         return 1;
     }
     struct pl_frame dst = placebo_transition_texture_frame(*output, &color);
-    if (placebo_transition_render(renderer, &src, &dst)) {
+    if (placebo_transition_render(PLACEBO_SITE_DEINTERLACE, &src, &dst)) {
         mlt_log_error(service, "Failed to render deinterlaced output\n");
         return 1;
     }
@@ -604,8 +598,7 @@ static int render_deinterlace(mlt_service service,
 {
     pl_gpu gpu = placebo_gpu_get();
     pl_dispatch dispatch = placebo_dispatch_get();
-    pl_renderer renderer = placebo_renderer_get();
-    if (!gpu || !dispatch || !renderer) {
+    if (!gpu || !dispatch) {
         mlt_log_error(service, "GPU deinterlacing is unavailable\n");
         return 1;
     }
@@ -626,7 +619,6 @@ static int render_deinterlace(mlt_service service,
                                        planes))
                 || compose_output(service,
                                   gpu,
-                                  renderer,
                                   current,
                                   field == PL_FIELD_NONE ? NULL : planes,
                                   requested,
@@ -637,9 +629,9 @@ static int render_deinterlace(mlt_service service,
     unmap_image(gpu, previous);
     unmap_image(gpu, current);
     for (int i = 0; i < PL_MAX_PLANES; i++)
-        pl_tex_destroy(gpu, &planes[i]);
+        placebo_tex_recycle(gpu, &planes[i]);
     if (error)
-        pl_tex_destroy(gpu, &output);
+        placebo_tex_recycle(gpu, &output);
     else
         *result = output;
     placebo_render_unlock();

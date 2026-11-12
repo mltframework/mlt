@@ -20,6 +20,8 @@
 #include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
+#include "render_cache.h"
+#include "tex_pool.h"
 #include "vulkan_frame.h"
 
 #include <framework/mlt_filter.h>
@@ -96,6 +98,21 @@ static void apply_consumer_scaler(struct pl_render_params *params, const char *r
     }
 }
 
+/* Whether a GPU image already is the output, so nothing needs rendering: a
+   Vulkan image of the output size with nothing cropped away, or a texture in the
+   output format. The caller checks the size of a texture. */
+static int image_is_output(const uint8_t *image, int is_vulkan, pl_fmt dst_fmt, int out_w, int out_h)
+{
+    if (!is_vulkan)
+        return placebo_tex_is(placebo_image_get_tex(image), dst_fmt);
+
+    const mlt_vulkan_image *vulkan = (const mlt_vulkan_image *) image;
+    return vulkan->nb_planes > 0 && vulkan->planes[0].image && vulkan->width == out_w
+           && vulkan->height == out_h && !vulkan->crop_left && !vulkan->crop_top
+           && !vulkan->crop_right && !vulkan->crop_bottom && vulkan->planes[0].width == out_w
+           && vulkan->planes[0].height == out_h;
+}
+
 static int filter_get_image(mlt_frame frame,
                             uint8_t **image,
                             mlt_image_format *format,
@@ -128,11 +145,9 @@ static int filter_get_image(mlt_frame frame,
 
     const char *rescale = mlt_properties_get(properties, "consumer.rescale");
     pl_gpu gpu = placebo_gpu_get();
-    pl_renderer renderer = placebo_renderer_get();
     pl_fmt rgba_fmt = gpu ? pl_find_named_fmt(gpu, "rgba8") : NULL;
-    if ((rescale && !strcmp(rescale, "none")) || !gpu || !renderer || !rgba_fmt || out_w < 1
-        || out_h < 1) {
-        if (!gpu || !renderer || !rgba_fmt)
+    if ((rescale && !strcmp(rescale, "none")) || !gpu || !rgba_fmt || out_w < 1 || out_h < 1) {
+        if (!gpu || !rgba_fmt)
             mlt_log_warning(MLT_FILTER_SERVICE(filter),
                             "GPU not available, passing frame through\n");
         return mlt_frame_get_image(frame, image, format, width, height, writable);
@@ -244,17 +259,20 @@ static int filter_get_image(mlt_frame frame,
     if (encoded)
         dst_fmt = encoded;
 
-    /* blit_dst is required by pl_frame_clear; without it the clear is a no-op
-       and the padding keeps whatever a recycled allocation held before. */
+    int identity = *width == out_w && *height == out_h && content_w == out_w && content_h == out_h
+                   && off_x == 0 && off_y == 0;
+    if (identity && requested == *format
+        && image_is_output(*image, is_vulkan, dst_fmt, out_w, out_h)) {
+        if (!distort)
+            mlt_frame_set_aspect_ratio(frame, consumer_aspect);
+        mlt_properties_set_int(properties,
+                               "color_trc",
+                               placebo_frame_color_trc(frame, *image, *format));
+        return 0;
+    }
+
     placebo_render_lock();
-    pl_tex dst_tex = pl_tex_create(gpu,
-                                   pl_tex_params(.w = out_w,
-                                                 .h = out_h,
-                                                 .format = dst_fmt,
-                                                 .sampleable = true,
-                                                 .renderable = true,
-                                                 .blit_dst = true,
-                                                 .host_readable = true, ));
+    pl_tex dst_tex = placebo_tex_acquire_target(gpu, out_w, out_h, dst_fmt);
     if (!dst_tex) {
         mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to create dest texture\n");
         placebo_render_unlock();
@@ -268,7 +286,7 @@ static int filter_get_image(mlt_frame frame,
     if (is_vulkan) {
         if (!placebo_map_vulkan_image(gpu, *image, &mapped)) {
             mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to map Vulkan frame\n");
-            pl_tex_destroy(gpu, &dst_tex);
+            placebo_tex_recycle(gpu, &dst_tex);
             placebo_render_unlock();
             return 1;
         }
@@ -320,11 +338,11 @@ static int filter_get_image(mlt_frame frame,
     params.skip_target_clearing = true;
 #endif
     apply_consumer_scaler(&params, rescale);
-    if (!pl_render_image(renderer, src, &pl_dst, &params)) {
+    if (!placebo_render(PLACEBO_SITE_SCALE, src, &pl_dst, &params)) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "pl_render_image failed\n");
         if (mapped_vulkan)
             placebo_unmap_vulkan_image(gpu, &mapped);
-        pl_tex_destroy(gpu, &dst_tex);
+        placebo_tex_recycle(gpu, &dst_tex);
         placebo_render_unlock();
         return 1;
     }

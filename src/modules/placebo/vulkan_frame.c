@@ -21,6 +21,7 @@
 
 #include "color_space.h"
 #include "gpu_context.h"
+#include "tex_pool.h"
 
 #include <framework/mlt_image.h>
 #include <framework/mlt_log.h>
@@ -29,14 +30,6 @@
 
 #include <stdlib.h>
 #include <string.h>
-
-/* A texture this module created and then held for another Vulkan user.
-   The VkImage stays alive until the mlt image is destroyed. */
-typedef struct
-{
-    pl_tex tex;
-    VkSemaphore sem;
-} vulkan_owner;
 
 typedef struct
 {
@@ -196,7 +189,7 @@ static void destroy_wrapped(pl_gpu gpu, map_state *state)
 int placebo_map_vulkan_image(pl_gpu gpu, const uint8_t *bytes, struct pl_frame *out)
 {
     mlt_vulkan_image *image = (mlt_vulkan_image *) bytes;
-    vulkan_owner *owner;
+    pl_tex owned_tex;
     map_state *state;
     enum pl_color_transfer transfer;
     int i;
@@ -208,7 +201,7 @@ int placebo_map_vulkan_image(pl_gpu gpu, const uint8_t *bytes, struct pl_frame *
     if (!state)
         return 0;
     state->image = image;
-    owner = image->module_data;
+    owned_tex = image->module_data;
 
     memset(out, 0, sizeof(*out));
     out->num_planes = image->nb_planes;
@@ -238,11 +231,11 @@ int placebo_map_vulkan_image(pl_gpu gpu, const uint8_t *bytes, struct pl_frame *
     if (image->log2_chroma_w || image->log2_chroma_h)
         pl_frame_set_chroma_location(out, chroma_from_image(image->chroma_location));
 
-    if (owner && owner->tex) {
-        state->textures[0] = owner->tex;
+    if (owned_tex) {
+        state->textures[0] = owned_tex;
         state->owned = 1;
         out->num_planes = 1;
-        out->planes[0].texture = owner->tex;
+        out->planes[0].texture = owned_tex;
     } else if (real_plane_count(image) == 1 && image->nb_planes > 1) {
         pl_tex tex
             = pl_vulkan_wrap(gpu,
@@ -331,30 +324,30 @@ void placebo_unmap_vulkan_image(pl_gpu gpu, struct pl_frame *frame)
 static void destroy_placebo_vulkan(void *p)
 {
     mlt_vulkan_image *image = p;
-    vulkan_owner *owner;
+    pl_tex tex;
     pl_gpu gpu;
 
     if (!image)
         return;
-    owner = image->module_data;
+    tex = image->module_data;
     gpu = placebo_gpu_get();
-    if (gpu && owner && owner->tex) {
+    if (gpu && tex) {
         placebo_render_lock();
-        pl_vulkan_release_ex(gpu,
-                             pl_vulkan_release_params(.tex = owner->tex,
-                                                      .layout
-                                                      = (VkImageLayout) image->planes[0].layout,
-                                                      .qf = VK_QUEUE_FAMILY_IGNORED,
-                                                      .semaphore = {
-                                                          .sem = owner->sem,
-                                                          .value = image->planes[0].sem_value,
-                                                      }, ));
-        pl_tex_destroy(gpu, &owner->tex);
-        if (owner->sem)
-            pl_vulkan_sem_destroy(gpu, &owner->sem);
+        pl_vulkan_release_ex(
+            gpu,
+            pl_vulkan_release_params(.tex = tex,
+                                     .layout = (VkImageLayout) image->planes[0].layout,
+                                     .qf = VK_QUEUE_FAMILY_IGNORED,
+                                     .semaphore = {
+                                         .sem = (VkSemaphore) (uintptr_t) image->planes[0].semaphore,
+                                         .value = image->planes[0].sem_value,
+                                     }, ));
+        /* The pool keeps the semaphore with the texture. libplacebo waits on
+           it the next time the texture is used. */
+        placebo_tex_set_semaphore_value(tex, image->planes[0].sem_value);
+        placebo_tex_recycle(gpu, &tex);
         placebo_render_unlock();
     }
-    free(owner);
     free(image);
 }
 
@@ -364,8 +357,8 @@ static int publish_vulkan(
     pl_gpu gpu = placebo_gpu_get();
     mlt_properties props = MLT_FRAME_PROPERTIES(frame);
     mlt_vulkan_image *vulkan;
-    vulkan_owner *owner;
     VkSemaphore sem = VK_NULL_HANDLE;
+    uint64_t sem_value = 0;
     VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkFormat vk_format = VK_FORMAT_UNDEFINED;
     VkImageUsageFlags usage = 0;
@@ -375,21 +368,19 @@ static int publish_vulkan(
     static int logged;
 
     vulkan = calloc(1, sizeof(*vulkan));
-    owner = calloc(1, sizeof(*owner));
-    if (!vulkan || !owner || !gpu) {
+    if (!vulkan || !gpu) {
         free(vulkan);
-        free(owner);
-        placebo_render_lock();
-        pl_tex_destroy(gpu, &tex);
-        placebo_render_unlock();
+        if (gpu) {
+            placebo_render_lock();
+            placebo_tex_recycle(gpu, &tex);
+            placebo_render_unlock();
+        }
         *image = NULL;
         return 1;
     }
 
     placebo_render_lock();
-    sem = pl_vulkan_sem_create(gpu,
-                               pl_vulkan_sem_params(.type = VK_SEMAPHORE_TYPE_TIMELINE,
-                                                    .initial_value = 0, ));
+    sem = placebo_tex_semaphore(gpu, tex, &sem_value);
     if (!sem
         || !pl_vulkan_hold_ex(gpu,
                               pl_vulkan_hold_params(.tex = tex,
@@ -397,14 +388,11 @@ static int publish_vulkan(
                                                     .qf = VK_QUEUE_FAMILY_IGNORED,
                                                     .semaphore = {
                                                         .sem = sem,
-                                                        .value = 1,
+                                                        .value = sem_value + 1,
                                                     }, ))) {
-        if (sem)
-            pl_vulkan_sem_destroy(gpu, &sem);
-        pl_tex_destroy(gpu, &tex);
+        placebo_tex_recycle(gpu, &tex);
         placebo_render_unlock();
         free(vulkan);
-        free(owner);
         *image = NULL;
         return 1;
     }
@@ -413,8 +401,6 @@ static int publish_vulkan(
 
     primaries = mlt_image_color_pri_id(mlt_properties_get(props, "color_primaries"));
     colorspace = mlt_image_colorspace_id(mlt_properties_get(props, "colorspace"));
-    owner->tex = tex;
-    owner->sem = sem;
     vulkan->width = tex->params.w;
     vulkan->height = tex->params.h;
     vulkan->nb_planes = 1;
@@ -432,13 +418,15 @@ static int publish_vulkan(
     vulkan->planes[0].height = vulkan->height;
     vulkan->planes[0].layout = (int) layout;
     vulkan->planes[0].semaphore = (uint64_t) (uintptr_t) sem;
-    vulkan->planes[0].sem_value = 1;
+    vulkan->planes[0].sem_value = sem_value + 1;
     vulkan->planes[0].components = 4;
     vulkan->planes[0].component_mapping[0] = 0;
     vulkan->planes[0].component_mapping[1] = 1;
     vulkan->planes[0].component_mapping[2] = 2;
     vulkan->planes[0].component_mapping[3] = 3;
-    vulkan->module_data = owner;
+    /* The texture from the pool, held for this other Vulkan user. Its VkImage
+       stays alive until the image is destroyed. */
+    vulkan->module_data = tex;
 
     *format = mlt_image_vulkan;
     *image = (uint8_t *) vulkan;
@@ -476,7 +464,7 @@ int placebo_frame_publish_tex(mlt_frame frame,
     *image = (uint8_t *) tex;
     if (placebo_frame_set_tex(frame, tex)) {
         placebo_render_lock();
-        pl_tex_destroy(gpu, &tex);
+        placebo_tex_recycle(gpu, &tex);
         placebo_render_unlock();
         *image = NULL;
         return 1;

@@ -20,6 +20,8 @@
 #include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
+#include "render_cache.h"
+#include "tex_pool.h"
 #include "vulkan_frame.h"
 
 #include <framework/mlt_filter.h>
@@ -177,8 +179,7 @@ static int convert_trc(mlt_filter filter,
                        mlt_image_format requested)
 {
     pl_gpu gpu = placebo_gpu_get();
-    pl_renderer renderer = placebo_renderer_get();
-    if (!gpu || !renderer || *width < 1 || *height < 1)
+    if (!gpu || *width < 1 || *height < 1)
         return 1;
 
     int is_tex = placebo_frame_is_tex(frame, *format);
@@ -246,13 +247,7 @@ static int convert_trc(mlt_filter filter,
         return 1;
     }
 
-    pl_tex dst_tex = pl_tex_create(gpu,
-                                   pl_tex_params(.w = *width,
-                                                 .h = *height,
-                                                 .format = dst_fmt,
-                                                 .sampleable = true,
-                                                 .renderable = true,
-                                                 .host_readable = true, ));
+    pl_tex dst_tex = placebo_tex_acquire_target(gpu, *width, *height, dst_fmt);
     if (!dst_tex) {
         mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to create dest texture\n");
         if (mapped_vulkan)
@@ -306,11 +301,11 @@ static int convert_trc(mlt_filter filter,
     params.skip_target_clearing = true;
 #endif
     params.background_transparency = 1.f;
-    if (!pl_render_image(renderer, src, &pl_dst, &params)) {
+    if (!placebo_render(PLACEBO_SITE_COLOR_TRANSFORM, src, &pl_dst, &params)) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "pl_render_image failed\n");
         if (mapped_vulkan)
             placebo_unmap_vulkan_image(gpu, &mapped);
-        pl_tex_destroy(gpu, &dst_tex);
+        placebo_tex_recycle(gpu, &dst_tex);
         placebo_render_unlock();
         return 1;
     }

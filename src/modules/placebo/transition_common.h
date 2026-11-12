@@ -23,6 +23,8 @@
 #include <framework/mlt_frame.h>
 #include <libplacebo/renderer.h>
 
+#include "render_cache.h"
+
 /**
  * UV coordinates for the four vertices of a full-frame quad.
  */
@@ -43,12 +45,12 @@ struct pl_frame placebo_transition_texture_frame(pl_tex texture, const struct pl
  * Render a source frame into a target frame without compositing partial alpha.
  *
  * \pre The caller holds placebo_render_lock().
- * \param renderer the libplacebo renderer
+ * \param site which kind of call this is, to select a renderer
  * \param source the input frame
  * \param target the output frame
  * \return 0 on success; nonzero if rendering fails
  */
-int placebo_transition_render(pl_renderer renderer,
+int placebo_transition_render(enum placebo_renderer_site site,
                               const struct pl_frame *source,
                               const struct pl_frame *target);
 
@@ -58,11 +60,11 @@ int placebo_transition_render(pl_renderer renderer,
  *
  * A matching placebo texture may be returned directly; otherwise, a new
  * texture is allocated and rendered into. The caller must hold
- * placebo_render_lock() and destroy the returned texture when \p owned is set.
+ * placebo_render_lock() and give the returned texture back with
+ * placebo_tex_recycle() when \p owned is set.
  *
  * \pre The caller holds placebo_render_lock().
  * \param gpu the libplacebo GPU
- * \param renderer the libplacebo renderer
  * \param frame the MLT frame that owns \p image
  * \param image the image payload returned for \p frame
  * \param format the format of \p image
@@ -76,7 +78,6 @@ int placebo_transition_render(pl_renderer renderer,
  * \return 0 on success; nonzero if the input is unsupported or normalization fails
  */
 int placebo_transition_normalize(pl_gpu gpu,
-                                 pl_renderer renderer,
                                  mlt_frame frame,
                                  const uint8_t *image,
                                  mlt_image_format format,

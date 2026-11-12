@@ -22,6 +22,8 @@
 
 #include "color_space.h"
 #include "gpu_context.h"
+#include "render_cache.h"
+#include "tex_pool.h"
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
@@ -113,21 +115,21 @@ static int upload_tex(mlt_frame frame,
     mlt_image_format src_format = *format;
 
     placebo_render_lock();
-    tex = pl_tex_create(gpu,
-                        pl_tex_params(.w = width,
-                                      .h = height,
-                                      .format = rgba_fmt,
-                                      .sampleable = true,
-                                      .renderable = true,
-                                      .host_readable = true,
-                                      .host_writable = true, ));
+    tex = placebo_tex_acquire(gpu,
+                              pl_tex_params(.w = width,
+                                            .h = height,
+                                            .format = rgba_fmt,
+                                            .sampleable = true,
+                                            .renderable = true,
+                                            .host_readable = true,
+                                            .host_writable = true, ));
     if (!tex) {
         placebo_render_unlock();
         return 1;
     }
     if (!pl_tex_upload(gpu,
                        pl_tex_transfer_params(.tex = tex, .row_pitch = stride, .ptr = *image, ))) {
-        pl_tex_destroy(gpu, &tex);
+        placebo_tex_recycle(gpu, &tex);
         placebo_render_unlock();
         return 1;
     }
@@ -138,7 +140,7 @@ static int upload_tex(mlt_frame frame,
     *image = (uint8_t *) tex;
     if (placebo_frame_set_tex(frame, tex)) {
         placebo_render_lock();
-        pl_tex_destroy(gpu, &tex);
+        placebo_tex_recycle(gpu, &tex);
         placebo_render_unlock();
         *image = NULL;
         return 1;
@@ -151,12 +153,11 @@ static int upload_tex(mlt_frame frame,
 static int render_to_format(
     mlt_frame frame, pl_gpu gpu, pl_tex src, pl_fmt dst_fmt, int width, int height, pl_tex *out)
 {
-    pl_renderer renderer = placebo_renderer_get();
     const char *trc_name = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "color_trc");
     mlt_color_trc trc = trc_name ? mlt_image_color_trc_id(trc_name) : mlt_color_trc_none;
     enum pl_color_transfer transfer = placebo_transfer_from_mlt(trc);
     pl_fmt src_fmt = src ? src->params.format : NULL;
-    if (!dst_fmt || !renderer || !src)
+    if (!dst_fmt || !src)
         return 1;
     /* Unorm bit-depth changes have no curve to apply. A float texture with
        no transfer is linear light, and guessing sRGB would encode it. */
@@ -168,13 +169,7 @@ static int render_to_format(
 
     struct pl_color_space color = placebo_color_space_for_trc(frame, transfer);
     placebo_render_lock();
-    pl_tex dst = pl_tex_create(gpu,
-                               pl_tex_params(.w = width,
-                                             .h = height,
-                                             .format = dst_fmt,
-                                             .sampleable = true,
-                                             .renderable = true,
-                                             .host_readable = true, ));
+    pl_tex dst = placebo_tex_acquire_target(gpu, width, height, dst_fmt);
     if (!dst) {
         placebo_render_unlock();
         return 1;
@@ -201,9 +196,9 @@ static int render_to_format(
     params.skip_target_clearing = true;
 #endif
     params.background_transparency = 1.f;
-    int ok = pl_render_image(renderer, &pl_src, &pl_dst, &params);
+    int ok = placebo_render(PLACEBO_SITE_CONVERT, &pl_src, &pl_dst, &params);
     if (!ok)
-        pl_tex_destroy(gpu, &dst);
+        placebo_tex_recycle(gpu, &dst);
     placebo_render_unlock();
     if (!ok)
         return 1;
@@ -269,7 +264,7 @@ static int download_rgba(mlt_frame frame,
     if (!output) {
         if (converted) {
             placebo_render_lock();
-            pl_tex_destroy(gpu, &converted);
+            placebo_tex_recycle(gpu, &converted);
             placebo_render_unlock();
         }
         return 1;
@@ -282,7 +277,7 @@ static int download_rgba(mlt_frame frame,
                                                                  * tex->params.format->texel_size,
                                                     .ptr = output, ));
     if (converted)
-        pl_tex_destroy(gpu, &converted);
+        placebo_tex_recycle(gpu, &converted);
     placebo_render_unlock();
     if (!ok) {
         mlt_pool_release(output);

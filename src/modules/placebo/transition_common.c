@@ -21,6 +21,7 @@
 
 #include "color_space.h"
 #include "gpu_context.h"
+#include "tex_pool.h"
 #include "vulkan_frame.h"
 
 #include <libplacebo/config.h>
@@ -48,7 +49,7 @@ struct pl_frame placebo_transition_texture_frame(pl_tex texture, const struct pl
     };
 }
 
-int placebo_transition_render(pl_renderer renderer,
+int placebo_transition_render(enum placebo_renderer_site site,
                               const struct pl_frame *source,
                               const struct pl_frame *target)
 {
@@ -63,7 +64,7 @@ int placebo_transition_render(pl_renderer renderer,
     params.skip_target_clearing = true;
 #endif
     params.background_transparency = 1.f;
-    return pl_render_image(renderer, source, target, &params) ? 0 : 1;
+    return placebo_render(site, source, target, &params) ? 0 : 1;
 };
 
 /**
@@ -90,7 +91,6 @@ static int same_texture(pl_tex tex,
 }
 
 int placebo_transition_normalize(pl_gpu gpu,
-                                 pl_renderer renderer,
                                  mlt_frame frame,
                                  const uint8_t *image,
                                  mlt_image_format format,
@@ -134,13 +134,7 @@ int placebo_transition_normalize(pl_gpu gpu,
         mapped_vulkan = 1;
     }
 
-    temp = pl_tex_create(gpu,
-                         pl_tex_params(.w = out_w,
-                                       .h = out_h,
-                                       .format = dst_fmt,
-                                       .sampleable = true,
-                                       .renderable = true,
-                                       .storable = true, ));
+    temp = placebo_tex_acquire_work(gpu, out_w, out_h, dst_fmt, PLACEBO_TEX_STORABLE);
     if (!temp) {
         if (mapped_vulkan)
             placebo_unmap_vulkan_image(gpu, &mapped);
@@ -148,11 +142,11 @@ int placebo_transition_normalize(pl_gpu gpu,
     }
 
     dst = placebo_transition_texture_frame(temp, dst_color);
-    error = placebo_transition_render(renderer, mapped_vulkan ? &mapped : &src, &dst);
+    error = placebo_transition_render(PLACEBO_SITE_TRANSITION, mapped_vulkan ? &mapped : &src, &dst);
     if (mapped_vulkan)
         placebo_unmap_vulkan_image(gpu, &mapped);
     if (error) {
-        pl_tex_destroy(gpu, &temp);
+        placebo_tex_recycle(gpu, &temp);
         return 1;
     }
     *out_tex = temp;

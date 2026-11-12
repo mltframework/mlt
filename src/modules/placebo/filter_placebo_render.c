@@ -21,6 +21,8 @@
 #include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
+#include "render_cache.h"
+#include "tex_pool.h"
 #include "vulkan_frame.h"
 
 #include <framework/mlt_filter.h>
@@ -86,10 +88,7 @@ static const struct pl_tone_map_function *lookup_tonemap(const char *name)
     return &pl_tone_map_auto;
 }
 
-static int render_frame(mlt_filter filter,
-                        pl_renderer renderer,
-                        const struct pl_frame *src,
-                        struct pl_frame *dst)
+static int render_frame(mlt_filter filter, const struct pl_frame *src, struct pl_frame *dst)
 {
     mlt_properties filter_props = MLT_FILTER_PROPERTIES(filter);
     const char *preset = mlt_properties_get(filter_props, "preset");
@@ -130,7 +129,7 @@ static int render_frame(mlt_filter filter,
     color_map_params.tone_mapping_function = lookup_tonemap(tonemap_name);
     params.color_map_params = &color_map_params;
 
-    return pl_render_image(renderer, src, dst, &params) ? 0 : 1;
+    return placebo_render(PLACEBO_SITE_RENDER, src, dst, &params) ? 0 : 1;
 }
 
 static int filter_get_image(mlt_frame frame,
@@ -143,8 +142,7 @@ static int filter_get_image(mlt_frame frame,
     mlt_filter filter = mlt_frame_pop_service(frame);
 
     pl_gpu gpu = placebo_gpu_get();
-    pl_renderer renderer = placebo_renderer_get();
-    if (!gpu || !renderer) {
+    if (!gpu) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "GPU not available, passing frame through\n");
         return mlt_frame_get_image(frame, image, format, width, height, writable);
     }
@@ -191,13 +189,7 @@ static int filter_get_image(mlt_frame frame,
     /* sampleable is needed so a subsequent placebo filter can bind this
      * texture as its source without re-uploading from RAM. */
     placebo_render_lock();
-    pl_tex dst_tex = pl_tex_create(gpu,
-                                   pl_tex_params(.w = w,
-                                                 .h = h,
-                                                 .format = dst_fmt,
-                                                 .sampleable = true,
-                                                 .renderable = true,
-                                                 .host_readable = true, ));
+    pl_tex dst_tex = placebo_tex_acquire_target(gpu, w, h, dst_fmt);
     if (!dst_tex) {
         mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to create dest texture\n");
         placebo_render_unlock();
@@ -211,7 +203,7 @@ static int filter_get_image(mlt_frame frame,
     if (is_vulkan) {
         if (!placebo_map_vulkan_image(gpu, *image, &mapped)) {
             mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to map Vulkan frame\n");
-            pl_tex_destroy(gpu, &dst_tex);
+            placebo_tex_recycle(gpu, &dst_tex);
             placebo_render_unlock();
             return 1;
         }
@@ -243,11 +235,11 @@ static int filter_get_image(mlt_frame frame,
         .color = dst_color,
     };
 
-    if (render_frame(filter, renderer, src, &pl_dst)) {
+    if (render_frame(filter, src, &pl_dst)) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "pl_render_image failed\n");
         if (mapped_vulkan)
             placebo_unmap_vulkan_image(gpu, &mapped);
-        pl_tex_destroy(gpu, &dst_tex);
+        placebo_tex_recycle(gpu, &dst_tex);
         placebo_render_unlock();
         return 1;
     }
