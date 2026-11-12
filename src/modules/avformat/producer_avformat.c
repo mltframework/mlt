@@ -3778,8 +3778,15 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
                                     ret);
                 }
             }
-            if (self->hwaccel.device_ctx)
+            if (self->hwaccel.device_ctx) {
                 codec_context->hw_device_ctx = av_buffer_ref(self->hwaccel.device_ctx);
+                /* FFmpeg's frame-threaded Vulkan decode intermittently hands over
+                   frames whose lower part was never written. The decode runs on one
+                   hardware queue, so extra frame threads gained nothing measurable
+                   (13 fps with 1 thread and with the default). */
+                if (self->hwaccel.device_type == AV_HWDEVICE_TYPE_VULKAN)
+                    codec_context->thread_count = 1;
+            }
         } else {
             mlt_log_warning(MLT_PRODUCER_SERVICE(self->parent), "failed to find hw_pix_fmt\n");
         }
