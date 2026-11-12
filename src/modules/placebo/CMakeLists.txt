@@ -21,6 +21,9 @@ add_library(mltplacebo MODULE
   transition_placebo_luma_mix.c
   transition_common.c transition_common.h
   gpu_context.c gpu_context.h
+  idle_trim.c idle_trim.h
+  render_cache.c render_cache.h
+  tex_pool.c tex_pool.h
   vulkan_frame.c vulkan_frame.h
 )
 

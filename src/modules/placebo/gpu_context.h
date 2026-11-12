@@ -36,10 +36,17 @@
    Returns NULL on failure. Thread-safe. */
 pl_gpu placebo_gpu_get(void);
 
+/* The pl_gpu if one is running, or NULL. Unlike placebo_gpu_get, never starts
+   one. Thread-safe. */
+pl_gpu placebo_gpu_peek(void);
+
 /* Return the singleton pl_dispatch (for shader filter). Thread-safe. */
 pl_dispatch placebo_dispatch_get(void);
 
-/* Return the singleton pl_renderer (for render filter). Thread-safe. */
+/* Return the singleton pl_renderer. Only for users that keep one geometry for a
+   long time, such as the display consumer. Filters and transitions go through
+   placebo_render() (render_cache.h) instead, because one renderer shared by
+   calls of different sizes reallocates its buffers on every call. */
 pl_renderer placebo_renderer_get(void);
 
 /* Lock/unlock the render mutex. pl_renderer and pl_dispatch are NOT
@@ -49,6 +56,9 @@ void placebo_render_lock(void);
 void placebo_render_unlock(void);
 
 /* Tear down all GPU resources. Registered for cleanup on first init. */
+/* The release must not overlap rendering: a render thread that creates a cached
+   object during it restarts the idle thread, which then outlives the GPU until
+   the next release. */
 void placebo_gpu_release(void);
 
 /* Create the singleton as a presentable Vulkan device and publish it.

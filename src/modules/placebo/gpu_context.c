@@ -20,6 +20,10 @@
 
 #include "gpu_context.h"
 
+#include "idle_trim.h"
+#include "render_cache.h"
+#include "tex_pool.h"
+
 #include <string.h>
 
 #include <framework/mlt_factory.h>
@@ -843,16 +847,23 @@ void placebo_render_unlock(void)
     RENDER_UNLOCK();
 }
 
+/* A frame destroyed after the GPU was released must not bring it back. */
+pl_gpu placebo_gpu_peek(void)
+{
+    LOCK();
+    pl_gpu gpu = s_initialized ? s_gpu : NULL;
+    UNLOCK();
+    return gpu;
+}
+
 static void placebo_tex_destroy(void *ptr)
 {
     pl_tex tex = (pl_tex) ptr;
     if (!tex)
         return;
-    pl_gpu gpu = placebo_gpu_get();
-    if (!gpu)
-        return;
+    pl_gpu gpu = placebo_gpu_peek();
     placebo_render_lock();
-    pl_tex_destroy(gpu, &tex);
+    placebo_tex_recycle(gpu, &tex);
     placebo_render_unlock();
 }
 
@@ -1013,15 +1024,24 @@ static void release_gpu_locked(void)
 
 void placebo_gpu_release(void)
 {
+    /* The pool and the renderer cache belong to the render lock. Take it before
+       s_mutex, the order render threads use, so none of them is mid-call. The
+       idle thread needs the render lock, so it is stopped before. */
+    placebo_idle_trim_stop();
+    RENDER_LOCK();
     LOCK();
     if (!s_initialized) {
         UNLOCK();
+        RENDER_UNLOCK();
         return;
     }
 
     s_gpu_shutdown = 1; /* block any reinit triggered by in-flight tex destructors */
     save_cache();
+    placebo_tex_pool_drain(s_gpu);
+    placebo_render_cache_drain();
     release_gpu_locked();
 
     UNLOCK();
+    RENDER_UNLOCK();
 }
