@@ -5,18 +5,20 @@
 #include <iostream>
 #include <stdexcept>
 
-static uint32_t findMemoryType(VkPhysicalDevice physicalDevice,
-                               uint32_t typeFilter,
-                               VkMemoryPropertyFlags properties,
-                               bool allowFallback = false,
-                               VkMemoryPropertyFlags fallbackProperties = 0)
+static bool findMemoryType(VkPhysicalDevice physicalDevice,
+                           uint32_t typeFilter,
+                           VkMemoryPropertyFlags properties,
+                           uint32_t &outIndex,
+                           bool allowFallback = false,
+                           VkMemoryPropertyFlags fallbackProperties = 0)
 {
     VkPhysicalDeviceMemoryProperties memProperties;
     vkGetPhysicalDeviceMemoryProperties(physicalDevice, &memProperties);
     for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
         if ((typeFilter & (1 << i))
             && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
-            return i;
+            outIndex = i;
+            return true;
         }
     }
     if (allowFallback) {
@@ -24,11 +26,12 @@ static uint32_t findMemoryType(VkPhysicalDevice physicalDevice,
             if ((typeFilter & (1 << i))
                 && (memProperties.memoryTypes[i].propertyFlags & fallbackProperties)
                        == fallbackProperties) {
-                return i;
+                outIndex = i;
+                return true;
             }
         }
     }
-    throw std::runtime_error("failed to find suitable memory type!");
+    return false;
 }
 
 OsvVulkanStitcher::OsvVulkanStitcher() {}
@@ -392,96 +395,122 @@ bool OsvVulkanStitcher::ensureResources(uint32_t sensor_w,
                          VkBuffer &buf,
                          VkDeviceMemory &mem,
                          bool allowFallback = false,
-                         VkMemoryPropertyFlags fallbackProps = 0) {
+                         VkMemoryPropertyFlags fallbackProps = 0) -> bool {
         VkBufferCreateInfo bInfo{};
         bInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         bInfo.size = size;
         bInfo.usage = usage;
         bInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        vkCreateBuffer(device_, &bInfo, nullptr, &buf);
+        if (vkCreateBuffer(device_, &bInfo, nullptr, &buf) != VK_SUCCESS)
+            return false;
 
         VkMemoryRequirements req;
         vkGetBufferMemoryRequirements(device_, buf, &req);
         VkMemoryAllocateInfo allocInfo{};
         allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         allocInfo.allocationSize = req.size;
-        allocInfo.memoryTypeIndex = findMemoryType(physical_device_,
-                                                   req.memoryTypeBits,
-                                                   props,
-                                                   allowFallback,
-                                                   fallbackProps);
-        vkAllocateMemory(device_, &allocInfo, nullptr, &mem);
-        vkBindBufferMemory(device_, buf, mem, 0);
+        if (!findMemoryType(physical_device_,
+                            req.memoryTypeBits,
+                            props,
+                            allocInfo.memoryTypeIndex,
+                            allowFallback,
+                            fallbackProps))
+            return false;
+        if (vkAllocateMemory(device_, &allocInfo, nullptr, &mem) != VK_SUCCESS)
+            return false;
+        return vkBindBufferMemory(device_, buf, mem, 0) == VK_SUCCESS;
     };
 
-    createBuf(inBytes,
-              VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-              stageInMaster_,
-              stageInMasterMem_);
-    createBuf(inBytes,
-              VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
-              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-              stageInSlave_,
-              stageInSlaveMem_);
+    if (!createBuf(inBytes,
+                   VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                   stageInMaster_,
+                   stageInMasterMem_)) {
+        freeResources();
+        return false;
+    }
+    if (!createBuf(inBytes,
+                   VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+                   stageInSlave_,
+                   stageInSlaveMem_)) {
+        freeResources();
+        return false;
+    }
     // Prefer HOST_CACHED memory for GPU->CPU readback to avoid 45ms uncached write-combining read stalls on Intel/AMD GPUs
-    createBuf(outBytes,
-              VK_BUFFER_USAGE_TRANSFER_DST_BIT,
-              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
-              stageOut_,
-              stageOutMem_,
-              true,
-              VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    if (!createBuf(outBytes,
+                   VK_BUFFER_USAGE_TRANSFER_DST_BIT,
+                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT,
+                   stageOut_,
+                   stageOutMem_,
+                   true,
+                   VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) {
+        freeResources();
+        return false;
+    }
 
-    vkMapMemory(device_, stageInMasterMem_, 0, inBytes, 0, &mappedInMaster_);
-    vkMapMemory(device_, stageInSlaveMem_, 0, inBytes, 0, &mappedInSlave_);
-    vkMapMemory(device_, stageOutMem_, 0, VK_WHOLE_SIZE, 0, &mappedOut_);
+    if (vkMapMemory(device_, stageInMasterMem_, 0, inBytes, 0, &mappedInMaster_) != VK_SUCCESS
+        || vkMapMemory(device_, stageInSlaveMem_, 0, inBytes, 0, &mappedInSlave_) != VK_SUCCESS
+        || vkMapMemory(device_, stageOutMem_, 0, VK_WHOLE_SIZE, 0, &mappedOut_) != VK_SUCCESS) {
+        freeResources();
+        return false;
+    }
 
-    auto createImg =
-        [&](uint32_t w, uint32_t h, VkImageUsageFlags usage, VkImage &img, VkDeviceMemory &mem) {
-            VkImageCreateInfo iInfo{};
-            iInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-            iInfo.imageType = VK_IMAGE_TYPE_2D;
-            iInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
-            iInfo.extent = {w, h, 1};
-            iInfo.mipLevels = 1;
-            iInfo.arrayLayers = 1;
-            iInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-            iInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-            iInfo.usage = usage;
-            iInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-            iInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-            vkCreateImage(device_, &iInfo, nullptr, &img);
+    auto createImg = [&](uint32_t w,
+                         uint32_t h,
+                         VkImageUsageFlags usage,
+                         VkImage &img,
+                         VkDeviceMemory &mem) -> bool {
+        VkImageCreateInfo iInfo{};
+        iInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        iInfo.imageType = VK_IMAGE_TYPE_2D;
+        iInfo.format = VK_FORMAT_R8G8B8A8_UNORM;
+        iInfo.extent = {w, h, 1};
+        iInfo.mipLevels = 1;
+        iInfo.arrayLayers = 1;
+        iInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+        iInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+        iInfo.usage = usage;
+        iInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+        iInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        if (vkCreateImage(device_, &iInfo, nullptr, &img) != VK_SUCCESS)
+            return false;
 
-            VkMemoryRequirements req;
-            vkGetImageMemoryRequirements(device_, img, &req);
-            VkMemoryAllocateInfo allocInfo{};
-            allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-            allocInfo.allocationSize = req.size;
-            allocInfo.memoryTypeIndex = findMemoryType(physical_device_,
-                                                       req.memoryTypeBits,
-                                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-            vkAllocateMemory(device_, &allocInfo, nullptr, &mem);
-            vkBindImageMemory(device_, img, mem, 0);
-        };
+        VkMemoryRequirements req;
+        vkGetImageMemoryRequirements(device_, img, &req);
+        VkMemoryAllocateInfo allocInfo{};
+        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        allocInfo.allocationSize = req.size;
+        if (!findMemoryType(physical_device_,
+                            req.memoryTypeBits,
+                            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+                            allocInfo.memoryTypeIndex))
+            return false;
+        if (vkAllocateMemory(device_, &allocInfo, nullptr, &mem) != VK_SUCCESS)
+            return false;
+        return vkBindImageMemory(device_, img, mem, 0) == VK_SUCCESS;
+    };
 
-    createImg(sensor_w,
-              sensor_h,
-              VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-              imgMaster_,
-              memMaster_);
-    createImg(sensor_w,
-              sensor_h,
-              VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-              imgSlave_,
-              memSlave_);
-    createImg(out_w,
-              out_h,
-              VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
-              imgOut_,
-              memOut_);
+    if (!createImg(sensor_w,
+                   sensor_h,
+                   VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                   imgMaster_,
+                   memMaster_)
+        || !createImg(sensor_w,
+                      sensor_h,
+                      VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
+                      imgSlave_,
+                      memSlave_)
+        || !createImg(out_w,
+                      out_h,
+                      VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_SRC_BIT,
+                      imgOut_,
+                      memOut_)) {
+        freeResources();
+        return false;
+    }
 
-    auto createView = [&](VkImage img, VkImageView &view) {
+    auto createView = [&](VkImage img, VkImageView &view) -> bool {
         VkImageViewCreateInfo vInfo{};
         vInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
         vInfo.image = img;
@@ -490,12 +519,14 @@ bool OsvVulkanStitcher::ensureResources(uint32_t sensor_w,
         vInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         vInfo.subresourceRange.levelCount = 1;
         vInfo.subresourceRange.layerCount = 1;
-        vkCreateImageView(device_, &vInfo, nullptr, &view);
+        return vkCreateImageView(device_, &vInfo, nullptr, &view) == VK_SUCCESS;
     };
 
-    createView(imgMaster_, viewMaster_);
-    createView(imgSlave_, viewSlave_);
-    createView(imgOut_, viewOut_);
+    if (!createView(imgMaster_, viewMaster_) || !createView(imgSlave_, viewSlave_)
+        || !createView(imgOut_, viewOut_)) {
+        freeResources();
+        return false;
+    }
 
     VkSamplerCreateInfo sInfo{};
     sInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
@@ -504,7 +535,10 @@ bool OsvVulkanStitcher::ensureResources(uint32_t sensor_w,
     sInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     sInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
     sInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    vkCreateSampler(device_, &sInfo, nullptr, &sampler_);
+    if (vkCreateSampler(device_, &sInfo, nullptr, &sampler_) != VK_SUCCESS) {
+        freeResources();
+        return false;
+    }
 
     VkDescriptorPoolSize poolSizes[2]{};
     poolSizes[0].type = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
@@ -517,14 +551,20 @@ bool OsvVulkanStitcher::ensureResources(uint32_t sensor_w,
     poolInfo.maxSets = 1;
     poolInfo.poolSizeCount = 2;
     poolInfo.pPoolSizes = poolSizes;
-    vkCreateDescriptorPool(device_, &poolInfo, nullptr, &descPool_);
+    if (vkCreateDescriptorPool(device_, &poolInfo, nullptr, &descPool_) != VK_SUCCESS) {
+        freeResources();
+        return false;
+    }
 
     VkDescriptorSetAllocateInfo setAllocInfo{};
     setAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
     setAllocInfo.descriptorPool = descPool_;
     setAllocInfo.descriptorSetCount = 1;
     setAllocInfo.pSetLayouts = &desc_layout_;
-    vkAllocateDescriptorSets(device_, &setAllocInfo, &descSet_);
+    if (vkAllocateDescriptorSets(device_, &setAllocInfo, &descSet_) != VK_SUCCESS) {
+        freeResources();
+        return false;
+    }
 
     VkDescriptorImageInfo outInfo{};
     outInfo.imageView = viewOut_;
@@ -569,11 +609,17 @@ bool OsvVulkanStitcher::ensureResources(uint32_t sensor_w,
     cmdAllocInfo.commandPool = command_pool_;
     cmdAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
     cmdAllocInfo.commandBufferCount = 1;
-    vkAllocateCommandBuffers(device_, &cmdAllocInfo, &cmd_);
+    if (vkAllocateCommandBuffers(device_, &cmdAllocInfo, &cmd_) != VK_SUCCESS) {
+        freeResources();
+        return false;
+    }
 
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    vkCreateFence(device_, &fenceInfo, nullptr, &fence_);
+    if (vkCreateFence(device_, &fenceInfo, nullptr, &fence_) != VK_SUCCESS) {
+        freeResources();
+        return false;
+    }
 
     return true;
 }
@@ -817,8 +863,15 @@ bool OsvVulkanStitcher::executeStitchPass(uint32_t sensor_w,
     submitInfo.commandBufferCount = 1;
     submitInfo.pCommandBuffers = &cmd_;
 
-    vkQueueSubmit(compute_queue_, 1, &submitInfo, fence_);
-    vkWaitForFences(device_, 1, &fence_, VK_TRUE, UINT64_MAX);
+    VkResult submitRes = vkQueueSubmit(compute_queue_, 1, &submitInfo, fence_);
+    if (submitRes != VK_SUCCESS) {
+        return false;
+    }
+
+    VkResult waitRes = vkWaitForFences(device_, 1, &fence_, VK_TRUE, 5000000000ULL);
+    if (waitRes != VK_SUCCESS) {
+        return false;
+    }
 
     VkMappedMemoryRange mappedRange{};
     mappedRange.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;

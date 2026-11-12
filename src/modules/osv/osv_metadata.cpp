@@ -16,14 +16,21 @@ uint64_t readVarint(const uint8_t *&ptr, const uint8_t *end)
 {
     uint64_t result = 0;
     int shift = 0;
-    while (ptr < end) {
+    int bytes = 0;
+    while (ptr < end && bytes < 10) {
         uint8_t byte = *ptr++;
+        bytes++;
+        if (shift == 63 && (byte & 0x7E) != 0) {
+            ptr = end;
+            return 0;
+        }
         result |= static_cast<uint64_t>(byte & 0x7F) << shift;
         if ((byte & 0x80) == 0)
-            break;
+            return result;
         shift += 7;
     }
-    return result;
+    ptr = end;
+    return 0;
 }
 
 float readFloat(const uint8_t *&ptr, const uint8_t *end)
@@ -47,6 +54,9 @@ void parseLensMessage(const uint8_t *data, size_t size, LensCalibration &lens)
         uint32_t wire_type = tag & 0x7;
 
         if (wire_type == 5) { // 32-bit float
+            if (end - ptr < 4) {
+                break;
+            }
             float val = readFloat(ptr, end);
             switch (field_num) {
             case 1:
@@ -78,6 +88,9 @@ void parseLensMessage(const uint8_t *data, size_t size, LensCalibration &lens)
             }
         } else if (wire_type == 2) { // length-delimited
             uint64_t len = readVarint(ptr, end);
+            if (len > static_cast<size_t>(end - ptr)) {
+                break;
+            }
             if (field_num == 28 && len >= 16) { // orientation quaternion submessage
                 const uint8_t *sub_ptr = ptr;
                 const uint8_t *sub_end = ptr + len;
@@ -86,12 +99,25 @@ void parseLensMessage(const uint8_t *data, size_t size, LensCalibration &lens)
                     uint64_t sub_tag = readVarint(sub_ptr, sub_end);
                     uint32_t sub_wire = sub_tag & 0x7;
                     if (sub_wire == 5) {
+                        if (sub_end - sub_ptr < 4) {
+                            break;
+                        }
                         lens.quat[q_idx++] = readFloat(sub_ptr, sub_end);
                     } else if (sub_wire == 0) {
                         readVarint(sub_ptr, sub_end);
                     } else if (sub_wire == 2) {
                         uint64_t l = readVarint(sub_ptr, sub_end);
+                        if (l > static_cast<size_t>(sub_end - sub_ptr)) {
+                            break;
+                        }
                         sub_ptr += l;
+                    } else if (sub_wire == 1) {
+                        if (sub_end - sub_ptr < 8) {
+                            break;
+                        }
+                        sub_ptr += 8;
+                    } else {
+                        break;
                     }
                 }
             }
@@ -99,6 +125,9 @@ void parseLensMessage(const uint8_t *data, size_t size, LensCalibration &lens)
         } else if (wire_type == 0) {
             readVarint(ptr, end);
         } else if (wire_type == 1) {
+            if (end - ptr < 8) {
+                break;
+            }
             ptr += 8;
         } else {
             break;
@@ -219,15 +248,20 @@ void parseFrameMeta(const uint8_t *data, size_t size, OsvMetadata &out_meta)
         if (wt != 2) {
             if (wt == 0)
                 readVarint(ptr, end);
-            else if (wt == 1)
+            else if (wt == 1) {
+                if (end - ptr < 8)
+                    break;
                 ptr += 8;
-            else if (wt == 5)
+            } else if (wt == 5) {
+                if (end - ptr < 4)
+                    break;
                 ptr += 4;
+            }
             continue;
         }
 
         uint64_t len = readVarint(ptr, end);
-        if (ptr + len > end)
+        if (len > static_cast<size_t>(end - ptr))
             break;
 
         if (fn == 1) { // FrameMetaHeader
@@ -241,12 +275,18 @@ void parseFrameMeta(const uint8_t *data, size_t size, OsvMetadata &out_meta)
                     uint64_t v = readVarint(h_ptr, h_end);
                     if (hfn == 2)
                         frame.timestamp_us = static_cast<int64_t>(v);
-                } else if (hwt == 1)
+                } else if (hwt == 1) {
+                    if (h_end - h_ptr < 8)
+                        break;
                     h_ptr += 8;
-                else if (hwt == 5)
+                } else if (hwt == 5) {
+                    if (h_end - h_ptr < 4)
+                        break;
                     h_ptr += 4;
-                else if (hwt == 2) {
+                } else if (hwt == 2) {
                     uint64_t hl = readVarint(h_ptr, h_end);
+                    if (hl > static_cast<size_t>(h_end - h_ptr))
+                        break;
                     h_ptr += hl;
                 }
             }
@@ -259,6 +299,8 @@ void parseFrameMeta(const uint8_t *data, size_t size, OsvMetadata &out_meta)
                 uint32_t cwt = ct & 0x7;
                 if (cwt == 2) {
                     uint64_t cl = readVarint(c_ptr, c_end);
+                    if (cl > static_cast<size_t>(c_end - c_ptr))
+                        break;
                     if (cfn == 9) { // camera_attitude (Quaternion)
                         const uint8_t *q_ptr = c_ptr;
                         const uint8_t *q_end = c_ptr + cl;
@@ -268,15 +310,21 @@ void parseFrameMeta(const uint8_t *data, size_t size, OsvMetadata &out_meta)
                             uint32_t qfn = qt >> 3;
                             uint32_t qwt = qt & 0x7;
                             if (qwt == 5) {
+                                if (q_end - q_ptr < 4)
+                                    break;
                                 float val = readFloat(q_ptr, q_end);
                                 if (qfn >= 1 && qfn <= 4)
                                     f[qfn - 1] = val;
                             } else if (qwt == 0)
                                 readVarint(q_ptr, q_end);
-                            else if (qwt == 1)
+                            else if (qwt == 1) {
+                                if (q_end - q_ptr < 8)
+                                    break;
                                 q_ptr += 8;
-                            else if (qwt == 2) {
+                            } else if (qwt == 2) {
                                 uint64_t ql = readVarint(q_ptr, q_end);
+                                if (ql > static_cast<size_t>(q_end - q_ptr))
+                                    break;
                                 q_ptr += ql;
                             }
                         }
@@ -309,10 +357,15 @@ void parseFrameMeta(const uint8_t *data, size_t size, OsvMetadata &out_meta)
                     c_ptr += cl;
                 } else if (cwt == 0)
                     readVarint(c_ptr, c_end);
-                else if (cwt == 1)
+                else if (cwt == 1) {
+                    if (c_end - c_ptr < 8)
+                        break;
                     c_ptr += 8;
-                else if (cwt == 5)
+                } else if (cwt == 5) {
+                    if (c_end - c_ptr < 4)
+                        break;
                     c_ptr += 4;
+                }
             }
         }
         ptr += len;
@@ -356,6 +409,7 @@ bool OsvMetadataParser::parseFromBuffer(const uint8_t *data, size_t size, OsvMet
 {
     const uint8_t *ptr = data;
     const uint8_t *end = data + size;
+    bool has_calibration = false;
 
     while (ptr < end) {
         uint64_t tag = readVarint(ptr, end);
@@ -365,15 +419,20 @@ bool OsvMetadataParser::parseFromBuffer(const uint8_t *data, size_t size, OsvMet
         if (wire_type != 2) {
             if (wire_type == 0)
                 readVarint(ptr, end);
-            else if (wire_type == 1)
+            else if (wire_type == 1) {
+                if (end - ptr < 8)
+                    break;
                 ptr += 8;
-            else if (wire_type == 5)
+            } else if (wire_type == 5) {
+                if (end - ptr < 4)
+                    break;
                 ptr += 4;
+            }
             continue;
         }
 
         uint64_t len = readVarint(ptr, end);
-        if (ptr + len > end)
+        if (len > static_cast<size_t>(end - ptr))
             break;
 
         const uint8_t *msg_start = ptr;
@@ -388,6 +447,8 @@ bool OsvMetadataParser::parseFromBuffer(const uint8_t *data, size_t size, OsvMet
                 uint32_t h_wire = h_tag & 0x7;
                 if (h_wire == 2) {
                     uint64_t s_len = readVarint(h_ptr, msg_end);
+                    if (s_len > static_cast<size_t>(msg_end - h_ptr))
+                        break;
                     if (h_field == 1) {
                         // Submessage: proto name, serial, model
                         const uint8_t *sub_ptr = h_ptr;
@@ -398,6 +459,8 @@ bool OsvMetadataParser::parseFromBuffer(const uint8_t *data, size_t size, OsvMet
                             uint32_t wt = t & 0x7;
                             if (wt == 2) {
                                 uint64_t sl = readVarint(sub_ptr, sub_end);
+                                if (sl > static_cast<size_t>(sub_end - sub_ptr))
+                                    break;
                                 std::string str(reinterpret_cast<const char *>(sub_ptr), sl);
                                 if (fn == 1)
                                     out_meta.proto_name = str;
@@ -410,10 +473,15 @@ bool OsvMetadataParser::parseFromBuffer(const uint8_t *data, size_t size, OsvMet
                                 sub_ptr += sl;
                             } else if (wt == 0)
                                 readVarint(sub_ptr, sub_end);
-                            else if (wt == 1)
+                            else if (wt == 1) {
+                                if (sub_end - sub_ptr < 8)
+                                    break;
                                 sub_ptr += 8;
-                            else if (wt == 5)
+                            } else if (wt == 5) {
+                                if (sub_end - sub_ptr < 4)
+                                    break;
                                 sub_ptr += 4;
+                            }
                         }
                     }
                     h_ptr += s_len;
@@ -422,8 +490,12 @@ bool OsvMetadataParser::parseFromBuffer(const uint8_t *data, size_t size, OsvMet
                     if (h_field == 10)
                         out_meta.sample_rate_hz = static_cast<uint32_t>(val);
                 } else if (h_wire == 5) {
+                    if (msg_end - h_ptr < 4)
+                        break;
                     h_ptr += 4;
                 } else if (h_wire == 1) {
+                    if (msg_end - h_ptr < 8)
+                        break;
                     h_ptr += 8;
                 }
             }
@@ -437,6 +509,8 @@ bool OsvMetadataParser::parseFromBuffer(const uint8_t *data, size_t size, OsvMet
 
                 if (v_wire == 2) {
                     uint64_t v_len = readVarint(v_ptr, msg_end);
+                    if (v_len > static_cast<size_t>(msg_end - v_ptr))
+                        break;
                     if (v_field == 6) { // Message containing lens 1 and lens 2 calibrations
                         const uint8_t *l_ptr = v_ptr;
                         const uint8_t *l_end = v_ptr + v_len;
@@ -446,27 +520,41 @@ bool OsvMetadataParser::parseFromBuffer(const uint8_t *data, size_t size, OsvMet
                             uint32_t l_wire = l_tag & 0x7;
                             if (l_wire == 2) {
                                 uint64_t lens_len = readVarint(l_ptr, l_end);
+                                if (lens_len > static_cast<size_t>(l_end - l_ptr))
+                                    break;
                                 if (l_field == 1) {
                                     parseLensMessage(l_ptr, lens_len, out_meta.lens_front);
+                                    has_calibration = true;
                                 } else if (l_field == 2) {
                                     parseLensMessage(l_ptr, lens_len, out_meta.lens_rear);
+                                    has_calibration = true;
                                 }
                                 l_ptr += lens_len;
                             } else if (l_wire == 0)
                                 readVarint(l_ptr, l_end);
-                            else if (l_wire == 5)
+                            else if (l_wire == 5) {
+                                if (l_end - l_ptr < 4)
+                                    break;
                                 l_ptr += 4;
-                            else if (l_wire == 1)
+                            } else if (l_wire == 1) {
+                                if (l_end - l_ptr < 8)
+                                    break;
                                 l_ptr += 8;
+                            }
                         }
                     }
                     v_ptr += v_len;
                 } else if (v_wire == 0)
                     readVarint(v_ptr, msg_end);
-                else if (v_wire == 5)
+                else if (v_wire == 5) {
+                    if (msg_end - v_ptr < 4)
+                        break;
                     v_ptr += 4;
-                else if (v_wire == 1)
+                } else if (v_wire == 1) {
+                    if (msg_end - v_ptr < 8)
+                        break;
                     v_ptr += 8;
+                }
             }
         } else if (field_num == 3) {
             // FrameMeta: timestamp, attitude, imu
@@ -476,7 +564,7 @@ bool OsvMetadataParser::parseFromBuffer(const uint8_t *data, size_t size, OsvMet
         ptr += len;
     }
 
-    return !out_meta.proto_name.empty() || out_meta.lens_front.fx > 100.0f;
+    return !out_meta.proto_name.empty() || has_calibration || !out_meta.telemetry_frames.empty();
 }
 
 bool OsvMetadataParser::parseFromFile(const std::string &osv_path, OsvMetadata &out_meta)
@@ -520,6 +608,13 @@ bool OsvMetadataParser::parseFromFile(const std::string &osv_path, OsvMetadata &
         std::cerr << "No 'djmd' telemetry stream found in: " << osv_path << std::endl;
         avformat_close_input(&fmt_ctx);
         return false;
+    }
+
+    // Discard non-djmd streams to skip decoding heavy video/audio packets
+    for (unsigned int i = 0; i < fmt_ctx->nb_streams; ++i) {
+        if (static_cast<int>(i) != djmd_stream_idx) {
+            fmt_ctx->streams[i]->discard = AVDISCARD_ALL;
+        }
     }
 
     AVPacket *pkt = av_packet_alloc();

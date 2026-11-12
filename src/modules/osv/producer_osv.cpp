@@ -160,24 +160,17 @@ static bool is_render_export(mlt_producer producer)
             return false;
     }
 
-    // 3. Process detection:
-    // When Shotcut exports, it spawns 'melt' / 'melt-7' to encode the timeline.
-    // Inside the Shotcut GUI itself, it runs the interactive editor preview.
-    try {
-        std::string exe = std::filesystem::read_symlink("/proc/self/exe").filename().string();
-        if (exe.find("melt") != std::string::npos) {
-            return true;
-        }
-    } catch (...) {
-    }
-
-    // 4. Consumer service check if directly connected
+    // 3. Consumer service check if directly connected
     mlt_service cons = mlt_service_consumer(MLT_PRODUCER_SERVICE(producer));
     if (cons) {
         mlt_properties cp = MLT_SERVICE_PROPERTIES(cons);
         const char *svc = mlt_properties_get(cp, "mlt_service");
         if (svc
             && (std::strcmp(svc, "avformat") == 0 || std::strcmp(svc, "avformat-novalidate") == 0)) {
+            return true;
+        }
+        if (mlt_properties_get(cp, "real_time") != nullptr
+            && mlt_properties_get_int(cp, "real_time") <= 0) {
             return true;
         }
     }
@@ -298,11 +291,22 @@ static int producer_get_image(mlt_frame frame,
     PreviewMode preview_mode = resolve_preview_mode(producer);
 
     bool use_lrf = false;
-    if (!export_mode) {
-        if (preview_mode == PreviewMode::Proxy || preview_mode == PreviewMode::Auto) {
+    if (preview_mode == PreviewMode::Proxy) {
+        use_lrf = ctx->has_lrf && ctx->producer_lrf;
+    } else if (preview_mode == PreviewMode::Auto && !export_mode) {
+        mlt_service cons = mlt_service_consumer(MLT_PRODUCER_SERVICE(producer));
+        bool is_preview_consumer = false;
+        if (cons) {
+            mlt_properties cp = MLT_SERVICE_PROPERTIES(cons);
+            int rt = mlt_properties_get_int(cp, "real_time");
+            const char *svc = mlt_properties_get(cp, "mlt_service");
+            if (rt > 0 && svc && std::strcmp(svc, "avformat") != 0) {
+                is_preview_consumer = true;
+            }
+        }
+        if (is_preview_consumer || mlt_properties_get_int(props, "preview") == 1
+            || mlt_properties_get_int(props, "shotcut:proxy") == 1) {
             use_lrf = ctx->has_lrf && ctx->producer_lrf;
-        } else if (preview_mode == PreviewMode::Full) {
-            use_lrf = false;
         }
     }
 
@@ -361,10 +365,9 @@ static int producer_get_image(mlt_frame frame,
             return 1;
         }
 
-        if (cut_changed || ctx->last_lrf_position < 0 || position != ctx->last_lrf_position + 1) {
+        if (cut_changed || mlt_producer_position(ctx->producer_lrf) != position) {
             mlt_producer_seek(ctx->producer_lrf, position);
         }
-        ctx->last_lrf_position = position;
 
         mlt_frame lrf_frame = nullptr;
         mlt_service_get_frame(MLT_PRODUCER_SERVICE(ctx->producer_lrf), &lrf_frame, 0);
@@ -430,11 +433,10 @@ static int producer_get_image(mlt_frame frame,
     }
 
     // Avoid seeking on sequential playback within the same cut to prevent GOP decoder flush
-    if (cut_changed || ctx->last_position < 0 || position != ctx->last_position + 1) {
+    if (cut_changed || mlt_producer_position(ctx->producer_master) != position) {
         mlt_producer_seek(ctx->producer_master, position);
         mlt_producer_seek(ctx->producer_slave, position);
     }
-    ctx->last_position = position;
 
     mlt_frame frame_master = nullptr;
     mlt_frame frame_slave = nullptr;
@@ -495,6 +497,8 @@ static int producer_get_image(mlt_frame frame,
             ctx->cached_use_lrf = false;
             ctx->cached_stab_mode = stab_mode;
             ctx->cached_equirect.assign(*image, *image + buf_size);
+        } else {
+            std::memset(*image, 0, buf_size);
         }
     } else {
         std::memset(*image, 0, buf_size);
@@ -591,10 +595,9 @@ static int producer_get_audio(mlt_frame frame,
         ctx->last_audio_position = -1;
     }
 
-    if (cut_changed || ctx->last_audio_position < 0 || position != ctx->last_audio_position + 1) {
+    if (cut_changed || mlt_producer_position(ctx->producer_audio) != position) {
         mlt_producer_seek(ctx->producer_audio, position);
     }
-    ctx->last_audio_position = position;
 
     mlt_frame audio_frame = nullptr;
     int err = mlt_service_get_frame(MLT_PRODUCER_SERVICE(ctx->producer_audio), &audio_frame, 0);
@@ -664,17 +667,19 @@ static void producer_close(mlt_producer producer)
     if (producer) {
         if (producer->child) {
             ProducerOsvContext *ctx = (ProducerOsvContext *) producer->child;
-            std::lock_guard<std::mutex> lock(ctx->mutex);
-            std::lock_guard<std::mutex> audio_lock(ctx->audio_mutex);
             producer->child = nullptr;
-            if (ctx->producer_master)
-                mlt_producer_close(ctx->producer_master);
-            if (ctx->producer_slave)
-                mlt_producer_close(ctx->producer_slave);
-            if (ctx->producer_audio)
-                mlt_producer_close(ctx->producer_audio);
-            if (ctx->producer_lrf)
-                mlt_producer_close(ctx->producer_lrf);
+            {
+                std::lock_guard<std::mutex> lock(ctx->mutex);
+                std::lock_guard<std::mutex> audio_lock(ctx->audio_mutex);
+                if (ctx->producer_master)
+                    mlt_producer_close(ctx->producer_master);
+                if (ctx->producer_slave)
+                    mlt_producer_close(ctx->producer_slave);
+                if (ctx->producer_audio)
+                    mlt_producer_close(ctx->producer_audio);
+                if (ctx->producer_lrf)
+                    mlt_producer_close(ctx->producer_lrf);
+            }
             delete ctx;
         }
         producer->close = nullptr;

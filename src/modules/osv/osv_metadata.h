@@ -15,7 +15,7 @@ struct LensCalibration
     float k2 = 0.0f;
     float k3 = 0.0f;
     float k4 = 0.0f;
-    float quat[4] = {0.0f, 0.0f, 0.0f, 1.0f}; // x, y, z, w
+    float quat[4] = {1.0f, 0.0f, 0.0f, 0.0f}; // w, x, y, z (identity)
 };
 
 enum class OsvStabilizationMode { Off = 0, HorizonLock = 1, FullLock = 2 };
