@@ -392,6 +392,18 @@ static int plane_format_matches(const mlt_vulkan_image *image, enum AVPixelForma
     return 1;
 }
 
+/* An image exported from FFmpeg keeps its frames context. That names the exact
+   software format and the VkFormats FFmpeg chose, which the plane format alone
+   cannot: a multi-planar 16-bit view with bit_shift 6 is P010, not P016.
+   lock_vulkan_image is installed only by the exporter, so it marks these
+   images. Anything else, such as a placebo texture, has no such context. */
+static const vulkan_export_sync *exported_sync(const mlt_vulkan_image *image)
+{
+    return image->lock == lock_vulkan_image ? image->sync_opaque : NULL;
+}
+
+/* The software format of an image. An exported image states it. For any other
+   image it is the first candidate whose per-plane VkFormats match. */
 static enum AVPixelFormat vulkan_sw_format(const mlt_vulkan_image *image)
 {
     static const enum AVPixelFormat candidates[] = {
@@ -402,8 +414,11 @@ static enum AVPixelFormat vulkan_sw_format(const mlt_vulkan_image *image)
         AV_PIX_FMT_YUV420P10, AV_PIX_FMT_YUV422P10, AV_PIX_FMT_YUV444P10, AV_PIX_FMT_NONE,
     };
     int bgra = image->planes[0].component_mapping[0] == 2;
+    const vulkan_export_sync *sync = exported_sync(image);
     int i;
 
+    if (sync)
+        return sync->hwfc->sw_format;
     for (i = 0; candidates[i] != AV_PIX_FMT_NONE; i++) {
         int is_bgr = candidates[i] == AV_PIX_FMT_BGRA || candidates[i] == AV_PIX_FMT_BGR0
                      || candidates[i] == AV_PIX_FMT_BGRA64;
@@ -454,16 +469,13 @@ static void release_input_frame(AVFrame *in, vulkan_wrap_owner *owner, mlt_vulka
     av_frame_free(&in);
 }
 
-static int alloc_input_frames(AVBufferRef *device,
-                              const mlt_vulkan_image *image,
-                              enum AVPixelFormat sw,
-                              int coded_w,
-                              int coded_h,
-                              AVBufferRef **out)
+static int alloc_input_frames(
+    AVBufferRef *device, const mlt_vulkan_image *image, int coded_w, int coded_h, AVBufferRef **out)
 {
     AVBufferRef *ref = av_hwframe_ctx_alloc(device);
     AVHWFramesContext *hwfc;
     AVVulkanFramesContext *vkfc;
+    const vulkan_export_sync *sync = exported_sync(image);
     int i;
     int err;
 
@@ -472,13 +484,17 @@ static int alloc_input_frames(AVBufferRef *device,
     hwfc = (AVHWFramesContext *) ref->data;
     vkfc = hwfc->hwctx;
     hwfc->format = AV_PIX_FMT_VULKAN;
-    hwfc->sw_format = sw;
+    hwfc->sw_format = vulkan_sw_format(image);
     hwfc->width = coded_w;
     hwfc->height = coded_h;
     vkfc->tiling = VK_IMAGE_TILING_OPTIMAL;
-    for (i = 0; i < image->nb_planes && i < AV_NUM_DATA_POINTERS; i++) {
-        if (image->planes[i].format)
-            vkfc->format[i] = (VkFormat) image->planes[i].format;
+    if (sync) {
+        memcpy(vkfc->format, sync->vkfc->format, sizeof(vkfc->format));
+    } else {
+        for (i = 0; i < image->nb_planes && i < AV_NUM_DATA_POINTERS; i++) {
+            if (image->planes[i].format)
+                vkfc->format[i] = (VkFormat) image->planes[i].format;
+        }
     }
     err = av_hwframe_ctx_init(ref);
     if (err < 0) {
@@ -526,7 +542,7 @@ static int configure_encoder_graph(avformat_vulkan_encoder *enc,
     enc->src = NULL;
     enc->sink = NULL;
 
-    err = alloc_input_frames(device, image, src_sw, src_w, src_h, &in_frames);
+    err = alloc_input_frames(device, image, src_w, src_h, &in_frames);
     if (err < 0) {
         mlt_log_error(NULL, "Vulkan input frames init failed: %d\n", err);
         return err;
@@ -684,7 +700,7 @@ static int wrap_vulkan_image(mlt_vulkan_image *image,
 
     *frame_out = NULL;
     *owner_out = NULL;
-    if (image->bit_shift && !shift_logged) {
+    if (image->bit_shift && !exported_sync(image) && !shift_logged) {
         shift_logged = 1;
         mlt_log_warning(NULL,
                         "Vulkan image bit_shift %d is not applied by the encoder\n",
@@ -1080,12 +1096,7 @@ static int configure_user_filter(avformat_vulkan_avfilter *self,
             return AVERROR(ENODEV);
     }
 
-    err = alloc_input_frames(self->device,
-                             image,
-                             vulkan_sw_format(image),
-                             coded_w,
-                             coded_h,
-                             &in_frames);
+    err = alloc_input_frames(self->device, image, coded_w, coded_h, &in_frames);
     if (err < 0) {
         mlt_log_error(NULL, "Vulkan avfilter input frames init failed: %d\n", err);
         return err;
