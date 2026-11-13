@@ -277,8 +277,8 @@ static int convert_trc(mlt_filter filter,
         pl_src.repr.alpha = PL_ALPHA_INDEPENDENT;
     }
 
-    struct pl_color_space dst_color = src_color;
-    dst_color.transfer = dst_transfer;
+    const enum pl_color_transfer output = placebo_frame_output_transfer(frame);
+    struct pl_color_space dst_color = placebo_color_space_retarget(&src_color, dst_transfer, output);
     struct pl_frame pl_dst = {
         .num_planes = 1,
         .planes = {{

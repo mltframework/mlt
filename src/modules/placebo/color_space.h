@@ -35,6 +35,22 @@ int placebo_frame_is_linear(mlt_frame frame);
 /* Color space with the frame's primaries and an explicit transfer. */
 struct pl_color_space placebo_color_space_for_trc(mlt_frame frame, enum pl_color_transfer transfer);
 
+/* The transfer the consumer will encode the frame in, from consumer.color_trc.
+   PL_COLOR_TRC_UNKNOWN when the consumer does not say. */
+enum pl_color_transfer placebo_frame_output_transfer(mlt_frame frame);
+
+/* Destination for converting src to another transfer, with the same primaries.
+   Linear light has no peak or black level of its own, so libplacebo infers SDR
+   white for it. That is right when the frame ends up SDR: the HDR source is
+   tone mapped on the way to linear. It is wrong when the frame ends up HDR,
+   where it would tone map the highlights away before the way back. So linear
+   takes the levels of the HDR output transfer instead, and nothing is tone
+   mapped until the output is reached. An output that is not HDR, or unknown,
+   leaves the levels to libplacebo's inference. */
+struct pl_color_space placebo_color_space_retarget(const struct pl_color_space *src,
+                                                   enum pl_color_transfer transfer,
+                                                   enum pl_color_transfer output);
+
 /* Same mapping when the caller already has the ids (a Vulkan texture). */
 struct pl_color_space placebo_color_space(mlt_color_primaries primaries,
                                           mlt_colorspace colorspace,

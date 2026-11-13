@@ -340,7 +340,191 @@ private Q_SLOTS:
         }
     }
 
+    void LinearHdrRoundTrip_data() { addHdrTransfers(); }
+
+    // Linear light has no peak or black level of its own. A trip through it
+    // must not tone map an HDR frame down to SDR white or lift its blacks.
+    void LinearHdrRoundTrip()
+    {
+        QFETCH(QString, transfer);
+        if (!mlt_properties_get_data(mlt_global_properties(), "placebo.vulkan", nullptr))
+            QSKIP("The published placebo backend is not Vulkan");
+
+        QVector<uint16_t> expected;
+        for (int i = 0; i < 64; i++) {
+            // Alternate 16-bit code values 6000 (about 9% signal, near black)
+            // and 50000 (about 76% signal). For HLG and PQ the bright one is
+            // above SDR white, so tone mapping it down to SDR would show.
+            expected << (i % 2 ? 50000 : 6000);
+        }
+        std::unique_ptr<Frame> frame = greyFrame(transfer, expected);
+        QVERIFY(frame);
+
+        // A 400 code tolerance (about 0.6% of 65535) covers the precision lost
+        // in half-float linear light. Lifted blacks or clipped highlights miss
+        // by thousands.
+        const QVector<uint16_t> actual = grade(*frame, {"linear", transfer});
+        QVERIFY(!actual.isEmpty());
+        for (int i = 0; i < 64; i++) {
+            QVERIFY2(qAbs(int(actual[i]) - int(expected[i])) <= 400,
+                     qPrintable(
+                         QString("pixel %1: %2 expected %3").arg(i).arg(actual[i]).arg(expected[i])));
+        }
+    }
+
+    void LinearHdrToSdr_data() { addHdrTransfers(); }
+
+    // Going to SDR through linear light must tone map the highlights the way a
+    // direct conversion does, not clip them at SDR white.
+    void LinearHdrToSdr()
+    {
+        QFETCH(QString, transfer);
+        if (!mlt_properties_get_data(mlt_global_properties(), "placebo.vulkan", nullptr))
+            QSKIP("The published placebo backend is not Vulkan");
+
+        // A ramp of 64 steps from 20000 (31% signal) to 64100 (98% signal),
+        // 700 codes apart. Most of it is HDR highlight that an SDR output has
+        // to compress.
+        QVector<uint16_t> levels;
+        for (int i = 0; i < 64; i++)
+            levels << (20000 + i * 700);
+        std::unique_ptr<Frame> directFrame = greyFrame(transfer, levels);
+        std::unique_ptr<Frame> linearFrame = greyFrame(transfer, levels);
+        QVERIFY(directFrame && linearFrame);
+
+        const QVector<uint16_t> direct = grade(*directFrame, {"bt709"});
+        const QVector<uint16_t> viaLinear = grade(*linearFrame, {"linear", "bt709"});
+        QVERIFY(!direct.isEmpty() && !viaLinear.isEmpty());
+        for (int i = 0; i < 64; i++) {
+            // Half-float rounding stays within a few codes of a direct
+            // conversion. The tolerance of 300 is far below the thousands of
+            // codes by which highlights that were not tone mapped miss.
+            QVERIFY2(qAbs(int(viaLinear[i]) - int(direct[i])) <= 300,
+                     qPrintable(QString("level %1: %2 via linear, %3 direct")
+                                    .arg(levels[i])
+                                    .arg(viaLinear[i])
+                                    .arg(direct[i])));
+        }
+        // Steps 48 (53600) and 63 (64100) are both highlights. Clipping would
+        // flatten them into one value.
+        QVERIFY(viaLinear[63] > viaLinear[48]);
+    }
+
+    void SdrIntoHdr_data() { addHdrTransfers(); }
+
+    // An SDR clip in an HDR project goes through linear light too. Linear
+    // taking the HDR output's levels must not change how SDR content lands.
+    void SdrIntoHdr()
+    {
+        QFETCH(QString, transfer);
+        if (!mlt_properties_get_data(mlt_global_properties(), "placebo.vulkan", nullptr))
+            QSKIP("The published placebo backend is not Vulkan");
+
+        // A ramp of 64 steps from 4000 (6% signal) to 60700 (93% signal), 900
+        // codes apart, so it covers shadows through highlights of an SDR clip.
+        QVector<uint16_t> levels;
+        for (int i = 0; i < 64; i++)
+            levels << (4000 + i * 900);
+        std::unique_ptr<Frame> directFrame = greyFrame("bt709", levels, 709, "bt709");
+        std::unique_ptr<Frame> linearFrame = greyFrame("bt709", levels, 709, "bt709");
+        QVERIFY(directFrame && linearFrame);
+
+        const QVector<uint16_t> direct = grade(*directFrame, {transfer});
+        const QVector<uint16_t> viaLinear = grade(*linearFrame, {"linear", transfer});
+        QVERIFY(!direct.isEmpty() && !viaLinear.isEmpty());
+        // Both sides agreeing only means something if the conversion did
+        // something. Re-encoding SDR as HLG or PQ moves the middle step (index
+        // 32, code 32800) by far more than 1000 codes.
+        QVERIFY(qAbs(int(direct[32]) - int(levels[32])) > 1000);
+        for (int i = 0; i < 64; i++) {
+            // Same 300 code tolerance as the HDR to SDR test, for half-float
+            // rounding only.
+            QVERIFY2(qAbs(int(viaLinear[i]) - int(direct[i])) <= 300,
+                     qPrintable(QString("level %1: %2 via linear, %3 direct")
+                                    .arg(levels[i])
+                                    .arg(viaLinear[i])
+                                    .arg(direct[i])));
+        }
+    }
+
 private:
+    // The HDR transfers the linear tests run for.
+    static void addHdrTransfers()
+    {
+        QTest::addColumn<QString>("transfer");
+        QTest::newRow("hlg") << "arib-std-b67";
+        QTest::newRow("pq") << "smpte2084";
+    }
+
+    // An 8x8 grey rgba64 frame of 64 code values, tagged with the transfer. It
+    // is uploaded to the GPU, ready for color transforms. Null on failure.
+    std::unique_ptr<Frame> greyFrame(const QString &transfer,
+                                     const QVector<uint16_t> &levels,
+                                     int colorspace = 2020,
+                                     const char *primaries = "bt2020")
+    {
+        if (levels.size() != 64)
+            return nullptr;
+        const int size = mlt_image_format_size(mlt_image_rgba64, 8, 8, nullptr);
+        auto *pixels = static_cast<uint8_t *>(mlt_pool_alloc(size));
+        if (!pixels)
+            return nullptr;
+        for (int i = 0; i < 64; i++) {
+            const uint16_t rgba[] = {levels[i], levels[i], levels[i], 65535};
+            memcpy(pixels + 8 * i, rgba, sizeof(rgba));
+        }
+        mlt_frame raw = mlt_frame_init(nullptr);
+        if (!raw) {
+            mlt_pool_release(pixels);
+            return nullptr;
+        }
+        auto frame = std::make_unique<Frame>(raw);
+        mlt_frame_close(raw);
+        if (mlt_frame_set_image(frame->get_frame(), pixels, size, mlt_pool_release)) {
+            mlt_pool_release(pixels);
+            return nullptr;
+        }
+        frame->set("format", int(mlt_image_rgba64));
+        frame->set("width", 8);
+        frame->set("height", 8);
+        frame->set("colorspace", colorspace);
+        frame->set("color_primaries", primaries);
+        frame->set("color_trc", qPrintable(transfer));
+        renderer->process(*frame);
+        return frame;
+    }
+
+    // Converts through one color transform per target transfer, in order, and
+    // reads back the red channel. Empty on failure. Like the consumer, it tells
+    // the frame which transfer it ends up in.
+    QVector<uint16_t> grade(Frame &frame, const QStringList &targets)
+    {
+        if (targets.isEmpty())
+            return {};
+        frame.set("consumer.color_trc", qPrintable(targets.last()));
+        std::vector<std::unique_ptr<Filter>> filters;
+        for (const QString &target : targets) {
+            filters.push_back(std::make_unique<Filter>(profile, "placebo.color_transform"));
+            if (!filters.back()->is_valid())
+                return {};
+            filters.back()->set("force_trc", qPrintable(target));
+            filters.back()->process(frame);
+        }
+        mlt_image_format format = mlt_image_rgba64;
+        int width = 8;
+        int height = 8;
+        uint8_t *output = frame.get_image(format, width, height);
+        if (!output || format != mlt_image_rgba64)
+            return {};
+        QVector<uint16_t> levels;
+        for (int i = 0; i < 64; i++) {
+            uint16_t red;
+            memcpy(&red, output + 8 * i, 2);
+            levels << red;
+        }
+        return levels;
+    }
+
     // A color frame run through the render filter and requested in the format.
     std::unique_ptr<Frame> renderedColorFrame(const char *color,
                                               int width,

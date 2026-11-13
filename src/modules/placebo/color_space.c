@@ -109,6 +109,29 @@ struct pl_color_space placebo_color_space(mlt_color_primaries primaries,
     return color;
 }
 
+enum pl_color_transfer placebo_frame_output_transfer(mlt_frame frame)
+{
+    const char *name = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), "consumer.color_trc");
+
+    return name ? placebo_transfer_from_mlt(mlt_image_color_trc_id(name)) : PL_COLOR_TRC_UNKNOWN;
+}
+
+struct pl_color_space placebo_color_space_retarget(const struct pl_color_space *src,
+                                                   enum pl_color_transfer transfer,
+                                                   enum pl_color_transfer output)
+{
+    struct pl_color_space dst = {.primaries = src->primaries, .transfer = transfer};
+
+    if (transfer == PL_COLOR_TRC_LINEAR && pl_color_transfer_is_hdr(output)) {
+        struct pl_color_space target = {.transfer = output};
+
+        pl_color_space_infer(&target);
+        dst.hdr.max_luma = target.hdr.max_luma;
+        dst.hdr.min_luma = target.hdr.min_luma;
+    }
+    return dst;
+}
+
 struct pl_color_space placebo_color_space_for_trc(mlt_frame frame, enum pl_color_transfer transfer)
 {
     mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
