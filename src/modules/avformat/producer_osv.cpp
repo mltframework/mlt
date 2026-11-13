@@ -68,10 +68,13 @@ struct ProducerOsvContext
         if (env_path && std::filesystem::exists(env_path)) {
             return env_path;
         }
-        const char *mlt_data = std::getenv("MLT_DATA");
+        const char *mlt_data = mlt_environment("MLT_DATA");
         if (mlt_data) {
-            std::filesystem::path p = std::filesystem::path(mlt_data).parent_path().parent_path()
-                                      / "shaders" / "osv_stitch.spv";
+            std::filesystem::path data_dir(mlt_data);
+            std::filesystem::path p = data_dir / "avformat" / "shaders" / "osv_stitch.spv";
+            if (std::filesystem::exists(p))
+                return p.string();
+            p = data_dir.parent_path().parent_path() / "shaders" / "osv_stitch.spv";
             if (std::filesystem::exists(p))
                 return p.string();
         }

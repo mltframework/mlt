@@ -44,10 +44,6 @@ if(MOD_OPENCV)
   add_subdirectory(opencv)
 endif()
 
-if(MOD_OSV)
-  add_subdirectory(osv)
-endif()
-
 if(MOD_MOVIT)
   add_subdirectory(movit)
 endif()
