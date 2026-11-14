@@ -1,0 +1,81 @@
+schema_version: 7.2
+type: producer
+identifier: osv
+title: DJI Osmo 360 Video Reader
+version: 1
+copyright: Meltytech, LLC
+creator: Francesco Pischedda
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+  - Audio
+description: >
+  Reads DJI Osmo 360 camera recordings (.OSV) and stitches dual fisheye lenses
+  into a full 360-degree equirectangular projection using GPU-accelerated Vulkan
+  compute shaders with embedded IMU gyro stabilization.
+
+notes: >
+  Output projection is stitched 360-degree equirectangular (2:1 aspect ratio,
+  360x180 degree field of view) with horizon leveling or full gyro stabilization
+  computed from embedded camera IMU telemetry. Interactive preview automatically
+  decodes the companion low-resolution proxy (.LRF) for smooth scrubbing and editing,
+  while export and rendering process full-resolution dual 4K/5.7K HEVC streams.
+
+audio_formats:
+  - s16
+  - s32le
+  - float
+
+image_formats:
+  - rgba
+
+parameters:
+  - identifier: resource
+    argument: yes
+    title: File
+    type: string
+    description: Path to DJI Osmo 360 video container (.OSV)
+    required: yes
+    widget: fileopen
+
+  - identifier: osv.stabilization
+    title: Gyro Stabilization
+    type: string
+    description: >
+      Stabilization mode using embedded IMU telemetry:
+      0: Raw camera orientation without stabilization (Off).
+      1: Horizon Lock (default, maintains level horizon while preserving yaw heading).
+      2: Full Lock (locks yaw, pitch, and roll to fix viewing heading).
+    default: 1
+    widget: combo
+    values:
+      - 0
+      - 1
+      - 2
+
+  - identifier: osv_mode
+    title: Processing Mode
+    type: string
+    description: >
+      Explicit processing pipeline override:
+      auto: Use companion proxy (.LRF) during interactive editing and full resolution during export.
+      proxy: Force companion proxy (.LRF) decoding.
+      full: Force full dual-fisheye HEVC GPU stitching.
+    default: auto
+    widget: combo
+    values:
+      - auto
+      - proxy
+      - full
+
+  - identifier: osv.export_res
+    title: Export Resolution
+    type: string
+    description: Equirectangular output export resolution override (4k, 5.7k, 8k).
+    default: 5.7k
+    widget: combo
+    values:
+      - 4k
+      - 5.7k
+      - 8k
