@@ -798,8 +798,14 @@ static void *video_thread(void *arg)
             }
 
             if (!real_time
-                || (difference > -10000 || speed != 1.0 || mlt_deque_count(self->queue) < 2))
+                || (difference > -10000 || speed != 1.0 || mlt_deque_count(self->queue) < 2)) {
                 consumer_play_video(self, next);
+            } else {
+                mlt_log_verbose(MLT_CONSUMER_SERVICE(&self->parent),
+                                "dropped late video frame at position %d (%d ms late)\n",
+                                mlt_frame_get_position(next),
+                                (int) (-difference / 1000));
+            }
 
             if (real_time && (mlt_deque_count(self->queue) == 0 && speed == 1.0)) {
                 gettimeofday(&now, NULL);
