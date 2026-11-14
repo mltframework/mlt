@@ -27,6 +27,9 @@ description: >
   force_trc onto this filter so the image is encoded back to color_trc
   before it is downloaded. An rgba64 request is encoded to 16-bit unorm.
   Any other pixel request is rgba8.
+  The kernel that upsamples chroma follows consumer.rescale: nearest or
+  bilinear (also the default when unset) is cheap. Any other value uses the
+  libplacebo default for the best quality.
 image_formats:
   - rgba
   - rgba64

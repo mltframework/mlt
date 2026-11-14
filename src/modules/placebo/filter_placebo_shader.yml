@@ -28,7 +28,12 @@ description: >
   Installed shader YAML files are discovered recursively in
   MLT_DATA/placebo/shaders and registered as placebo.<basename> filters.
   Each YAML file must have a sibling .hook file with the same basename.
-
+  The scalers built into the render follow consumer.rescale: nearest or
+  bilinear (also the default when unset) is cheap. Any other value uses the
+  libplacebo default. This affects chroma upsampling and any scaling a
+  shader hook does not replace, so a hook that depends on the scaler
+  can look different in preview than in a render with a higher-quality
+  rescale.
 image_formats:
   - rgba
   - rgba64

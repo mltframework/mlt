@@ -22,6 +22,7 @@
 #include "convert.h"
 #include "gpu_context.h"
 #include "render_cache.h"
+#include "render_params.h"
 #include "tex_pool.h"
 #include "vulkan_frame.h"
 
@@ -461,7 +462,7 @@ static int filter_get_image(mlt_frame frame,
     }
 
     /* Render with shader hooks. HOOK MAIN runs after YUV to RGB. */
-    struct pl_render_params params = pl_render_default_params;
+    struct pl_render_params params = placebo_render_params(frame);
     params.hooks = priv->hooks;
     params.num_hooks = priv->num_hooks;
 

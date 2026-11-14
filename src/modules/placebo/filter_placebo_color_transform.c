@@ -21,6 +21,7 @@
 #include "convert.h"
 #include "gpu_context.h"
 #include "render_cache.h"
+#include "render_params.h"
 #include "tex_pool.h"
 #include "vulkan_frame.h"
 
@@ -291,16 +292,11 @@ static int convert_trc(mlt_filter filter,
     };
     pl_dst.repr.alpha = PL_ALPHA_INDEPENDENT;
 
-    struct pl_render_params params = pl_render_default_params;
+    struct pl_render_params params = placebo_render_params(frame);
     /* A YUV frame has no alpha. An RGBA frame, such as qtext, does. The
        default background composites that coverage onto black and leaves an
        opaque card, which hides the picture under a source-over blend. */
-#if PL_API_VER >= 346
-    params.background = PL_CLEAR_SKIP;
-#else
-    params.skip_target_clearing = true;
-#endif
-    params.background_transparency = 1.f;
+    placebo_render_params_preserve_alpha(&params);
     if (!placebo_render(PLACEBO_SITE_COLOR_TRANSFORM, src, &pl_dst, &params)) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "pl_render_image failed\n");
         if (mapped_vulkan)

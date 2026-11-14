@@ -23,6 +23,7 @@
 #include "color_space.h"
 #include "gpu_context.h"
 #include "render_cache.h"
+#include "render_params.h"
 #include "tex_pool.h"
 
 #include <framework/mlt_filter.h>
@@ -190,12 +191,7 @@ static int render_to_format(
     struct pl_frame pl_dst = pl_src;
     pl_dst.planes[0].texture = dst;
     struct pl_render_params params = pl_render_default_params;
-#if PL_API_VER >= 346
-    params.background = PL_CLEAR_SKIP;
-#else
-    params.skip_target_clearing = true;
-#endif
-    params.background_transparency = 1.f;
+    placebo_render_params_preserve_alpha(&params);
     int ok = placebo_render(PLACEBO_SITE_CONVERT, &pl_src, &pl_dst, &params);
     if (!ok)
         placebo_tex_recycle(gpu, &dst);

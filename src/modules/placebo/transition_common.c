@@ -21,6 +21,7 @@
 
 #include "color_space.h"
 #include "gpu_context.h"
+#include "render_params.h"
 #include "tex_pool.h"
 #include "vulkan_frame.h"
 
@@ -57,13 +58,10 @@ int placebo_transition_render(enum placebo_renderer_site site,
     params.dither_params = NULL;
     params.deband_params = NULL;
     /* Preserve partial alpha instead of compositing onto the background. */
+    placebo_render_params_preserve_alpha(&params);
 #if PL_API_VER >= 346
-    params.background = PL_CLEAR_SKIP;
     params.border = PL_CLEAR_SKIP;
-#else
-    params.skip_target_clearing = true;
 #endif
-    params.background_transparency = 1.f;
     return placebo_render(site, source, target, &params) ? 0 : 1;
 };
 

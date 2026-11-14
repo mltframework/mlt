@@ -21,6 +21,7 @@
 #include "convert.h"
 #include "gpu_context.h"
 #include "render_cache.h"
+#include "render_params.h"
 #include "tex_pool.h"
 #include "vulkan_frame.h"
 
@@ -30,7 +31,6 @@
 #include <framework/mlt_profile.h>
 
 #include <libplacebo/config.h>
-#include <libplacebo/filters.h>
 #include <libplacebo/gpu.h>
 #include <libplacebo/renderer.h>
 
@@ -85,17 +85,6 @@ static void letterbox_rect(int out_w,
     *content_h = ch;
     *off_x = (out_w - cw) / 2;
     *off_y = (out_h - ch) / 2;
-}
-
-static void apply_consumer_scaler(struct pl_render_params *params, const char *rescale)
-{
-    if (!rescale || !strcmp(rescale, "bilinear") || !strcmp(rescale, "fast_bilinear")) {
-        params->upscaler = &pl_filter_bilinear;
-        params->downscaler = &pl_filter_bilinear;
-    } else if (!strcmp(rescale, "nearest") || !strcmp(rescale, "neighbor")) {
-        params->upscaler = &pl_filter_nearest;
-        params->downscaler = &pl_filter_nearest;
-    }
 }
 
 /* Whether a GPU image already is the output, so nothing needs rendering: a
@@ -329,15 +318,10 @@ static int filter_get_image(mlt_frame frame,
         .y1 = off_y + content_h,
     };
 
-    struct pl_render_params params = pl_render_default_params;
+    struct pl_render_params params = placebo_render_params(frame);
     /* Default background composites partial alpha onto black. Letterbox
        padding is still cleared to opaque black before this render. */
-#if PL_API_VER >= 346
-    params.background = PL_CLEAR_SKIP;
-#else
-    params.skip_target_clearing = true;
-#endif
-    apply_consumer_scaler(&params, rescale);
+    placebo_render_params_skip_background(&params);
     if (!placebo_render(PLACEBO_SITE_SCALE, src, &pl_dst, &params)) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "pl_render_image failed\n");
         if (mapped_vulkan)
