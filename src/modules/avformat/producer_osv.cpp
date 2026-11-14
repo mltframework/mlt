@@ -417,8 +417,9 @@ static int producer_get_image(mlt_frame frame,
     auto t_start = std::chrono::steady_clock::now();
 
     // Fast-path: Companion .LRF proxy decoding during interactive editor playback
-    // The camera's companion .LRF is 2048x1024 progressive H.264 side-by-side dual fisheye.
-    // Left half (1024x1024) is Slave lens (Stream 0), Right half (1024x1024) is Master lens (Stream 1).
+    // The camera's companion .LRF is an in-camera hardware-stitched 2048x1024 progressive
+    // H.264 equirectangular 360 preview proxy. Directly output / scale it for fluid,
+    // real-time scrubbing without redundant GPU compute re-stitching.
     if (use_lrf) {
         if (!ctx->ensureStitcher()) {
             std::cerr << "[OSV-MLT] Failed to initialize Vulkan stitcher for LRF mode" << std::endl;

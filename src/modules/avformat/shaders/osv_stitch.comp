@@ -9,7 +9,8 @@ layout(binding = 1) uniform sampler2D lensMaster;
 layout(binding = 2) uniform sampler2D lensSlave;
 
 // Calibration and Orientation Uniforms (128 bytes total - universal Vulkan push constant limit)
-layout(push_constant) uniform PushConstants {
+layout(push_constant) uniform PushConstants
+{
     // Lens Master (Stream 1): fx, fy, cx, cy
     vec4 lens_master_intrinsics;
     // Lens Master Distortion: k1, k2, k3, k4
@@ -31,13 +32,15 @@ layout(push_constant) uniform PushConstants {
     uint outWidth;
     uint outHeight;
     float maxFovDegrees;       // 195.18 deg
-    float blendOverlapDegrees;  // 10.0 deg
-} pc;
+    float blendOverlapDegrees; // 10.0 deg
+}
+pc;
 
 #define PI 3.14159265358979323846
 
 // Rotate vector v by quaternion q = (w, x, y, z): v' = R(q) * v
-vec3 quatRotateWXYZ(vec4 q, vec3 v) {
+vec3 quatRotateWXYZ(vec4 q, vec3 v)
+{
     vec3 qvec = q.yzw; // x, y, z
     vec3 uv = cross(qvec, v);
     vec3 uuv = cross(qvec, uv);
@@ -45,22 +48,32 @@ vec3 quatRotateWXYZ(vec4 q, vec3 v) {
 }
 
 // Invert quaternion (w, -x, -y, -z)
-vec4 quatConjugateWXYZ(vec4 q) {
+vec4 quatConjugateWXYZ(vec4 q)
+{
     return vec4(q.x, -q.yzw);
 }
 
 // Kannala-Brandt fisheye projection: lens frame direction -> normalized texture coordinates [0, 1]
-vec2 projectKannalaBrandt(vec3 dLens, vec4 intrinsics, vec4 dist, vec2 texSize, float theta, float rho) {
+vec2 projectKannalaBrandt(
+    vec3 dLens, vec4 intrinsics, vec4 dist, vec2 texSize, float theta, float rho)
+{
     if (rho <= 1e-6) {
         return vec2(intrinsics.z / texSize.x, intrinsics.w / texSize.y);
     }
 
-    // Polynomial distortion: rd = theta * (1 + k1*th^2 + k2*th^4 + k3*th^6 + k4*th^8)
-    float t2 = theta * theta;
+    // Monotonic guard: prevent polynomial inversion at extreme boundary angles.
+    // For Kannala-Brandt with negative higher-order terms (k3, k4), rd(theta) peaks
+    // around 93.75 deg (1.636 rad) for rear lens and 97.4 deg for front lens.
+    // Clamping theta to 1.635 (~93.68 deg) prevents peripheral rays beyond the sensor
+    // circle from folding backwards while ensuring zero clamping within active FOV.
+    float safeTheta = min(theta, 1.635);
+
+    // Polynomial distortion: rd = safeTheta * (1 + k1*th^2 + k2*th^4 + k3*th^6 + k4*th^8)
+    float t2 = safeTheta * safeTheta;
     float t4 = t2 * t2;
     float t6 = t4 * t2;
     float t8 = t4 * t4;
-    float rd = theta * (1.0 + dist.x * t2 + dist.y * t4 + dist.z * t6 + dist.w * t8);
+    float rd = safeTheta * (1.0 + dist.x * t2 + dist.y * t4 + dist.z * t6 + dist.w * t8);
 
     // Lens frame: +x is image right, +y is image down
     float px = intrinsics.z + intrinsics.x * rd * (dLens.x / rho);
@@ -69,7 +82,8 @@ vec2 projectKannalaBrandt(vec3 dLens, vec4 intrinsics, vec4 dist, vec2 texSize, 
     return vec2(px / texSize.x, py / texSize.y);
 }
 
-void main() {
+void main()
+{
     ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
     if (pixelCoord.x >= pc.outWidth || pixelCoord.y >= pc.outHeight) {
         return;
@@ -85,67 +99,271 @@ void main() {
     float lat = (0.5 - uv.y) * PI;
     float cosLat = cos(lat);
 
-    // Body frame direction vector: X right, Y forward, Z up
-    vec3 dBody = vec3(
-        sin(lon) * cosLat,
-        cos(lon) * cosLat,
-        sin(lat)
-    );
+    // Equirectangular direction vector: X right, Y forward, Z up
+    vec3 dEquirect = vec3(sin(lon) * cosLat, cos(lon) * cosLat, sin(lat));
+
+    vec3 dBody = dEquirect;
 
     // Apply gyro stabilization if active
     if (abs(pc.gyro_quat.x - 1.0) > 1e-5 || length(pc.gyro_quat.yzw) > 1e-5) {
         vec4 invGyro = quatConjugateWXYZ(pc.gyro_quat);
-        dBody = quatRotateWXYZ(invGyro, dBody);
+        dBody = quatRotateWXYZ(invGyro, dEquirect);
     }
 
-    // Rotate body ray into Master lens frame (+z optical axis): d_lens = R * d_body
+    // True geometric bisector separating Master and Slave optical axes in body frame
+    vec3 aMaster = quatRotateWXYZ(quatConjugateWXYZ(pc.lens_master_quat), vec3(0.0, 0.0, 1.0));
+    vec3 aSlave = quatRotateWXYZ(quatConjugateWXYZ(pc.lens_slave_quat), vec3(0.0, 0.0, 1.0));
+    vec3 nBisector = normalize(aMaster - aSlave);
+    vec3 uSeam = normalize(vec3(nBisector.y, -nBisector.x, 0.0));
+
+    float d_n = dot(dBody, nBisector);
+    float d_u = dot(dBody, uSeam);
+    float phiSeam = (d_u < 0.0) ? atan(d_n, -d_u) : atan(d_n, d_u);
+
+    // Rotate body ray directly into Master lens frame (+z optical axis): d_lens = R * d_body
     vec3 dMaster = quatRotateWXYZ(pc.lens_master_quat, dBody);
     float rhoMaster = length(dMaster.xy);
     float thMaster = atan(rhoMaster, dMaster.z);
 
-    // Rotate body ray into Slave lens frame (+z optical axis): d_lens = R * d_body
+    // Rotate body ray directly into Slave lens frame (+z optical axis): d_lens = R * d_body
     vec3 dSlave = quatRotateWXYZ(pc.lens_slave_quat, dBody);
     float rhoSlave = length(dSlave.xy);
     float thSlave = atan(rhoSlave, dSlave.z);
 
-    // Half field-of-view limits and seam blend band (in radians)
-    float maxTheta = radians(pc.maxFovDegrees * 0.5);
-    float blendOverlap = radians(pc.blendOverlapDegrees);
-    float blendStart = maxTheta - blendOverlap;
-    float blendEnd = maxTheta;
+    // Half field-of-view limits and seam blend band (in radians).
+    // Note: Kannala-Brandt rd(theta) folds around 1.636 rad (93.75 deg) on the rear lens,
+    // and the 3840x3840 sensor frame crops the circle around ~92-93 deg. Keep valid rays
+    // strictly inside both the monotonic polynomial region and the [0, 1] texture bounds
+    // so clamped edge-smear pixels never enter seam matching or blending.
+    float maxTheta = min(radians(pc.maxFovDegrees * 0.5), 1.635);
+    float halfOverlap = radians(pc.blendOverlapDegrees * 0.5);
 
-    // Hermite smoothstep weighting across the overlap band
-    float wMaster = (thMaster <= maxTheta) ? (1.0 - smoothstep(blendStart, blendEnd, thMaster)) : 0.0;
-    float wSlave  = (thSlave  <= maxTheta) ? (1.0 - smoothstep(blendStart, blendEnd, thSlave))  : 0.0;
+    vec2 sensorSize = vec2(3840.0, 3840.0);
+    vec2 rawUvMaster = projectKannalaBrandt(dMaster,
+                                            pc.lens_master_intrinsics,
+                                            pc.lens_master_dist,
+                                            sensorSize,
+                                            thMaster,
+                                            rhoMaster);
+    vec2 rawUvSlave = projectKannalaBrandt(dSlave,
+                                           pc.lens_slave_intrinsics,
+                                           pc.lens_slave_dist,
+                                           sensorSize,
+                                           thSlave,
+                                           rhoSlave);
+    bool validMaster = (thMaster <= maxTheta) && all(greaterThanEqual(rawUvMaster, vec2(0.0)))
+                       && all(lessThanEqual(rawUvMaster, vec2(1.0)));
+    bool validSlave = (thSlave <= maxTheta) && all(greaterThanEqual(rawUvSlave, vec2(0.0)))
+                      && all(lessThanEqual(rawUvSlave, vec2(1.0)));
+
+    float phiCut = 0.0;
+    if (abs(phiSeam) < halfOverlap && validMaster && validSlave) {
+        vec3 sVec = (d_u < 0.0) ? -uSeam : uSeam;
+        vec3 vSeam = cross(nBisector, sVec);
+        if (vSeam.z < 0.0) {
+            vSeam = -vSeam;
+        }
+        vec3 dOnSeam = normalize(dBody - d_n * nBisector);
+        float alpha = atan(dot(dOnSeam, vSeam), dot(dOnSeam, sVec));
+        float stepAlpha = radians(8.0);
+        float aIdx = floor(alpha / stepAlpha);
+        float aFrac = smoothstep(0.0, 1.0, fract(alpha / stepAlpha));
+        float maxSearch = radians(3.3);
+        float stepPhi = maxSearch / 6.0;
+
+        float knotPhi[2];
+        for (int k = 0; k < 2; ++k) {
+            float aK = (aIdx + float(k)) * stepAlpha;
+            float bestCost = 1e9;
+            int bestIdx = 6;
+            float costs[13];
+            for (int i = -6; i <= 6; ++i) {
+                float candPhi = float(i) * stepPhi;
+                float diffAccum = 0.0;
+                float validCount = 0.0;
+                for (int j = -3; j <= 3; ++j) {
+                    float aSub = aK + float(j) * radians(1.2);
+                    vec3 dSub = cos(aSub) * sVec + sin(aSub) * vSeam;
+                    vec3 dTest = normalize(cos(candPhi) * dSub + sin(candPhi) * nBisector);
+                    vec3 dm = quatRotateWXYZ(pc.lens_master_quat, dTest);
+                    vec3 ds = quatRotateWXYZ(pc.lens_slave_quat, dTest);
+                    float rm = length(dm.xy);
+                    float rs = length(ds.xy);
+                    float tm = atan(rm, dm.z);
+                    float ts = atan(rs, ds.z);
+                    if (tm <= maxTheta && ts <= maxTheta) {
+                        vec2 uvm = projectKannalaBrandt(dm,
+                                                        pc.lens_master_intrinsics,
+                                                        pc.lens_master_dist,
+                                                        sensorSize,
+                                                        tm,
+                                                        rm);
+                        vec2 uvs = projectKannalaBrandt(ds,
+                                                        pc.lens_slave_intrinsics,
+                                                        pc.lens_slave_dist,
+                                                        sensorSize,
+                                                        ts,
+                                                        rs);
+                        if (all(greaterThanEqual(uvm, vec2(0.0)))
+                            && all(lessThanEqual(uvm, vec2(1.0)))
+                            && all(greaterThanEqual(uvs, vec2(0.0)))
+                            && all(lessThanEqual(uvs, vec2(1.0)))) {
+                            diffAccum += length(texture(lensMaster, uvm).rgb
+                                                - texture(lensSlave, uvs).rgb);
+                            validCount += 1.0;
+                        }
+                    }
+                }
+                if (validCount > 0.0) {
+                    float avgDiff = diffAccum / validCount;
+                    float normPhi = candPhi / maxSearch;
+                    costs[i + 6] = avgDiff + 0.004 * normPhi * normPhi;
+                } else {
+                    costs[i + 6] = 1e6;
+                }
+            }
+            float fgMaster = 0.0;
+            float fgSlave = 0.0;
+            if (costs[6] > 0.06 && costs[6] < 1e5) {
+                for (int j = -6; j <= 6; ++j) {
+                    float aSub = aK + float(j) * radians(1.2);
+                    vec3 dSub = cos(aSub) * sVec + sin(aSub) * vSeam;
+                    vec3 dMbg = normalize(cos(radians(8.0)) * dSub + sin(radians(8.0)) * nBisector);
+                    vec3 dSbg = normalize(cos(radians(-8.0)) * dSub
+                                          + sin(radians(-8.0)) * nBisector);
+                    vec3 dm0 = quatRotateWXYZ(pc.lens_master_quat, dSub);
+                    vec3 dmBg = quatRotateWXYZ(pc.lens_master_quat, dMbg);
+                    vec3 ds0 = quatRotateWXYZ(pc.lens_slave_quat, dSub);
+                    vec3 dsBg = quatRotateWXYZ(pc.lens_slave_quat, dSbg);
+                    vec3 cM0 = texture(lensMaster,
+                                       clamp(projectKannalaBrandt(dm0,
+                                                                  pc.lens_master_intrinsics,
+                                                                  pc.lens_master_dist,
+                                                                  sensorSize,
+                                                                  atan(length(dm0.xy), dm0.z),
+                                                                  length(dm0.xy)),
+                                             vec2(0.0),
+                                             vec2(1.0)))
+                                   .rgb;
+                    vec3 bgM = texture(lensMaster,
+                                       clamp(projectKannalaBrandt(dmBg,
+                                                                  pc.lens_master_intrinsics,
+                                                                  pc.lens_master_dist,
+                                                                  sensorSize,
+                                                                  atan(length(dmBg.xy), dmBg.z),
+                                                                  length(dmBg.xy)),
+                                             vec2(0.0),
+                                             vec2(1.0)))
+                                   .rgb;
+                    vec3 cS0 = texture(lensSlave,
+                                       clamp(projectKannalaBrandt(ds0,
+                                                                  pc.lens_slave_intrinsics,
+                                                                  pc.lens_slave_dist,
+                                                                  sensorSize,
+                                                                  atan(length(ds0.xy), ds0.z),
+                                                                  length(ds0.xy)),
+                                             vec2(0.0),
+                                             vec2(1.0)))
+                                   .rgb;
+                    vec3 bgS = texture(lensSlave,
+                                       clamp(projectKannalaBrandt(dsBg,
+                                                                  pc.lens_slave_intrinsics,
+                                                                  pc.lens_slave_dist,
+                                                                  sensorSize,
+                                                                  atan(length(dsBg.xy), dsBg.z),
+                                                                  length(dsBg.xy)),
+                                             vec2(0.0),
+                                             vec2(1.0)))
+                                   .rgb;
+                    fgMaster += min(length(cM0 - bgM), length(cM0 - bgS));
+                    fgSlave += min(length(cS0 - bgM), length(cS0 - bgS));
+                }
+                float fgDiff = fgMaster - fgSlave;
+                float dirBias = clamp((abs(fgDiff) > 0.5 ? (fgDiff - sign(fgDiff) * 0.5) : 0.0)
+                                          * 0.22,
+                                      -0.45,
+                                      0.45);
+                for (int idx = 0; idx < 13; ++idx) {
+                    if (costs[idx] < 1e5) {
+                        float normPhi = float(idx - 6) / 6.0;
+                        costs[idx] += dirBias * normPhi;
+                    }
+                }
+            }
+            for (int idx = 0; idx < 13; ++idx) {
+                if (costs[idx] < bestCost) {
+                    bestCost = costs[idx];
+                    bestIdx = idx;
+                }
+            }
+            float subStep = 0.0;
+            if (bestIdx > 0 && bestIdx < 12 && costs[bestIdx - 1] < 1e5
+                && costs[bestIdx + 1] < 1e5) {
+                float denom = costs[bestIdx - 1] - 2.0 * costs[bestIdx] + costs[bestIdx + 1];
+                if (denom > 1e-4) {
+                    subStep = clamp(0.5 * (costs[bestIdx - 1] - costs[bestIdx + 1]) / denom,
+                                    -0.5,
+                                    0.5);
+                }
+            }
+            knotPhi[k] = (float(bestIdx - 6) + subStep) * stepPhi;
+        }
+        phiCut = mix(knotPhi[0], knotPhi[1], aFrac);
+    }
+
+    float blendHalf = radians(1.2);
+    float blendFactor = smoothstep(phiCut - blendHalf, phiCut + blendHalf, phiSeam);
+
+    float wMaster = validMaster ? blendFactor : 0.0;
+    float wSlave = validSlave ? (1.0 - blendFactor) : 0.0;
 
     vec4 colorMaster = vec4(0.0);
-    vec4 colorSlave  = vec4(0.0);
-    vec2 sensorSize = vec2(3840.0, 3840.0);
+    vec4 colorSlave = vec4(0.0);
 
     if (wMaster > 0.0) {
-        vec2 uvMaster = projectKannalaBrandt(dMaster, pc.lens_master_intrinsics, pc.lens_master_dist, sensorSize, thMaster, rhoMaster);
-        if (uvMaster.x >= 0.0 && uvMaster.x <= 1.0 && uvMaster.y >= 0.0 && uvMaster.y <= 1.0) {
-            colorMaster = texture(lensMaster, uvMaster);
-        } else {
-            wMaster = 0.0;
-        }
+        colorMaster = texture(lensMaster, clamp(rawUvMaster, vec2(0.0), vec2(1.0)));
     }
 
     if (wSlave > 0.0) {
-        vec2 uvSlave = projectKannalaBrandt(dSlave, pc.lens_slave_intrinsics, pc.lens_slave_dist, sensorSize, thSlave, rhoSlave);
-        if (uvSlave.x >= 0.0 && uvSlave.x <= 1.0 && uvSlave.y >= 0.0 && uvSlave.y <= 1.0) {
-            colorSlave = texture(lensSlave, uvSlave);
-        } else {
-            wSlave = 0.0;
-        }
+        colorSlave = texture(lensSlave, clamp(rawUvSlave, vec2(0.0), vec2(1.0)));
     }
 
     float totalWeight = wMaster + wSlave;
     vec4 finalColor;
-    if (totalWeight > 1e-4) {
+    if (wMaster > 0.0 && wSlave > 0.0) {
+        // Content-adaptive seam sharpening around phiCut: keep a smooth blend on
+        // well-aligned backgrounds, and tighten the transition band when
+        // parallax causes strong color disagreement on close objects.
+        float colorDiff = length(colorMaster.rgb - colorSlave.rgb);
+        float mismatch = smoothstep(0.06, 0.25, colorDiff);
+        float effectiveHalf = mix(blendHalf, radians(0.6), mismatch);
+        float adaptiveBlend = smoothstep(phiCut - effectiveHalf, phiCut + effectiveHalf, phiSeam);
+        finalColor = mix(colorSlave, colorMaster, adaptiveBlend);
+    } else if (totalWeight > 1e-4) {
         finalColor = (colorMaster * wMaster + colorSlave * wSlave) / totalWeight;
     } else {
-        finalColor = vec4(0.0, 0.0, 0.0, 1.0);
+        // Fallback: if outside nominal FOV at poles, seamlessly sample closest lens
+        if (phiSeam >= 0.0) {
+            vec2 uvMaster = clamp(projectKannalaBrandt(dMaster,
+                                                       pc.lens_master_intrinsics,
+                                                       pc.lens_master_dist,
+                                                       sensorSize,
+                                                       thMaster,
+                                                       rhoMaster),
+                                  vec2(0.0),
+                                  vec2(1.0));
+            finalColor = texture(lensMaster, uvMaster);
+        } else {
+            vec2 uvSlave = clamp(projectKannalaBrandt(dSlave,
+                                                      pc.lens_slave_intrinsics,
+                                                      pc.lens_slave_dist,
+                                                      sensorSize,
+                                                      thSlave,
+                                                      rhoSlave),
+                                 vec2(0.0),
+                                 vec2(1.0));
+            finalColor = texture(lensSlave, uvSlave);
+        }
     }
 
     imageStore(outEquirect, pixelCoord, finalColor);
