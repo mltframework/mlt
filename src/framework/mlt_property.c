@@ -936,7 +936,14 @@ void mlt_property_close(mlt_property self)
  */
 void mlt_property_pass(mlt_property self, mlt_property that)
 {
-    pthread_mutex_lock(&self->mutex);
+    if (self == that)
+        return;
+
+    // Always lock mutexes in the same order to avoid deadlocks.
+    mlt_property first = (uintptr_t) self < (uintptr_t) that ? self : that;
+    mlt_property second = first == self ? that : self;
+    pthread_mutex_lock(&first->mutex);
+    pthread_mutex_lock(&second->mutex);
     clear_property(self);
 
     self->types = that->types;
@@ -967,7 +974,8 @@ void mlt_property_pass(mlt_property self, mlt_property that)
         self->types = mlt_prop_string;
         self->prop_string = that->serialiser(that->data, that->length);
     }
-    pthread_mutex_unlock(&self->mutex);
+    pthread_mutex_unlock(&second->mutex);
+    pthread_mutex_unlock(&first->mutex);
 }
 
 /** Convert frame count to a SMPTE timecode string.
