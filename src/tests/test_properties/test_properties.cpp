@@ -519,6 +519,56 @@ private Q_SLOTS:
         runAnimationCopyStress(true, true);
     }
 
+    void PassAnimatedStringConcurrentStress()
+    {
+        if (!kRunLongTests)
+            QSKIP("Long tests are disabled by kRunLongTests");
+
+        Properties source;
+        // Large allocations make freed-cache accesses more likely to fault.
+        const QByteArray expected(1024 * 1024, 'x');
+        QCOMPARE(source.anim_set("key", expected.constData(), 0, 20), 0);
+        QCOMPARE(source.anim_set("key", expected.constData(), 10, 20), 0);
+        QCOMPARE(QByteArray(source.anim_get("key", 0, 20)), expected);
+
+        std::atomic<int> ready{0};
+        std::atomic<bool> start{false};
+        std::atomic<bool> incorrect{false};
+        unsigned long long operations[2] = {0, 0};
+        std::chrono::steady_clock::time_point deadline;
+        auto run = [&](int index) {
+            Properties destination;
+            ready.fetch_add(1);
+            while (!start.load())
+                std::this_thread::yield();
+            do {
+                if (index == 0) {
+                    destination.pass_property(source, "key");
+                    const char *value = destination.get("key");
+                    if (!value || QByteArray(value) != expected)
+                        incorrect.store(true);
+                } else {
+                    // Do not consume the borrowed pointer: exercise cache replacement only.
+                    source.anim_get("key", 0, 20);
+                }
+                ++operations[index];
+            } while (std::chrono::steady_clock::now() < deadline);
+        };
+
+        std::thread snapshot(run, 0);
+        std::thread render(run, 1);
+        while (ready.load() != 2)
+            std::this_thread::yield();
+        deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+        start.store(true);
+        snapshot.join();
+        render.join();
+        qInfo("Animated string operations: snapshot=%llu render=%llu", operations[0], operations[1]);
+        QVERIFY2(!incorrect.load(), "Animated string copy produced incorrect data");
+        QVERIFY(operations[0] > 0);
+        QVERIFY(operations[1] > 0);
+    }
+
     void PassMultipleByPrefix()
     {
         Properties p[2];

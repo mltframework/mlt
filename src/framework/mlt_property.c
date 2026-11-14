@@ -1506,19 +1506,15 @@ char *mlt_property_anim_get_string(
             refresh_animation(self, fps, locale, length);
         mlt_animation_get_item(self->animation, &item, position);
 
+        const char *value = mlt_property_get_string_l(item.property, locale);
+        char *string = value ? strdup(value) : NULL;
+
         free(self->prop_string);
-
-        pthread_mutex_unlock(&self->mutex);
-        self->prop_string = mlt_property_get_string_l(item.property, locale);
-        pthread_mutex_lock(&self->mutex);
-
-        if (self->prop_string)
-            self->prop_string = strdup(self->prop_string);
+        self->prop_string = string;
         self->types |= mlt_prop_string;
 
         result = self->prop_string;
         mlt_property_close(item.property);
-        pthread_mutex_unlock(&self->mutex);
     } else {
         const char *raw = mlt_property_get_string_l(self, locale);
         if (raw && raw[0] == '"') {
@@ -1542,8 +1538,8 @@ char *mlt_property_anim_get_string(
         } else {
             result = (char *) raw;
         }
-        pthread_mutex_unlock(&self->mutex);
     }
+    pthread_mutex_unlock(&self->mutex);
     return result;
 }
 
