@@ -79,3 +79,14 @@ parameters:
       - 4k
       - 5.7k
       - 8k
+
+  - identifier: stitch_radius
+    title: Convergence Radius
+    type: float
+    description: >
+      Virtual focal sphere radius in meters for optical parallax compensation
+      (e.g., 2.0 for 2 meters). Set to 0 to disable ray-offset translation.
+    default: 0.0
+    minimum: 0.0
+    maximum: 100.0
+    widget: spinner

@@ -15,8 +15,8 @@ struct PushConstants
     float lens_slave_dist[4];        // k1, k2, k3, k4
     float lens_slave_quat[4];        // w, x, y, z
     float gyro_quat[4];              // w, x, y, z
-    uint32_t outWidth;
-    uint32_t outHeight;
+    uint32_t packedDims;             // low 16: outWidth, high 16: outHeight
+    float stitchRadius;              // virtual focal sphere radius in meters (e.g. 2.0)
     float maxFovDegrees;
     float blendOverlapDegrees;
 };
@@ -29,6 +29,10 @@ public:
 
     bool initialize(const std::string &spv_shader_path = "");
     void cleanup();
+
+    void setStitchRadius(float radius_meters) { stitchRadius_ = radius_meters; }
+    float getStitchRadius() const { return stitchRadius_; }
+    void resetTemporalSeam() { has_prev_seam_ = false; }
 
     bool stitchFrames(const uint8_t *master_rgba,
                       const uint8_t *slave_rgba,
@@ -73,28 +77,49 @@ private:
     VkBuffer stageInMaster_ = VK_NULL_HANDLE;
     VkBuffer stageInSlave_ = VK_NULL_HANDLE;
     VkBuffer stageOut_ = VK_NULL_HANDLE;
+    VkBuffer stageSeamLut_ = VK_NULL_HANDLE;
     VkDeviceMemory stageInMasterMem_ = VK_NULL_HANDLE;
     VkDeviceMemory stageInSlaveMem_ = VK_NULL_HANDLE;
     VkDeviceMemory stageOutMem_ = VK_NULL_HANDLE;
+    VkDeviceMemory stageSeamLutMem_ = VK_NULL_HANDLE;
     void *mappedInMaster_ = nullptr;
     void *mappedInSlave_ = nullptr;
     void *mappedOut_ = nullptr;
+    void *mappedSeamLut_ = nullptr;
 
     VkImage imgMaster_ = VK_NULL_HANDLE;
     VkImage imgSlave_ = VK_NULL_HANDLE;
     VkImage imgOut_ = VK_NULL_HANDLE;
+    VkImage imgSeamLut_ = VK_NULL_HANDLE;
     VkDeviceMemory memMaster_ = VK_NULL_HANDLE;
     VkDeviceMemory memSlave_ = VK_NULL_HANDLE;
     VkDeviceMemory memOut_ = VK_NULL_HANDLE;
+    VkDeviceMemory memSeamLut_ = VK_NULL_HANDLE;
     VkImageView viewMaster_ = VK_NULL_HANDLE;
     VkImageView viewSlave_ = VK_NULL_HANDLE;
     VkImageView viewOut_ = VK_NULL_HANDLE;
+    VkImageView viewSeamLut_ = VK_NULL_HANDLE;
 
     VkSampler sampler_ = VK_NULL_HANDLE;
+    VkSampler samplerSeam_ = VK_NULL_HANDLE;
     VkDescriptorPool descPool_ = VK_NULL_HANDLE;
     VkDescriptorSet descSet_ = VK_NULL_HANDLE;
     VkCommandBuffer cmd_ = VK_NULL_HANDLE;
     VkFence fence_ = VK_NULL_HANDLE;
+
+    float stitchRadius_ = 0.0f;
+    bool has_prev_seam_ = false;
+    float prev_seam_phis_[128] = {0.0f};
+
+    void computeSeamLut(const uint8_t *master_rgba,
+                        size_t master_stride,
+                        const uint8_t *slave_rgba,
+                        size_t slave_stride,
+                        uint32_t sensor_w,
+                        uint32_t sensor_h,
+                        const LensCalibration &lens_master,
+                        const LensCalibration &lens_slave,
+                        float *out_phis);
 
     bool initVulkanCore();
     bool createPipeline(const std::string &spv_path);
