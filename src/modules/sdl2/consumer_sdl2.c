@@ -624,6 +624,11 @@ static int consumer_play_video(consumer_sdl self, mlt_frame frame)
 
         // Get the image, width and height
         mlt_frame_get_image(frame, &image, &vfmt, &width, &height, 0);
+        // Keep the texture already on screen. The test card is not a picture.
+        if (mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "get_image_error")) {
+            image = NULL;
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "rendered", 0);
+        }
 
         if (self->running) {
             // Determine window's new display aspect ratio, and resize if it's an existing window
@@ -720,6 +725,8 @@ static int consumer_play_video(consumer_sdl self, mlt_frame frame)
             mlt_image_format preview_format = mlt_properties_get_int(properties, "preview_format");
             vfmt = preview_format == mlt_image_none ? mlt_image_rgba : preview_format;
             mlt_frame_get_image(frame, &image, &vfmt, &width, &height, 0);
+            if (mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "get_image_error"))
+                mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "rendered", 0);
         }
         mlt_events_fire(properties, "consumer-frame-show", mlt_event_data_from_frame(frame));
     }
