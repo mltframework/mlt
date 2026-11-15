@@ -13,6 +13,9 @@ Framework
     with no picture still shows the checkerboard so it composites as transparent.
 
 Modules
+  - Fixed the `avformat` consumer aborting when a picture fetch fails. That
+    frame's video packet is skipped, its audio is kept, and the checkerboard
+    is not encoded.
   - Fixed `subtitle` and `subtitle_feed` dropping every cue after a blank
     line. An empty line is no longer read as a cue number.
   - Fixed `Subtitles::writeToSrtString()` leaving its output string unchanged.

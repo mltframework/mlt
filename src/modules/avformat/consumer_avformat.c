@@ -2135,6 +2135,23 @@ static void encode_subtitles(encode_ctx_t *ctx, mlt_frame frame)
     }
 }
 
+/** A failed picture fetch must not abort the encode or write the test card.
+ *
+ * Advance the video clock and write no packet. Sending the previous AVFrame
+ * again aliases a buffer the codec may still hold.
+ */
+
+static void hold_failed_picture(encode_ctx_t *enc_ctx, mlt_frame frame)
+{
+    AVCodecContext *c = enc_ctx->vcodec_ctx;
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
+
+    mlt_properties_set_int(frame_properties, "rendered", 0);
+    mlt_events_fire(enc_ctx->properties, "consumer-frame-show", mlt_event_data_from_frame(frame));
+    enc_ctx->frame_count++;
+    enc_ctx->video_pts = (double) enc_ctx->frame_count * av_q2d(c->time_base);
+}
+
 static int encode_video(encode_ctx_t *enc_ctx,
                         AVFrame *converted_avframe,
                         uint8_t *video_outbuf,
@@ -2155,8 +2172,11 @@ static int encode_video(encode_ctx_t *enc_ctx,
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
     mlt_service service = MLT_CONSUMER_SERVICE(enc_ctx->consumer);
 
-    if (mlt_properties_get_int(frame_properties, "rendered")
-        && mlt_properties_get_int(properties, "vulkan_image_encode")) {
+    if (mlt_properties_get_int(frame_properties, "get_image_error")) {
+        hold_failed_picture(enc_ctx, frame);
+        return 0;
+    } else if (mlt_properties_get_int(frame_properties, "rendered")
+               && mlt_properties_get_int(properties, "vulkan_image_encode")) {
         uint8_t *image = NULL;
         int width = mlt_properties_get_int(properties, "width");
         int height = mlt_properties_get_int(properties, "height");
@@ -2166,38 +2186,42 @@ static int encode_video(encode_ctx_t *enc_ctx,
         int av_colorspace = mlt_to_av_colorspace(dst_colorspace, height);
 
         mlt_frame_get_image(frame, &image, &img_fmt, &img_width, &img_height, 0);
-        if (img_fmt != mlt_image_vulkan || !image) {
+        if (mlt_properties_get_int(frame_properties, "get_image_error")) {
+            hold_failed_picture(enc_ctx, frame);
+            return 0;
+        } else if (img_fmt != mlt_image_vulkan || !image) {
             mlt_log_error(service,
                           "Vulkan encode expected an mlt_image_vulkan frame, got %s\n",
                           mlt_image_format_name(img_fmt));
             return -1;
-        }
-        if (av_colorspace <= AVCOL_SPC_RGB || av_colorspace == AVCOL_SPC_UNSPECIFIED)
-            av_colorspace = AVCOL_SPC_BT709;
-        venc = mlt_properties_get_data(properties, "vulkan_encoder", NULL);
-        if (!venc) {
-            venc = avformat_vulkan_encoder_new();
-            if (!venc)
+        } else {
+            if (av_colorspace <= AVCOL_SPC_RGB || av_colorspace == AVCOL_SPC_UNSPECIFIED)
+                av_colorspace = AVCOL_SPC_BT709;
+            venc = mlt_properties_get_data(properties, "vulkan_encoder", NULL);
+            if (!venc) {
+                venc = avformat_vulkan_encoder_new();
+                if (!venc)
+                    return -1;
+                mlt_properties_set_data(properties,
+                                        "vulkan_encoder",
+                                        venc,
+                                        0,
+                                        (mlt_destructor) avformat_vulkan_encoder_close,
+                                        NULL);
+            }
+            ret = avformat_vulkan_encoder_frame(venc,
+                                                c->hw_device_ctx,
+                                                width,
+                                                height,
+                                                hwupload_pix_fmt(properties),
+                                                dst_full_range,
+                                                av_colorspace,
+                                                (mlt_vulkan_image *) image,
+                                                &avframe);
+            if (ret < 0)
                 return -1;
-            mlt_properties_set_data(properties,
-                                    "vulkan_encoder",
-                                    venc,
-                                    0,
-                                    (mlt_destructor) avformat_vulkan_encoder_close,
-                                    NULL);
+            mlt_events_fire(properties, "consumer-frame-show", mlt_event_data_from_frame(frame));
         }
-        ret = avformat_vulkan_encoder_frame(venc,
-                                            c->hw_device_ctx,
-                                            width,
-                                            height,
-                                            hwupload_pix_fmt(properties),
-                                            dst_full_range,
-                                            av_colorspace,
-                                            (mlt_vulkan_image *) image,
-                                            &avframe);
-        if (ret < 0)
-            return -1;
-        mlt_events_fire(properties, "consumer-frame-show", mlt_event_data_from_frame(frame));
     } else if (mlt_properties_get_int(frame_properties, "rendered")) {
         uint8_t *image;
         int width = mlt_properties_get_int(properties, "width");
@@ -2208,150 +2232,159 @@ static int encode_video(encode_ctx_t *enc_ctx,
         int is_interlaced_chroma_correction = 0;
 
         mlt_frame_get_image(frame, &image, &img_fmt, &img_width, &img_height, 0);
-
-        // Interlaced 420 correction
-        if (!mlt_properties_get_int(frame_properties, "progressive")
-            && converted_avframe->format == AV_PIX_FMT_YUV420P // dst
-            && img_fmt == mlt_image_yuv422 // src. It looks like rgb and 444 go as 422 too.
-            && height % 4 == 0             // because reducing twice
-            && width == converted_avframe->linesize[1] * 2) // if != things become too complicated
-        {
-            width *= 2; // substitute resolution, to appear each half-frame side-by-side
-            height /= 2;
-            for (int i = 0; i < 3; ++i)
-                converted_avframe->linesize[i] *= 2;
-            is_interlaced_chroma_correction = 1;
-            mlt_log_debug(service, "interlaced chroma correction is activated\n");
-        }
-
-        mlt_image_format_planes(img_fmt,
-                                width,
-                                height,
-                                image,
-                                video_avframe.data,
-                                video_avframe.linesize);
-
-        // Do the colour space conversion
-        int srcfmt = pick_pix_fmt(img_fmt);
-        int flags
-            = mlt_get_sws_flags(width, height, srcfmt, width, height, converted_avframe->format);
-        struct SwsContext *context = sws_getContext(width,
-                                                    height,
-                                                    srcfmt,
-                                                    width,
-                                                    height,
-                                                    converted_avframe->format,
-                                                    flags,
-                                                    NULL,
-                                                    NULL,
-                                                    NULL);
-        const char *src_colorspace_str = mlt_properties_get(frame_properties, "colorspace");
-        mlt_colorspace src_colorspace = mlt_image_colorspace_id(src_colorspace_str);
-        int src_full_range = mlt_properties_get_int(frame_properties, "full_range");
-        mlt_set_luma_transfer(context,
-                              src_colorspace,
-                              dst_colorspace,
-                              src_full_range,
-                              dst_full_range);
-        sws_scale(context,
-                  (const uint8_t *const *) video_avframe.data,
-                  video_avframe.linesize,
-                  0,
-                  height,
-                  converted_avframe->data,
-                  converted_avframe->linesize);
-        sws_freeContext(context);
-
-        if (is_interlaced_chroma_correction) // restoring everything back
-        {
-            width /= 2;
-            height *= 2;
-            for (int i = 0; i < 3; ++i)
-                converted_avframe->linesize[i] /= 2;
-        }
-
-        mlt_events_fire(properties, "consumer-frame-show", mlt_event_data_from_frame(frame));
-
-        // Apply the alpha if applicable
-        if (!mlt_properties_get(properties, "mlt_image_format")
-            || strcmp(mlt_properties_get(properties, "mlt_image_format"), "rgba"))
-            if (c->pix_fmt == AV_PIX_FMT_RGBA || c->pix_fmt == AV_PIX_FMT_ARGB
-                || c->pix_fmt == AV_PIX_FMT_BGRA) {
-                uint8_t *p;
-                uint8_t *alpha = mlt_frame_get_alpha(frame);
-                if (alpha) {
-                    register int n;
-
-                    for (int i = 0; i < height; i++) {
-                        n = (width + 7) / 8;
-                        p = converted_avframe->data[0] + i * converted_avframe->linesize[0] + 3;
-
-                        switch (width % 8) {
-                        case 0:
-                            do {
-                                *p = *alpha++;
-                                p += 4;
-                            case 7:
-                                *p = *alpha++;
-                                p += 4;
-                            case 6:
-                                *p = *alpha++;
-                                p += 4;
-                            case 5:
-                                *p = *alpha++;
-                                p += 4;
-                            case 4:
-                                *p = *alpha++;
-                                p += 4;
-                            case 3:
-                                *p = *alpha++;
-                                p += 4;
-                            case 2:
-                                *p = *alpha++;
-                                p += 4;
-                            case 1:
-                                *p = *alpha++;
-                                p += 4;
-                            } while (--n);
-                        }
-                    }
-                } else {
-                    for (int i = 0; i < height; i++) {
-                        int n = width;
-                        uint8_t *p = converted_avframe->data[0] + i * converted_avframe->linesize[0]
-                                     + 3;
-                        while (n) {
-                            *p = 255;
-                            p += 4;
-                            n--;
-                        }
-                    }
-                }
-            }
-        if (AV_PIX_FMT_VAAPI == c->pix_fmt
-#if HAVE_FFMPEG_VULKAN
-            || AV_PIX_FMT_VULKAN == c->pix_fmt
-#endif
-        ) {
-            AVFilterContext *vfilter_in = mlt_properties_get_data(properties, "vfilter_in", NULL);
-            AVFilterContext *vfilter_out = mlt_properties_get_data(properties, "vfilter_out", NULL);
-            if (vfilter_in && vfilter_out) {
-                if (!avframe)
-                    avframe = av_frame_alloc();
-                ret = av_buffersrc_add_frame(vfilter_in, converted_avframe);
-                ret = av_buffersink_get_frame(vfilter_out, avframe);
-                if (ret < 0) {
-                    mlt_log_warning(service,
-                                    "error with hwupload: %d (frame %d)\n",
-                                    ret,
-                                    enc_ctx->frame_count);
-                    if (++enc_ctx->error_count > 2)
-                        return -1;
-                    ret = 0;
-                }
-            }
+        if (mlt_properties_get_int(frame_properties, "get_image_error")) {
+            hold_failed_picture(enc_ctx, frame);
+            return 0;
         } else {
-            avframe = converted_avframe;
+            // Interlaced 420 correction
+            if (!mlt_properties_get_int(frame_properties, "progressive")
+                && converted_avframe->format == AV_PIX_FMT_YUV420P // dst
+                && img_fmt == mlt_image_yuv422 // src. It looks like rgb and 444 go as 422 too.
+                && height % 4 == 0             // because reducing twice
+                && width
+                       == converted_avframe->linesize[1] * 2) // if != things become too complicated
+            {
+                width *= 2; // substitute resolution, to appear each half-frame side-by-side
+                height /= 2;
+                for (int i = 0; i < 3; ++i)
+                    converted_avframe->linesize[i] *= 2;
+                is_interlaced_chroma_correction = 1;
+                mlt_log_debug(service, "interlaced chroma correction is activated\n");
+            }
+
+            mlt_image_format_planes(img_fmt,
+                                    width,
+                                    height,
+                                    image,
+                                    video_avframe.data,
+                                    video_avframe.linesize);
+
+            // Do the colour space conversion
+            int srcfmt = pick_pix_fmt(img_fmt);
+            int flags
+                = mlt_get_sws_flags(width, height, srcfmt, width, height, converted_avframe->format);
+            struct SwsContext *context = sws_getContext(width,
+                                                        height,
+                                                        srcfmt,
+                                                        width,
+                                                        height,
+                                                        converted_avframe->format,
+                                                        flags,
+                                                        NULL,
+                                                        NULL,
+                                                        NULL);
+            const char *src_colorspace_str = mlt_properties_get(frame_properties, "colorspace");
+            mlt_colorspace src_colorspace = mlt_image_colorspace_id(src_colorspace_str);
+            int src_full_range = mlt_properties_get_int(frame_properties, "full_range");
+            mlt_set_luma_transfer(context,
+                                  src_colorspace,
+                                  dst_colorspace,
+                                  src_full_range,
+                                  dst_full_range);
+            sws_scale(context,
+                      (const uint8_t *const *) video_avframe.data,
+                      video_avframe.linesize,
+                      0,
+                      height,
+                      converted_avframe->data,
+                      converted_avframe->linesize);
+            sws_freeContext(context);
+
+            if (is_interlaced_chroma_correction) // restoring everything back
+            {
+                width /= 2;
+                height *= 2;
+                for (int i = 0; i < 3; ++i)
+                    converted_avframe->linesize[i] /= 2;
+            }
+
+            mlt_events_fire(properties, "consumer-frame-show", mlt_event_data_from_frame(frame));
+
+            // Apply the alpha if applicable
+            if (!mlt_properties_get(properties, "mlt_image_format")
+                || strcmp(mlt_properties_get(properties, "mlt_image_format"), "rgba"))
+                if (c->pix_fmt == AV_PIX_FMT_RGBA || c->pix_fmt == AV_PIX_FMT_ARGB
+                    || c->pix_fmt == AV_PIX_FMT_BGRA) {
+                    uint8_t *p;
+                    uint8_t *alpha = mlt_frame_get_alpha(frame);
+                    if (alpha) {
+                        register int n;
+
+                        for (int i = 0; i < height; i++) {
+                            n = (width + 7) / 8;
+                            p = converted_avframe->data[0] + i * converted_avframe->linesize[0] + 3;
+
+                            switch (width % 8) {
+                            case 0:
+                                do {
+                                    *p = *alpha++;
+                                    p += 4;
+                                case 7:
+                                    *p = *alpha++;
+                                    p += 4;
+                                case 6:
+                                    *p = *alpha++;
+                                    p += 4;
+                                case 5:
+                                    *p = *alpha++;
+                                    p += 4;
+                                case 4:
+                                    *p = *alpha++;
+                                    p += 4;
+                                case 3:
+                                    *p = *alpha++;
+                                    p += 4;
+                                case 2:
+                                    *p = *alpha++;
+                                    p += 4;
+                                case 1:
+                                    *p = *alpha++;
+                                    p += 4;
+                                } while (--n);
+                            }
+                        }
+                    } else {
+                        for (int i = 0; i < height; i++) {
+                            int n = width;
+                            uint8_t *p = converted_avframe->data[0]
+                                         + i * converted_avframe->linesize[0] + 3;
+                            while (n) {
+                                *p = 255;
+                                p += 4;
+                                n--;
+                            }
+                        }
+                    }
+                }
+            if (AV_PIX_FMT_VAAPI == c->pix_fmt
+#if HAVE_FFMPEG_VULKAN
+                || AV_PIX_FMT_VULKAN == c->pix_fmt
+#endif
+            ) {
+                AVFilterContext *vfilter_in = mlt_properties_get_data(properties,
+                                                                      "vfilter_in",
+                                                                      NULL);
+                AVFilterContext *vfilter_out = mlt_properties_get_data(properties,
+                                                                       "vfilter_out",
+                                                                       NULL);
+                if (vfilter_in && vfilter_out) {
+                    if (!avframe)
+                        avframe = av_frame_alloc();
+                    ret = av_buffersrc_add_frame(vfilter_in, converted_avframe);
+                    ret = av_buffersink_get_frame(vfilter_out, avframe);
+                    if (ret < 0) {
+                        mlt_log_warning(service,
+                                        "error with hwupload: %d (frame %d)\n",
+                                        ret,
+                                        enc_ctx->frame_count);
+                        if (++enc_ctx->error_count > 2)
+                            return -1;
+                        ret = 0;
+                    }
+                }
+            } else {
+                avframe = converted_avframe;
+            }
         }
     }
 
