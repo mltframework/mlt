@@ -1,6 +1,6 @@
 schema_version: 7.2
 type: filter
-identifier: placebo.unsharp_mask
+identifier: placebo.garamond13.unsharp_mask
 title: Unsharp Mask (libplacebo)
 version: 1
 copyright: 2022-2023 Ivan Bjelis

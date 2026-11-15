@@ -76,6 +76,14 @@ if(MOD_QT6)
 endif()
 
 
+# Links the placebo module's shader_service_id.c. No libplacebo dependency.
+add_executable(test_placebo_shader_id test_placebo_shader_id/test_placebo_shader_id.c
+                                       ${CMAKE_SOURCE_DIR}/src/modules/placebo/shader_service_id.c)
+target_include_directories(test_placebo_shader_id PRIVATE ${CMAKE_SOURCE_DIR}/src/modules/placebo)
+target_compile_options(test_placebo_shader_id PRIVATE ${MLT_COMPILE_OPTIONS})
+set_target_properties(test_placebo_shader_id PROPERTIES AUTOMOC OFF)
+add_test(NAME placebo_shader_id COMMAND test_placebo_shader_id)
+
 if(MOD_PLACEBO)
   add_qt_test(TEST_NAME placebo_blend)
   add_qt_test(TEST_NAME color_transform)

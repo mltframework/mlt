@@ -19,6 +19,7 @@
  */
 
 #include "mltplacebo_export.h"
+#include "shader_service_id.h"
 #include <framework/mlt.h>
 #include <limits.h>
 #include <string.h>
@@ -96,7 +97,10 @@ static mlt_filter shader_init(mlt_profile profile, mlt_service_type type, const 
     return filter_placebo_shader_init(profile, type, id, arg && *arg ? arg : resource);
 }
 
-static void register_shaders(mlt_repository repository, const char *directory, int depth)
+static void register_shaders(mlt_repository repository,
+                             const char *root,
+                             const char *directory,
+                             int depth)
 {
     if (depth > 32) {
         mlt_log_error(NULL, "[placebo] Shader directory nesting too deep: %s\n", directory);
@@ -116,7 +120,7 @@ static void register_shaders(mlt_repository repository, const char *directory, i
             continue;
         }
         if (S_ISDIR(st.st_mode)) {
-            register_shaders(repository, path, depth + 1);
+            register_shaders(repository, root, path, depth + 1);
             continue;
         }
         const char *basename = strrchr(path, '/');
@@ -127,10 +131,9 @@ static void register_shaders(mlt_repository repository, const char *directory, i
 
         char id[PATH_MAX];
         char resource[PATH_MAX];
-        int n = snprintf(id, sizeof(id), "placebo.%.*s", (int) length - 4, basename);
         int r = snprintf(resource, sizeof(resource), "%.*s.hook", (int) strlen(path) - 4, path);
-        if (n < 0 || n >= sizeof(id) || r < 0 || r >= sizeof(resource)) {
-            mlt_log_error(NULL, "[placebo] Shader path too long: %s\n", path);
+        if (shader_service_id(id, sizeof(id), root, path) || r < 0 || r >= (int) sizeof(resource)) {
+            mlt_log_error(NULL, "[placebo] Failed to form shader service id: %s\n", path);
             continue;
         }
         if (mlt_stat(resource, &st) || !S_ISREG(st.st_mode)) {
@@ -219,5 +222,5 @@ MLTPLACEBO_EXPORT MLT_REPOSITORY
         mlt_log_error(NULL, "[placebo] Shader data directory path too long\n");
         return;
     }
-    register_shaders(repository, directory, 0);
+    register_shaders(repository, directory, directory, 0);
 }
