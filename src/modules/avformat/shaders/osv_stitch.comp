@@ -211,7 +211,13 @@ void main()
     if (validMaster && validSlave) {
         // Multi-Band Photometric & Content-Adaptive Blending:
         // 1. Measure local color mismatch across the overlap.
-        vec3 deltaC = clamp(colorMaster.rgb - colorSlave.rgb, vec3(-0.15), vec3(0.15));
+        float colorDiff = length(colorMaster.rgb - colorSlave.rgb);
+
+        // Disparity Gate: Only equalize exposure where color difference is low (similar scene content).
+        // If colorDiff is high (>0.06), it is structural parallax/occlusion (e.g. body vs sky),
+        // NOT a global exposure mismatch. Bleeding in high-disparity zones causes washed-out milky ghosts!
+        float exposureWeight = smoothstep(0.18, 0.05, colorDiff);
+        vec3 deltaC = clamp((colorMaster.rgb - colorSlave.rgb) * exposureWeight, vec3(-0.15), vec3(0.15));
 
         // 2. Low-frequency luminance/color bleeding: ramp deltaC smoothly across the full overlap band (10 deg)
         // so neither side experiences a step change in exposure or vignetting at the seam cut line.
@@ -219,10 +225,10 @@ void main()
         vec3 balancedSlave = colorSlave.rgb + tWide * deltaC;
         vec3 balancedMaster = colorMaster.rgb - (1.0 - tWide) * deltaC;
 
-        // 3. High-frequency seam sharpening: adapt transition width based on local texture disparity
-        float colorDiff = length(colorMaster.rgb - colorSlave.rgb);
-        float mismatch = smoothstep(0.05, 0.20, colorDiff);
-        float effectiveHalf = mix(blendHalf, radians(0.25), mismatch);
+        // 3. High-frequency seam sharpening: when disparity is high, collapse transition band to a razor-thin
+        // cut (~0.02 deg) to completely eliminate transparent alpha-ghosting between foreground and background.
+        float mismatch = smoothstep(0.05, 0.15, colorDiff);
+        float effectiveHalf = mix(blendHalf, radians(0.02), mismatch);
         float adaptiveBlend = smoothstep(phiCut - effectiveHalf, phiCut + effectiveHalf, phiSeam);
         finalColor = vec4(clamp(mix(balancedSlave, balancedMaster, adaptiveBlend), 0.0, 1.0), 1.0);
     } else if (validMaster) {

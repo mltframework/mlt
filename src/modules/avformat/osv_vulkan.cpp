@@ -1,11 +1,10 @@
 #include "osv_vulkan.h"
-#include "osv_stitch_spv.h"
-#include <algorithm>
-#include <cmath>
 #include <cstring>
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include <cmath>
+#include <algorithm>
 
 static uint32_t findMemoryType(VkPhysicalDevice physicalDevice,
                                uint32_t typeFilter,
@@ -170,35 +169,21 @@ bool OsvVulkanStitcher::initVulkanCore()
 
 bool OsvVulkanStitcher::createPipeline(const std::string &spv_path)
 {
-    const uint32_t *code = nullptr;
-    size_t code_size = 0;
-    std::vector<char> buffer;
-
-    if (!spv_path.empty()) {
-        std::ifstream file(spv_path, std::ios::ate | std::ios::binary);
-        if (file.is_open()) {
-            size_t fileSize = (size_t) file.tellg();
-            buffer.resize(fileSize);
-            file.seekg(0);
-            file.read(buffer.data(), fileSize);
-            file.close();
-            code = reinterpret_cast<const uint32_t *>(buffer.data());
-            code_size = buffer.size();
-        } else {
-            std::cerr << "[OSV-Vulkan] Shader file not found: " << spv_path
-                      << ", falling back to embedded SPIR-V shader." << std::endl;
-        }
+    std::ifstream file(spv_path, std::ios::ate | std::ios::binary);
+    if (!file.is_open()) {
+        std::cerr << "[OSV-Vulkan] Shader file not found: " << spv_path << std::endl;
+        return false;
     }
-
-    if (!code) {
-        code = osv_stitch_spv;
-        code_size = osv_stitch_spv_size;
-    }
+    size_t fileSize = (size_t) file.tellg();
+    std::vector<char> buffer(fileSize);
+    file.seekg(0);
+    file.read(buffer.data(), fileSize);
+    file.close();
 
     VkShaderModuleCreateInfo moduleCreateInfo{};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    moduleCreateInfo.codeSize = code_size;
-    moduleCreateInfo.pCode = code;
+    moduleCreateInfo.codeSize = buffer.size();
+    moduleCreateInfo.pCode = reinterpret_cast<const uint32_t *>(buffer.data());
 
     if (vkCreateShaderModule(device_, &moduleCreateInfo, nullptr, &shader_module_) != VK_SUCCESS) {
         return false;
@@ -478,37 +463,33 @@ bool OsvVulkanStitcher::ensureResources(uint32_t sensor_w,
     vkMapMemory(device_, stageOutMem_, 0, outBytes, 0, &mappedOut_);
     vkMapMemory(device_, stageSeamLutMem_, 0, 128 * sizeof(float), 0, &mappedSeamLut_);
 
-    auto createImg = [&](uint32_t w,
-                         uint32_t h,
-                         VkImageUsageFlags usage,
-                         VkImage &img,
-                         VkDeviceMemory &mem,
-                         VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM) {
-        VkImageCreateInfo iInfo{};
-        iInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        iInfo.imageType = VK_IMAGE_TYPE_2D;
-        iInfo.format = fmt;
-        iInfo.extent = {w, h, 1};
-        iInfo.mipLevels = 1;
-        iInfo.arrayLayers = 1;
-        iInfo.samples = VK_SAMPLE_COUNT_1_BIT;
-        iInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
-        iInfo.usage = usage;
-        iInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        iInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        vkCreateImage(device_, &iInfo, nullptr, &img);
+    auto createImg =
+        [&](uint32_t w, uint32_t h, VkImageUsageFlags usage, VkImage &img, VkDeviceMemory &mem, VkFormat fmt = VK_FORMAT_R8G8B8A8_UNORM) {
+            VkImageCreateInfo iInfo{};
+            iInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+            iInfo.imageType = VK_IMAGE_TYPE_2D;
+            iInfo.format = fmt;
+            iInfo.extent = {w, h, 1};
+            iInfo.mipLevels = 1;
+            iInfo.arrayLayers = 1;
+            iInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+            iInfo.tiling = VK_IMAGE_TILING_OPTIMAL;
+            iInfo.usage = usage;
+            iInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+            iInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            vkCreateImage(device_, &iInfo, nullptr, &img);
 
-        VkMemoryRequirements req;
-        vkGetImageMemoryRequirements(device_, img, &req);
-        VkMemoryAllocateInfo allocInfo{};
-        allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        allocInfo.allocationSize = req.size;
-        allocInfo.memoryTypeIndex = findMemoryType(physical_device_,
-                                                   req.memoryTypeBits,
-                                                   VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-        vkAllocateMemory(device_, &allocInfo, nullptr, &mem);
-        vkBindImageMemory(device_, img, mem, 0);
-    };
+            VkMemoryRequirements req;
+            vkGetImageMemoryRequirements(device_, img, &req);
+            VkMemoryAllocateInfo allocInfo{};
+            allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+            allocInfo.allocationSize = req.size;
+            allocInfo.memoryTypeIndex = findMemoryType(physical_device_,
+                                                       req.memoryTypeBits,
+                                                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+            vkAllocateMemory(device_, &allocInfo, nullptr, &mem);
+            vkBindImageMemory(device_, img, mem, 0);
+        };
 
     createImg(sensor_w,
               sensor_h,
@@ -653,40 +634,34 @@ bool OsvVulkanStitcher::ensureResources(uint32_t sensor_w,
 
 namespace {
 
-struct Vec3f
-{
+struct Vec3f {
     float x, y, z;
-    Vec3f operator+(const Vec3f &o) const { return {x + o.x, y + o.y, z + o.z}; }
-    Vec3f operator-(const Vec3f &o) const { return {x - o.x, y - o.y, z - o.z}; }
+    Vec3f operator+(const Vec3f& o) const { return {x + o.x, y + o.y, z + o.z}; }
+    Vec3f operator-(const Vec3f& o) const { return {x - o.x, y - o.y, z - o.z}; }
     Vec3f operator*(float s) const { return {x * s, y * s, z * s}; }
 };
 
-static inline Vec3f crossVec(const Vec3f &a, const Vec3f &b)
-{
-    return {a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x};
+static inline Vec3f crossVec(const Vec3f& a, const Vec3f& b) {
+    return { a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x };
 }
 
-static inline float dotVec(const Vec3f &a, const Vec3f &b)
-{
+static inline float dotVec(const Vec3f& a, const Vec3f& b) {
     return a.x * b.x + a.y * b.y + a.z * b.z;
 }
 
-static inline Vec3f normVec(const Vec3f &v)
-{
+static inline Vec3f normVec(const Vec3f& v) {
     float l = std::sqrt(dotVec(v, v));
     return l > 1e-6f ? Vec3f{v.x / l, v.y / l, v.z / l} : v;
 }
 
-static inline Vec3f quatRotate(const float q[4], const Vec3f &v)
-{
+static inline Vec3f quatRotate(const float q[4], const Vec3f& v) {
     Vec3f qvec = {q[1], q[2], q[3]};
     Vec3f uv = crossVec(qvec, v);
     Vec3f uuv = crossVec(qvec, uv);
     return v + (uv * q[0] + uuv) * 2.0f;
 }
 
-static inline float kannalaBrandtRd(float th, const float k[4])
-{
+static inline float kannalaBrandtRd(float th, const float k[4]) {
     const float th0 = 1.57079632679f;
     if (th <= th0) {
         float t2 = th * th, t4 = t2 * t2, t6 = t4 * t2, t8 = t4 * t4;
@@ -694,52 +669,46 @@ static inline float kannalaBrandtRd(float th, const float k[4])
     } else {
         float t2 = th0 * th0, t4 = t2 * t2, t6 = t4 * t2, t8 = t4 * t4;
         float rd0 = th0 * (1.0f + k[0] * t2 + k[1] * t4 + k[2] * t6 + k[3] * t8);
-        float drd0 = 1.0f + 3.0f * k[0] * t2 + 5.0f * k[1] * t4 + 7.0f * k[2] * t6
-                     + 9.0f * k[3] * t8;
+        float drd0 = 1.0f + 3.0f * k[0] * t2 + 5.0f * k[1] * t4 + 7.0f * k[2] * t6 + 9.0f * k[3] * t8;
         return rd0 + drd0 * (th - th0);
     }
 }
 
-static inline bool projectLens(
-    const Vec3f &dLens, const LensCalibration &cal, uint32_t w, uint32_t h, float &px, float &py)
-{
+static inline bool projectLens(const Vec3f& dLens, const LensCalibration& cal, uint32_t w, uint32_t h, float& px, float& py) {
     float rho = std::sqrt(dLens.x * dLens.x + dLens.y * dLens.y);
     float th = std::atan2(rho, dLens.z);
-    if (th > 1.70327f)
-        return false; // 97.59 deg
+    if (th > 1.70327f) return false; // 97.59 deg
     float rd = kannalaBrandtRd(th, &cal.k1);
     float safe_rho = std::max(rho, 1e-6f);
     px = cal.cx + cal.fx * rd * (dLens.x / safe_rho);
     py = cal.cy + cal.fy * rd * (dLens.y / safe_rho);
-    return (px >= 0.0f && px < (float) (w - 1) && py >= 0.0f && py < (float) (h - 1));
+    return (px >= 0.0f && px < (float)(w - 1) && py >= 0.0f && py < (float)(h - 1));
 }
 
-static inline float sampleLuma(const uint8_t *rgba, size_t stride, float px, float py)
-{
-    int x0 = (int) px;
-    int y0 = (int) py;
-    const uint8_t *p = rgba + y0 * stride + x0 * 4;
+static inline float sampleLuma(const uint8_t* rgba, size_t stride, float px, float py) {
+    int x0 = (int)px;
+    int y0 = (int)py;
+    const uint8_t* p = rgba + y0 * stride + x0 * 4;
     return (p[0] * 0.299f + p[1] * 0.587f + p[2] * 0.114f) * (1.0f / 255.0f);
 }
 
 } // namespace
 
-void OsvVulkanStitcher::computeSeamLut(const uint8_t *master_rgba,
-                                       size_t master_stride,
-                                       const uint8_t *slave_rgba,
-                                       size_t slave_stride,
-                                       uint32_t sensor_w,
-                                       uint32_t sensor_h,
-                                       const LensCalibration &lens_master,
-                                       const LensCalibration &lens_slave,
-                                       float *out_phis)
-{
-    float q_m_inv[4]
-        = {lens_master.quat[0], -lens_master.quat[1], -lens_master.quat[2], -lens_master.quat[3]};
-    float q_s_inv[4]
-        = {lens_slave.quat[0], -lens_slave.quat[1], -lens_slave.quat[2], -lens_slave.quat[3]};
+void OsvVulkanStitcher::computeSeamLut(
+    const uint8_t* master_rgba,
+    size_t master_stride,
+    const uint8_t* slave_rgba,
+    size_t slave_stride,
+    uint32_t sensor_w,
+    uint32_t sensor_h,
+    const LensCalibration& lens_master,
+    const LensCalibration& lens_slave,
+    float* out_phis
+) {
+    float q_m_inv[4] = {lens_master.quat[0], -lens_master.quat[1], -lens_master.quat[2], -lens_master.quat[3]};
+    float q_s_inv[4] = {lens_slave.quat[0], -lens_slave.quat[1], -lens_slave.quat[2], -lens_slave.quat[3]};
     Vec3f aMaster = quatRotate(q_m_inv, {0.0f, 0.0f, 1.0f});
-    Vec3f aSlave = quatRotate(q_s_inv, {0.0f, 0.0f, 1.0f});
+    Vec3f aSlave  = quatRotate(q_s_inv, {0.0f, 0.0f, 1.0f});
 
     Vec3f nBisector = normVec(aMaster - aSlave);
     Vec3f uSeam = normVec(crossVec(aMaster, aSlave));
@@ -754,7 +723,7 @@ void OsvVulkanStitcher::computeSeamLut(const uint8_t *master_rgba,
     float diffs[N_KNOTS][N_CAND];
     bool validKnot[N_KNOTS][N_CAND];
 
-#pragma omp parallel for schedule(static)
+    #pragma omp parallel for schedule(static)
     for (int k = 0; k < N_KNOTS; ++k) {
         float aK = -3.141592653589793f + float(k) * (2.0f * 3.141592653589793f / float(N_KNOTS));
         for (int c = 0; c < N_CAND; ++c) {
@@ -768,8 +737,8 @@ void OsvVulkanStitcher::computeSeamLut(const uint8_t *master_rgba,
                 Vec3f d_m = quatRotate(lens_master.quat, dTest);
                 Vec3f d_s = quatRotate(lens_slave.quat, dTest);
                 float px_m, py_m, px_s, py_s;
-                if (projectLens(d_m, lens_master, sensor_w, sensor_h, px_m, py_m)
-                    && projectLens(d_s, lens_slave, sensor_w, sensor_h, px_s, py_s)) {
+                if (projectLens(d_m, lens_master, sensor_w, sensor_h, px_m, py_m) &&
+                    projectLens(d_s, lens_slave, sensor_w, sensor_h, px_s, py_s)) {
                     float cM = sampleLuma(master_rgba, master_stride, px_m, py_m);
                     float cS = sampleLuma(slave_rgba, slave_stride, px_s, py_s);
                     diffAccum += std::abs(cM - cS);
@@ -788,6 +757,14 @@ void OsvVulkanStitcher::computeSeamLut(const uint8_t *master_rgba,
                 lumaM[k][c] = 0.0f;
                 lumaS[k][c] = 0.0f;
                 validKnot[k][c] = false;
+            }
+        }
+
+        // Detect foreground obstacles across the candidate angles at knot k
+        float maxKnotDiff = 0.0f;
+        for (int c = 0; c < N_CAND; ++c) {
+            if (validKnot[k][c]) {
+                maxKnotDiff = std::max(maxKnotDiff, diffs[k][c]);
             }
         }
 
@@ -813,32 +790,41 @@ void OsvVulkanStitcher::computeSeamLut(const uint8_t *master_rgba,
             float avgDiff = diffs[k][c];
             float candPhi = -maxSearch + float(c) * (2.0f * maxSearch / float(N_CAND - 1));
             float normPhi = candPhi / maxSearch;
-            // Penalize:
-            // 1. Squared photometric disparity (edges / high error)
-            // 2. Center deviation (gentle preference for 50/50 split when scene is uniform)
-            // 3. Forward optical bias (strongly favor Master for obstacles in forward hemisphere)
-            // 4. Directional edge-crossing penalty (repel seam from cutting across sharp contrast lines)
-            float forwardBias = 0.003f * std::max(0.0f, normPhi);
-            costs[k][c] = avgDiff * avgDiff + 0.0005f * normPhi * normPhi + forwardBias
-                          + 0.05f * edgePenalty * edgePenalty;
+
+            // Obstacle Repulsion:
+            // When maxKnotDiff > 0.12f, a foreground obstacle is present at this knot.
+            // Strongly penalize cutting through the obstacle body/edges, and guide the seam
+            // towards the Master lens side (candPhi < 0) where optics and lighting are superior.
+            float obstacleCost = 0.0f;
+            if (maxKnotDiff > 0.12f) {
+                float disparityRatio = avgDiff / maxKnotDiff;
+                obstacleCost = 0.25f * (disparityRatio * disparityRatio);
+                // Forward optical preference for Master lens on obstacles
+                if (normPhi > 0.0f) {
+                    obstacleCost += 0.08f * normPhi;
+                }
+            }
+
+            float centerPref = 0.0005f * normPhi * normPhi;
+            float edgeCost = 0.05f * edgePenalty * edgePenalty;
+            costs[k][c] = avgDiff * avgDiff + centerPref + obstacleCost + edgeCost;
         }
     }
 
-    // Dynamic Programming across circular loop (2 passes to enforce seamless wrap)
-    float M[N_KNOTS * 2][N_CAND];
-    int backtrack[N_KNOTS * 2][N_CAND];
-    for (int c = 0; c < N_CAND; ++c)
-        M[0][c] = costs[0][c];
-    const float smooth_step_penalty = 0.005f;
-    for (int k = 1; k < N_KNOTS * 2; ++k) {
-        int k_mod = k % N_KNOTS;
+    // Dynamic Programming across circular loop:
+    // Pass 1: Warm-up over N_KNOTS to discover steady-state endpoint seed
+    float M[N_KNOTS][N_CAND];
+    int backtrack[N_KNOTS][N_CAND];
+    for (int c = 0; c < N_CAND; ++c) M[0][c] = costs[0][c];
+    const float smooth_step_penalty = 0.020f;
+
+    for (int k = 1; k < N_KNOTS; ++k) {
         for (int c = 0; c < N_CAND; ++c) {
             float best_val = 1e9f;
             int best_prev = c;
             for (int prev_c = 0; prev_c < N_CAND; ++prev_c) {
                 int dc = std::abs(c - prev_c);
-                if (dc > 2)
-                    continue; // enforce smooth C0 continuity across knots
+                if (dc > 2) continue; // enforce smooth C0 continuity across knots
                 float step_pen = smooth_step_penalty * float(dc);
                 float v = M[k - 1][prev_c] + step_pen;
                 if (v < best_val) {
@@ -846,34 +832,87 @@ void OsvVulkanStitcher::computeSeamLut(const uint8_t *master_rgba,
                     best_prev = prev_c;
                 }
             }
-            M[k][c] = costs[k_mod][c] + best_val;
+            M[k][c] = costs[k][c] + best_val;
             backtrack[k][c] = best_prev;
         }
     }
 
-    int best_c = 0;
-    float min_last = M[N_KNOTS * 2 - 1][0];
+    int best_end_c = 0;
+    float min_last = M[N_KNOTS - 1][0];
     for (int c = 1; c < N_CAND; ++c) {
-        if (M[N_KNOTS * 2 - 1][c] < min_last) {
-            min_last = M[N_KNOTS * 2 - 1][c];
-            best_c = c;
+        if (M[N_KNOTS - 1][c] < min_last) {
+            min_last = M[N_KNOTS - 1][c];
+            best_end_c = c;
         }
     }
 
-    int path[N_KNOTS * 2];
-    path[N_KNOTS * 2 - 1] = best_c;
-    for (int k = N_KNOTS * 2 - 2; k >= 0; --k) {
+    // Pass 2: Cyclic-Constrained DP
+    // Initialize knot 0 anchored to best_end_c, and enforce circular wrap closure |c(N-1) - c(0)| <= 2
+    for (int c = 0; c < N_CAND; ++c) {
+        int dc = std::abs(c - best_end_c);
+        if (dc <= 2) {
+            M[0][c] = costs[0][c] + smooth_step_penalty * float(dc);
+        } else {
+            M[0][c] = 1e9f;
+        }
+    }
+
+    for (int k = 1; k < N_KNOTS; ++k) {
+        for (int c = 0; c < N_CAND; ++c) {
+            float best_val = 1e9f;
+            int best_prev = c;
+            for (int prev_c = 0; prev_c < N_CAND; ++prev_c) {
+                int dc = std::abs(c - prev_c);
+                if (dc > 2) continue;
+                float step_pen = smooth_step_penalty * float(dc);
+                float v = M[k - 1][prev_c] + step_pen;
+                if (v < best_val) {
+                    best_val = v;
+                    best_prev = prev_c;
+                }
+            }
+            M[k][c] = costs[k][c] + best_val;
+            backtrack[k][c] = best_prev;
+        }
+    }
+
+    // Select endpoint that closes loop with knot 0 anchor
+    int final_c = best_end_c;
+    float min_closed = 1e9f;
+    for (int c = 0; c < N_CAND; ++c) {
+        int dc = std::abs(c - best_end_c);
+        if (dc <= 2 && M[N_KNOTS - 1][c] < min_closed) {
+            min_closed = M[N_KNOTS - 1][c];
+            final_c = c;
+        }
+    }
+
+    int path[N_KNOTS];
+    path[N_KNOTS - 1] = final_c;
+    for (int k = N_KNOTS - 2; k >= 0; --k) {
         path[k] = backtrack[k + 1][path[k + 1]];
+    }
+
+    // Convert candidates to angles and apply 3-tap circular smoothing filter
+    float raw_phis[N_KNOTS];
+    for (int k = 0; k < N_KNOTS; ++k) {
+        int c = path[k];
+        raw_phis[k] = -maxSearch + float(c) * (2.0f * maxSearch / float(N_CAND - 1));
+    }
+
+    float smoothed_phis[N_KNOTS];
+    for (int k = 0; k < N_KNOTS; ++k) {
+        int prev_k = (k - 1 + N_KNOTS) % N_KNOTS;
+        int next_k = (k + 1) % N_KNOTS;
+        smoothed_phis[k] = 0.25f * raw_phis[prev_k] + 0.50f * raw_phis[k] + 0.25f * raw_phis[next_k];
     }
 
     // Resolve knots with temporal moving average to prevent video frame-to-frame seam jitter
     for (int k = 0; k < N_KNOTS; ++k) {
-        int c = path[N_KNOTS + k];
-        float raw_phi = -maxSearch + float(c) * (2.0f * maxSearch / float(N_CAND - 1));
         if (has_prev_seam_) {
-            out_phis[k] = 0.65f * prev_seam_phis_[k] + 0.35f * raw_phi;
+            out_phis[k] = 0.65f * prev_seam_phis_[k] + 0.35f * smoothed_phis[k];
         } else {
-            out_phis[k] = raw_phi;
+            out_phis[k] = smoothed_phis[k];
         }
         prev_seam_phis_[k] = out_phis[k];
     }
@@ -900,14 +939,14 @@ bool OsvVulkanStitcher::stitchFrames(const uint8_t *master_rgba,
     std::memcpy(mappedInSlave_, slave_rgba, inBytes);
 
     computeSeamLut(master_rgba,
-                   (size_t) sensor_w * 4,
+                   (size_t)sensor_w * 4,
                    slave_rgba,
-                   (size_t) sensor_w * 4,
+                   (size_t)sensor_w * 4,
                    sensor_w,
                    sensor_h,
                    lens_master,
                    lens_slave,
-                   static_cast<float *>(mappedSeamLut_));
+                   static_cast<float*>(mappedSeamLut_));
 
     return executeStitchPass(sensor_w,
                              sensor_h,
@@ -946,7 +985,7 @@ bool OsvVulkanStitcher::stitchSideBySide(const uint8_t *sbs_rgba,
         std::memcpy(dst_master + (size_t) y * row_bytes, src_row + row_bytes, row_bytes);
     }
 
-    computeSeamLut(sbs_rgba + (size_t) eye_w * 4,
+    computeSeamLut(sbs_rgba + (size_t)eye_w * 4,
                    sbs_stride,
                    sbs_rgba,
                    sbs_stride,
@@ -954,7 +993,7 @@ bool OsvVulkanStitcher::stitchSideBySide(const uint8_t *sbs_rgba,
                    eye_h,
                    lens_master,
                    lens_slave,
-                   static_cast<float *>(mappedSeamLut_));
+                   static_cast<float*>(mappedSeamLut_));
 
     return executeStitchPass(eye_w,
                              eye_h,
