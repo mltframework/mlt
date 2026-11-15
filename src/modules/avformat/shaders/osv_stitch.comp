@@ -225,10 +225,11 @@ void main()
         vec3 balancedSlave = colorSlave.rgb + tWide * deltaC;
         vec3 balancedMaster = colorMaster.rgb - (1.0 - tWide) * deltaC;
 
-        // 3. High-frequency seam sharpening: when disparity is high, collapse transition band to a razor-thin
-        // cut (~0.02 deg) to completely eliminate transparent alpha-ghosting between foreground and background.
+        // 3. High-frequency seam transition: content-adaptive blend band.
+        // Narrow transition down to ~0.25 deg in high-disparity zones to prevent ghosting,
+        // while preserving enough width to avoid knife-edge shearing along linear geometry.
         float mismatch = smoothstep(0.05, 0.15, colorDiff);
-        float effectiveHalf = mix(blendHalf, radians(0.02), mismatch);
+        float effectiveHalf = mix(blendHalf, radians(0.25), mismatch);
         float adaptiveBlend = smoothstep(phiCut - effectiveHalf, phiCut + effectiveHalf, phiSeam);
         finalColor = vec4(clamp(mix(balancedSlave, balancedMaster, adaptiveBlend), 0.0, 1.0), 1.0);
     } else if (validMaster) {

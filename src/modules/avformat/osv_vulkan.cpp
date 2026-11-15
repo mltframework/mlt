@@ -1,4 +1,5 @@
 #include "osv_vulkan.h"
+#include "osv_stitch_spv.h"
 #include <cstring>
 #include <fstream>
 #include <iostream>
@@ -169,21 +170,35 @@ bool OsvVulkanStitcher::initVulkanCore()
 
 bool OsvVulkanStitcher::createPipeline(const std::string &spv_path)
 {
-    std::ifstream file(spv_path, std::ios::ate | std::ios::binary);
-    if (!file.is_open()) {
-        std::cerr << "[OSV-Vulkan] Shader file not found: " << spv_path << std::endl;
-        return false;
+    const uint32_t *code = nullptr;
+    size_t code_size = 0;
+    std::vector<char> buffer;
+
+    if (!spv_path.empty()) {
+        std::ifstream file(spv_path, std::ios::ate | std::ios::binary);
+        if (file.is_open()) {
+            size_t fileSize = (size_t) file.tellg();
+            buffer.resize(fileSize);
+            file.seekg(0);
+            file.read(buffer.data(), fileSize);
+            file.close();
+            code = reinterpret_cast<const uint32_t *>(buffer.data());
+            code_size = buffer.size();
+        } else {
+            std::cerr << "[OSV-Vulkan] Shader file not found: " << spv_path
+                      << ", falling back to embedded SPIR-V shader." << std::endl;
+        }
     }
-    size_t fileSize = (size_t) file.tellg();
-    std::vector<char> buffer(fileSize);
-    file.seekg(0);
-    file.read(buffer.data(), fileSize);
-    file.close();
+
+    if (!code) {
+        code = osv_stitch_spv;
+        code_size = osv_stitch_spv_size;
+    }
 
     VkShaderModuleCreateInfo moduleCreateInfo{};
     moduleCreateInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    moduleCreateInfo.codeSize = buffer.size();
-    moduleCreateInfo.pCode = reinterpret_cast<const uint32_t *>(buffer.data());
+    moduleCreateInfo.codeSize = code_size;
+    moduleCreateInfo.pCode = code;
 
     if (vkCreateShaderModule(device_, &moduleCreateInfo, nullptr, &shader_module_) != VK_SUCCESS) {
         return false;
@@ -680,8 +695,10 @@ static inline bool projectLens(const Vec3f& dLens, const LensCalibration& cal, u
     if (th > 1.70327f) return false; // 97.59 deg
     float rd = kannalaBrandtRd(th, &cal.k1);
     float safe_rho = std::max(rho, 1e-6f);
-    px = cal.cx + cal.fx * rd * (dLens.x / safe_rho);
-    py = cal.cy + cal.fy * rd * (dLens.y / safe_rho);
+    float sx = (float)w / 3840.0f;
+    float sy = (float)h / 3840.0f;
+    px = (cal.cx + cal.fx * rd * (dLens.x / safe_rho)) * sx;
+    py = (cal.cy + cal.fy * rd * (dLens.y / safe_rho)) * sy;
     return (px >= 0.0f && px < (float)(w - 1) && py >= 0.0f && py < (float)(h - 1));
 }
 
@@ -793,16 +810,12 @@ void OsvVulkanStitcher::computeSeamLut(
 
             // Obstacle Repulsion:
             // When maxKnotDiff > 0.12f, a foreground obstacle is present at this knot.
-            // Strongly penalize cutting through the obstacle body/edges, and guide the seam
-            // towards the Master lens side (candPhi < 0) where optics and lighting are superior.
+            // Heavily penalize candidate angles where disparity is high, guiding the seam
+            // smoothly into regions of minimum optical difference without unilateral kinks.
             float obstacleCost = 0.0f;
             if (maxKnotDiff > 0.12f) {
                 float disparityRatio = avgDiff / maxKnotDiff;
-                obstacleCost = 0.25f * (disparityRatio * disparityRatio);
-                // Forward optical preference for Master lens on obstacles
-                if (normPhi > 0.0f) {
-                    obstacleCost += 0.08f * normPhi;
-                }
+                obstacleCost = 0.35f * (disparityRatio * disparityRatio);
             }
 
             float centerPref = 0.0005f * normPhi * normPhi;
@@ -816,7 +829,7 @@ void OsvVulkanStitcher::computeSeamLut(
     float M[N_KNOTS][N_CAND];
     int backtrack[N_KNOTS][N_CAND];
     for (int c = 0; c < N_CAND; ++c) M[0][c] = costs[0][c];
-    const float smooth_step_penalty = 0.020f;
+    const float smooth_step_penalty = 0.035f;
 
     for (int k = 1; k < N_KNOTS; ++k) {
         for (int c = 0; c < N_CAND; ++c) {

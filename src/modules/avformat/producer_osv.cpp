@@ -38,7 +38,8 @@ struct ProducerOsvContext
     bool has_lrf = false;
     std::string lrf_path;
 
-    // Stitched frame cache to make interactive viewport pan/tilt/zoom at a paused position instantaneous
+    // Stitched frame cache to make interactive viewport pan/tilt/zoom at a paused
+    // position instantaneous
     mlt_position cached_position = -1;
     int cached_w = 0;
     int cached_h = 0;
@@ -69,13 +70,10 @@ struct ProducerOsvContext
         if (env_path && std::filesystem::exists(env_path)) {
             return env_path;
         }
-        const char *mlt_data = mlt_environment("MLT_DATA");
+        const char *mlt_data = std::getenv("MLT_DATA");
         if (mlt_data) {
-            std::filesystem::path data_dir(mlt_data);
-            std::filesystem::path p = data_dir / "avformat" / "shaders" / "osv_stitch.spv";
-            if (std::filesystem::exists(p))
-                return p.string();
-            p = data_dir.parent_path().parent_path() / "shaders" / "osv_stitch.spv";
+            std::filesystem::path p = std::filesystem::path(mlt_data).parent_path().parent_path()
+                                      / "shaders" / "osv_stitch.spv";
             if (std::filesystem::exists(p))
                 return p.string();
         }
@@ -97,7 +95,7 @@ struct ProducerOsvContext
             if (std::filesystem::exists(path))
                 return path;
         }
-        return "";
+        return "shaders/osv_stitch.spv";
     }
 
     bool ensureStitcher()
@@ -206,7 +204,8 @@ static bool is_render_export(mlt_producer producer, mlt_frame frame)
         svc = mlt_service_consumer(svc);
     }
 
-    // 5. Check if process is an offline melt render job (e.g. spawned by Shotcut EncodeJob)
+    // 5. Process detection:
+    // When Shotcut exports, it spawns 'melt' / 'melt-7' to encode the timeline.
     try {
         std::ifstream cmdline("/proc/self/cmdline", std::ios::binary);
         if (cmdline.is_open()) {
@@ -236,7 +235,8 @@ static PreviewMode resolve_preview_mode(mlt_producer producer)
 {
     mlt_properties props = MLT_PRODUCER_PROPERTIES(producer);
 
-    // 1. Explicit property override on producer (osv.preview_mode or preview_mode)
+    // 1. Explicit property override on producer (osv.preview_mode or
+    // preview_mode)
     const char *prop = mlt_properties_get(props, "osv.preview_mode");
     if (!prop)
         prop = mlt_properties_get(props, "preview_mode");
@@ -346,8 +346,9 @@ static int producer_get_image(mlt_frame frame,
 
     bool use_lrf = false;
     if (export_mode) {
-        // EXPORT / RENDER: Always stitch full Dual-4K/5.7K HEVC streams with Vulkan for maximum fidelity.
-        // The ONLY exception is if the user explicitly forced proxy export via osv_mode=proxy or OSV_MODE=proxy.
+        // EXPORT / RENDER: Always stitch full Dual-4K/5.7K HEVC streams with Vulkan
+        // for maximum fidelity. The ONLY exception is if the user explicitly forced
+        // proxy export via osv_mode=proxy or OSV_MODE=proxy.
         const char *prop_mode = mlt_properties_get(props, "osv_mode");
         const char *env_mode = std::getenv("OSV_MODE");
         if ((prop_mode
@@ -360,8 +361,9 @@ static int producer_get_image(mlt_frame frame,
         }
     } else {
         // PREVIEW / EDITING:
-        // Use LRF companion proxy by default (Auto) or when Proxy mode is requested,
-        // providing fluid, real-time playback and scrubbing without dropping frames.
+        // Use LRF companion proxy by default (Auto) or when Proxy mode is
+        // requested, providing fluid, real-time playback and scrubbing without
+        // dropping frames.
         if (preview_mode == PreviewMode::Full) {
             use_lrf = false;
         } else {
@@ -392,7 +394,8 @@ static int producer_get_image(mlt_frame frame,
         }
     }
 
-    // Instantaneous cache hit when user pans/rotates/zooms the 360 viewport on the same frame
+    // Instantaneous cache hit when user pans/rotates/zooms the 360 viewport on
+    // the same frame
     if (!cut_changed && position == ctx->cached_position && export_mode == ctx->cached_export_mode
         && use_lrf == ctx->cached_use_lrf && stab_mode == ctx->cached_stab_mode
         && ctx->cached_w == out_w && ctx->cached_h == out_h
@@ -417,19 +420,21 @@ static int producer_get_image(mlt_frame frame,
     auto t_start = std::chrono::steady_clock::now();
 
     // Fast-path: Companion .LRF proxy decoding during interactive editor playback
-    // The camera's companion .LRF is an in-camera hardware-stitched 2048x1024 progressive
-    // H.264 equirectangular 360 preview proxy. Directly output / scale it for fluid,
-    // real-time scrubbing without redundant GPU compute re-stitching.
+    // The camera's companion .LRF is an in-camera hardware-stitched 2048x1024
+    // progressive H.264 equirectangular 360 preview proxy. Directly output /
+    // scale it for fluid, real-time scrubbing without redundant GPU compute
+    // re-stitching.
     if (use_lrf) {
         if (!ctx->ensureStitcher()) {
             std::cerr << "[OSV-MLT] Failed to initialize Vulkan stitcher for LRF mode" << std::endl;
             return 1;
         }
 
-        if (cut_changed || mlt_producer_position(ctx->producer_lrf) != position) {
+        if (cut_changed || ctx->last_lrf_position < 0 || position != ctx->last_lrf_position + 1) {
             mlt_producer_seek(ctx->producer_lrf, position);
             ctx->stitcher->resetTemporalSeam();
         }
+        ctx->last_lrf_position = position;
 
         mlt_frame lrf_frame = nullptr;
         mlt_service_get_frame(MLT_PRODUCER_SERVICE(ctx->producer_lrf), &lrf_frame, 0);
@@ -445,12 +450,13 @@ static int producer_get_image(mlt_frame frame,
                 int buf_size = out_w * out_h * 4;
                 *image = (uint8_t *) mlt_pool_alloc(buf_size);
 
-                double stitch_radius = mlt_properties_get_double(MLT_PRODUCER_PROPERTIES(producer),
-                                                                 "stitch_radius");
+                double stitch_radius = mlt_properties_get_double(MLT_PRODUCER_PROPERTIES(producer), "stitch_radius");
                 if (stitch_radius <= 0.0) {
                     const char *env_radius = std::getenv("OSV_STITCH_RADIUS");
                     if (env_radius) {
                         stitch_radius = std::atof(env_radius);
+                    } else {
+                        stitch_radius = 2.2;
                     }
                 }
                 ctx->stitcher->setStitchRadius((float) stitch_radius);
@@ -475,7 +481,7 @@ static int producer_get_image(mlt_frame frame,
                     ctx->cached_w = out_w;
                     ctx->cached_h = out_h;
                     ctx->cached_export_mode = export_mode;
-                    ctx->cached_use_lrf = true;
+                    ctx->cached_use_lrf = use_lrf;
                     ctx->cached_stab_mode = stab_mode;
                     ctx->cached_equirect.assign(*image, *image + buf_size);
 
@@ -487,7 +493,8 @@ static int producer_get_image(mlt_frame frame,
             }
         }
 
-        // Graceful blank fallback if LRF frame decoding fails temporarily during rapid seek
+        // Graceful blank fallback if LRF frame decoding fails temporarily during
+        // rapid seek
         *width = out_w;
         *height = out_h;
         *format = mlt_image_rgba;
@@ -499,17 +506,20 @@ static int producer_get_image(mlt_frame frame,
         return 0;
     }
 
-    // Full Vulkan compute stitching path (used for final render / export or when no LRF is available)
+    // Full Vulkan compute stitching path (used for final render / export or when
+    // no LRF is available)
     if (!ctx->ensureFullProducers()) {
         return 1;
     }
 
-    // Avoid seeking on sequential playback within the same cut to prevent GOP decoder flush
-    if (cut_changed || mlt_producer_position(ctx->producer_master) != position) {
+    // Avoid seeking on sequential playback within the same cut to prevent GOP
+    // decoder flush
+    if (cut_changed || ctx->last_position < 0 || position != ctx->last_position + 1) {
         mlt_producer_seek(ctx->producer_master, position);
         mlt_producer_seek(ctx->producer_slave, position);
         ctx->stitcher->resetTemporalSeam();
     }
+    ctx->last_position = position;
 
     mlt_frame frame_master = nullptr;
     mlt_frame frame_slave = nullptr;
@@ -551,15 +561,17 @@ static int producer_get_image(mlt_frame frame,
     *image = (uint8_t *) mlt_pool_alloc(buf_size);
 
     if (img_master && img_slave && ctx->stitcher_initialized) {
-        double stitch_radius = mlt_properties_get_double(MLT_PRODUCER_PROPERTIES(producer),
-                                                         "stitch_radius");
+        double stitch_radius = mlt_properties_get_double(MLT_PRODUCER_PROPERTIES(producer), "stitch_radius");
         if (stitch_radius <= 0.0) {
             const char *env_radius = std::getenv("OSV_STITCH_RADIUS");
             if (env_radius) {
                 stitch_radius = std::atof(env_radius);
+            } else {
+                stitch_radius = 2.2;
             }
         }
         ctx->stitcher->setStitchRadius((float) stitch_radius);
+
         float gyro[4] = {1.0f, 0.0f, 0.0f, 0.0f};
         ctx->metadata.getStabilizationQuat(source_frame, stab_mode, gyro);
         if (ctx->stitcher->stitchFrames(img_master,
@@ -576,11 +588,9 @@ static int producer_get_image(mlt_frame frame,
             ctx->cached_w = out_w;
             ctx->cached_h = out_h;
             ctx->cached_export_mode = export_mode;
-            ctx->cached_use_lrf = false;
+            ctx->cached_use_lrf = use_lrf;
             ctx->cached_stab_mode = stab_mode;
             ctx->cached_equirect.assign(*image, *image + buf_size);
-        } else {
-            std::memset(*image, 0, buf_size);
         }
     } else {
         std::memset(*image, 0, buf_size);
@@ -596,8 +606,8 @@ static int producer_get_image(mlt_frame frame,
                                  : (0.85 * ctx->avg_frame_time_ms + 0.15 * frame_ms);
     double budget_ms = (profile_fps > 0.0) ? (1000.0 / profile_fps) : 40.0;
 
-    // Dynamic performance check: if dual 4K HEVC decode latency exceeds real-time budget,
-    // toggle to LRF companion proxy automatically in auto mode
+    // Dynamic performance check: if dual 4K HEVC decode latency exceeds real-time
+    // budget, toggle to LRF companion proxy automatically in auto mode
     if (!use_lrf && !export_mode && ctx->avg_frame_time_ms > budget_ms * 1.25) {
         if (ctx->has_lrf && ctx->producer_lrf && !ctx->dynamic_fallback_to_lrf
             && preview_mode == PreviewMode::Auto) {
@@ -606,8 +616,8 @@ static int producer_get_image(mlt_frame frame,
                       << ctx->avg_frame_time_ms << " ms) exceeded budget (" << budget_ms
                       << " ms). Toggling to LRF preview proxy." << std::endl;
             mlt_log_info(MLT_PRODUCER_SERVICE(producer),
-                         "[OSV-MLT] Dynamic performance check: Full Dual-4K render time (%.1f ms) "
-                         "exceeded budget (%.1f ms). Toggled to LRF preview proxy.\n",
+                         "[OSV-MLT] Dynamic performance check: Full Dual-4K render time (%.1f "
+                         "ms) exceeded budget (%.1f ms). Toggled to LRF preview proxy.\n",
                          ctx->avg_frame_time_ms,
                          budget_ms);
         } else if (!ctx->has_lrf && !ctx->perf_warning_logged) {
@@ -616,8 +626,8 @@ static int producer_get_image(mlt_frame frame,
                       << ctx->avg_frame_time_ms << " ms) exceeds real-time frame budget ("
                       << budget_ms << " ms). No companion .LRF found." << std::endl;
             mlt_log_info(MLT_PRODUCER_SERVICE(producer),
-                         "[OSV-MLT] Host performance warning: Dual-4K HEVC decode latency (%.1f "
-                         "ms) exceeds real-time frame budget (%.1f ms).\n",
+                         "[OSV-MLT] Host performance warning: Dual-4K HEVC decode latency "
+                         "(%.1f ms) exceeds real-time frame budget (%.1f ms).\n",
                          ctx->avg_frame_time_ms,
                          budget_ms);
         }
@@ -677,9 +687,10 @@ static int producer_get_audio(mlt_frame frame,
         ctx->last_audio_position = -1;
     }
 
-    if (cut_changed || mlt_producer_position(ctx->producer_audio) != position) {
+    if (cut_changed || ctx->last_audio_position < 0 || position != ctx->last_audio_position + 1) {
         mlt_producer_seek(ctx->producer_audio, position);
     }
+    ctx->last_audio_position = position;
 
     mlt_frame audio_frame = nullptr;
     int err = mlt_service_get_frame(MLT_PRODUCER_SERVICE(ctx->producer_audio), &audio_frame, 0);
@@ -722,13 +733,15 @@ static int producer_get_frame(mlt_producer producer, mlt_frame_ptr frame, int in
         mlt_properties_set_position(frame_props, "original_position", p_frame);
         mlt_frame_set_position(*frame, p_pos);
 
-        // Populate geometry properties on frame so downstream filters receive correct format
+        // Populate geometry properties on frame so downstream filters receive
+        // correct format
         mlt_properties_set_int(frame_props, "width", 3840);
         mlt_properties_set_int(frame_props, "height", 1920);
         mlt_properties_set_double(frame_props, "aspect_ratio", 1.0);
         mlt_properties_set_int(frame_props, "progressive", 1);
 
-        // Populate audio properties so downstream filters and mix transitions identify format
+        // Populate audio properties so downstream filters and mix transitions
+        // identify format
         mlt_properties_set_int(frame_props, "audio_frequency", 48000);
         mlt_properties_set_int(frame_props, "audio_channels", 2);
         mlt_properties_set_int(frame_props, "audio_samples", 1920);
@@ -749,24 +762,19 @@ static void producer_close(mlt_producer producer)
     if (producer) {
         if (producer->child) {
             ProducerOsvContext *ctx = (ProducerOsvContext *) producer->child;
+            std::lock_guard<std::mutex> lock(ctx->mutex);
+            std::lock_guard<std::mutex> audio_lock(ctx->audio_mutex);
             producer->child = nullptr;
-            {
-                std::lock_guard<std::mutex> lock(ctx->mutex);
-                std::lock_guard<std::mutex> audio_lock(ctx->audio_mutex);
-                if (ctx->producer_master)
-                    mlt_producer_close(ctx->producer_master);
-                if (ctx->producer_slave)
-                    mlt_producer_close(ctx->producer_slave);
-                if (ctx->producer_audio)
-                    mlt_producer_close(ctx->producer_audio);
-                if (ctx->producer_lrf)
-                    mlt_producer_close(ctx->producer_lrf);
-            }
+            if (ctx->producer_master)
+                mlt_producer_close(ctx->producer_master);
+            if (ctx->producer_slave)
+                mlt_producer_close(ctx->producer_slave);
+            if (ctx->producer_audio)
+                mlt_producer_close(ctx->producer_audio);
+            if (ctx->producer_lrf)
+                mlt_producer_close(ctx->producer_lrf);
             delete ctx;
         }
-        producer->close = nullptr;
-        mlt_producer_close(producer);
-        free(producer);
     }
 }
 
@@ -819,7 +827,8 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile,
     mlt_properties_set_int(props, "astream", 0);
     mlt_properties_set_int(props, "mute_on_pause", 0);
 
-    // Inject Equirectangular aspect ratio (SAR = 1.0 for square pixels) and video properties
+    // Inject Equirectangular aspect ratio (SAR = 1.0 for square pixels) and video
+    // properties
     mlt_properties_set_int(props, "width", 3840);
     mlt_properties_set_int(props, "height", 1920);
     mlt_properties_set_double(props, "aspect_ratio", 1.0);
@@ -853,7 +862,6 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile,
     mlt_properties_set_double(props, "meta.media.0.stream.frame_rate", fps);
     mlt_properties_set(props, "meta.media.0.codec.pix_fmt", "yuv420p");
     mlt_properties_set_int(props, "meta.media.0.codec.colorspace", 709);
-    mlt_properties_set(props, "meta.media.0.stream.projection", "equirectangular");
 
     // Stream 1: Audio
     mlt_properties_set(props, "meta.media.1.stream.type", "audio");
@@ -863,14 +871,16 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile,
     mlt_properties_set_int(props, "meta.media.1.codec.sample_rate", 48000);
     mlt_properties_set(props, "meta.media.1.codec.sample_fmt", "fltp");
 
-    // Default stabilization: 1 = Horizon Lock (0 = Off, 1 = Horizon Lock, 2 = Full Lock)
+    // Default stabilization: 1 = Horizon Lock (0 = Off, 1 = Horizon Lock, 2 =
+    // Full Lock)
     mlt_properties_set_int(props, "osv.stabilization", 1);
     mlt_properties_set(props, "meta.stabilization.mode", "Horizon Lock (1)");
 
     // Dynamic preview mode configuration:
-    // Auto (default): Uses lightweight companion LRF proxy for smooth interactive preview,
-    // and full dual-4K/5.7K HEVC compute stitching during render/export.
-    // Can be forced via OSV_PREVIEW_MODE ("proxy" / "full" / "auto") or producer property "osv.preview_mode".
+    // Auto (default): Uses lightweight companion LRF proxy for smooth interactive
+    // preview, and full dual-4K/5.7K HEVC compute stitching during render/export.
+    // Can be forced via OSV_PREVIEW_MODE ("proxy" / "full" / "auto") or producer
+    // property "osv.preview_mode".
     if (filename) {
         std::string path_str(filename);
         size_t dot_pos = path_str.find_last_of('.');
@@ -878,7 +888,7 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile,
             std::string ext = path_str.substr(dot_pos);
             std::string base = path_str.substr(0, dot_pos);
             std::string cand1 = base + (ext == ".OSV" ? ".LRF" : ".lrf");
-            std::string cand2 = base + (ext == ".OSV" ? ".lrf" : ".LRF");
+            std::string cand2 = base + (ext == ".osv" ? ".lrf" : ".LRF");
             if (std::filesystem::exists(cand1)) {
                 ctx->lrf_path = cand1;
                 ctx->has_lrf = true;
@@ -905,7 +915,8 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile,
                      "[OSV-MLT] Using companion LRF proxy: %s\n",
                      ctx->lrf_path.c_str());
     } else {
-        std::cout << "[OSV-MLT] Companion LRF not found, using direct native OSV dual-stream mode"
+        std::cout << "[OSV-MLT] Companion LRF not found, using direct native OSV "
+                     "dual-stream mode"
                   << std::endl;
         mlt_log_info(MLT_PRODUCER_SERVICE(producer),
                      "[OSV-MLT] Companion LRF not found, using direct native OSV\n");
@@ -935,7 +946,8 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile,
         mlt_producer_probe(ctx->producer_audio);
     }
 
-    // Set duration and timeline in/out bounds (from LRF if available, otherwise from audio/master stream)
+    // Set duration and timeline in/out bounds (from LRF if available, otherwise
+    // from audio/master stream)
     mlt_position length = 0;
     if (ctx->producer_lrf) {
         length = mlt_producer_get_length(ctx->producer_lrf);
@@ -951,7 +963,8 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile,
     mlt_properties_set_position(props, "out", length > 0 ? length - 1 : 0);
     mlt_properties_set_position(props, "length", length);
 
-    // Optional auto-reframing filter attachment if requested via reframe=1 property
+    // Optional auto-reframing filter attachment if requested via reframe=1
+    // property
     if (mlt_properties_get_int(props, "reframe") == 1) {
         mlt_filter reframe_filter = mlt_factory_filter(profile,
                                                        "frei0r.bigsh0t_eq_to_rect",
