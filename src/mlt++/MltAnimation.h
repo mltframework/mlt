@@ -90,6 +90,11 @@ public:
     char *serialize_cut(int in = -1, int out = -1);
     /** \overload */
     char *serialize_cut(mlt_time_format format, int in = -1, int out = -1);
+    /** Set whether positions after the last keyframe repeat the cycle from the first keyframe.
+     *  \see mlt_animation_set_loop */
+    void set_loop(bool loop);
+    /** Return true if the animation loops. */
+    bool get_loop();
 };
 } // namespace Mlt
 

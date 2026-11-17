@@ -735,3 +735,11 @@ MLT_7.42.0 {
       "Mlt::Producer::pass_frame_properties(Mlt::Frame&)";
     };
 } MLT_7.36.0;
+
+MLT_7.44.0 {
+  global:
+    extern "C++" {
+      "Mlt::Animation::set_loop(bool)";
+      "Mlt::Animation::get_loop()";
+    };
+} MLT_7.42.0;

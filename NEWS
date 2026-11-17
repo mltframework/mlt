@@ -3,6 +3,16 @@ MLT Release Notes
 
 Version 7.43.0
 
+Framework
+  - Added looping for property animations. End an animation string with
+    `;loop` (for example, `0=10;30=50;60=10;loop`) to repeat the cycle from
+    the first keyframe to the last keyframe instead of holding the last value.
+    The final segment approaches the authored last value, but its frame
+    evaluates to the first value, without repeating the boundary frame.
+    New public API:
+    `mlt_animation_set_loop()`, `mlt_animation_get_loop()`, and
+    `Mlt::Animation::set_loop()`/`get_loop()`.
+
 Modules
   - Fixed `subtitle` and `subtitle_feed` dropping every cue after a blank
     line. An empty line is no longer read as a cue number.
