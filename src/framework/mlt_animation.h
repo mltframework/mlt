@@ -3,7 +3,7 @@
  * \brief Property Animation class declaration
  * \see mlt_animation_s
  *
- * Copyright (C) 2004-2018 Meltytech, LLC
+ * Copyright (C) 2004-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -36,6 +36,22 @@
  * \envvar \em MLT_ANIMATION_TIME_FORMAT the time value string format to use,
  * defaults to mlt_time_frames. Use the numeric value of mlt_time_format as
  * the value of this variable.
+ *
+ * \par Looping
+ * An animation can loop instead of holding its last keyframe's value. End the
+ * animation string with a "loop" item (for example, "0=10;30=50;60=10;loop"),
+ * or call mlt_animation_set_loop(), which adds or removes that item when the
+ * animation is serialized.
+ * The first and last keyframes define the cycle, and its period is the
+ * distance between them. The final segment interpolates toward the authored
+ * last keyframe value, but its position evaluates to the first value. For
+ * example, "0=0;60=360;loop" evaluates to 354 at frame 59, 0 at frame 60,
+ * and 6 at frame 61. The stored endpoint is available via
+ * mlt_animation_key_get(). Matching endpoints use cross-boundary neighbors
+ * for smooth interpolation; different endpoints use ordinary end neighbors.
+ * Positions before the first keyframe hold its value.
+ * The "loop" item must be last. Versions of MLT without looping stop parsing
+ * at it, keep the keyframes before it, and hold the last keyframe's value.
  */
 
 /** \brief An animation item that represents a keyframe-property combination. */
@@ -78,5 +94,7 @@ MLT_EXPORT int mlt_animation_key_set_type(mlt_animation self, int index, mlt_key
 MLT_EXPORT int mlt_animation_key_set_frame(mlt_animation self, int index, int frame);
 MLT_EXPORT void mlt_animation_shift_frames(mlt_animation self, int shift);
 MLT_EXPORT const char *mlt_animation_get_string(mlt_animation self);
+MLT_EXPORT void mlt_animation_set_loop(mlt_animation self, int loop);
+MLT_EXPORT int mlt_animation_get_loop(mlt_animation self);
 
 #endif

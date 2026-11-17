@@ -1,6 +1,6 @@
 /**
  * MltAnimation.cpp - MLT Wrapper
- * Copyright (C) 2015-2021 Meltytech, LLC
+ * Copyright (C) 2015-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -253,4 +253,14 @@ char *Animation::serialize_cut(int in, int out)
 char *Animation::serialize_cut(mlt_time_format format, int in, int out)
 {
     return mlt_animation_serialize_cut_tf(instance, in, out, format);
+}
+
+void Animation::set_loop(bool loop)
+{
+    mlt_animation_set_loop(instance, loop);
+}
+
+bool Animation::get_loop()
+{
+    return mlt_animation_get_loop(instance);
 }
