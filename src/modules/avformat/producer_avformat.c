@@ -49,8 +49,11 @@
 #include <libavutil/channel_layout.h>
 #include <libavutil/dict.h>
 #include <libavutil/hwcontext.h>
-#if HAVE_FFMPEG_VULKAN
+#if HAVE_FFMPEG_VULKAN_QF
 #include <libavutil/hwcontext_vulkan.h>
+#ifndef VK_QUEUE_VIDEO_DECODE_BIT_KHR
+#define VK_QUEUE_VIDEO_DECODE_BIT_KHR 0
+#endif
 #endif
 #include <libavutil/imgutils.h>
 #include <libavutil/opt.h>
@@ -3508,7 +3511,7 @@ static void apply_properties(void *obj, mlt_properties properties, int flags)
     }
 }
 
-#if HAVE_FFMPEG_VULKAN
+#if HAVE_FFMPEG_VULKAN_QF
 static void placebo_lock_queue(struct AVHWDeviceContext *dev_ctx,
                                uint32_t queue_family,
                                uint32_t index)
@@ -3754,7 +3757,7 @@ static int video_codec_init(producer_avformat self, int index, mlt_properties pr
             self->hwaccel.lock_ctx = NULL;
             self->hwaccel.lock_queue = NULL;
             self->hwaccel.unlock_queue = NULL;
-#if HAVE_FFMPEG_VULKAN
+#if HAVE_FFMPEG_VULKAN_QF
             if (self->hwaccel.device_type == AV_HWDEVICE_TYPE_VULKAN)
                 adopted = adopt_placebo_vulkan_device(self);
 #endif

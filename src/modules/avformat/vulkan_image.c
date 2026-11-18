@@ -21,7 +21,7 @@
 
 #include "common.h"
 
-#if HAVE_FFMPEG_VULKAN
+#if HAVE_FFMPEG_VULKAN_QF
 #include <libavfilter/avfilter.h>
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
@@ -29,6 +29,16 @@
 #include <libavutil/hwcontext_vulkan.h>
 #include <libavutil/opt.h>
 #include <libavutil/pixdesc.h>
+
+#ifndef VK_QUEUE_VIDEO_DECODE_BIT_KHR
+#define VK_QUEUE_VIDEO_DECODE_BIT_KHR 0
+#endif
+#ifndef VK_QUEUE_VIDEO_ENCODE_BIT_KHR
+#define VK_QUEUE_VIDEO_ENCODE_BIT_KHR 0
+#endif
+#ifndef VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR
+#define VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR 0
+#endif
 
 #include <pthread.h>
 #include <stdlib.h>
@@ -1358,7 +1368,7 @@ int avformat_vulkan_avfilter_frame(avformat_vulkan_avfilter *self,
 
 int avformat_avfilter_is_vulkan(const char *name)
 {
-#if !HAVE_FFMPEG_VULKAN
+#if !HAVE_FFMPEG_VULKAN_QF
     (void) name;
     return 0;
 #else
@@ -1380,7 +1390,7 @@ int avformat_install_vulkan_frame(mlt_service service,
                                   uint8_t **buffer,
                                   mlt_image_format *format)
 {
-#if !HAVE_FFMPEG_VULKAN
+#if !HAVE_FFMPEG_VULKAN_QF
     (void) service;
     (void) video_frame;
     (void) frame;
@@ -1510,7 +1520,7 @@ int avformat_export_vulkan_frame(mlt_producer producer,
                                          format);
 }
 
-#if !HAVE_FFMPEG_VULKAN
+#if !HAVE_FFMPEG_VULKAN_QF
 struct AVBufferRef *avformat_vulkan_adopt_placebo(int need_encode)
 {
     (void) need_encode;
