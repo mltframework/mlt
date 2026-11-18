@@ -43,7 +43,7 @@ jobs:
         env:
           DEBIAN_FRONTEND: noninteractive
         run: |
-          sudo sed -i '/^#\sdeb-src /s/^#//' "/etc/apt/sources.list"
+          sudo sed -i 's/^Types: deb/Types: deb deb-src/' /etc/apt/sources.list.d/ubuntu.sources
           sudo apt-get -qq update
           sudo apt-get -yqq build-dep mlt
           sudo apt-get -yqq install autoconf automake git libtool pkg-config wget libplacebo-dev qt6-base-dev libqt6svg6-dev liblilv-dev
