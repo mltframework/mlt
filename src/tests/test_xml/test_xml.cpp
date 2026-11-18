@@ -231,7 +231,7 @@ private Q_SLOTS:
             QSKIP("Placebo module is unavailable");
         Profile profile;
         Producer producer(profile, "colour", "red");
-        Filter filter(profile, "placebo.unsharp_mask");
+        Filter filter(profile, "placebo.garamond13.unsharp_mask");
         QVERIFY(filter.is_valid());
         QString resource = QString::fromUtf8(filter.get("resource"));
         filter.set("param.amount", "0=0.5;10=2");
@@ -242,11 +242,11 @@ private Q_SLOTS:
 
         Producer restored(profile, "xml-string", consumer.get("string"));
         QVERIFY(restored.is_valid());
-        Filter *restoredFilter = findFilter(restored, "placebo.unsharp_mask");
+        Filter *restoredFilter = findFilter(restored, "placebo.garamond13.unsharp_mask");
         QVERIFY(restoredFilter);
         QVERIFY(restoredFilter->is_valid());
         QCOMPARE(QString::fromUtf8(restoredFilter->get("mlt_service")),
-                 QString("placebo.unsharp_mask"));
+                 QString("placebo.garamond13.unsharp_mask"));
         QCOMPARE(QString::fromUtf8(restoredFilter->get("resource")), resource);
         QCOMPARE(QString::fromUtf8(restoredFilter->get("param.amount")), QString("0=0.5;10=2"));
         delete restoredFilter;

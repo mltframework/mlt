@@ -21,6 +21,8 @@
 #include <string.h>
 #include <QtTest>
 
+#include <memory>
+
 using namespace Mlt;
 
 namespace {
@@ -53,9 +55,11 @@ class TestPlaceboBlend : public QObject
 {
     Q_OBJECT
     Profile profile;
+    std::unique_ptr<Filter> publisher;
+    bool gpuAvailable = false;
 
-public:
-    TestPlaceboBlend()
+private Q_SLOTS:
+    void initTestCase()
     {
         Factory::init();
         profile.set_width(8);
@@ -65,15 +69,20 @@ public:
         profile.set_sample_aspect(1, 1);
         profile.set_display_aspect(1, 1);
         profile.set_explicit(1);
+        publisher = std::make_unique<Filter>(profile, "placebo.render");
+        QVERIFY(publisher->is_valid());
+        // scale's factory returns NULL until a placebo service has published a device.
+        Filter scale(profile, "placebo.scale");
+        gpuAvailable = scale.is_valid();
+    }
+
+    void init()
+    {
+        if (!gpuAvailable)
+            QSKIP("No placebo GPU backend is available");
     }
 
 private:
-    bool available()
-    {
-        Transition probe(profile, "placebo.blend");
-        return probe.is_valid();
-    }
-
     Pixel blend(int mode, Pixel bottom, Pixel top, const char *frameMode)
     {
         Pixel out = {-1, -1, -1, -1};
@@ -131,24 +140,18 @@ private:
 private Q_SLOTS:
     void SourceOverPartialAlpha()
     {
-        if (!available())
-            QSKIP("placebo.blend is unavailable");
         // Half red over opaque green. Straight source-over rounds to this.
         expect(blend(0, {0, 255, 0, 255}, {255, 0, 0, 128}, NULL), {128, 127, 0, 255}, 2, "over");
     }
 
     void TransparentTopLeavesBottom()
     {
-        if (!available())
-            QSKIP("placebo.blend is unavailable");
         const Pixel bottom = {10, 20, 30, 200};
         expect(blend(0, bottom, {255, 255, 255, 0}, NULL), bottom, 1, "transparent top");
     }
 
     void OpaqueTopReplacesBottom()
     {
-        if (!available())
-            QSKIP("placebo.blend is unavailable");
         expect(blend(0, {0, 255, 0, 255}, {0, 0, 255, 255}, NULL),
                {0, 0, 255, 255},
                1,
@@ -157,8 +160,6 @@ private Q_SLOTS:
 
     void SourceAndDestination()
     {
-        if (!available())
-            QSKIP("placebo.blend is unavailable");
         const Pixel bottom = {0, 255, 0, 255};
         const Pixel top = {255, 0, 0, 128};
         expect(blend(3, bottom, top, NULL), top, 1, "source");
@@ -167,8 +168,6 @@ private Q_SLOTS:
 
     void MultiplyScreenDarkenLighten()
     {
-        if (!available())
-            QSKIP("placebo.blend is unavailable");
         expect(blend(13, {255, 0, 0, 255}, {0, 255, 0, 255}, NULL), {0, 0, 0, 255}, 1, "multiply");
         expect(blend(14, {128, 128, 128, 255}, {128, 128, 128, 255}, NULL),
                {192, 192, 192, 255},
@@ -186,8 +185,6 @@ private Q_SLOTS:
 
     void ClearXorAndPlus()
     {
-        if (!available())
-            QSKIP("placebo.blend is unavailable");
         expect(blend(2, {0, 255, 0, 255}, {255, 0, 0, 255}, NULL), {0, 0, 0, 0}, 1, "clear");
         expect(blend(11, {0, 255, 0, 255}, {255, 0, 0, 255}, NULL), {0, 0, 0, 0}, 1, "xor");
         expect(blend(12, {200, 0, 0, 255}, {100, 0, 0, 255}, NULL), {255, 0, 0, 255}, 1, "plus");
@@ -195,8 +192,6 @@ private Q_SLOTS:
 
     void UnknownModeIsSourceOver()
     {
-        if (!available())
-            QSKIP("placebo.blend is unavailable");
         expect(blend(99, {0, 255, 0, 255}, {255, 0, 0, 128}, NULL),
                {128, 127, 0, 255},
                2,
@@ -205,8 +200,6 @@ private Q_SLOTS:
 
     void PerPixel()
     {
-        if (!available())
-            QSKIP("placebo.blend is unavailable");
         const uint8_t bottomPx[] = {0, 255, 0, 255, 0, 0, 255, 255};
         const uint8_t topPx[] = {255, 0, 0, 128, 255, 255, 255, 0};
         mlt_frame a = solidFrame(2, 1, bottomPx);
@@ -233,8 +226,6 @@ private Q_SLOTS:
 
     void FrameModeOverridesTransition()
     {
-        if (!available())
-            QSKIP("placebo.blend is unavailable");
         // Transition mode is source-over. The upper frame asks for destination.
         const Pixel bottom = {0, 255, 0, 255};
         expect(blend(0, bottom, {255, 0, 0, 128}, "4"), bottom, 1, "frame mode");
@@ -242,8 +233,6 @@ private Q_SLOTS:
 
     void BlendModeFilter()
     {
-        if (!available())
-            QSKIP("placebo.blend is unavailable");
         const uint8_t bottomPx[4] = {0, 255, 0, 255};
         const uint8_t topPx[4] = {255, 0, 0, 128};
         mlt_frame a = solidFrame(1, 1, bottomPx);
@@ -272,12 +261,6 @@ private Q_SLOTS:
 
     void LinearLightKeepsPartialCoverage()
     {
-        if (!available())
-            QSKIP("placebo.blend is unavailable");
-        // Publish the GPU before the loader builds color_transform and placebo.scale.
-        Transition anchor(profile, "placebo.blend");
-        QVERIFY(anchor.is_valid());
-
         Producer bottom(profile, "loader", "color:0x00ff00ff");
         Producer top(profile, "loader", "color:0xff000080");
         QVERIFY(bottom.is_valid());

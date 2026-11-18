@@ -54,8 +54,8 @@ private Q_SLOTS:
     {
         QTest::addColumn<QString>("name");
         QTest::addColumn<int>("parameterCount");
-        QTest::newRow("gaussian blur") << QString("gaussian_blur") << 2;
-        QTest::newRow("unsharp mask") << QString("unsharp_mask") << 4;
+        QTest::newRow("gaussian blur") << QString("garamond13.gaussian_blur") << 2;
+        QTest::newRow("unsharp mask") << QString("garamond13.unsharp_mask") << 4;
     }
 
     void PlaceboShaders()
@@ -91,7 +91,7 @@ private Q_SLOTS:
         QVERIFY(filter.is_valid());
         QString resource = QString::fromUtf8(filter.get("resource"));
         QVERIFY(QFileInfo::exists(resource));
-        QVERIFY(resource.endsWith("/" + name + ".hook"));
+        QVERIFY(resource.endsWith("/" + name.section('.', -1) + ".hook"));
         QVERIFY(!filter.property_exists("shader_path"));
 
         Filter custom(profile, "placebo.shader", resource.toUtf8().constData());

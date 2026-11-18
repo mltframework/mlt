@@ -19,6 +19,8 @@
 #include <mlt++/Mlt.h>
 #include <QtTest>
 
+#include <memory>
+
 using namespace Mlt;
 
 namespace {
@@ -37,9 +39,11 @@ class TestColorTransform : public QObject
 {
     Q_OBJECT
     Profile profile;
+    std::unique_ptr<Filter> publisher;
+    bool gpuAvailable = false;
 
-public:
-    TestColorTransform()
+private Q_SLOTS:
+    void initTestCase()
     {
         Factory::init();
         profile.set_width(8);
@@ -49,15 +53,14 @@ public:
         profile.set_sample_aspect(1, 1);
         profile.set_display_aspect(1, 1);
         profile.set_explicit(1);
+        publisher = std::make_unique<Filter>(profile, "placebo.render");
+        QVERIFY(publisher->is_valid());
+        // scale's factory returns NULL until a placebo service has published a device.
+        Filter scale(profile, "placebo.scale");
+        gpuAvailable = scale.is_valid();
     }
 
 private:
-    bool available()
-    {
-        Transition probe(profile, "placebo.blend");
-        return probe.is_valid();
-    }
-
     Pixel sample(const char *color, bool linear, bool roundTrip)
     {
         Pixel out = {-1, -1, -1, -1};
@@ -116,8 +119,6 @@ private:
 private Q_SLOTS:
     void AlphaSurvivesLinear()
     {
-        if (!available())
-            QSKIP("libplacebo is unavailable");
         const int alphas[] = {0, 32, 128, 255};
         for (int alpha : alphas) {
             const QString color = QString("color:0xff0000%1").arg(alpha, 2, 16, QChar('0'));
@@ -129,6 +130,10 @@ private Q_SLOTS:
                                     .arg(got.r)
                                     .arg(got.g)
                                     .arg(got.b)));
+            // Straight red, and black at alpha 0, is the GPU result. The CPU
+            // transfer does not make those promises, so only the alpha is checked.
+            if (!gpuAvailable)
+                continue;
             if (alpha == 0) {
                 QCOMPARE(got.r, 0);
                 QCOMPARE(got.g, 0);
@@ -147,16 +152,12 @@ private Q_SLOTS:
 
     void EndpointsStayPut()
     {
-        if (!available())
-            QSKIP("libplacebo is unavailable");
         expect(sample("color:0x000000ff", true, false), {0, 0, 0, 255}, 1, "black");
         expect(sample("color:0xffffffff", true, false), {255, 255, 255, 255}, 1, "white");
     }
 
     void RampIncreases()
     {
-        if (!available())
-            QSKIP("libplacebo is unavailable");
         const int encoded[] = {0, 64, 128, 192, 255};
         int previous = -1;
         for (int value : encoded) {
@@ -177,8 +178,6 @@ private Q_SLOTS:
 
     void MidGrayDarkensAndRoundTrips()
     {
-        if (!available())
-            QSKIP("libplacebo is unavailable");
         const Pixel linear = sample("color:0x808080ff", true, false);
         QVERIFY2(linear.r > 20 && linear.r < 100,
                  qPrintable(QString("bt709 128 linearized to %1,%2,%3")

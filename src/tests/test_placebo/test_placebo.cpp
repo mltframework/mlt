@@ -31,6 +31,7 @@ class TestPlacebo : public QObject
     Q_OBJECT
     Profile profile;
     std::unique_ptr<Filter> renderer;
+    bool gpuAvailable = false;
 
 private Q_SLOTS:
     void initTestCase()
@@ -46,6 +47,9 @@ private Q_SLOTS:
         profile.set_explicit(1);
         renderer = std::make_unique<Filter>(profile, "placebo.render");
         QVERIFY(renderer->is_valid());
+        // scale's factory returns NULL until a placebo service has published a device.
+        Filter scale(profile, "placebo.scale");
+        gpuAvailable = scale.is_valid();
     }
 
     void CpuRoundTrip_data()
@@ -180,6 +184,9 @@ private Q_SLOTS:
     // idle thread, so the next frame has to create them again.
     void RecreateAfterIdle()
     {
+        if (!gpuAvailable)
+            QSKIP("No placebo GPU backend is available");
+
         mlt_properties global = mlt_global_properties();
         int before = mlt_properties_get_int(global, "placebo.trimmed");
 
