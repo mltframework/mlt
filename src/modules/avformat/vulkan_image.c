@@ -285,6 +285,7 @@ static void load_fn_ptr(void *ptr, void *dest, size_t size)
     memcpy(dest, &ptr, size);
 }
 
+#if FF_API_VULKAN_SYNC_QUEUES
 static void placebo_lock_queue(struct AVHWDeviceContext *dev_ctx,
                                uint32_t queue_family,
                                uint32_t index)
@@ -304,6 +305,7 @@ static void placebo_unlock_queue(struct AVHWDeviceContext *dev_ctx,
     if (lock && lock->unlock_queue && lock->ctx)
         lock->unlock_queue(lock->ctx, queue_family, index);
 }
+#endif
 
 static void free_adopted_lock(struct AVHWDeviceContext *ctx)
 {

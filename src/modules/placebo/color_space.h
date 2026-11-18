@@ -25,6 +25,11 @@
 #include <libplacebo/colorspace.h>
 #include <libplacebo/gpu.h>
 
+/* Before API 344, PL_ALPHA_UNKNOWN also meant the alpha channel was absent. */
+#if !defined(PL_ALPHA_NONE) && PL_API_VER < 344
+#define PL_ALPHA_NONE PL_ALPHA_UNKNOWN
+#endif
+
 /* Same libplacebo transfer that its FFmpeg mapping uses for this TRC.
    PL_COLOR_TRC_UNKNOWN when libplacebo has no curve for it. */
 enum pl_color_transfer placebo_transfer_from_mlt(mlt_color_trc trc);

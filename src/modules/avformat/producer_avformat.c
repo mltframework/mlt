@@ -3512,6 +3512,7 @@ static void apply_properties(void *obj, mlt_properties properties, int flags)
 }
 
 #if HAVE_FFMPEG_VULKAN_QF
+#if FF_API_VULKAN_SYNC_QUEUES
 static void placebo_lock_queue(struct AVHWDeviceContext *dev_ctx,
                                uint32_t queue_family,
                                uint32_t index)
@@ -3529,6 +3530,7 @@ static void placebo_unlock_queue(struct AVHWDeviceContext *dev_ctx,
     if (self && self->hwaccel.unlock_queue && self->hwaccel.lock_ctx)
         self->hwaccel.unlock_queue(self->hwaccel.lock_ctx, queue_family, index);
 }
+#endif
 
 static void load_fn_ptr(void *ptr, void *dest, size_t size)
 {
