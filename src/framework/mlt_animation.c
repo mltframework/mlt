@@ -551,12 +551,6 @@ int mlt_animation_get_item(mlt_animation self, mlt_animation_item item, int posi
     if (!first || !last || last->item.frame <= first->item.frame)
         first = last = NULL;
     int period = last ? last->item.frame - first->item.frame : 0;
-    int seamless = 0;
-    if (last) {
-        const char *first_value = mlt_property_get_string_l(first->item.property, self->locale);
-        const char *last_value = mlt_property_get_string_l(last->item.property, self->locale);
-        seamless = first_value && last_value && !strcmp(first_value, last_value);
-    }
     int cycle_position = position;
     if (last && position >= last->item.frame)
         cycle_position = first->item.frame + (position - first->item.frame) % period;
@@ -570,6 +564,38 @@ int mlt_animation_get_item(mlt_animation self, mlt_animation_item item, int posi
 
     if (node) {
         item->keyframe_type = node->item.keyframe_type;
+
+        int use_loop_neighbors = 0;
+        mlt_keyframe_type type = item->keyframe_type;
+        if (type == mlt_keyframe_smooth_loose || type == mlt_keyframe_smooth_natural
+            || type == mlt_keyframe_smooth_tight) {
+            const int needs_loop_neighbor = last && item->property && node->next
+                                            && cycle_position > node->item.frame
+                                            && (!node->prev || !node->next->next);
+            int endpoints_equal = 0;
+            if (needs_loop_neighbor) {
+                mlt_property first_value = first->item.property;
+                mlt_property last_value = last->item.property;
+                mlt_property start = node->item.property;
+                // Match interpolate_item: rects are requested by the output property,
+                // since the keyframe itself can hold a rectangle as text.
+                if (mlt_property_is_color(start)) {
+                    mlt_color a = mlt_property_get_color(first_value, self->fps, self->locale);
+                    mlt_color b = mlt_property_get_color(last_value, self->fps, self->locale);
+                    endpoints_equal = a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
+                } else if (mlt_property_is_rect(item->property)) {
+                    mlt_rect a = mlt_property_get_rect(first_value, self->locale);
+                    mlt_rect b = mlt_property_get_rect(last_value, self->locale);
+                    endpoints_equal = a.x == b.x && a.y == b.y && a.w == b.w && a.h == b.h
+                                      && a.o == b.o;
+                } else if (mlt_property_is_numeric(start, self->locale)) {
+                    double a = mlt_property_get_double(first_value, self->fps, self->locale);
+                    double b = mlt_property_get_double(last_value, self->fps, self->locale);
+                    endpoints_equal = a == b;
+                }
+            }
+            use_loop_neighbors = needs_loop_neighbor && endpoints_equal;
+        }
 
         // Position is before the first keyframe.
         if (cycle_position < node->item.frame) {
@@ -600,11 +626,11 @@ int mlt_animation_get_item(mlt_animation self, mlt_animation_item item, int posi
                 int after_shift = 0;
                 // Use the neighbors across the loop point, shifted by one period, so that
                 // smooth curves pass through the loop point as through an interior keyframe.
-                if (seamless && !node->prev) {
+                if (use_loop_neighbors && !node->prev) {
                     before = last->prev;
                     before_shift = -period;
                 }
-                if (seamless && !node->next->next) {
+                if (use_loop_neighbors && !node->next->next) {
                     after = first->next;
                     after_shift = period;
                 }
@@ -633,9 +659,9 @@ int mlt_animation_get_item(mlt_animation self, mlt_animation_item item, int posi
  * When looping, the animation repeats the cycle from the first keyframe to the
  * last keyframe forever instead of holding the last keyframe's value. The last
  * keyframe's authored value is the target of the final segment, but its frame
- * evaluates to the first value. Matching endpoint values use neighbors across
- * the loop boundary for smooth interpolation; differing values use the usual
- * endpoint neighbors.
+ * evaluates to the first value. Endpoints equal in the segment's interpolation
+ * domain use neighbors across the loop boundary for smooth interpolation;
+ * differing values use the usual endpoint neighbors.
  *
  * Positions before the first keyframe hold the first keyframe's value as usual.
  * Looping requires at least two keyframes at different positions; otherwise it
@@ -827,6 +853,7 @@ int mlt_animation_prev_key(mlt_animation self, mlt_animation_item item, int posi
 
 /** Serialize a cut of the animation (with time format).
  *
+ * The loop flag is retained only if the range includes all authored keyframes.
  * The caller is responsible for free-ing the returned string.
  * \public \memberof mlt_animation_s
  * \param self an animation
@@ -856,13 +883,16 @@ char *mlt_animation_serialize_cut_tf(mlt_animation self,
         out = mlt_animation_get_length(self);
 
     if (self && ret) {
+        animation_node last = self->loop ? last_node(self) : NULL;
+        const int keep_loop = last && in <= self->nodes->item.frame && out >= last->item.frame;
         item.frame = in;
 
         while (1) {
             size_t item_len = 0;
 
-            // If it's the first frame, then it's not necessarily a key
-            if (item.frame == in) {
+            // Seed clipped ranges with the evaluated value. An intact loop instead
+            // starts at its first authored key, even if in precedes it.
+            if (item.frame == in && !keep_loop) {
                 if (mlt_animation_get_item(self, &item, item.frame))
                     break;
 
@@ -950,7 +980,7 @@ char *mlt_animation_serialize_cut_tf(mlt_animation self,
             item.frame++;
         }
 
-        if (self->loop && used > 0) {
+        if (keep_loop && used > 0) {
             size_t needed = used + strlen(LOOP_TOKEN) + 2; // +2 for ';' and NULL
             if (needed > size) {
                 char *tmp = realloc(ret, needed);
@@ -980,6 +1010,7 @@ static mlt_time_format default_time_format()
 /** Serialize a cut of the animation.
  *
  * This version outputs the key frames' position as a frame number.
+ * The loop flag is retained only if the range includes all authored keyframes.
  * The caller is responsible for free-ing the returned string.
  * \public \memberof mlt_animation_s
  * \param self an animation
