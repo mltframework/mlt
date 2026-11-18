@@ -1192,6 +1192,42 @@ private Q_SLOTS:
         QCOMPARE(q.anim_get_double("foo", 75), 20.0);
     }
 
+    void LoopCutRetainsOnlyIntactCycles()
+    {
+        Properties p;
+        p.set("rotation", "0=0;60|=360;loop");
+        QCOMPARE(p.anim_get_double("rotation", 60), 0.0);
+        Animation a = p.get_animation("rotation");
+        struct
+        {
+            int in;
+            int out;
+            const char *expected;
+        } cuts[] = {
+            {0, 60, "0=0;60|=360;loop"},
+            {0, 90, "0=0;60|=360;loop"},
+            {0, 30, "0=0;30=180"},
+            {10, 60, "0=60;50|=360"},
+            {60, 120, "0=0"},
+        };
+        for (const auto &range : cuts) {
+            char *cut = a.serialize_cut(mlt_time_frames, range.in, range.out);
+            const QString serialized = QString::fromUtf8(cut);
+            free(cut);
+            QCOMPARE(serialized, QString::fromUtf8(range.expected));
+        }
+        QVERIFY(a.get_loop());
+        QCOMPARE(QString(p.get("rotation")), QString("0=0;60|=360;loop"));
+
+        p.set("offset", "10=0;70|=360;loop");
+        QCOMPARE(p.anim_get_double("offset", 70), 0.0);
+        a = p.get_animation("offset");
+        char *cut = a.serialize_cut(mlt_time_frames, 5, 70);
+        const QString serialized = QString::fromUtf8(cut);
+        free(cut);
+        QCOMPARE(serialized, QString("5=0;65|=360;loop"));
+    }
+
     void LoopToggleKeepsKeyframes()
     {
         Properties p;
@@ -1253,7 +1289,7 @@ private Q_SLOTS:
         for (const char *t : types) {
             Properties p;
             p.set("loop",
-                  QStringLiteral("0%1=0; 10%1=100; 50%1=0; loop").arg(t).toUtf8().constData());
+                  QStringLiteral("0%1=0; 10%1=100; 50%1=0.0; loop").arg(t).toUtf8().constData());
             p.set("unrolled",
                   QStringLiteral("0%1=0; 10%1=100; 50%1=0; 60%1=100; 100%1=0")
                       .arg(t)
@@ -1297,6 +1333,47 @@ private Q_SLOTS:
         for (int i = 0; i < 50; i++)
             QCOMPARE(p.anim_get_double("loop", i), p.anim_get_double("plain", i));
         QCOMPARE(p.anim_get_double("loop", 50), 0.0);
+    }
+
+    void LoopSmoothRectPreservesEndpointPrecision()
+    {
+        Properties p;
+        const mlt_rect endpoint = {1.23456789, 0, 10, 10, 1};
+        const mlt_rect middle = {100, 0, 10, 10, 1};
+        QCOMPARE(p.anim_set("rect", endpoint, 0, 0, mlt_keyframe_smooth), 0);
+        QCOMPARE(p.anim_set("rect", middle, 10, 0, mlt_keyframe_smooth), 0);
+        QCOMPARE(p.anim_set("rect", endpoint, 50, 0, mlt_keyframe_smooth), 0);
+        Animation a = p.get_animation("rect");
+        a.set_loop(true);
+        p.anim_get_rect("rect", 49);
+        QVERIFY(p.anim_get_rect("rect", 0).x == endpoint.x);
+        QVERIFY(p.anim_get_rect("rect", 50).x == endpoint.x);
+    }
+
+    void LoopSmoothRectUsesExactComponentEquality()
+    {
+        Properties p;
+        const mlt_rect first = {0, 0, 10, 10, 0.123456789};
+        const mlt_rect middle = {0, 100, 10, 10, 1};
+        const mlt_rect last = {0, 0, 10, 10, 0.123456788};
+        QCOMPARE(p.anim_set("rect", first, 0, 0, mlt_keyframe_smooth), 0);
+        QCOMPARE(p.anim_set("rect", middle, 10, 0, mlt_keyframe_smooth), 0);
+        QCOMPARE(p.anim_set("rect", last, 50, 0, mlt_keyframe_smooth), 0);
+        Animation a = p.get_animation("rect");
+        const double beforeLoop = p.anim_get_rect("rect", 45).y;
+        a.set_loop(true);
+        QCOMPARE(p.anim_get_rect("rect", 45).y, beforeLoop);
+    }
+
+    void LoopSmoothRectAndColorCompareConvertedValues()
+    {
+        Properties p;
+        p.set("rect", "0~=0 0 1 1 1;10~=0 100 1 1 1;50~=0 0 100% 1 1;loop");
+        p.set("rectUnrolled", "0~=0 0 1 1 1;10~=0 100 1 1 1;50~=0 0 1 1 1;60~=0 100 1 1 1");
+        QCOMPARE(p.anim_get_rect("rect", 45).y, p.anim_get_rect("rectUnrolled", 45).y);
+        p.set("color", "0~=#ff0022aa;10~=#ff00ddaa;50~=#FF0022AA;loop");
+        p.set("colorUnrolled", "0~=#ff0022aa;10~=#ff00ddaa;50~=#ff0022aa;60~=#ff00ddaa");
+        QCOMPARE(p.anim_get_color("color", 45).g, p.anim_get_color("colorUnrolled", 45).g);
     }
 
     void LoopDifferentRectAndColorEndpoints()
