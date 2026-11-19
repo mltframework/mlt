@@ -13,6 +13,10 @@ Framework
     with no picture still shows the checkerboard so it composites as transparent.
 
 Modules
+  - Fixed Vulkan hardware decoding when `avformat` adopts the shared placebo
+    device. The decode queue uses the Vulkan enumerator, so FFmpeg can see
+    the codec. Headers without the video decode extension still build, and
+    FFmpeg older than 7.1 does not use the Vulkan image path.
   - Fixed the `avformat` consumer aborting when a picture fetch fails. That
     frame's video packet is skipped, its audio is kept, and the checkerboard
     is not encoded.

@@ -11,6 +11,7 @@ add_library(mltavformat MODULE
   conceal.h
   vulkan_image.c
   vulkan_image.h
+  vulkan_video.h
   consumer_avformat.c
   # avfilter
   filter_avfilter.c

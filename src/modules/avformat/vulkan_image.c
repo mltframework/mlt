@@ -22,23 +22,13 @@
 #include "common.h"
 
 #if HAVE_FFMPEG_VULKAN_QF
+#include "vulkan_video.h"
 #include <libavfilter/avfilter.h>
 #include <libavfilter/buffersink.h>
 #include <libavfilter/buffersrc.h>
 #include <libavutil/hwcontext.h>
-#include <libavutil/hwcontext_vulkan.h>
 #include <libavutil/opt.h>
 #include <libavutil/pixdesc.h>
-
-#ifndef VK_QUEUE_VIDEO_DECODE_BIT_KHR
-#define VK_QUEUE_VIDEO_DECODE_BIT_KHR 0
-#endif
-#ifndef VK_QUEUE_VIDEO_ENCODE_BIT_KHR
-#define VK_QUEUE_VIDEO_ENCODE_BIT_KHR 0
-#endif
-#ifndef VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR
-#define VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR 0
-#endif
 
 #include <pthread.h>
 #include <stdlib.h>
@@ -515,7 +505,9 @@ static int alloc_input_frames(
     }
     /* The wrapped images were not allocated as encode sources. Clearing this
        stops the conversion filter from reusing the description for its output. */
+#ifdef VK_KHR_video_encode_queue
     vkfc->usage &= ~(VkImageUsageFlags) VK_IMAGE_USAGE_VIDEO_ENCODE_SRC_BIT_KHR;
+#endif
     *out = ref;
     return 0;
 }
@@ -801,24 +793,30 @@ AVBufferRef *avformat_vulkan_adopt_placebo(int need_encode)
     AVBufferRef *ref;
     AVHWDeviceContext *device_ctx;
     AVVulkanDeviceContext *vk;
-    int encode_index;
-    int encode_count;
+    int encode_index = -1;
+    int encode_count = 0;
+#ifdef VK_KHR_video_decode_queue
     int decode_index;
     int decode_count;
+#endif
     int nb_qf = 0;
     int ret;
 
     if (!published)
         return NULL;
 
+#ifdef VK_KHR_video_encode_queue
     encode_count = mlt_properties_get_int(published, "queue_encode_count");
     encode_index = mlt_properties_get_int(published, "queue_encode_index");
-    decode_count = mlt_properties_get_int(published, "queue_decode_count");
-    decode_index = mlt_properties_get_int(published, "queue_decode_index");
+#endif
     if (need_encode && (encode_count <= 0 || encode_index < 0)) {
         mlt_log_error(NULL, "shared placebo Vulkan device has no encode queue\n");
         return NULL;
     }
+#ifdef VK_KHR_video_decode_queue
+    decode_count = mlt_properties_get_int(published, "queue_decode_count");
+    decode_index = mlt_properties_get_int(published, "queue_decode_index");
+#endif
 
     instance = mlt_properties_get_data(published, "instance", NULL);
     phys_dev = mlt_properties_get_data(published, "phys_dev", NULL);
@@ -895,10 +893,14 @@ AVBufferRef *avformat_vulkan_adopt_placebo(int need_encode)
                      mlt_properties_get_int(published, "queue_compute_index"),
                      mlt_properties_get_int(published, "queue_compute_count"),
                      VK_QUEUE_COMPUTE_BIT);
+#ifdef VK_KHR_video_decode_queue
     if (decode_count > 0 && decode_index >= 0)
         add_queue_family(vk, &nb_qf, decode_index, decode_count, VK_QUEUE_VIDEO_DECODE_BIT_KHR);
+#endif
+#ifdef VK_KHR_video_encode_queue
     if (encode_count > 0 && encode_index >= 0)
         add_queue_family(vk, &nb_qf, encode_index, encode_count, VK_QUEUE_VIDEO_ENCODE_BIT_KHR);
+#endif
     vk->nb_qf = nb_qf;
 
     ret = av_hwdevice_ctx_init(ref);

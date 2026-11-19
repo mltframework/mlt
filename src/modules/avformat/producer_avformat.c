@@ -50,10 +50,7 @@
 #include <libavutil/dict.h>
 #include <libavutil/hwcontext.h>
 #if HAVE_FFMPEG_VULKAN_QF
-#include <libavutil/hwcontext_vulkan.h>
-#ifndef VK_QUEUE_VIDEO_DECODE_BIT_KHR
-#define VK_QUEUE_VIDEO_DECODE_BIT_KHR 0
-#endif
+#include "vulkan_video.h"
 #endif
 #include <libavutil/imgutils.h>
 #include <libavutil/opt.h>
@@ -3642,11 +3639,13 @@ static int adopt_placebo_vulkan_device(producer_avformat self)
         .num = mlt_properties_get_int(published, "queue_compute_count"),
         .flags = VK_QUEUE_COMPUTE_BIT,
     };
+#ifdef VK_KHR_video_decode_queue
     vk->qf[nb_qf++] = (AVVulkanDeviceQueueFamily){
         .idx = decode_index,
         .num = decode_count,
         .flags = VK_QUEUE_VIDEO_DECODE_BIT_KHR,
     };
+#endif
     vk->nb_qf = nb_qf;
 
     ret = av_hwdevice_ctx_init(ref);
