@@ -34,8 +34,8 @@ layout(push_constant) uniform PushConstants
     // Output Dimensions & Blend parameters
     uint packedDims;           // low 16: outWidth, high 16: outHeight
     float stitchRadius;        // virtual focal sphere radius in meters (e.g. 2.0)
-    float maxFovDegrees;       // 195.18 deg
-    float blendOverlapDegrees; // 10.0 deg
+    uint packedFovOverlap;     // low 16: maxFovDegrees*100, high 16: blendOverlapDegrees*100
+    uint packedK5;             // float16 pair: x = master.k5, y = slave.k5
 }
 pc;
 
@@ -56,37 +56,27 @@ vec4 quatConjugateWXYZ(vec4 q)
     return vec4(q.x, -q.yzw);
 }
 
-// Kannala-Brandt fisheye projection: lens frame direction -> normalized texture coordinates [0, 1]
+// 5-term Kannala-Brandt fisheye projection: lens frame direction -> normalized texture coordinates [0, 1]
 vec2 projectKannalaBrandt(
-    vec3 dLens, vec4 intrinsics, vec4 dist, vec2 texSize, float theta, float rho)
+    vec3 dLens, vec4 intrinsics, vec4 dist, float k5, vec2 texSize, float theta, float rho)
 {
     if (rho <= 1e-6) {
         return vec2(intrinsics.z / texSize.x, intrinsics.w / texSize.y);
     }
 
-    // Monotonic C1 tangent linear extrapolation:
-    // For Kannala-Brandt with negative higher-order terms (k3, k4), rd(theta) loses
-    // monotonicity around 93.75 deg (1.636 rad) for rear lens and 97.4 deg for front lens.
-    // Instead of hard-clamping theta (which forces drd/dtheta = 0 and severely flattens/distorts
-    // the image near the seam), we perform smooth C1 tangent extrapolation past theta0 = 90 deg (PI/2),
-    // preserving strictly positive slope and geometric scale all the way to the edge of FOV.
-    float th0 = 1.57079632679; // 90.0 degrees (PI * 0.5)
-    float rd;
-    if (theta <= th0) {
-        float t2 = theta * theta;
-        float t4 = t2 * t2;
-        float t6 = t4 * t2;
-        float t8 = t4 * t4;
-        rd = theta * (1.0 + dist.x * t2 + dist.y * t4 + dist.z * t6 + dist.w * t8);
-    } else {
-        float t2 = th0 * th0;
-        float t4 = t2 * t2;
-        float t6 = t4 * t2;
-        float t8 = t4 * t4;
-        float rd0 = th0 * (1.0 + dist.x * t2 + dist.y * t4 + dist.z * t6 + dist.w * t8);
-        float drd0 = 1.0 + 3.0 * dist.x * t2 + 5.0 * dist.y * t4 + 7.0 * dist.z * t6 + 9.0 * dist.w * t8;
-        rd = rd0 + drd0 * (theta - th0);
+    // 5-term Kannala-Brandt polynomial (k1..k5) is strictly monotonic past 105 deg;
+    // only clamp to the 4-term stationary peak if k5 is absent.
+    float safeTheta = theta;
+    if (abs(k5) <= 1e-8) {
+        float thPeak = (dist.w < -0.002) ? 1.63587 : 1.70008;
+        safeTheta = min(theta, thPeak);
     }
+    float t2 = safeTheta * safeTheta;
+    float t4 = t2 * t2;
+    float t6 = t4 * t2;
+    float t8 = t4 * t4;
+    float t10 = t8 * t2;
+    float rd = safeTheta * (1.0 + dist.x * t2 + dist.y * t4 + dist.z * t6 + dist.w * t8 + k5 * t10);
 
     // Lens frame: +x is image right, +y is image down
     float px = intrinsics.z + intrinsics.x * rd * (dLens.x / rho);
@@ -167,20 +157,27 @@ void main()
     float thSlave = atan(rhoSlave, dSlave.z);
 
     // Half field-of-view limits and seam blend band (in radians).
-    // With C1 monotonic tangent extrapolation, maxTheta uses full lens optical FOV.
-    float maxTheta = radians(pc.maxFovDegrees * 0.5);
-    float halfOverlap = radians(pc.blendOverlapDegrees * 0.5);
+    float maxFovDegrees = float(pc.packedFovOverlap & 0xFFFFu) * 0.01;
+    float blendOverlapDegrees = float((pc.packedFovOverlap >> 16u) & 0xFFFFu) * 0.01;
+    vec2 k5Pair = unpackHalf2x16(pc.packedK5);
+    float masterK5 = k5Pair.x;
+    float slaveK5 = k5Pair.y;
+
+    float maxTheta = radians(maxFovDegrees * 0.5);
+    float halfOverlap = radians(blendOverlapDegrees * 0.5);
 
     vec2 sensorSize = vec2(3840.0, 3840.0);
     vec2 rawUvMaster = projectKannalaBrandt(dMaster,
                                             pc.lens_master_intrinsics,
                                             pc.lens_master_dist,
+                                            masterK5,
                                             sensorSize,
                                             thMaster,
                                             rhoMaster);
     vec2 rawUvSlave = projectKannalaBrandt(dSlave,
                                            pc.lens_slave_intrinsics,
                                            pc.lens_slave_dist,
+                                           slaveK5,
                                            sensorSize,
                                            thSlave,
                                            rhoSlave);
@@ -210,13 +207,26 @@ void main()
     vec4 finalColor;
     if (validMaster && validSlave) {
         // Multi-Band Photometric & Content-Adaptive Blending:
-        // 1. Measure local color mismatch across the overlap.
-        float colorDiff = length(colorMaster.rgb - colorSlave.rgb);
+        // 1. Structural vs High-Frequency Disparity Estimation:
+        // Distinguish between a small (1-3 px) shift on a high-contrast edge (e.g. concrete ledge)
+        // and a large structural occlusion (>15 px, like a person's body, arm, or foreground obstacle).
+        vec2 texel = 3.0 / sensorSize;
+        vec3 mBox = 0.25 * (
+            texture(lensMaster, clamp(rawUvMaster + vec2(-texel.x, -texel.y), vec2(0.0), vec2(1.0))).rgb +
+            texture(lensMaster, clamp(rawUvMaster + vec2( texel.x, -texel.y), vec2(0.0), vec2(1.0))).rgb +
+            texture(lensMaster, clamp(rawUvMaster + vec2(-texel.x,  texel.y), vec2(0.0), vec2(1.0))).rgb +
+            texture(lensMaster, clamp(rawUvMaster + vec2( texel.x,  texel.y), vec2(0.0), vec2(1.0))).rgb
+        );
+        vec3 sBox = 0.25 * (
+            texture(lensSlave, clamp(rawUvSlave + vec2(-texel.x, -texel.y), vec2(0.0), vec2(1.0))).rgb +
+            texture(lensSlave, clamp(rawUvSlave + vec2( texel.x, -texel.y), vec2(0.0), vec2(1.0))).rgb +
+            texture(lensSlave, clamp(rawUvSlave + vec2(-texel.x,  texel.y), vec2(0.0), vec2(1.0))).rgb +
+            texture(lensSlave, clamp(rawUvSlave + vec2( texel.x,  texel.y), vec2(0.0), vec2(1.0))).rgb
+        );
+        float structDiff = length(mBox - sBox);
 
-        // Disparity Gate: Only equalize exposure where color difference is low (similar scene content).
-        // If colorDiff is high (>0.06), it is structural parallax/occlusion (e.g. body vs sky),
-        // NOT a global exposure mismatch. Bleeding in high-disparity zones causes washed-out milky ghosts!
-        float exposureWeight = smoothstep(0.18, 0.05, colorDiff);
+        // Disparity Gate: Only equalize exposure where structural difference is low.
+        float exposureWeight = smoothstep(0.20, 0.05, structDiff);
         vec3 deltaC = clamp((colorMaster.rgb - colorSlave.rgb) * exposureWeight, vec3(-0.15), vec3(0.15));
 
         // 2. Low-frequency luminance/color bleeding: ramp deltaC smoothly across the full overlap band (10 deg)
@@ -225,11 +235,11 @@ void main()
         vec3 balancedSlave = colorSlave.rgb + tWide * deltaC;
         vec3 balancedMaster = colorMaster.rgb - (1.0 - tWide) * deltaC;
 
-        // 3. High-frequency seam transition: content-adaptive blend band.
-        // Narrow transition down to ~0.25 deg in high-disparity zones to prevent ghosting,
-        // while preserving enough width to avoid knife-edge shearing along linear geometry.
-        float mismatch = smoothstep(0.05, 0.15, colorDiff);
-        float effectiveHalf = mix(blendHalf, radians(0.25), mismatch);
+        // 3. High-frequency seam transition: content-adaptive soft blending.
+        // Maintain a generous blend band (1.0 deg to 2.0 deg half-width) to ensure the
+        // two sides are smoothly mixed around the edges without knife-edge amputation.
+        float mismatch = smoothstep(0.06, 0.22, structDiff);
+        float effectiveHalf = mix(radians(2.00), radians(1.00), mismatch);
         float adaptiveBlend = smoothstep(phiCut - effectiveHalf, phiCut + effectiveHalf, phiSeam);
         finalColor = vec4(clamp(mix(balancedSlave, balancedMaster, adaptiveBlend), 0.0, 1.0), 1.0);
     } else if (validMaster) {
@@ -242,6 +252,7 @@ void main()
             vec2 uvMaster = clamp(projectKannalaBrandt(dMaster,
                                                        pc.lens_master_intrinsics,
                                                        pc.lens_master_dist,
+                                                       masterK5,
                                                        sensorSize,
                                                        thMaster,
                                                        rhoMaster),
@@ -252,6 +263,7 @@ void main()
             vec2 uvSlave = clamp(projectKannalaBrandt(dSlave,
                                                       pc.lens_slave_intrinsics,
                                                       pc.lens_slave_dist,
+                                                      slaveK5,
                                                       sensorSize,
                                                       thSlave,
                                                       rhoSlave),

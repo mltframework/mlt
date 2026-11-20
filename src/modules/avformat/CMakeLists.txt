@@ -61,13 +61,14 @@ endif()
 if(USE_VULKAN AND Vulkan_FOUND)
   target_sources(mltavformat PRIVATE
     producer_osv.cpp
+    filter_dual_lens_reframe.cpp
     osv_vulkan.cpp
     osv_metadata.cpp
   )
   target_include_directories(mltavformat PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
   target_link_libraries(mltavformat PRIVATE Vulkan::Vulkan)
   target_compile_definitions(mltavformat PRIVATE USE_VULKAN)
-  install(FILES producer_osv.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/avformat)
+  install(FILES producer_osv.yml filter_dual_lens_reframe.yml DESTINATION ${MLT_INSTALL_DATA_DIR}/avformat)
 endif()
 
 set_target_properties(mltavformat PROPERTIES LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")

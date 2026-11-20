@@ -32,8 +32,10 @@ struct ProducerOsvContext
     mlt_producer producer_audio = nullptr;  // Stream 2: Audio
     mlt_producer producer_lrf = nullptr;    // Companion .LRF side-by-side dual-fisheye proxy
 
-    OsvMetadata metadata;
+    DualLensCalibration calibration;
+    std::unique_ptr<DualLensTelemetrySource> telemetry_source;
     std::unique_ptr<OsvVulkanStitcher> stitcher;
+    CompanionProxyResolver proxy_resolver = nullptr;
     bool stitcher_initialized = false;
     bool has_lrf = false;
     std::string lrf_path;
@@ -45,6 +47,7 @@ struct ProducerOsvContext
     int cached_h = 0;
     bool cached_export_mode = false;
     bool cached_use_lrf = false;
+    bool cached_raw_dual = false;
     int cached_stab_mode = -1;
     std::vector<uint8_t> cached_equirect;
 
@@ -72,10 +75,14 @@ struct ProducerOsvContext
         }
         const char *mlt_data = std::getenv("MLT_DATA");
         if (mlt_data) {
-            std::filesystem::path p = std::filesystem::path(mlt_data).parent_path().parent_path()
-                                      / "shaders" / "osv_stitch.spv";
-            if (std::filesystem::exists(p))
-                return p.string();
+            std::filesystem::path p1 = std::filesystem::path(mlt_data).parent_path().parent_path()
+                                       / "shaders" / "osv_stitch.spv";
+            if (std::filesystem::exists(p1))
+                return p1.string();
+            std::filesystem::path p2 = std::filesystem::path(mlt_data).parent_path().parent_path().parent_path()
+                                       / "shaders" / "osv_stitch.spv";
+            if (std::filesystem::exists(p2))
+                return p2.string();
         }
         try {
             std::filesystem::path exe_dir
@@ -104,6 +111,11 @@ struct ProducerOsvContext
             stitcher = std::make_unique<OsvVulkanStitcher>();
             std::string shader_path = resolveShaderPath();
             stitcher_initialized = stitcher->initialize(shader_path);
+            if (stitcher_initialized) {
+                std::cout << "[OSV-MLT] Vulkan stitcher initialized successfully with shader: " << shader_path << std::endl;
+            } else {
+                std::cerr << "[OSV-MLT] Vulkan stitcher initialization FAILED for: " << shader_path << std::endl;
+            }
         }
         return stitcher_initialized;
     }
@@ -394,10 +406,17 @@ static int producer_get_image(mlt_frame frame,
         }
     }
 
+    mlt_properties frame_props = MLT_FRAME_PROPERTIES(frame);
+    const char *out_mode_prop = mlt_properties_get(props, "osv.output_mode");
+    const bool raw_dual_mode
+        = (mlt_properties_get_int(frame_props, "osv.request_raw_dual") == 1)
+          || (out_mode_prop && std::strcmp(out_mode_prop, "raw_dual") == 0);
+
     // Instantaneous cache hit when user pans/rotates/zooms the 360 viewport on
     // the same frame
-    if (!cut_changed && position == ctx->cached_position && export_mode == ctx->cached_export_mode
-        && use_lrf == ctx->cached_use_lrf && stab_mode == ctx->cached_stab_mode
+    if (!raw_dual_mode && !cut_changed && position == ctx->cached_position
+        && export_mode == ctx->cached_export_mode && use_lrf == ctx->cached_use_lrf
+        && raw_dual_mode == ctx->cached_raw_dual && stab_mode == ctx->cached_stab_mode
         && ctx->cached_w == out_w && ctx->cached_h == out_h
         && ctx->cached_equirect.size() == (size_t) out_w * out_h * 4) {
         *width = out_w;
@@ -412,7 +431,7 @@ static int producer_get_image(mlt_frame frame,
 
     // Scaled frame index for gyro telemetry lookup matching container fps
     double profile_fps = mlt_producer_get_fps(producer);
-    double source_fps = ctx->metadata.fps > 0.0 ? ctx->metadata.fps : 25.0;
+    double source_fps = ctx->calibration.fps > 0.0 ? ctx->calibration.fps : 25.0;
     int64_t source_frame = (profile_fps > 0.0)
                                ? static_cast<int64_t>(position / profile_fps * source_fps + 0.5)
                                : position;
@@ -425,14 +444,16 @@ static int producer_get_image(mlt_frame frame,
     // scale it for fluid, real-time scrubbing without redundant GPU compute
     // re-stitching.
     if (use_lrf) {
-        if (!ctx->ensureStitcher()) {
+        if (!raw_dual_mode && !ctx->ensureStitcher()) {
             std::cerr << "[OSV-MLT] Failed to initialize Vulkan stitcher for LRF mode" << std::endl;
             return 1;
         }
 
         if (cut_changed || ctx->last_lrf_position < 0 || position != ctx->last_lrf_position + 1) {
             mlt_producer_seek(ctx->producer_lrf, position);
-            ctx->stitcher->resetTemporalSeam();
+            if (ctx->stitcher) {
+                ctx->stitcher->resetTemporalSeam();
+            }
         }
         ctx->last_lrf_position = position;
 
@@ -444,6 +465,39 @@ static int producer_get_image(mlt_frame frame,
             int lw = 2048;
             int lh = 1024;
             if (mlt_frame_get_image(lrf_frame, &lrf_img, &fmt, &lw, &lh, 0) == 0 && lrf_img) {
+                float gyro[4] = {1.0f, 0.0f, 0.0f, 0.0f};
+                if (ctx->telemetry_source) {
+                    ctx->telemetry_source->getStabilizationQuat(source_frame, stab_mode, gyro);
+                }
+
+                if (raw_dual_mode) {
+                    int buf_size = lw * lh * 4;
+                    *width = lw;
+                    *height = lh;
+                    *format = mlt_image_rgba;
+                    *image = (uint8_t *) mlt_pool_alloc(buf_size);
+                    std::memcpy(*image, lrf_img, buf_size);
+                    mlt_frame_close(lrf_frame);
+
+                    auto *payload = new DualLensFramePayload();
+                    payload->calibration = ctx->calibration;
+                    std::memcpy(payload->gyro_quat, gyro, sizeof(gyro));
+                    payload->raw_sbs_rgba = std::make_shared<std::vector<uint8_t>>(
+                        *image, *image + buf_size);
+                    payload->raw_sbs_w = static_cast<uint32_t>(lw);
+                    payload->raw_sbs_h = static_cast<uint32_t>(lh);
+                    mlt_properties_set_data(frame_props,
+                                            "osv.dual_lens_payload",
+                                            payload,
+                                            sizeof(DualLensFramePayload),
+                                            [](void *p) {
+                                                delete static_cast<DualLensFramePayload *>(p);
+                                            },
+                                            nullptr);
+                    mlt_frame_set_image(frame, *image, buf_size, mlt_pool_release);
+                    return 0;
+                }
+
                 *width = out_w;
                 *height = out_h;
                 *format = mlt_image_rgba;
@@ -461,14 +515,12 @@ static int producer_get_image(mlt_frame frame,
                 }
                 ctx->stitcher->setStitchRadius((float) stitch_radius);
 
-                float gyro[4] = {1.0f, 0.0f, 0.0f, 0.0f};
-                ctx->metadata.getStabilizationQuat(source_frame, stab_mode, gyro);
                 bool ok
                     = ctx->stitcher->stitchSideBySide(lrf_img,
                                                       lw,
                                                       lh,
-                                                      ctx->metadata.lens_rear,  // Master (Stream 1)
-                                                      ctx->metadata.lens_front, // Slave (Stream 0)
+                                                      ctx->calibration.lens_master,
+                                                      ctx->calibration.lens_slave,
                                                       gyro,
                                                       out_w,
                                                       out_h,
@@ -482,6 +534,7 @@ static int producer_get_image(mlt_frame frame,
                     ctx->cached_h = out_h;
                     ctx->cached_export_mode = export_mode;
                     ctx->cached_use_lrf = use_lrf;
+                    ctx->cached_raw_dual = false;
                     ctx->cached_stab_mode = stab_mode;
                     ctx->cached_equirect.assign(*image, *image + buf_size);
 
@@ -553,6 +606,49 @@ static int producer_get_image(mlt_frame frame,
     mlt_frame_get_image(frame_master, &img_master, &fmt, &w1, &h1, 0);
     mlt_frame_get_image(frame_slave, &img_slave, &fmt, &w0, &h0, 0);
 
+    if (raw_dual_mode && img_master && img_slave && w1 == w0 && h1 == h0) {
+        float gyro[4] = {1.0f, 0.0f, 0.0f, 0.0f};
+        if (ctx->telemetry_source) {
+            ctx->telemetry_source->getStabilizationQuat(source_frame, stab_mode, gyro);
+        }
+
+        int sbs_w = w1 * 2;
+        int sbs_h = h1;
+        int buf_size = sbs_w * sbs_h * 4;
+        *width = sbs_w;
+        *height = sbs_h;
+        *format = mlt_image_rgba;
+        *image = (uint8_t *) mlt_pool_alloc(buf_size);
+
+        size_t row_bytes = static_cast<size_t>(w1) * 4;
+        size_t sbs_stride = static_cast<size_t>(sbs_w) * 4;
+        for (int y = 0; y < sbs_h; ++y) {
+            uint8_t *dst = *image + static_cast<size_t>(y) * sbs_stride;
+            std::memcpy(dst, img_slave + static_cast<size_t>(y) * row_bytes, row_bytes);
+            std::memcpy(dst + row_bytes, img_master + static_cast<size_t>(y) * row_bytes, row_bytes);
+        }
+
+        mlt_frame_close(frame_master);
+        mlt_frame_close(frame_slave);
+
+        auto *payload = new DualLensFramePayload();
+        payload->calibration = ctx->calibration;
+        std::memcpy(payload->gyro_quat, gyro, sizeof(gyro));
+        payload->raw_sbs_rgba = std::make_shared<std::vector<uint8_t>>(*image, *image + buf_size);
+        payload->raw_sbs_w = static_cast<uint32_t>(sbs_w);
+        payload->raw_sbs_h = static_cast<uint32_t>(sbs_h);
+        mlt_properties_set_data(frame_props,
+                                "osv.dual_lens_payload",
+                                payload,
+                                sizeof(DualLensFramePayload),
+                                [](void *p) {
+                                    delete static_cast<DualLensFramePayload *>(p);
+                                },
+                                nullptr);
+        mlt_frame_set_image(frame, *image, buf_size, mlt_pool_release);
+        return 0;
+    }
+
     *width = out_w;
     *height = out_h;
     *format = mlt_image_rgba;
@@ -573,13 +669,15 @@ static int producer_get_image(mlt_frame frame,
         ctx->stitcher->setStitchRadius((float) stitch_radius);
 
         float gyro[4] = {1.0f, 0.0f, 0.0f, 0.0f};
-        ctx->metadata.getStabilizationQuat(source_frame, stab_mode, gyro);
+        if (ctx->telemetry_source) {
+            ctx->telemetry_source->getStabilizationQuat(source_frame, stab_mode, gyro);
+        }
         if (ctx->stitcher->stitchFrames(img_master,
                                         img_slave,
                                         w1,
                                         h1,
-                                        ctx->metadata.lens_rear,  // Master (Lens 2)
-                                        ctx->metadata.lens_front, // Slave (Lens 1)
+                                        ctx->calibration.lens_master,
+                                        ctx->calibration.lens_slave,
                                         gyro,
                                         out_w,
                                         out_h,
@@ -778,6 +876,25 @@ static void producer_close(mlt_producer producer)
     }
 }
 
+static std::optional<CompanionProxyInfo> resolveDjiCompanionProxy(const std::string &source_path)
+{
+    size_t dot_pos = source_path.find_last_of('.');
+    if (dot_pos == std::string::npos) {
+        return std::nullopt;
+    }
+    std::string ext = source_path.substr(dot_pos);
+    std::string base = source_path.substr(0, dot_pos);
+    std::string cand1 = base + (ext == ".OSV" ? ".LRF" : ".lrf");
+    std::string cand2 = base + (ext == ".osv" ? ".lrf" : ".LRF");
+    if (std::filesystem::exists(cand1)) {
+        return CompanionProxyInfo{cand1, true};
+    }
+    if (std::filesystem::exists(cand2)) {
+        return CompanionProxyInfo{cand2, true};
+    }
+    return std::nullopt;
+}
+
 extern "C" mlt_producer producer_osv_init(mlt_profile profile,
                                           mlt_service_type type,
                                           const char *id,
@@ -788,6 +905,8 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile,
         return nullptr;
 
     ProducerOsvContext *ctx = new ProducerOsvContext();
+    ctx->telemetry_source = std::make_unique<OsvTelemetrySource>();
+    ctx->proxy_resolver = resolveDjiCompanionProxy;
     producer->child = ctx;
     producer->get_frame = producer_get_frame;
     producer->close = (mlt_destructor) producer_close;
@@ -799,24 +918,25 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile,
     mlt_properties_set(props, "shotcut:producer", "avformat");
 
     mlt_log_info(MLT_PRODUCER_SERVICE(producer),
-                 "[OSV-MLT] Loaded native OSV plugin (build 2026-11-10 direct-osv-v3)\n");
-    std::cout << "[OSV-MLT] Loaded native OSV plugin (build 2026-11-10 direct-osv-v3)" << std::endl;
+                 "[OSV-MLT] Loaded native OSV plugin v4.4-true-poly-monotonic (build 2026-11-16)\n");
+    std::cout << "[OSV-MLT] Loaded native OSV plugin v4.4-true-poly-monotonic (build 2026-11-16)" << std::endl;
 
     ctx->profile = profile;
     ctx->osv_path = filename ? filename : "";
 
-    // Parse OSV metadata, frame rate, and per-frame attitude telemetry
-    if (filename && OsvMetadataParser::parseFromFile(filename, ctx->metadata)) {
-        mlt_properties_set(props, "meta.camera.model", ctx->metadata.camera_model.c_str());
-        mlt_properties_set(props, "meta.camera.serial", ctx->metadata.serial_number.c_str());
+    // Parse vendor-specific metadata, frame rate, and per-frame attitude telemetry
+    if (!ctx->osv_path.empty() && ctx->telemetry_source
+        && ctx->telemetry_source->parseFromFile(ctx->osv_path, ctx->calibration)) {
+        mlt_properties_set(props, "meta.camera.model", ctx->calibration.camera_model.c_str());
+        mlt_properties_set(props, "meta.camera.serial", ctx->calibration.serial_number.c_str());
         mlt_properties_set_int(props,
                                "meta.telemetry.samples",
-                               ctx->metadata.telemetry_frames.size());
+                               ctx->calibration.telemetry_sample_count);
     }
 
-    double fps = ctx->metadata.fps > 0.0 ? ctx->metadata.fps : 29.97002997002997;
-    int fps_num = ctx->metadata.fps_num > 0 ? ctx->metadata.fps_num : 30000;
-    int fps_den = ctx->metadata.fps_den > 0 ? ctx->metadata.fps_den : 1001;
+    double fps = ctx->calibration.fps > 0.0 ? ctx->calibration.fps : 29.97002997002997;
+    int fps_num = ctx->calibration.fps_num > 0 ? ctx->calibration.fps_num : 30000;
+    int fps_den = ctx->calibration.fps_den > 0 ? ctx->calibration.fps_den : 1001;
 
     // Critical seekability and stream properties for Shotcut UI & Filter dock
     mlt_properties_set_int(props, "seekable", 1);
@@ -881,21 +1001,10 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile,
     // preview, and full dual-4K/5.7K HEVC compute stitching during render/export.
     // Can be forced via OSV_PREVIEW_MODE ("proxy" / "full" / "auto") or producer
     // property "osv.preview_mode".
-    if (filename) {
-        std::string path_str(filename);
-        size_t dot_pos = path_str.find_last_of('.');
-        if (dot_pos != std::string::npos) {
-            std::string ext = path_str.substr(dot_pos);
-            std::string base = path_str.substr(0, dot_pos);
-            std::string cand1 = base + (ext == ".OSV" ? ".LRF" : ".lrf");
-            std::string cand2 = base + (ext == ".osv" ? ".lrf" : ".LRF");
-            if (std::filesystem::exists(cand1)) {
-                ctx->lrf_path = cand1;
-                ctx->has_lrf = true;
-            } else if (std::filesystem::exists(cand2)) {
-                ctx->lrf_path = cand2;
-                ctx->has_lrf = true;
-            }
+    if (!ctx->osv_path.empty() && ctx->proxy_resolver) {
+        if (auto proxy = ctx->proxy_resolver(ctx->osv_path)) {
+            ctx->lrf_path = proxy->path;
+            ctx->has_lrf = true;
         }
     }
 
