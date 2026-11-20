@@ -1530,6 +1530,28 @@ static int render_unprocessed_frame(mlt_consumer self, mlt_frame frame)
     return mlt_properties_get_int(frame_properties, "rendered");
 }
 
+/** True while the prefill wait still has a queued frame a worker can start.
+ *
+ * A worker is idle once every queued frame is processing, and an empty queue
+ * (after a purge) has nothing to wait for.
+ *
+ * Lock order: the caller holds \p done_mutex, and this takes \p queue_mutex
+ * inside it, as worker_wait_for_rendered() does. Nothing may take done_mutex
+ * while holding queue_mutex. The worker threads release queue_mutex before they
+ * lock done_mutex to broadcast.
+ */
+
+static int worker_prefill_pending(mlt_consumer self, int prefill)
+{
+    consumer_private *priv = self->local;
+
+    pthread_mutex_lock(&priv->queue_mutex);
+    int index = first_unprocessed_frame(self);
+    int count = mlt_deque_count(priv->queue);
+    pthread_mutex_unlock(&priv->queue_mutex);
+    return index < prefill && index < count;
+}
+
 /** Use multiple worker threads and a work queue.
  */
 
@@ -1579,9 +1601,17 @@ static mlt_frame worker_get_frame(mlt_consumer self, mlt_properties properties)
             }
         }
 
-        // Wait for prefill
-        while (priv->ahead && first_unprocessed_frame(self) < prefill) {
+        // Wait for prefill. A purge, or a frame that is already past the
+        // prefill count, leaves fewer unprocessed frames than prefill asks for.
+        // Nothing queues more while this waits, so only wait while a worker
+        // still has a queued frame to start or finish. The check holds
+        // done_mutex so a worker cannot broadcast between check and wait.
+        while (priv->ahead) {
             pthread_mutex_lock(&priv->done_mutex);
+            if (!priv->ahead || !worker_prefill_pending(self, prefill)) {
+                pthread_mutex_unlock(&priv->done_mutex);
+                break;
+            }
             pthread_cond_wait(&priv->done_cond, &priv->done_mutex);
             pthread_mutex_unlock(&priv->done_mutex);
         }
