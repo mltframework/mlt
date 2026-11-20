@@ -229,7 +229,8 @@ static bool is_render_export(mlt_producer producer, mlt_frame frame)
                     is_melt = true;
                 }
                 if (arg.rfind("xml:", 0) == 0 || arg.find("avformat") != std::string::npos
-                    || arg.rfind("consumer:", 0) == 0 || arg == "-abort") {
+                    || arg.rfind("consumer:", 0) == 0 || arg == "-abort"
+                    || (arg.size() >= 4 && arg.compare(arg.size() - 4, 4, ".mlt") == 0)) {
                     is_export_job = true;
                 }
             }
@@ -384,10 +385,20 @@ static int producer_get_image(mlt_frame frame,
         }
     }
 
-    int out_w = (*width > 0) ? *width : (export_mode ? 5760 : 2048);
-    int out_h = (*height > 0) ? *height : (export_mode ? 2880 : 1024);
-
-    if (export_mode && (*width <= 0 || *height <= 0)) {
+    int out_w = 2048;
+    int out_h = 1024;
+    if (export_mode) {
+        // EXPORT / RENDER: Always preserve 2:1 equirectangular aspect ratio and high
+        // optical resolution (default 5760x2880) regardless of preview scaling or 16:9
+        // timeline profile dimensions, so downstream 360 reframing filters sample from
+        // full sensor detail. Respect an explicit high-res 2:1 caller request or user
+        // override via osv.export_res / OSV_EXPORT_RES.
+        out_w = 5760;
+        out_h = 2880;
+        if (*width >= 3840 && *height >= 1920 && *width == 2 * (*height)) {
+            out_w = *width;
+            out_h = *height;
+        }
         const char *export_res = mlt_properties_get(props, "osv.export_res");
         if (!export_res)
             export_res = std::getenv("OSV_EXPORT_RES");
@@ -404,6 +415,9 @@ static int producer_get_image(mlt_frame frame,
                 out_h = 3840;
             }
         }
+    } else {
+        out_w = (*width > 0) ? *width : 2048;
+        out_h = (*height > 0) ? *height : 1024;
     }
 
     mlt_properties frame_props = MLT_FRAME_PROPERTIES(frame);
@@ -918,8 +932,8 @@ extern "C" mlt_producer producer_osv_init(mlt_profile profile,
     mlt_properties_set(props, "shotcut:producer", "avformat");
 
     mlt_log_info(MLT_PRODUCER_SERVICE(producer),
-                 "[OSV-MLT] Loaded native OSV plugin v4.4-true-poly-monotonic (build 2026-11-16)\n");
-    std::cout << "[OSV-MLT] Loaded native OSV plugin v4.4-true-poly-monotonic (build 2026-11-16)" << std::endl;
+                 "[OSV-MLT] Loaded native OSV plugin v4.5-kb5-refined\n");
+    std::cout << "[OSV-MLT] Loaded native OSV plugin v4.5-kb5-refined" << std::endl;
 
     ctx->profile = profile;
     ctx->osv_path = filename ? filename : "";
