@@ -1,0 +1,76 @@
+schema_version: 7.2
+type: filter
+identifier: dual_lens_reframe
+title: 360: Dual-Lens Direct to Rectilinear
+version: 1
+copyright: Meltytech, LLC
+creator: Francesco Pischedda
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  Projects raw dual-fisheye 360-degree camera streams directly to a rectilinear
+  perspective view in a single Vulkan compute pass with 5-term Kannala-Brandt
+  calibration, EWA anisotropic resampling, and dynamic-programming seam routing.
+
+parameters:
+  - identifier: yaw
+    title: Yaw
+    type: float
+    description: Horizontal viewing angle in degrees.
+    minimum: -360
+    maximum: 360
+    default: 0
+    mutable: yes
+    animation: yes
+
+  - identifier: pitch
+    title: Pitch
+    type: float
+    description: Vertical viewing angle in degrees.
+    minimum: -180
+    maximum: 180
+    default: 0
+    mutable: yes
+    animation: yes
+
+  - identifier: roll
+    title: Roll
+    type: float
+    description: Camera roll angle in degrees.
+    minimum: -180
+    maximum: 180
+    default: 0
+    mutable: yes
+    animation: yes
+
+  - identifier: fov
+    title: FOV
+    type: float
+    description: Horizontal field of view in degrees.
+    minimum: 10
+    maximum: 160
+    default: 90
+    mutable: yes
+    animation: yes
+
+  - identifier: fisheye
+    title: Fisheye
+    type: float
+    description: Fisheye blend amount (0 = pure rectilinear).
+    minimum: 0
+    maximum: 100
+    default: 0
+    mutable: yes
+    animation: yes
+
+  - identifier: stitch_radius
+    title: Stitch Radius
+    type: float
+    description: Virtual focal sphere radius in meters for parallax compensation (0 = infinity).
+    minimum: 0
+    maximum: 50
+    default: 2.2
+    mutable: yes
+    animation: yes

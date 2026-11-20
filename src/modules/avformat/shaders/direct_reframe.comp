@@ -1,0 +1,305 @@
+#version 450
+layout(local_size_x = 16, local_size_y = 16) in;
+
+// Output rectilinear 2D image (e.g. 1920x1080)
+layout(binding = 0, rgba8) uniform writeonly image2D outRect;
+
+// Input lens textures: binding 1 = Master (Stream 1), binding 2 = Slave (Stream 0)
+layout(binding = 1) uniform sampler2D lensMaster;
+layout(binding = 2) uniform sampler2D lensSlave;
+
+// Dynamic Programming Seam LUT: 128x1 R32_SFLOAT texture
+layout(binding = 3) uniform sampler2D seamLut;
+
+// View / Projection uniforms for direct rectilinear reframe
+layout(std140, binding = 4) uniform ReframeUniforms
+{
+    mat4 viewMatrix;     // Upper-left 3x3: Rz(yaw) * Ry(pitch) * Rx(roll)
+    float tanHalfFov;    // tan(0.5 * fov_rad)
+    float fisheyeAmount; // Reserved for panoramic/fisheye blend (0.0 = pure rectilinear)
+    float sensorWidth;
+    float sensorHeight;
+}
+rf;
+
+// Calibration and Orientation Uniforms (128 bytes total)
+layout(push_constant) uniform PushConstants
+{
+    vec4 lens_master_intrinsics; // fx, fy, cx, cy
+    vec4 lens_master_dist;       // k1, k2, k3, k4
+    vec4 lens_master_quat;       // w, x, y, z
+
+    vec4 lens_slave_intrinsics;  // fx, fy, cx, cy
+    vec4 lens_slave_dist;        // k1, k2, k3, k4
+    vec4 lens_slave_quat;        // w, x, y, z
+
+    vec4 gyro_quat;              // w, x, y, z
+
+    uint packedDims;             // low 16: outWidth, high 16: outHeight
+    float stitchRadius;          // virtual focal sphere radius in meters
+    uint packedFovOverlap;       // low 16: maxFovDegrees*100, high 16: blendOverlapDegrees*100
+    uint packedK5;               // float16 pair: x = master.k5, y = slave.k5
+}
+pc;
+
+#define PI 3.14159265358979323846
+
+vec3 quatRotateWXYZ(vec4 q, vec3 v)
+{
+    vec3 qvec = q.yzw;
+    vec3 uv = cross(qvec, v);
+    vec3 uuv = cross(qvec, uv);
+    return v + ((uv * q.x) + uuv) * 2.0;
+}
+
+vec4 quatConjugateWXYZ(vec4 q)
+{
+    return vec4(q.x, -q.yzw);
+}
+
+// 5-term Kannala-Brandt fisheye projection: lens frame direction -> normalized texture coordinates [0, 1]
+vec2 projectKannalaBrandt(
+    vec3 dLens, vec4 intrinsics, vec4 dist, float k5, vec2 texSize, float theta, float rho)
+{
+    if (rho <= 1e-6) {
+        return vec2(intrinsics.z / texSize.x, intrinsics.w / texSize.y);
+    }
+
+    // 5-term polynomial (k1..k5) is strictly monotonic past 105 deg; only clamp for legacy 4-term calibrations
+    float safeTheta = theta;
+    if (abs(k5) <= 1e-8) {
+        float thPeak = (dist.w < -0.002) ? 1.63587 : 1.70008;
+        safeTheta = min(theta, thPeak);
+    }
+    float t2 = safeTheta * safeTheta;
+    float t4 = t2 * t2;
+    float t6 = t4 * t2;
+    float t8 = t4 * t4;
+    float t10 = t8 * t2;
+    float rd = safeTheta * (1.0 + dist.x * t2 + dist.y * t4 + dist.z * t6 + dist.w * t8 + k5 * t10);
+
+    float px = intrinsics.z + intrinsics.x * rd * (dLens.x / rho);
+    float py = intrinsics.w + intrinsics.y * rd * (dLens.y / rho);
+
+    return vec2(px / texSize.x, py / texSize.y);
+}
+
+vec3 offsetToLens(vec3 dirBody, vec3 axisLens, float stitchRadius)
+{
+    if (stitchRadius > 0.05 && stitchRadius < 100.0) {
+        return normalize(stitchRadius * dirBody - (0.5 * 0.024) * axisLens);
+    }
+    return dirBody;
+}
+
+vec3 computeBodyRay(vec2 pixelCenter, float fW, float fH, float aspect, vec4 invGyro, bool hasGyro)
+{
+    float ny = ((2.0 * pixelCenter.x / fW) - 1.0) * rf.tanHalfFov;
+    float nz = ((2.0 * pixelCenter.y / fH) - 1.0) * rf.tanHalfFov * aspect;
+    vec3 vCam = normalize(vec3(1.0, ny, nz));
+    vec3 w = mat3(rf.viewMatrix) * vCam;
+    vec3 dEquirect = vec3(-w.x, w.y, -w.z);
+    return hasGyro ? quatRotateWXYZ(invGyro, dEquirect) : dEquirect;
+}
+
+vec2 projectBodyToLensUV(
+    vec3 dBody, vec3 axisLens, vec4 intrinsics, vec4 dist, float k5, vec4 lensQuat, vec2 sensorSize)
+{
+    vec3 dBodyLens = offsetToLens(dBody, axisLens, pc.stitchRadius);
+    vec3 dLens = quatRotateWXYZ(lensQuat, dBodyLens);
+    float rho = length(dLens.xy);
+    float th = atan(rho, dLens.z);
+    return projectKannalaBrandt(dLens, intrinsics, dist, k5, sensorSize, th, rho);
+}
+
+// Heckbert EWA-inspired Jacobian-aware anisotropic resampling:
+// When minification exceeds 1.25 texels/pixel (e.g. near the fisheye rim),
+// evaluate a 3x3 Gaussian-weighted kernel pulled back through the local Jacobian.
+vec4 sampleLensEWA(sampler2D tex, vec2 uv, vec2 uvDx, vec2 uvDy, vec2 sensorSize)
+{
+    vec2 jx = (uvDx - uv) * sensorSize;
+    vec2 jy = (uvDy - uv) * sensorSize;
+    float maxFootprint = max(length(jx), length(jy));
+
+    if (maxFootprint <= 1.25) {
+        return texture(tex, clamp(uv, vec2(0.0), vec2(1.0)));
+    }
+
+    vec2 du = uvDx - uv;
+    vec2 dv = uvDy - uv;
+    // Clamp step to avoid over-blurring at extreme grazing angles
+    float scale = min(maxFootprint, 2.5) / maxFootprint;
+    du *= scale;
+    dv *= scale;
+
+    vec4 accum = vec4(0.0);
+    float wSum = 0.0;
+    for (int iy = -1; iy <= 1; ++iy) {
+        float sy = float(iy) * 0.45;
+        for (int ix = -1; ix <= 1; ++ix) {
+            float sx = float(ix) * 0.45;
+            float w = exp(-2.0 * (sx * sx + sy * sy));
+            vec2 sampleUv = clamp(uv + sx * du + sy * dv, vec2(0.0), vec2(1.0));
+            accum += texture(tex, sampleUv) * w;
+            wSum += w;
+        }
+    }
+    return accum / wSum;
+}
+
+void main()
+{
+    ivec2 pixelCoord = ivec2(gl_GlobalInvocationID.xy);
+    uint outWidth = pc.packedDims & 0xFFFFu;
+    uint outHeight = (pc.packedDims >> 16u) & 0xFFFFu;
+    if (pixelCoord.x >= outWidth || pixelCoord.y >= outHeight) {
+        return;
+    }
+
+    // 1. Inverse ray-tracing from output rectilinear pixel to 3D camera ray (Bourke / bigsh0t convention)
+    float fW = float(outWidth);
+    float fH = float(outHeight);
+    float aspect = fH / fW;
+
+    bool hasGyro = (abs(pc.gyro_quat.x - 1.0) > 1e-5 || length(pc.gyro_quat.yzw) > 1e-5);
+    vec4 invGyro = hasGyro ? quatConjugateWXYZ(pc.gyro_quat) : vec4(1.0, 0.0, 0.0, 0.0);
+
+    vec2 pCenter = vec2(pixelCoord) + 0.5;
+    vec3 dBody = computeBodyRay(pCenter, fW, fH, aspect, invGyro, hasGyro);
+    vec3 dBodyDx = computeBodyRay(pCenter + vec2(1.0, 0.0), fW, fH, aspect, invGyro, hasGyro);
+    vec3 dBodyDy = computeBodyRay(pCenter + vec2(0.0, 1.0), fW, fH, aspect, invGyro, hasGyro);
+
+    // 3. Geometric bisector between Master and Slave optical axes
+    vec3 aMaster = quatRotateWXYZ(quatConjugateWXYZ(pc.lens_master_quat), vec3(0.0, 0.0, 1.0));
+    vec3 aSlave = quatRotateWXYZ(quatConjugateWXYZ(pc.lens_slave_quat), vec3(0.0, 0.0, 1.0));
+    vec3 nBisector = normalize(aMaster - aSlave);
+    float phiSeam = asin(clamp(dot(dBody, nBisector), -1.0, 1.0));
+
+    float maxFovDegrees = float(pc.packedFovOverlap & 0xFFFFu) * 0.01;
+    float blendOverlapDegrees = float((pc.packedFovOverlap >> 16u) & 0xFFFFu) * 0.01;
+    vec2 k5Pair = unpackHalf2x16(pc.packedK5);
+    float masterK5 = k5Pair.x;
+    float slaveK5 = k5Pair.y;
+
+    float maxTheta = radians(maxFovDegrees * 0.5);
+    float halfOverlap = radians(blendOverlapDegrees * 0.5);
+    vec2 sensorSize = vec2(rf.sensorWidth, rf.sensorHeight);
+
+    // 4. Single-lens fast path when well outside the overlap band
+    if (phiSeam > halfOverlap) {
+        vec2 uvM = projectBodyToLensUV(
+            dBody, aMaster, pc.lens_master_intrinsics, pc.lens_master_dist, masterK5, pc.lens_master_quat, sensorSize);
+        vec2 uvMDx = projectBodyToLensUV(
+            dBodyDx, aMaster, pc.lens_master_intrinsics, pc.lens_master_dist, masterK5, pc.lens_master_quat, sensorSize);
+        vec2 uvMDy = projectBodyToLensUV(
+            dBodyDy, aMaster, pc.lens_master_intrinsics, pc.lens_master_dist, masterK5, pc.lens_master_quat, sensorSize);
+        imageStore(outRect, pixelCoord, sampleLensEWA(lensMaster, uvM, uvMDx, uvMDy, sensorSize));
+        return;
+    }
+
+    if (phiSeam < -halfOverlap) {
+        vec2 uvS = projectBodyToLensUV(
+            dBody, aSlave, pc.lens_slave_intrinsics, pc.lens_slave_dist, slaveK5, pc.lens_slave_quat, sensorSize);
+        vec2 uvSDx = projectBodyToLensUV(
+            dBodyDx, aSlave, pc.lens_slave_intrinsics, pc.lens_slave_dist, slaveK5, pc.lens_slave_quat, sensorSize);
+        vec2 uvSDy = projectBodyToLensUV(
+            dBodyDy, aSlave, pc.lens_slave_intrinsics, pc.lens_slave_dist, slaveK5, pc.lens_slave_quat, sensorSize);
+        imageStore(outRect, pixelCoord, sampleLensEWA(lensSlave, uvS, uvSDx, uvSDy, sensorSize));
+        return;
+    }
+
+    // 5. Overlap band: evaluate both lenses with 5-term Kannala-Brandt + DP seam LUT
+    vec3 uSeam = normalize(cross(aMaster, aSlave));
+    vec3 vSeam = normalize(cross(nBisector, uSeam));
+    float alpha = atan(dot(dBody, vSeam), dot(dBody, uSeam));
+
+    float normAlpha = (alpha + PI) / (2.0 * PI);
+    vec4 seamData = texture(seamLut, vec2(normAlpha, 0.5));
+    float phiCut = (abs(masterK5) > 1e-8) ? seamData.r : max(seamData.r, radians(-1.5));
+    // Clamp flow magnitude so warp Jacobian across [-halfOverlap, +halfOverlap] stays strictly > 0.75 (no smearing)
+    float maxFlow = radians(1.5);
+    float dPhi = clamp(seamData.g * seamData.a, -maxFlow, maxFlow);
+    float dAlpha = clamp(seamData.b * seamData.a, -maxFlow, maxFlow);
+
+    // Zero-warp path: preserve true Kannala-Brandt geometry (no bent rails/lines)
+    // and rely on the DP seam LUT + razor-thin transition to prevent ghosting.
+    vec3 dBodyMaster = offsetToLens(dBody, aMaster, pc.stitchRadius);
+    vec3 dBodySlave = offsetToLens(dBody, aSlave, pc.stitchRadius);
+
+    vec3 dMaster = quatRotateWXYZ(pc.lens_master_quat, dBodyMaster);
+    float rhoMaster = length(dMaster.xy);
+    float thMaster = atan(rhoMaster, dMaster.z);
+
+    vec3 dSlave = quatRotateWXYZ(pc.lens_slave_quat, dBodySlave);
+    float rhoSlave = length(dSlave.xy);
+    float thSlave = atan(rhoSlave, dSlave.z);
+
+    vec2 rawUvMaster = projectKannalaBrandt(
+        dMaster, pc.lens_master_intrinsics, pc.lens_master_dist, masterK5, sensorSize, thMaster, rhoMaster);
+    vec2 rawUvSlave = projectKannalaBrandt(
+        dSlave, pc.lens_slave_intrinsics, pc.lens_slave_dist, slaveK5, sensorSize, thSlave, rhoSlave);
+
+    // Enforce each lens's monotonic optical limit (99 deg for 5-term KB; legacy 92.0 / 95.4 deg for 4-term)
+    float limitMaster = (abs(masterK5) > 1e-8) ? 1.7279 : ((pc.lens_master_dist.w < -0.002) ? 1.6057 : 1.6650);
+    float limitSlave  = (abs(slaveK5)  > 1e-8) ? 1.7279 : ((pc.lens_slave_dist.w  < -0.002) ? 1.6057 : 1.6650);
+    bool validMaster = (thMaster <= min(maxTheta, limitMaster))
+                       && all(greaterThanEqual(rawUvMaster, vec2(0.0)))
+                       && all(lessThanEqual(rawUvMaster, vec2(1.0)));
+    bool validSlave = (thSlave <= min(maxTheta, limitSlave))
+                      && all(greaterThanEqual(rawUvSlave, vec2(0.0)))
+                      && all(lessThanEqual(rawUvSlave, vec2(1.0)));
+
+    vec2 uvMDx = projectBodyToLensUV(
+        dBodyDx, aMaster, pc.lens_master_intrinsics, pc.lens_master_dist, masterK5, pc.lens_master_quat, sensorSize);
+    vec2 uvMDy = projectBodyToLensUV(
+        dBodyDy, aMaster, pc.lens_master_intrinsics, pc.lens_master_dist, masterK5, pc.lens_master_quat, sensorSize);
+    vec2 uvSDx = projectBodyToLensUV(
+        dBodyDx, aSlave, pc.lens_slave_intrinsics, pc.lens_slave_dist, slaveK5, pc.lens_slave_quat, sensorSize);
+    vec2 uvSDy = projectBodyToLensUV(
+        dBodyDy, aSlave, pc.lens_slave_intrinsics, pc.lens_slave_dist, slaveK5, pc.lens_slave_quat, sensorSize);
+
+    vec4 finalColor;
+    if (validMaster && validSlave) {
+        vec4 colorMaster = sampleLensEWA(lensMaster, rawUvMaster, uvMDx, uvMDy, sensorSize);
+        vec4 colorSlave = sampleLensEWA(lensSlave, rawUvSlave, uvSDx, uvSDy, sensorSize);
+
+        vec2 texel = 3.0 / sensorSize;
+        vec3 mBox = 0.25 * (
+            texture(lensMaster, clamp(rawUvMaster + vec2(-texel.x, -texel.y), vec2(0.0), vec2(1.0))).rgb +
+            texture(lensMaster, clamp(rawUvMaster + vec2( texel.x, -texel.y), vec2(0.0), vec2(1.0))).rgb +
+            texture(lensMaster, clamp(rawUvMaster + vec2(-texel.x,  texel.y), vec2(0.0), vec2(1.0))).rgb +
+            texture(lensMaster, clamp(rawUvMaster + vec2( texel.x,  texel.y), vec2(0.0), vec2(1.0))).rgb
+        );
+        vec3 sBox = 0.25 * (
+            texture(lensSlave, clamp(rawUvSlave + vec2(-texel.x, -texel.y), vec2(0.0), vec2(1.0))).rgb +
+            texture(lensSlave, clamp(rawUvSlave + vec2( texel.x, -texel.y), vec2(0.0), vec2(1.0))).rgb +
+            texture(lensSlave, clamp(rawUvSlave + vec2(-texel.x,  texel.y), vec2(0.0), vec2(1.0))).rgb +
+            texture(lensSlave, clamp(rawUvSlave + vec2( texel.x,  texel.y), vec2(0.0), vec2(1.0))).rgb
+        );
+        float structDiff = length(mBox - sBox);
+
+        // Keep low-frequency exposure equalization active even near foreground parallax
+        float exposureWeight = mix(1.0, 0.35, smoothstep(0.05, 0.25, structDiff));
+        vec3 deltaC = clamp((mBox - sBox) * exposureWeight, vec3(-0.15), vec3(0.15));
+
+        float tWide = smoothstep(-halfOverlap, halfOverlap, phiSeam);
+        vec3 balancedSlave = colorSlave.rgb + tWide * deltaC;
+        vec3 balancedMaster = colorMaster.rgb - (1.0 - tWide) * deltaC;
+
+        // Balanced seam transition (0.35 deg to 1.00 deg) to avoid hard knife-cuts while keeping ghosting minimal
+        float mismatch = smoothstep(0.03, 0.14, structDiff);
+        float effectiveHalf = mix(radians(1.00), radians(0.35), mismatch);
+        float adaptiveBlend = smoothstep(phiCut - effectiveHalf, phiCut + effectiveHalf, phiSeam);
+        finalColor = vec4(clamp(mix(balancedSlave, balancedMaster, adaptiveBlend), 0.0, 1.0), 1.0);
+    } else if (validMaster) {
+        finalColor = sampleLensEWA(lensMaster, rawUvMaster, uvMDx, uvMDy, sensorSize);
+    } else if (validSlave) {
+        finalColor = sampleLensEWA(lensSlave, rawUvSlave, uvSDx, uvSDy, sensorSize);
+    } else {
+        finalColor = (phiSeam >= 0.0)
+                         ? sampleLensEWA(lensMaster, rawUvMaster, uvMDx, uvMDy, sensorSize)
+                         : sampleLensEWA(lensSlave, rawUvSlave, uvSDx, uvSDy, sensorSize);
+    }
+
+    imageStore(outRect, pixelCoord, finalColor);
+}
