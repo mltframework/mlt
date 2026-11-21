@@ -28,7 +28,11 @@ extern "C" {
 #include <framework/mlt_animation.h>
 #include <framework/mlt_property.h>
 }
+#include <atomic>
 #include <cfloat>
+#include <chrono>
+#include <mutex>
+#include <thread>
 
 static const bool kRunLongTests = true;
 
@@ -36,6 +40,88 @@ class TestProperties : public QObject
 {
     Q_OBJECT
     mlt_locale_t locale;
+
+    void runConcurrentAnimationCopies(bool serialized, int seconds, bool cachedString = false)
+    {
+        Properties source;
+        QByteArray expected;
+        for (int i = 0; i < 64; ++i) {
+            QCOMPARE(source.anim_set("filter.1", double(i), i * 10, 640), 0);
+            if (i)
+                expected += ';';
+            expected += QByteArray::number(i * 10) + '=' + QByteArray::number(i);
+        }
+        if (cachedString) {
+            QCOMPARE(source.set("filter.1", expected.constData()), 0);
+            QCOMPARE(source.anim_get_double("filter.1", 0, 640), 0.0);
+        }
+        // Otherwise, preserve the animation-only copy branch.
+        std::atomic<int> ready{0};
+        std::atomic<bool> start{false};
+        std::atomic<bool> failed{false};
+        std::mutex sourceMutex;
+        unsigned long long copies[2] = {0, 0};
+        std::chrono::steady_clock::time_point deadline;
+
+        auto copy = [&](int index) {
+            Properties destination;
+            ready.fetch_add(1);
+            while (!start.load())
+                std::this_thread::yield();
+
+            do {
+                std::unique_lock<std::mutex> lock(sourceMutex, std::defer_lock);
+                if (serialized)
+                    lock.lock();
+                if (index == 0) {
+                    destination.pass_property(source, "filter.1");
+                } else if (cachedString) {
+                    // Discard the borrowed pointer to isolate cache access from its lifetime.
+                    source.get("filter.1");
+                } else if (mlt_properties_pass(destination.get_properties(),
+                                               source.get_properties(),
+                                               "filter.")) {
+                    failed.store(true);
+                    break;
+                }
+                if (index == 0 || !cachedString) {
+                    const char *value = destination.get(index == 0 ? "filter.1" : "1");
+                    if (!value || QByteArray(value) != expected) {
+                        failed.store(true);
+                        break;
+                    }
+                }
+                ++copies[index];
+            } while (
+                !failed.load()
+                && (seconds ? std::chrono::steady_clock::now() < deadline : copies[index] < 100));
+        };
+
+        std::thread snapshot(copy, 0);
+        std::thread render(copy, 1);
+        while (ready.load() != 2)
+            std::this_thread::yield();
+        deadline = std::chrono::steady_clock::now() + std::chrono::seconds(seconds);
+        start.store(true);
+        snapshot.join();
+        render.join();
+
+        qInfo("Animation operations: snapshot=%llu render=%llu serialized=%d cachedString=%d",
+              copies[0],
+              copies[1],
+              serialized,
+              cachedString);
+        QVERIFY2(!failed.load(), "Animation copy failed or produced incorrect serialization");
+        QVERIFY(copies[0] > 0);
+        QVERIFY(copies[1] > 0);
+    }
+
+    void runAnimationCopyStress(bool serialized, bool cachedString = false)
+    {
+        if (!kRunLongTests)
+            QSKIP("Long tests are disabled by kRunLongTests");
+        runConcurrentAnimationCopies(serialized, 30, cachedString);
+    }
 
 public:
     TestProperties()
@@ -359,6 +445,128 @@ private Q_SLOTS:
         QCOMPARE(p[1].get("key"), (void *) 0);
         p[1].pass_property(p[0], "key");
         QCOMPARE(p[1].get("key"), s);
+    }
+
+    void PassAnimatedPropertySerialized()
+    {
+        runConcurrentAnimationCopies(true, 0);
+    }
+
+    void PassAnimatedPropertyConcurrent()
+    {
+        runConcurrentAnimationCopies(false, 0);
+    }
+
+    void PassCachedStringConcurrent()
+    {
+        runConcurrentAnimationCopies(false, 0, true);
+    }
+
+    void PassPropertyToItself()
+    {
+        Properties source;
+        source.set("key", "value");
+        source.pass_property(source, "key");
+        QCOMPARE(source.get("key"), "value");
+        source.anim_set("animation", 1.0, 0, 20);
+        source.anim_set("animation", 2.0, 10, 20);
+        source.pass_property(source, "animation");
+        QCOMPARE(source.get("animation"), "0=1;10=2");
+    }
+
+    void PassPropertiesInOpposingDirections()
+    {
+        Properties properties[2];
+        for (auto &property : properties)
+            property.set("key", "value");
+        std::atomic<int> ready{0};
+        std::atomic<bool> start{false};
+        auto copy = [&](int index) {
+            ready.fetch_add(1);
+            while (!start.load())
+                std::this_thread::yield();
+            for (int i = 0; i < 1000; ++i)
+                properties[index].pass_property(properties[1 - index], "key");
+        };
+        std::thread first(copy, 0);
+        std::thread second(copy, 1);
+        while (ready.load() != 2)
+            std::this_thread::yield();
+        start.store(true);
+        first.join();
+        second.join();
+        QCOMPARE(properties[0].get("key"), "value");
+        QCOMPARE(properties[1].get("key"), "value");
+    }
+
+    void PassAnimatedPropertyConcurrentStress()
+    {
+        runAnimationCopyStress(false);
+    }
+
+    void PassAnimatedPropertySerializedStress()
+    {
+        runAnimationCopyStress(true);
+    }
+
+    void PassCachedStringConcurrentStress()
+    {
+        runAnimationCopyStress(false, true);
+    }
+
+    void PassCachedStringSerializedStress()
+    {
+        runAnimationCopyStress(true, true);
+    }
+
+    void PassAnimatedStringConcurrentStress()
+    {
+        if (!kRunLongTests)
+            QSKIP("Long tests are disabled by kRunLongTests");
+
+        Properties source;
+        // Large allocations make freed-cache accesses more likely to fault.
+        const QByteArray expected(1024 * 1024, 'x');
+        QCOMPARE(source.anim_set("key", expected.constData(), 0, 20), 0);
+        QCOMPARE(source.anim_set("key", expected.constData(), 10, 20), 0);
+        QCOMPARE(QByteArray(source.anim_get("key", 0, 20)), expected);
+
+        std::atomic<int> ready{0};
+        std::atomic<bool> start{false};
+        std::atomic<bool> incorrect{false};
+        unsigned long long operations[2] = {0, 0};
+        std::chrono::steady_clock::time_point deadline;
+        auto run = [&](int index) {
+            Properties destination;
+            ready.fetch_add(1);
+            while (!start.load())
+                std::this_thread::yield();
+            do {
+                if (index == 0) {
+                    destination.pass_property(source, "key");
+                    const char *value = destination.get("key");
+                    if (!value || QByteArray(value) != expected)
+                        incorrect.store(true);
+                } else {
+                    // Do not consume the borrowed pointer: exercise cache replacement only.
+                    source.anim_get("key", 0, 20);
+                }
+                ++operations[index];
+            } while (std::chrono::steady_clock::now() < deadline);
+        };
+
+        std::thread snapshot(run, 0);
+        std::thread render(run, 1);
+        while (ready.load() != 2)
+            std::this_thread::yield();
+        deadline = std::chrono::steady_clock::now() + std::chrono::seconds(30);
+        start.store(true);
+        snapshot.join();
+        render.join();
+        qInfo("Animated string operations: snapshot=%llu render=%llu", operations[0], operations[1]);
+        QVERIFY2(!incorrect.load(), "Animated string copy produced incorrect data");
+        QVERIFY(operations[0] > 0);
+        QVERIFY(operations[1] > 0);
     }
 
     void PassMultipleByPrefix()

@@ -936,7 +936,14 @@ void mlt_property_close(mlt_property self)
  */
 void mlt_property_pass(mlt_property self, mlt_property that)
 {
-    pthread_mutex_lock(&self->mutex);
+    if (self == that)
+        return;
+
+    // Always lock mutexes in the same order to avoid deadlocks.
+    mlt_property first = (uintptr_t) self < (uintptr_t) that ? self : that;
+    mlt_property second = first == self ? that : self;
+    pthread_mutex_lock(&first->mutex);
+    pthread_mutex_lock(&second->mutex);
     clear_property(self);
 
     self->types = that->types;
@@ -967,7 +974,8 @@ void mlt_property_pass(mlt_property self, mlt_property that)
         self->types = mlt_prop_string;
         self->prop_string = that->serialiser(that->data, that->length);
     }
-    pthread_mutex_unlock(&self->mutex);
+    pthread_mutex_unlock(&second->mutex);
+    pthread_mutex_unlock(&first->mutex);
 }
 
 /** Convert frame count to a SMPTE timecode string.
@@ -1498,19 +1506,15 @@ char *mlt_property_anim_get_string(
             refresh_animation(self, fps, locale, length);
         mlt_animation_get_item(self->animation, &item, position);
 
+        const char *value = mlt_property_get_string_l(item.property, locale);
+        char *string = value ? strdup(value) : NULL;
+
         free(self->prop_string);
-
-        pthread_mutex_unlock(&self->mutex);
-        self->prop_string = mlt_property_get_string_l(item.property, locale);
-        pthread_mutex_lock(&self->mutex);
-
-        if (self->prop_string)
-            self->prop_string = strdup(self->prop_string);
+        self->prop_string = string;
         self->types |= mlt_prop_string;
 
         result = self->prop_string;
         mlt_property_close(item.property);
-        pthread_mutex_unlock(&self->mutex);
     } else {
         const char *raw = mlt_property_get_string_l(self, locale);
         if (raw && raw[0] == '"') {
@@ -1534,8 +1538,8 @@ char *mlt_property_anim_get_string(
         } else {
             result = (char *) raw;
         }
-        pthread_mutex_unlock(&self->mutex);
     }
+    pthread_mutex_unlock(&self->mutex);
     return result;
 }
 
