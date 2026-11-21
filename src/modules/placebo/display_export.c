@@ -21,7 +21,10 @@
 
 #include <libplacebo/config.h>
 
-#ifndef PL_HAVE_VULKAN
+/* The exported picture is scRGB, which libplacebo has since API 362. An older
+   one has no transfer that keeps both 1.0 at 80 nits and the HDR range, so it
+   publishes no export and the display uses its own path. */
+#if !defined(PL_HAVE_VULKAN) || PL_API_VER < 362
 
 const mlt_vulkan_export_api *placebo_display_export_api(void)
 {
@@ -1012,4 +1015,4 @@ void placebo_display_export_close(void)
     pthread_mutex_unlock(&s_sides_mutex);
 }
 
-#endif /* PL_HAVE_VULKAN */
+#endif /* PL_HAVE_VULKAN && PL_API_VER >= 362 */

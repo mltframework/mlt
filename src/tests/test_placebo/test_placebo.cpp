@@ -366,7 +366,8 @@ private Q_SLOTS:
             QSKIP("The published placebo backend is not Vulkan");
         auto *api = static_cast<const mlt_vulkan_export_api *>(
             mlt_properties_get_data(props, "export_api", nullptr));
-        QVERIFY(api);
+        if (!api)
+            QSKIP("This libplacebo has no scRGB, so there is no display export");
         QVERIFY(api->size >= int(sizeof(mlt_vulkan_export_api)));
 
         Producer producer(profile, "color", "#7f7f7f");
