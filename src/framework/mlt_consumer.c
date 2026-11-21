@@ -722,7 +722,11 @@ mlt_frame mlt_consumer_get_frame(mlt_consumer self)
                            "consumer.scale",
                            mlt_properties_get(properties, "scale"));
 
-        if (mlt_properties_get(properties, "mlt_color_trc")) {
+        /* color_trc_off is for a consumer that applies the output transfer
+           itself, such as a display that samples the linear image. color_trc
+           still describes the output, which filters use while processing. */
+        if (mlt_properties_get(properties, "mlt_color_trc")
+            && !mlt_properties_get_int(properties, "color_trc_off")) {
             // Add a normalize filter to convert the mlt_color_trc to color_trc
             mlt_filter ct_filter = (mlt_filter) mlt_properties_get_data(properties,
                                                                         "_ct_filter",
