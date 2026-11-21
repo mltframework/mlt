@@ -1114,6 +1114,296 @@ private Q_SLOTS:
             QVERIFY(boun <= 100.1);
         }
     }
+
+    void LoopRepeatsCycleWithoutRepeatingFrame()
+    {
+        Properties p;
+        p.set("foo", "0=10; 30=50; 60=10; loop");
+        // The last keyframe's position shows the first keyframe's value.
+        QCOMPARE(p.anim_get_double("foo", 60), 10.0);
+        // The frames on either side of the loop point differ from it.
+        QVERIFY(p.anim_get_double("foo", 59) > 10.0);
+        QVERIFY(p.anim_get_double("foo", 61) > 10.0);
+        for (int i = 0; i < 60; i++) {
+            double expected = p.anim_get_double("foo", i);
+            QCOMPARE(p.anim_get_double("foo", i + 60), expected);
+            QCOMPARE(p.anim_get_double("foo", i + 600), expected);
+        }
+    }
+
+    void LoopSuffixIsParsed()
+    {
+        Properties p;
+        p.set("plain", "0=10;60=10");
+        p.set("loop", "0=10;60=10;loop");
+        p.set("spaces", "0=10; 60=10 ;  loop ; ");
+        p.set("middle", "0=10;loop;60=20");
+        p.set("value", "0=foo;60=loop");
+        QVERIFY(p.is_anim("loop"));
+        p.anim_get_double("plain", 0);
+        p.anim_get_double("loop", 0);
+        p.anim_get_double("spaces", 0);
+        p.anim_get_double("middle", 0);
+        p.anim_get("value", 0);
+        QVERIFY(!Animation(p.get_animation("plain")).get_loop());
+        QVERIFY(Animation(p.get_animation("loop")).get_loop());
+        QVERIFY(Animation(p.get_animation("spaces")).get_loop());
+        QCOMPARE(Animation(p.get_animation("spaces")).key_count(), 2);
+        // "loop" is only recognized as the last item. Elsewhere it ends
+        // parsing like any other unexpected item.
+        Animation middle = p.get_animation("middle");
+        QVERIFY(!middle.get_loop());
+        QCOMPARE(middle.key_count(), 1);
+        // A keyframe value of "loop" is not the suffix.
+        Animation value = p.get_animation("value");
+        QVERIFY(!value.get_loop());
+        QCOMPARE(value.key_count(), 2);
+        QCOMPARE(QString(p.anim_get("value", 60)), QString("loop"));
+    }
+
+    void LoopIsResetWhenStringChanges()
+    {
+        Properties p;
+        p.set("foo", "0=10;30=50;60=10;loop");
+        QCOMPARE(p.anim_get_double("foo", 75), 30.0);
+        p.set("foo", "0=10;30=50;60=10");
+        QCOMPARE(p.anim_get_double("foo", 75), 10.0);
+        QVERIFY(!Animation(p.get_animation("foo")).get_loop());
+    }
+
+    void LoopSerializesSuffix()
+    {
+        Properties p;
+        p.set("foo", "0=10;30=50;60=10;loop");
+        p.anim_get_double("foo", 0);
+        QCOMPARE(QString(p.get("foo")), QString("0=10;30=50;60=10;loop"));
+        // Editing keyframes keeps the loop.
+        p.anim_set("foo", 20, 15);
+        QCOMPARE(QString(p.get("foo")), QString("0=10;15=20;30=50;60=10;loop"));
+        Animation a = p.get_animation("foo");
+        char *cut = a.serialize_cut(mlt_time_frames, 0, 90);
+        QCOMPARE(QString(cut), QString("0=10;15=20;30=50;60=10;loop"));
+        free(cut);
+        // The serialized string parses back to a looping animation.
+        Properties q;
+        q.set("foo", p.get("foo"));
+        q.anim_get_double("foo", 0);
+        QVERIFY(Animation(q.get_animation("foo")).get_loop());
+        QCOMPARE(q.anim_get_double("foo", 75), 20.0);
+    }
+
+    void LoopCutRetainsOnlyIntactCycles()
+    {
+        Properties p;
+        p.set("rotation", "0=0;60|=360;loop");
+        QCOMPARE(p.anim_get_double("rotation", 60), 0.0);
+        Animation a = p.get_animation("rotation");
+        struct
+        {
+            int in;
+            int out;
+            const char *expected;
+        } cuts[] = {
+            {0, 60, "0=0;60|=360;loop"},
+            {0, 90, "0=0;60|=360;loop"},
+            {0, 30, "0=0;30=180"},
+            {10, 60, "0=60;50|=360"},
+            {60, 120, "0=0"},
+        };
+        for (const auto &range : cuts) {
+            char *cut = a.serialize_cut(mlt_time_frames, range.in, range.out);
+            const QString serialized = QString::fromUtf8(cut);
+            free(cut);
+            QCOMPARE(serialized, QString::fromUtf8(range.expected));
+        }
+        QVERIFY(a.get_loop());
+        QCOMPARE(QString(p.get("rotation")), QString("0=0;60|=360;loop"));
+
+        p.set("offset", "10=0;70|=360;loop");
+        QCOMPARE(p.anim_get_double("offset", 70), 0.0);
+        a = p.get_animation("offset");
+        char *cut = a.serialize_cut(mlt_time_frames, 5, 70);
+        const QString serialized = QString::fromUtf8(cut);
+        free(cut);
+        QCOMPARE(serialized, QString("5=0;65|=360;loop"));
+    }
+
+    void LoopToggleKeepsKeyframes()
+    {
+        Properties p;
+        p.set("foo", "0=10;30=50;60=10");
+        p.anim_get_double("foo", 0);
+        Animation a = p.get_animation("foo");
+        a.set_loop(true);
+        QVERIFY(a.get_loop());
+        QCOMPARE(p.anim_get_double("foo", 75), 30.0);
+        QCOMPARE(QString(p.get("foo")), QString("0=10;30=50;60=10;loop"));
+        a.set_loop(false);
+        QVERIFY(!a.get_loop());
+        QCOMPARE(p.anim_get_double("foo", 75), 10.0);
+        QCOMPARE(QString(p.get("foo")), QString("0=10;30=50;60=10"));
+        QCOMPARE(a.key_count(), 3);
+    }
+
+    void LoopReportsOnlyAuthoredKeyframes()
+    {
+        Properties p;
+        p.set("foo", "0=10; 30=50; 60|=10; loop");
+        p.anim_get_double("foo", 0);
+        Animation a = p.get_animation("foo");
+        QVERIFY(a.get_loop());
+        QVERIFY(a.is_key(0));
+        QVERIFY(a.is_key(30));
+        QVERIFY(a.is_key(60));
+        QCOMPARE(a.keyframe_type(60), mlt_keyframe_linear);
+        QVERIFY(!a.is_key(90));
+        QVERIFY(!a.is_key(120));
+        QCOMPARE(a.keyframe_type(90), mlt_keyframe_linear);
+    }
+
+    void LoopHoldsBeforeFirstKeyframe()
+    {
+        Properties p;
+        p.set("foo", "10=0; 20=100; 30=0; loop");
+        for (int i = 0; i <= 10; i++)
+            QCOMPARE(p.anim_get_double("foo", i), 0.0);
+        QCOMPARE(p.anim_get_double("foo", 30), 0.0);
+        QCOMPARE(p.anim_get_double("foo", 35), 50.0);
+        QCOMPARE(p.anim_get_double("foo", 40), 100.0);
+        QCOMPARE(p.anim_get_double("foo", 50), 0.0);
+    }
+
+    void LoopNeedsTwoKeyframes()
+    {
+        Properties p;
+        p.set("foo", "10=5; loop");
+        QCOMPARE(p.anim_get_double("foo", 0), 5.0);
+        QCOMPARE(p.anim_get_double("foo", 100), 5.0);
+    }
+
+    void LoopSmoothJoinsLikeInteriorKeyframe()
+    {
+        // The loop point should interpolate exactly like the same keyframes
+        // written out for two cycles without looping.
+        const char *types[] = {"~", "$", "-"};
+        for (const char *t : types) {
+            Properties p;
+            p.set("loop",
+                  QStringLiteral("0%1=0; 10%1=100; 50%1=0.0; loop").arg(t).toUtf8().constData());
+            p.set("unrolled",
+                  QStringLiteral("0%1=0; 10%1=100; 50%1=0; 60%1=100; 100%1=0")
+                      .arg(t)
+                      .toUtf8()
+                      .constData());
+            for (int i = 40; i < 60; i++)
+                QCOMPARE(p.anim_get_double("loop", i), p.anim_get_double("unrolled", i));
+        }
+    }
+
+    void LoopUsesAuthoredLastKeyframeValue()
+    {
+        Properties p;
+        p.set("rotation", "0=0;60|=360;loop");
+        QCOMPARE(p.anim_get_double("rotation", 1), 6.0);
+        QCOMPARE(p.anim_get_double("rotation", 59), 354.0);
+        QCOMPARE(p.anim_get_double("rotation", 60), 0.0);
+        QCOMPARE(p.anim_get_double("rotation", 61), 6.0);
+        QCOMPARE(p.anim_get_double("rotation", 119), 354.0);
+        Animation a = p.get_animation("rotation");
+        struct mlt_animation_item_s item;
+        item.property = mlt_property_init();
+        QCOMPARE(mlt_animation_key_get(a.get_animation(), &item, 1), 0);
+        QCOMPARE(mlt_property_get_double(item.property, 0, NULL), 360.0);
+        QCOMPARE(item.keyframe_type, mlt_keyframe_discrete);
+        mlt_property_close(item.property);
+        QCOMPARE(QString(p.get("rotation")), QString("0=0;60|=360;loop"));
+        p.anim_set("rotation", 300.0, 60, 0, mlt_keyframe_discrete);
+        QCOMPARE(p.anim_get_double("rotation", 59), 295.0);
+        QCOMPARE(p.anim_get_double("rotation", 60), 0.0);
+        QCOMPARE(QString(p.get("rotation")), QString("0=0;60|=300;loop"));
+        a.set_loop(false);
+        QCOMPARE(p.anim_get_double("rotation", 60), 300.0);
+    }
+
+    void LoopSmoothDifferentEndpointsUseEndNeighbors()
+    {
+        Properties p;
+        p.set("loop", "0~=0;10~=100;50~=360;loop");
+        p.set("plain", "0~=0;10~=100;50~=360");
+        for (int i = 0; i < 50; i++)
+            QCOMPARE(p.anim_get_double("loop", i), p.anim_get_double("plain", i));
+        QCOMPARE(p.anim_get_double("loop", 50), 0.0);
+    }
+
+    void LoopSmoothRectPreservesEndpointPrecision()
+    {
+        Properties p;
+        const mlt_rect endpoint = {1.23456789, 0, 10, 10, 1};
+        const mlt_rect middle = {100, 0, 10, 10, 1};
+        QCOMPARE(p.anim_set("rect", endpoint, 0, 0, mlt_keyframe_smooth), 0);
+        QCOMPARE(p.anim_set("rect", middle, 10, 0, mlt_keyframe_smooth), 0);
+        QCOMPARE(p.anim_set("rect", endpoint, 50, 0, mlt_keyframe_smooth), 0);
+        Animation a = p.get_animation("rect");
+        a.set_loop(true);
+        p.anim_get_rect("rect", 49);
+        QVERIFY(p.anim_get_rect("rect", 0).x == endpoint.x);
+        QVERIFY(p.anim_get_rect("rect", 50).x == endpoint.x);
+    }
+
+    void LoopSmoothRectUsesExactComponentEquality()
+    {
+        Properties p;
+        const mlt_rect first = {0, 0, 10, 10, 0.123456789};
+        const mlt_rect middle = {0, 100, 10, 10, 1};
+        const mlt_rect last = {0, 0, 10, 10, 0.123456788};
+        QCOMPARE(p.anim_set("rect", first, 0, 0, mlt_keyframe_smooth), 0);
+        QCOMPARE(p.anim_set("rect", middle, 10, 0, mlt_keyframe_smooth), 0);
+        QCOMPARE(p.anim_set("rect", last, 50, 0, mlt_keyframe_smooth), 0);
+        Animation a = p.get_animation("rect");
+        const double beforeLoop = p.anim_get_rect("rect", 45).y;
+        a.set_loop(true);
+        QCOMPARE(p.anim_get_rect("rect", 45).y, beforeLoop);
+    }
+
+    void LoopSmoothRectAndColorCompareConvertedValues()
+    {
+        Properties p;
+        p.set("rect", "0~=0 0 1 1 1;10~=0 100 1 1 1;50~=0 0 100% 1 1;loop");
+        p.set("rectUnrolled", "0~=0 0 1 1 1;10~=0 100 1 1 1;50~=0 0 1 1 1;60~=0 100 1 1 1");
+        QCOMPARE(p.anim_get_rect("rect", 45).y, p.anim_get_rect("rectUnrolled", 45).y);
+        p.set("color", "0~=#ff0022aa;10~=#ff00ddaa;50~=#FF0022AA;loop");
+        p.set("colorUnrolled", "0~=#ff0022aa;10~=#ff00ddaa;50~=#ff0022aa;60~=#ff00ddaa");
+        QCOMPARE(p.anim_get_color("color", 45).g, p.anim_get_color("colorUnrolled", 45).g);
+    }
+
+    void LoopDifferentRectAndColorEndpoints()
+    {
+        Properties p;
+        p.set("rect", "0=0 0 10 10;10=100 0 10 10;loop");
+        p.set("color", "0=#000000ff;10=#ffffffff;loop");
+        QCOMPARE(p.anim_get_rect("rect", 9).x, 90.0);
+        QCOMPARE(p.anim_get_rect("rect", 10).x, 0.0);
+        QCOMPARE(p.anim_get_rect("rect", 19).x, 90.0);
+        mlt_color before = p.anim_get_color("color", 9);
+        mlt_color after = p.anim_get_color("color", 10);
+        QCOMPARE(before.r, static_cast<uint8_t>(229));
+        QCOMPARE(after.r, static_cast<uint8_t>(0));
+    }
+
+    void LoopRectAndColor()
+    {
+        Properties p;
+        p.set("rect", "0=0 0 10 10; 30=30 0 10 10; 60=0 0 10 10; loop");
+        p.set("color", "0=#ff000000; 30=#ff00ff00; 60=#ff000000; loop");
+        mlt_rect r1 = p.anim_get_rect("rect", 15);
+        mlt_rect r2 = p.anim_get_rect("rect", 75);
+        QCOMPARE(r2.x, r1.x);
+        QCOMPARE(p.anim_get_rect("rect", 60).x, 0.0);
+        mlt_color c1 = p.anim_get_color("color", 15);
+        mlt_color c2 = p.anim_get_color("color", 75);
+        QCOMPARE(c2.g, c1.g);
+        QCOMPARE(p.anim_get_color("color", 60).g, (uint8_t) 0);
+    }
 };
 
 QTEST_APPLESS_MAIN(TestAnimation)
