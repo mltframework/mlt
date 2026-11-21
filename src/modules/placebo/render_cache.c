@@ -20,7 +20,8 @@
 #include "render_cache.h"
 
 #include "gpu_context.h"
-#include "idle_trim.h"
+
+#include <stdint.h>
 
 /* A pipeline uses a renderer per site and geometry, and a transition or
    deinterlace adds several. When the cache is too small, every call evicts the
@@ -35,14 +36,15 @@ typedef struct
 } renderer_key;
 
 /* Guarded by the render lock. A slot is free when its renderer is NULL. used is
-   when the renderer last served a call: the oldest is evicted first, and ones
-   idle for too long are released by the idle thread. */
+   a tick that counts the calls: the least recently used renderer is evicted
+   first. */
 static struct
 {
     renderer_key key;
-    int64_t used;
+    uint64_t used;
     pl_renderer renderer;
 } s_cache[CACHE_SIZE];
+static uint64_t s_tick;
 
 static renderer_key make_key(enum placebo_renderer_site site,
                              const struct pl_frame *src,
@@ -96,22 +98,6 @@ static int victim_slot(void)
     return victim;
 }
 
-/* Run by the idle thread: destroy the renderers that have been idle too long. */
-static int trim(pl_gpu gpu)
-{
-    int64_t now = placebo_now_ms();
-    int released = 0;
-
-    (void) gpu;
-    for (int i = 0; i < CACHE_SIZE; i++) {
-        if (s_cache[i].renderer && now - s_cache[i].used > placebo_idle_ms()) {
-            pl_renderer_destroy(&s_cache[i].renderer);
-            released++;
-        }
-    }
-    return released;
-}
-
 static pl_renderer renderer_for(const renderer_key *key)
 {
     int slot = find_slot(key);
@@ -125,9 +111,8 @@ static pl_renderer renderer_for(const renderer_key *key)
             pl_renderer_destroy(&s_cache[slot].renderer);
         s_cache[slot].renderer = pl_renderer_create(gpu->log, gpu);
         s_cache[slot].key = *key;
-        placebo_idle_trim_start(trim);
     }
-    s_cache[slot].used = placebo_now_ms();
+    s_cache[slot].used = ++s_tick;
     return s_cache[slot].renderer;
 }
 

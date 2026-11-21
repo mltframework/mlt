@@ -31,8 +31,9 @@
    These calls keep finished textures and hand them out again.
 
    The contents of an acquired texture are undefined. The pool is guarded by
-   the render lock. Idle textures are released by the idle thread (idle_trim.h),
-   so a stopped player does not keep video memory. */
+   the render lock. Idle textures are released when a request finds none to
+   reuse, and when they hold too much memory, so a changed size or format does
+   not keep the old textures. */
 
 /* Same as pl_tex_create, but returns an idle texture of identical size,
    format, and usage when there is one. Release it with placebo_tex_recycle.

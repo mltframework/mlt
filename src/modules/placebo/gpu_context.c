@@ -20,7 +20,6 @@
 
 #include "gpu_context.h"
 
-#include "idle_trim.h"
 #include "render_cache.h"
 #include "tex_pool.h"
 
@@ -1025,9 +1024,7 @@ static void release_gpu_locked(void)
 void placebo_gpu_release(void)
 {
     /* The pool and the renderer cache belong to the render lock. Take it before
-       s_mutex, the order render threads use, so none of them is mid-call. The
-       idle thread needs the render lock, so it is stopped before. */
-    placebo_idle_trim_stop();
+       s_mutex, the order render threads use, so none of them is mid-call. */
     RENDER_LOCK();
     LOCK();
     if (!s_initialized) {

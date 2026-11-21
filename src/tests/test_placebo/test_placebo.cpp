@@ -36,7 +36,6 @@ class TestPlacebo : public QObject
 private Q_SLOTS:
     void initTestCase()
     {
-        qputenv("MLT_PLACEBO_IDLE_MS", "200"); // short, so the idle thread acts quickly
         Factory::init();
         profile.set_width(8);
         profile.set_height(8);
@@ -177,27 +176,6 @@ private Q_SLOTS:
                 QVERIFY(frame);
                 QCOMPARE(centerChannel(*frame, width, height), 1);
             }
-        }
-    }
-
-    // Textures and renderers idle for longer than the limit are released by the
-    // idle thread, so the next frame has to create them again.
-    void RecreateAfterIdle()
-    {
-        if (!gpuAvailable)
-            QSKIP("No placebo GPU backend is available");
-
-        mlt_properties global = mlt_global_properties();
-        int before = mlt_properties_get_int(global, "placebo.trimmed");
-
-        for (int pass = 0; pass < 2; pass++) {
-            std::unique_ptr<Frame> frame = renderedColorFrame("#0000ff", 8, 8, mlt_image_private);
-            QVERIFY(frame);
-            QCOMPARE(centerChannel(*frame, 8, 8), 2);
-            frame.reset();
-            if (pass == 0)
-                QTRY_VERIFY_WITH_TIMEOUT(mlt_properties_get_int(global, "placebo.trimmed") > before,
-                                         5000);
         }
     }
 

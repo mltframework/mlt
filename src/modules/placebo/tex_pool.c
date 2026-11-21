@@ -20,16 +20,21 @@
 #include "tex_pool.h"
 
 #include "gpu_context.h"
-#include "idle_trim.h"
 
 #include <framework/mlt_log.h>
 
 #include <stdint.h>
 #include <stdlib.h>
+#include <time.h>
+
+#ifdef _WIN32
+#include <windows.h>
+#endif
 
 /* Idle textures beyond the byte limit are destroyed, oldest first. Ones idle for
-   longer than placebo_idle_ms() are destroyed by the idle thread. */
+   longer than IDLE_MS are destroyed when a request finds no texture to reuse. */
 #define MAX_IDLE_BYTES ((size_t) 768 << 20)
+#define IDLE_MS 5000
 
 /* Marks a pool_entry, so a texture whose user data is some other pointer, which
    the contract forbids, is more likely to be recognized than read as an entry.
@@ -46,7 +51,7 @@ typedef struct
     pl_tex tex;
     struct pl_tex_params key; /* as requested, not as libplacebo adjusted it */
     size_t size;
-    int64_t used; /* placebo_now_ms() when it was last acquired or returned */
+    int64_t used; /* now_ms() when it was last acquired or returned */
     int busy;
     int orphan; /* the pool let go of it while it was in use */
     VkSemaphore sem;
@@ -121,28 +126,39 @@ static void remove_entry(pl_gpu gpu, int index)
     s_entries[index] = s_entries[--s_count];
 }
 
-/* Destroy the idle textures that have not been used for too long. */
-static int expire(pl_gpu gpu)
+/* Milliseconds from a clock that does not follow changes to the system time. */
+static int64_t now_ms(void)
 {
-    int64_t now = placebo_now_ms();
-    int released = 0;
+#ifdef _WIN32
+    return (int64_t) GetTickCount64();
+#else
+    struct timespec ts;
+
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (int64_t) ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+#endif
+}
+
+/* Destroy the idle textures that have not been used for too long. A request
+   that finds a texture to reuse never gets here, so a paused project keeps its
+   textures and resumes without recreating them. A request that finds none is
+   for a new size or format, which makes the old ones likely stale. */
+static void expire(pl_gpu gpu)
+{
+    int64_t now = now_ms();
 
     for (int i = 0; i < s_count;) {
-        if (!s_entries[i]->busy && now - s_entries[i]->used > placebo_idle_ms()) {
+        if (!s_entries[i]->busy && now - s_entries[i]->used > IDLE_MS)
             remove_entry(gpu, i);
-            released++;
-        } else {
+        else
             i++;
-        }
     }
-    return released;
 }
 
 /* Destroy the oldest idle textures while they hold more than MAX_IDLE_BYTES. */
-static int enforce_cap(pl_gpu gpu)
+static void enforce_cap(pl_gpu gpu)
 {
     size_t idle_bytes = 0;
-    int released = 0;
 
     for (int i = 0; i < s_count; i++) {
         if (!s_entries[i]->busy)
@@ -158,15 +174,7 @@ static int enforce_cap(pl_gpu gpu)
             break;
         idle_bytes -= s_entries[oldest]->size;
         remove_entry(gpu, oldest);
-        released++;
     }
-    return released;
-}
-
-/* Run by the idle thread. */
-static int trim(pl_gpu gpu)
-{
-    return expire(gpu) + enforce_cap(gpu);
 }
 
 pl_tex placebo_tex_acquire(pl_gpu gpu, const struct pl_tex_params *params)
@@ -178,10 +186,11 @@ pl_tex placebo_tex_acquire(pl_gpu gpu, const struct pl_tex_params *params)
         pool_entry *entry = s_entries[i];
         if (!entry->busy && same_params(&entry->key, params)) {
             entry->busy = 1;
-            entry->used = placebo_now_ms();
+            entry->used = now_ms();
             return entry->tex;
         }
     }
+    expire(gpu);
 
     pool_entry *entry = reserve_entry() ? calloc(1, sizeof(*entry)) : NULL;
     if (!entry) /* an unpooled texture still works, it is destroyed on recycle */
@@ -199,10 +208,9 @@ pl_tex placebo_tex_acquire(pl_gpu gpu, const struct pl_tex_params *params)
     entry->key = *params;
     entry->key.user_data = NULL;
     entry->size = texture_size(params);
-    entry->used = placebo_now_ms();
+    entry->used = now_ms();
     entry->busy = 1;
     s_entries[s_count++] = entry;
-    placebo_idle_trim_start(trim);
     return tex;
 }
 
@@ -245,7 +253,7 @@ void placebo_tex_recycle(pl_gpu gpu, pl_tex *tex)
         return;
     }
     entry->busy = 0;
-    entry->used = placebo_now_ms();
+    entry->used = now_ms();
     *tex = NULL;
     enforce_cap(gpu);
 }
