@@ -3,7 +3,7 @@
  * \brief link service class
  * \see mlt_chain_s
  *
- * Copyright (C) 2020-2024 Meltytech, LLC
+ * Copyright (C) 2020-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -408,6 +408,19 @@ void mlt_chain_close(mlt_chain self)
     }
 }
 
+/* placebo.scale already fits and pads. A second resizer would pad again. */
+static int chain_has_placebo_scale(mlt_chain self, int count)
+{
+    for (int i = 0; i < count; i++) {
+        mlt_link link = mlt_chain_link(self, i);
+        const char *service = link ? mlt_properties_get(MLT_LINK_PROPERTIES(link), "mlt_service")
+                                   : NULL;
+        if (service && !strcmp(service, "placebo.scale"))
+            return 1;
+    }
+    return 0;
+}
+
 /** Attach normalizer links.
  *
  * \public \memberof mlt_chain_s
@@ -463,6 +476,9 @@ extern void mlt_chain_attach_normalizers(mlt_chain self)
     // Apply normalisers
     int norm_count = 0;
     for (int i = 0; i < mlt_properties_count(normalisers); i++) {
+        const char *key = mlt_properties_get_name(normalisers, i);
+        if (key && !strcmp(key, "resizer") && chain_has_placebo_scale(self, norm_count))
+            continue;
         char *value = mlt_properties_get_value(normalisers, i);
         mlt_tokeniser_parse_new(tokenizer, value, ",");
         for (int j = 0; j < mlt_tokeniser_count(tokenizer); j++) {

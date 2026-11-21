@@ -624,6 +624,11 @@ static int consumer_play_video(consumer_sdl self, mlt_frame frame)
 
         // Get the image, width and height
         mlt_frame_get_image(frame, &image, &vfmt, &width, &height, 0);
+        // Keep the texture already on screen. The test card is not a picture.
+        if (mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "get_image_error")) {
+            image = NULL;
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "rendered", 0);
+        }
 
         if (self->running) {
             // Determine window's new display aspect ratio, and resize if it's an existing window
@@ -720,6 +725,8 @@ static int consumer_play_video(consumer_sdl self, mlt_frame frame)
             mlt_image_format preview_format = mlt_properties_get_int(properties, "preview_format");
             vfmt = preview_format == mlt_image_none ? mlt_image_rgba : preview_format;
             mlt_frame_get_image(frame, &image, &vfmt, &width, &height, 0);
+            if (mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "get_image_error"))
+                mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "rendered", 0);
         }
         mlt_events_fire(properties, "consumer-frame-show", mlt_event_data_from_frame(frame));
     }
@@ -804,8 +811,14 @@ static void *video_thread(void *arg)
 
             // Show current frame if not too old
             if (!real_time
-                || (difference > -10000 || speed != 1.0 || mlt_deque_count(self->queue) < 2))
+                || (difference > -10000 || speed != 1.0 || mlt_deque_count(self->queue) < 2)) {
                 consumer_play_video(self, next);
+            } else {
+                mlt_log_verbose(MLT_CONSUMER_SERVICE(&self->parent),
+                                "dropped late video frame at position %d (%d ms late)\n",
+                                mlt_frame_get_position(next),
+                                (int) (-difference / 1000));
+            }
 
             // If the queue is empty, recalculate start to allow build up again
             if (real_time && (mlt_deque_count(self->queue) == 0 && speed == 1.0)) {

@@ -68,6 +68,11 @@ typedef int (*mlt_convert_image)(mlt_frame self,
  *
  * \extends mlt_properties
  * \properties \em test_image set if the frame holds a "test card" image
+ * \properties \em get_image_error set when \p mlt_frame_get_image substituted
+ * the test card because a real picture's callback failed, or the frame lost
+ * its image callback. A clip with no picture sets \p test_image beforehand
+ * and leaves this unset, so its checkerboard still shows and still
+ * composites as transparent.
  * \properties \em test_audio set if the frame holds "test card" audio
  * \properties \em _producer holds a reference to the frame's end producer
  * \properties \em _speed the current speed of the producer that generated the frame

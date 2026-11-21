@@ -44,7 +44,9 @@ src/examples/play
 *.qmake.stash
 src/tests/Makefile
 src/tests/*/*
+!src/tests/*/*.c
 !src/tests/*/*.cpp
+!src/tests/*/*.h
 !src/tests/*/*.pro
 *CTestTestfile.cmake
 src/tests/test_*_autogen
@@ -69,4 +71,6 @@ src/swig/ruby/markdown/
 CMakeLists.txt.user
 .cache/
 *_export.h
+!src/framework/mlt_vulkan_export.h
+!src/modules/placebo/display_export.h
 vcpkg_installed/

@@ -23,6 +23,7 @@
 #endif
 
 #include "common.h"
+#include "vulkan_image.h"
 
 #include <framework/mlt.h>
 #include <locale.h>
@@ -57,6 +58,9 @@ typedef struct
     mlt_colorspace colorspace;
     int full_range;
     int reset;
+    int vulkan;
+    double pending_scale;
+    avformat_vulkan_avfilter *vulkan_graph;
 #if HAVE_FFMPEG_CH_LAYOUT
     AVChannelLayout ch_layout;
 #endif
@@ -82,8 +86,8 @@ static void property_changed(mlt_service owner, mlt_filter filter, mlt_event_dat
     const char *name = mlt_event_data_to_string(event_data);
     if (name && strncmp(PARAM_PREFIX, name, PARAM_PREFIX_LEN) == 0) {
         private_data *pdata = (private_data *) filter->child;
+        mlt_service_lock(MLT_FILTER_SERVICE(filter));
         if (pdata->avfilter_ctx) {
-            mlt_service_lock(MLT_FILTER_SERVICE(filter));
             const AVOption *opt
                 = av_opt_find(pdata->avfilter_ctx->priv, name + PARAM_PREFIX_LEN, 0, 0, 0);
 #if LIBAVUTIL_VERSION_INT >= ((56 << 16) + (35 << 8) + 101)
@@ -93,8 +97,8 @@ static void property_changed(mlt_service owner, mlt_filter filter, mlt_event_dat
 #else
             pdata->reset = opt && !mlt_properties_is_anim(MLT_FILTER_PROPERTIES(filter), name);
 #endif
-            mlt_service_unlock(MLT_FILTER_SERVICE(filter));
         }
+        mlt_service_unlock(MLT_FILTER_SERVICE(filter));
     }
 }
 
@@ -843,6 +847,111 @@ exit:
     return 0;
 }
 
+static int init_vulkan_user_filter(AVFilterContext *ctx, void *opaque)
+{
+    mlt_filter filter = opaque;
+    private_data *pdata = filter->child;
+
+    pdata->avfilter_ctx = ctx;
+    set_avfilter_options(filter, pdata->pending_scale);
+    return avfilter_init_str(ctx, NULL);
+}
+
+static int filter_get_vulkan_image(mlt_filter filter,
+                                   mlt_frame frame,
+                                   uint8_t **image,
+                                   mlt_image_format *format,
+                                   int *width,
+                                   int *height)
+{
+    private_data *pdata = filter->child;
+    mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
+    AVRational sar = (AVRational){profile->sample_aspect_num, profile->sample_aspect_den};
+    AVRational timebase = (AVRational){profile->frame_rate_den, profile->frame_rate_num};
+    AVRational framerate = (AVRational){profile->frame_rate_num, profile->frame_rate_den};
+    mlt_vulkan_image *vulkan;
+    AVFrame *filtered = NULL;
+    int interlaced = 0;
+    int top_field_first = 0;
+    int threads = -1;
+    int ret;
+
+    *format = mlt_image_vulkan;
+    mlt_frame_get_image(frame, image, format, width, height, 0);
+    if (*format != mlt_image_vulkan || !image || !*image) {
+        mlt_log_error(MLT_FILTER_SERVICE(filter),
+                      "Vulkan filter %s requires an mlt_image_vulkan frame\n",
+                      pdata->avfilter->name);
+        return 0;
+    }
+
+    mlt_service_lock(MLT_FILTER_SERVICE(filter));
+    vulkan = (mlt_vulkan_image *) *image;
+    pdata->pending_scale = mlt_profile_scale_width(profile, *width);
+    if (pdata->avfilter->flags & AVFILTER_FLAG_SLICE_THREADS) {
+        threads = FFMAX(0, mlt_properties_get_int(MLT_FILTER_PROPERTIES(filter), "av.threads"));
+    }
+    if (!pdata->vulkan_graph)
+        pdata->vulkan_graph = avformat_vulkan_avfilter_new();
+    ret = avformat_vulkan_avfilter_configure(pdata->vulkan_graph,
+                                             pdata->avfilter,
+                                             vulkan,
+                                             sar.num,
+                                             sar.den,
+                                             timebase.num,
+                                             timebase.den,
+                                             framerate.num,
+                                             framerate.den,
+                                             threads,
+                                             pdata->reset,
+                                             init_vulkan_user_filter,
+                                             filter);
+    if (ret < 0) {
+        pdata->avfilter_graph = NULL;
+        pdata->avfilter_ctx = NULL;
+        mlt_log_error(MLT_FILTER_SERVICE(filter),
+                      "Cannot configure Vulkan filter graph: %s\n",
+                      av_err2str(ret));
+        mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+        return 0;
+    }
+    pdata->reset = 0;
+    pdata->avfilter_graph = avformat_vulkan_avfilter_graph(pdata->vulkan_graph);
+    pdata->avfilter_ctx = avformat_vulkan_avfilter_ctx(pdata->vulkan_graph);
+    send_avformat_commands(filter, frame, pdata, pdata->pending_scale);
+
+    interlaced = !mlt_properties_get_int(frame_properties, "progressive");
+    top_field_first = mlt_properties_get_int(frame_properties, "top_field_first");
+    ret = avformat_vulkan_avfilter_frame(pdata->vulkan_graph,
+                                         vulkan,
+                                         get_position(filter, frame),
+                                         sar.num,
+                                         sar.den,
+                                         interlaced,
+                                         top_field_first,
+                                         &filtered);
+    if (ret < 0 || !filtered) {
+        mlt_log_error(MLT_FILTER_SERVICE(filter),
+                      "Vulkan filter %s failed: %s\n",
+                      pdata->avfilter->name,
+                      av_err2str(ret));
+        av_frame_free(&filtered);
+        mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+        return 0;
+    }
+
+    if (avformat_install_vulkan_frame(MLT_FILTER_SERVICE(filter), filtered, frame, image, format)) {
+        mlt_log_error(MLT_FILTER_SERVICE(filter), "Cannot install Vulkan filter output\n");
+    } else {
+        *width = filtered->width;
+        *height = filtered->height;
+    }
+    av_frame_free(&filtered);
+    mlt_service_unlock(MLT_FILTER_SERVICE(filter));
+    return 0;
+}
+
 static int filter_get_image(mlt_frame frame,
                             uint8_t **image,
                             mlt_image_format *format,
@@ -852,7 +961,12 @@ static int filter_get_image(mlt_frame frame,
 {
     mlt_filter filter = mlt_frame_pop_service(frame);
     private_data *pdata = (private_data *) filter->child;
-    int64_t pos = get_position(filter, frame);
+    int64_t pos;
+
+    if (pdata->vulkan)
+        return filter_get_vulkan_image(filter, frame, image, format, width, height);
+
+    pos = get_position(filter, frame);
     mlt_profile profile = mlt_service_profile(MLT_FILTER_SERVICE(filter));
     mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
     int ret;
@@ -1060,6 +1174,11 @@ static void filter_close(mlt_filter filter)
     private_data *pdata = (private_data *) filter->child;
 
     if (pdata) {
+        if (pdata->vulkan_graph) {
+            pdata->avfilter_graph = NULL;
+            pdata->avfilter_ctx = NULL;
+            avformat_vulkan_avfilter_close(pdata->vulkan_graph);
+        }
         avfilter_graph_free(&pdata->avfilter_graph);
         av_frame_free(&pdata->avinframe);
         av_frame_free(&pdata->avoutframe);
@@ -1101,6 +1220,7 @@ mlt_filter filter_avfilter_init(mlt_profile profile,
         pdata->width = -1;
         pdata->height = -1;
         pdata->reset = 1;
+        pdata->vulkan = avformat_avfilter_is_vulkan(pdata->avfilter->name);
 
         filter->close = filter_close;
         filter->process = filter_process;

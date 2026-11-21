@@ -1,0 +1,63 @@
+schema_version: 7.2
+type: transition
+identifier: placebo.luma_mix
+title: Wipe (libplacebo)
+version: 1
+copyright: Meltytech, LLC
+license: LGPLv2.1
+language: en
+tags:
+  - Video
+description: >
+  Dissolve between two frames or use the luma of a resource as a wipe mask.
+image_formats:
+  - rgba
+  - rgba64
+parameters:
+  - identifier: resource
+    argument: yes
+    title: Wipe File
+    type: string
+    description: >
+      Gradient image or looping video; dissolve if empty or unavailable.
+    mutable: yes
+    readonly: no
+
+  - identifier: softness
+    title: Softness
+    type: float
+    description: The softness of the wipe edge.
+    minimum: 0
+    maximum: 1
+    default: 0
+    mutable: yes
+    animation: yes
+    readonly: no
+
+  - identifier: reverse
+    title: Reverse
+    type: integer
+    description: Reverse the direction of the transition.
+    default: 0
+    minimum: 0
+    maximum: 1
+    widget: checkbox
+    mutable: yes
+    readonly: no
+
+  - identifier: invert
+    title: Invert
+    type: integer
+    description: Invert the wipe mask and change the progress easing.
+    default: 0
+    minimum: 0
+    maximum: 1
+    widget: checkbox
+    mutable: yes
+    readonly: no
+
+  - identifier: producer.*
+    title: Producer
+    description: Properties forwarded to the producer that reads the wipe resource.
+    mutable: yes
+    readonly: no

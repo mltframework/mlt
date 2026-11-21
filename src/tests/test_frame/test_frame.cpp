@@ -53,6 +53,11 @@ static int convert_b(mlt_frame, uint8_t **, mlt_image_format *format, mlt_image_
     return 0;
 }
 
+static int fail_get_image(mlt_frame, uint8_t **, mlt_image_format *, int *, int *, int)
+{
+    return 1;
+}
+
 class TestFrame : public QObject
 {
     Q_OBJECT
@@ -325,6 +330,65 @@ private Q_SLOTS:
         QCOMPARE(g_convert_calls, 0);   // src's converter was NOT copied over
         mlt_frame_close(dst);
         mlt_frame_close(src);
+    }
+
+    void ToneOmitsGetImageError()
+    {
+        Factory::init();
+        Profile profile;
+        Producer producer(profile, "tone");
+        QVERIFY(producer.is_valid());
+        std::unique_ptr<Frame> frame(producer.get_frame());
+        QVERIFY(frame && frame->is_valid());
+        mlt_image_format format = mlt_image_yuv422;
+        int width = 640;
+        int height = 360;
+        uint8_t *image = frame->get_image(format, width, height);
+        QVERIFY(image != nullptr);
+        QCOMPARE(frame->get_int("test_image"), 1);
+        QCOMPARE(frame->get_int("get_image_error"), 0);
+    }
+
+    void FailedImageCallbackSetsGetImageError()
+    {
+        mlt_frame raw = mlt_frame_init(NULL);
+        mlt_frame_push_get_image(raw, fail_get_image);
+        mlt_image_format format = mlt_image_yuv422;
+        int width = 320;
+        int height = 240;
+        uint8_t *image = NULL;
+        mlt_frame_get_image(raw, &image, &format, &width, &height, 0);
+        QVERIFY(image != nullptr);
+        QCOMPARE(mlt_properties_get_int(MLT_FRAME_PROPERTIES(raw), "get_image_error"), 1);
+        mlt_frame_close(raw);
+    }
+
+    void PrependImageFromServiceSharesGetImageError()
+    {
+        // Tractor output prepends the top track, which prepends the picture.
+        // The consumer sees the outer frame after both shares.
+        mlt_frame picture = mlt_frame_init(NULL);
+        mlt_frame_push_get_image(picture, fail_get_image);
+        mlt_frame track = mlt_frame_init(NULL);
+        QCOMPARE(mlt_frame_prepend_image_from_service(track, picture), 0);
+        mlt_frame output = mlt_frame_init(NULL);
+        QCOMPARE(mlt_frame_prepend_image_from_service(output, track), 0);
+
+        mlt_image_format format = mlt_image_yuv422;
+        int width = 320;
+        int height = 240;
+        uint8_t *image = NULL;
+        int error = mlt_frame_get_image(output, &image, &format, &width, &height, 0);
+        QCOMPARE(error, 0);
+        QVERIFY(image != nullptr);
+        QCOMPARE(mlt_properties_get_int(MLT_FRAME_PROPERTIES(picture), "get_image_error"), 1);
+        QCOMPARE(mlt_properties_get_int(MLT_FRAME_PROPERTIES(track), "get_image_error"), 1);
+        QCOMPARE(mlt_properties_get_int(MLT_FRAME_PROPERTIES(output), "get_image_error"), 1);
+        QCOMPARE(mlt_properties_get_int(MLT_FRAME_PROPERTIES(output), "test_image"), 0);
+
+        mlt_frame_close(output);
+        mlt_frame_close(track);
+        mlt_frame_close(picture);
     }
 };
 

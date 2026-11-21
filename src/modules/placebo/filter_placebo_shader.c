@@ -1,6 +1,7 @@
 /*
  * filter_placebo_shader.c -- custom .hook shader loader via libplacebo
  * Copyright (C) 2025-2026 D-Ogi
+ * Copyright (C) 2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -17,8 +18,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
+#include "gpu_frame.h"
+#include "render_cache.h"
+#include "render_params.h"
+#include "tex_pool.h"
+#include "vulkan_frame.h"
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
@@ -166,7 +173,7 @@ static time_t file_mtime(const char *path)
  * (par->data->f / .i / .u) that can be written before every render call.
  *
  * The NLE (Kdenlive) stores user values as MLT animated properties with
- * the prefix "shader_param." — e.g. "shader_param.color_r".  Animated
+ * the prefix "param." — e.g. "param.color_r".  Animated
  * properties use MLT's keyframe string format ("0=200;50=100"), so we
  * must resolve them at the current frame position via the anim_get API.
  * Using plain atof() would parse only the frame number before '=' and
@@ -188,10 +195,10 @@ static void apply_shader_params(mlt_filter filter,
     int n = mlt_properties_count(props);
     for (int i = 0; i < n; i++) {
         const char *key = mlt_properties_get_name(props, i);
-        if (!key || strncmp(key, "shader_param.", 13) != 0)
+        if (!key || strncmp(key, "param.", 6) != 0)
             continue;
 
-        const char *param_name = key + 13; /* bare name after prefix */
+        const char *param_name = key + 6; /* bare name after prefix */
 
         /* Match against the hook's exported parameters by name */
         for (int j = 0; j < hook->num_parameters; j++) {
@@ -219,7 +226,7 @@ static void apply_shader_params(mlt_filter filter,
 static int ensure_shader(mlt_filter filter, shader_private *priv, pl_gpu gpu)
 {
     mlt_properties props = MLT_FILTER_PROPERTIES(filter);
-    const char *shader_path = mlt_properties_get(props, "shader_path");
+    const char *shader_path = mlt_properties_get(props, "resource");
     const char *shader_text = mlt_properties_get(props, "shader_text");
 
     /* Check if we need to reload from file */
@@ -327,8 +334,7 @@ static int filter_get_image(mlt_frame frame,
     mlt_properties filter_props = MLT_FILTER_PROPERTIES(filter);
 
     pl_gpu gpu = placebo_gpu_get();
-    pl_renderer renderer = placebo_renderer_get();
-    if (!gpu || !renderer) {
+    if (!gpu) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "GPU not available, passing frame through\n");
         return mlt_frame_get_image(frame, image, format, width, height, writable);
     }
@@ -347,18 +353,17 @@ static int filter_get_image(mlt_frame frame,
 
     /* Fast path: skip the GPU pipeline entirely when no shader is configured.
      * Property reads are safe here; we only mutate priv under placebo_render_lock. */
-    const char *shader_path = mlt_properties_get(filter_props, "shader_path");
+    const char *shader_path = mlt_properties_get(filter_props, "resource");
     const char *shader_text = mlt_properties_get(filter_props, "shader_text");
     if ((!shader_path || !*shader_path) && (!shader_text || !*shader_text))
         return mlt_frame_get_image(frame, image, format, width, height, writable);
 
     /* Fetch the upstream image before acquiring the render lock so the
      * potentially-expensive upstream pipeline runs concurrently with other
-     * frames that are already inside the lock. */
-    placebo_frame_set_requested_tex(frame, 1);
-    *format = mlt_image_private;
-    int error = mlt_frame_get_image(frame, image, format, width, height, 1);
-    placebo_frame_set_requested_tex(frame, 0);
+     * frames that are already inside the lock. requested is the caller's
+     * format; rgba64 is rendered to rgba16 instead of rgba8. */
+    mlt_image_format requested = *format;
+    int error = placebo_frame_get_gpu_image(frame, image, format, width, height, 1);
     if (error || !*image)
         return error;
 
@@ -366,17 +371,27 @@ static int filter_get_image(mlt_frame frame,
 
     int w = *width;
     int h = *height;
-
-    if (!placebo_frame_is_tex(frame, *format)) {
+    int is_tex = placebo_frame_is_tex(frame, *format);
+    int is_vulkan = placebo_frame_is_vulkan(frame, *format);
+    if (!is_tex && !is_vulkan) {
         mlt_log_error(MLT_FILTER_SERVICE(filter),
-                      "Expected placebo private input, got %s (%s)\n",
+                      "Expected a placebo texture or Vulkan texture, got %s (%s)\n",
                       mlt_image_format_name(*format),
                       mlt_properties_get(MLT_FRAME_PROPERTIES(frame), MLT_PLACEBO_IMAGE_PRIVATE));
         return 1;
     }
-    pl_tex src_tex = placebo_image_get_tex(*image);
-    if (!src_tex)
+    if (is_tex && !placebo_image_get_tex(*image))
         return 1;
+
+    /* A linear texture stays linear so the shader runs in linear light.
+       Any other known transfer is kept, so linearize() matches the samples.
+       rgba64 is rgba16; a private linear frame stays half-float. */
+    struct pl_color_space dst_color = pl_color_space_srgb;
+    pl_fmt dst_fmt = rgba_fmt;
+    pl_fmt encoded = NULL;
+    placebo_output_format(gpu, frame, requested, &dst_color, &encoded);
+    if (encoded)
+        dst_fmt = encoded;
 
     /* Hold the render lock for the entire shader-reload + render sequence.
      * Without this, concurrent worker threads can race on priv->hooks:
@@ -384,39 +399,50 @@ static int filter_get_image(mlt_frame frame,
      * still using it in pl_render_image (use-after-free / double-destroy). */
     placebo_render_lock();
 
-    /* Reload shader if path/text/mtime changed; returns 0 if unavailable. */
+    /* Reload shader if path/text/mtime changed; returns 0 if unavailable.
+       The upstream image, including a Vulkan texture, stays on the frame. */
     if (!ensure_shader(filter, priv, gpu)) {
         placebo_render_unlock();
-        /* src_tex is already attached to the frame; pass it through. */
         return 0;
     }
 
     /* sampleable is needed so a subsequent placebo filter can bind this
      * texture as its source without re-uploading from RAM. */
-    pl_tex dst_tex = pl_tex_create(gpu,
-                                   pl_tex_params(.w = w,
-                                                 .h = h,
-                                                 .format = rgba_fmt,
-                                                 .sampleable = true,
-                                                 .renderable = true,
-                                                 .host_readable = true, ));
+    pl_tex dst_tex = placebo_acquire_output(gpu, w, h, dst_fmt, requested, PLACEBO_TEX_BLIT_DST);
     if (!dst_tex) {
         mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to create dest texture\n");
         placebo_render_unlock();
         return 1;
     }
 
-    /* Build pl_frames */
-    struct pl_frame pl_src = {
-        .num_planes = 1,
-        .planes = {{
-            .texture = src_tex,
-            .components = 4,
-            .component_mapping = {0, 1, 2, 3},
-        }},
-        .repr = pl_color_repr_rgb,
-        .color = pl_color_space_srgb,
-    };
+    /* A Vulkan texture stays mapped only for this render. Unmap before
+       publish replaces the image. The mapped frame keeps its YUV color;
+       a placebo texture is rgba. */
+    struct pl_frame mapped = {0};
+    struct pl_frame pl_src = {0};
+    const struct pl_frame *src = &pl_src;
+    int mapped_vulkan = 0;
+    if (is_vulkan) {
+        if (!placebo_map_vulkan_image(gpu, *image, &mapped)) {
+            mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to map Vulkan frame\n");
+            placebo_tex_recycle(gpu, &dst_tex);
+            placebo_render_unlock();
+            return 1;
+        }
+        src = &mapped;
+        mapped_vulkan = 1;
+    } else {
+        pl_src = (struct pl_frame){
+            .num_planes = 1,
+            .planes = {{
+                .texture = placebo_image_get_tex(*image),
+                .components = 4,
+                .component_mapping = {0, 1, 2, 3},
+            }},
+            .repr = pl_color_repr_rgb,
+            .color = dst_color,
+        };
+    }
 
     struct pl_frame pl_dst = {
         .num_planes = 1,
@@ -426,7 +452,7 @@ static int filter_get_image(mlt_frame frame,
             .component_mapping = {0, 1, 2, 3},
         }},
         .repr = pl_color_repr_rgb,
-        .color = pl_color_space_srgb,
+        .color = dst_color,
     };
 
     /* Override DYNAMIC shader parameters with values from MLT properties.
@@ -436,26 +462,31 @@ static int filter_get_image(mlt_frame frame,
         apply_shader_params(filter, frame, filter_props, priv->hooks[0]);
     }
 
-    /* Render with shader hooks */
-    struct pl_render_params params = pl_render_default_params;
+    /* Render with shader hooks. HOOK MAIN runs after YUV to RGB. */
+    struct pl_render_params params = placebo_render_params(frame);
     params.hooks = priv->hooks;
     params.num_hooks = priv->num_hooks;
 
-    if (!pl_render_image(renderer, &pl_src, &pl_dst, &params)) {
+    if (!placebo_render(PLACEBO_SITE_SHADER, src, &pl_dst, &params)) {
         mlt_log_warning(MLT_FILTER_SERVICE(filter), "pl_render_image with shader hook failed\n");
+        if (mapped_vulkan)
+            placebo_unmap_vulkan_image(gpu, &mapped);
+        placebo_tex_recycle(gpu, &dst_tex);
+        placebo_render_unlock();
+        return 1;
     }
+    if (mapped_vulkan)
+        placebo_unmap_vulkan_image(gpu, &mapped);
 
     placebo_render_unlock();
 
-    *format = mlt_image_private;
-    *image = (uint8_t *) dst_tex;
-    if (placebo_frame_set_tex(frame, dst_tex)) {
-        placebo_render_lock();
-        pl_tex_destroy(gpu, &dst_tex);
-        placebo_render_unlock();
-        *image = NULL;
+    if (placebo_frame_publish_tex(frame,
+                                  dst_tex,
+                                  requested,
+                                  image,
+                                  format,
+                                  placebo_frame_color_trc(frame, *image, *format)))
         return 1;
-    }
 
     return 0;
 }
@@ -477,14 +508,17 @@ mlt_filter filter_placebo_shader_init(mlt_profile profile,
     if (filter) {
         filter->process = filter_process;
         mlt_properties props = MLT_FILTER_PROPERTIES(filter);
-        mlt_properties_set(props, "shader_path", arg ? arg : "");
-        mlt_properties_set(props, "shader_text", "");
+        mlt_properties_set(props, "resource", arg ? arg : NULL);
         shader_private *priv = calloc(1, sizeof(shader_private));
         if (!priv) {
             mlt_filter_close(filter);
             return NULL;
         }
         mlt_properties_set_data(props, "_shader_priv", priv, 0, shader_private_destroy, NULL);
+        /* Create the GPU before the loader opens a producer. video_codec_init()
+           adopts a device published here; publishing from get_image is too late. */
+        if (placebo_gpu_get())
+            placebo_vulkan_publish();
     }
     return filter;
 }

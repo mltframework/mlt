@@ -89,6 +89,7 @@
  * \properties \em color_range the color range as tv/mpeg (limited) or pc/jpeg (full); default is unset, which implies tv/mpeg
  * \properties \em color_trc the color transfer characteristic (gamma), default is unset, use mlt_color_trc string values
  * \properties \em mlt_color_trc the color transfer to use for internal processing, default is unset; use mlt_color_trc string values but only "linear" is implemented
+ * \properties \em color_trc_off set to 1 when the consumer itself converts mlt_color_trc to color_trc, default is 0
  * \properties \em deinterlacer the deinterlace algorithm to pass to deinterlace filters, defaults to "yadif"
  * \properties \em ante the shell command to run before rendering (DEPRECATED)
  * \properties \em post the shell command to run after rendering (DEPRECATED)
