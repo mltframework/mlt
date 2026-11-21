@@ -48,12 +48,12 @@ _Static_assert(sizeof(void *) == sizeof(void (*)(void)),
 /* libplacebo enables VK_KHR_internally_synchronized_queues when the device
    supports it. FFmpeg then calls vkGetDeviceQueue2 with flags 0 unless it was
    itself built with that extension, and RADV returns a null queue. Submitting
-   that queue crashes inside the driver. Publish a get_proc_addr that sets the
-   creation bit, and fall back to the caller's flags when the queues were not
-   created that way. */
+   that queue crashes inside the driver. Publish a get_proc_addr that retrieves
+   the queue through placebo_vulkan_get_queue(). */
 static PFN_vkGetInstanceProcAddr s_real_get_proc;
 static PFN_vkGetDeviceProcAddr s_real_get_device_proc;
 static PFN_vkGetDeviceQueue2 s_real_get_device_queue2;
+static pl_vulkan s_vk;
 
 static int vulkan_queues_are_internally_synchronized(pl_vulkan vk)
 {
@@ -71,22 +71,47 @@ static int vulkan_queues_are_internally_synchronized(pl_vulkan vk)
     return 0;
 }
 
+VkQueue placebo_vulkan_get_queue(pl_vulkan vk, uint32_t family, uint32_t index)
+{
+    PFN_vkGetDeviceQueue2 get_queue2;
+    PFN_vkGetDeviceQueue get_queue;
+    VkQueue queue = VK_NULL_HANDLE;
+
+    if (!vk || !vk->device || !vk->get_proc_addr || !vk->instance)
+        return VK_NULL_HANDLE;
+    get_queue2 = (PFN_vkGetDeviceQueue2) vk->get_proc_addr(vk->instance, "vkGetDeviceQueue2");
+    get_queue = (PFN_vkGetDeviceQueue) vk->get_proc_addr(vk->instance, "vkGetDeviceQueue");
+    if (vulkan_queues_are_internally_synchronized(vk) && get_queue2) {
+        VkDeviceQueueInfo2 info;
+
+        memset(&info, 0, sizeof(info));
+        info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_INFO_2;
+        info.flags = VK_DEVICE_QUEUE_CREATE_INTERNALLY_SYNCHRONIZED_BIT_KHR;
+        info.queueFamilyIndex = family;
+        info.queueIndex = index;
+        get_queue2(vk->device, &info, &queue);
+        if (queue)
+            return queue;
+    }
+    if (get_queue)
+        get_queue(vk->device, family, index, &queue);
+    return queue;
+}
+
 static void VKAPI_CALL wrapped_get_device_queue2(VkDevice device,
                                                  const VkDeviceQueueInfo2 *info,
                                                  VkQueue *queue)
 {
-    VkDeviceQueueInfo2 forced;
-
     if (!queue)
         return;
     *queue = VK_NULL_HANDLE;
-    if (!s_real_get_device_queue2 || !info)
+    if (!info)
         return;
-
-    forced = *info;
-    forced.flags |= VK_DEVICE_QUEUE_CREATE_INTERNALLY_SYNCHRONIZED_BIT_KHR;
-    s_real_get_device_queue2(device, &forced, queue);
-    if (*queue == VK_NULL_HANDLE && forced.flags != info->flags)
+    if (s_vk && device == s_vk->device) {
+        *queue = placebo_vulkan_get_queue(s_vk, info->queueFamilyIndex, info->queueIndex);
+        return;
+    }
+    if (s_real_get_device_queue2)
         s_real_get_device_queue2(device, info, queue);
 }
 
@@ -124,6 +149,7 @@ static void publish_get_proc_addr(mlt_properties props, pl_vulkan vk, pl_vk_inst
 {
     PFN_vkGetInstanceProcAddr published = vk->get_proc_addr;
 
+    s_vk = vk;
     s_real_get_proc = vk->get_proc_addr;
     s_real_get_device_proc = NULL;
     s_real_get_device_queue2 = NULL;
@@ -178,6 +204,7 @@ static void forget_procs(void)
     s_real_get_proc = NULL;
     s_real_get_device_proc = NULL;
     s_real_get_device_queue2 = NULL;
+    s_vk = NULL;
 }
 
 int placebo_vulkan_publish_device(pl_vulkan vk, pl_vk_inst inst)

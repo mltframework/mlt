@@ -30,6 +30,11 @@
    with GPU creation and teardown. */
 int placebo_vulkan_publish_device(pl_vulkan vk, pl_vk_inst inst);
 
+/* The queue libplacebo created for this family and index. An internally
+   synchronized queue is retrieved with vkGetDeviceQueue2 and its creation
+   flag; vkGetDeviceQueue returns null for that queue on RADV. */
+VkQueue placebo_vulkan_get_queue(pl_vulkan vk, uint32_t family, uint32_t index);
+
 /* Withdraw the "placebo.vulkan" property, which runs its destructor, and forget
    the device's procedure addresses. Call it when the device goes away, before
    it is destroyed, so nothing is handed a handle to a dead device. Does nothing

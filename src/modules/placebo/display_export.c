@@ -42,6 +42,7 @@ void placebo_display_export_close(void) {}
 
 #include "gpu_context.h"
 #include "vulkan_frame.h"
+#include "vulkan_publish.h"
 
 #include <framework/mlt_log.h>
 
@@ -134,7 +135,7 @@ struct vk_procs
     PFN_vkResetFences reset_fences;
     PFN_vkGetFenceStatus fence_status;
     PFN_vkQueueSubmit queue_submit;
-    PFN_vkGetDeviceQueue get_queue;
+    VkQueue graphics_queue;
     PFN_vkGetPhysicalDeviceMemoryProperties mem_props;
 #ifdef _WIN32
     PFN_vkGetMemoryWin32HandleKHR get_win32;
@@ -255,7 +256,6 @@ static int load_procs(pl_vulkan vk)
     LOAD(reset_fences, PFN_vkResetFences, "vkResetFences")
     LOAD(fence_status, PFN_vkGetFenceStatus, "vkGetFenceStatus")
     LOAD(queue_submit, PFN_vkQueueSubmit, "vkQueueSubmit")
-    LOAD(get_queue, PFN_vkGetDeviceQueue, "vkGetDeviceQueue")
     LOAD(mem_props, PFN_vkGetPhysicalDeviceMemoryProperties, "vkGetPhysicalDeviceMemoryProperties")
 #ifdef _WIN32
     LOAD(get_win32, PFN_vkGetMemoryWin32HandleKHR, "vkGetMemoryWin32HandleKHR")
@@ -263,6 +263,7 @@ static int load_procs(pl_vulkan vk)
     LOAD(get_fd, PFN_vkGetMemoryFdKHR, "vkGetMemoryFdKHR")
 #endif
 #undef LOAD
+    s_procs.graphics_queue = placebo_vulkan_get_queue(vk, vk->queue_graphics.index, 0);
     s_procs.device = vk->device;
     return 1;
 missing:
@@ -279,14 +280,13 @@ static int submit(pl_vulkan vk,
 {
     VkPipelineStageFlags stages[MLT_VULKAN_EXPORT_SIDES];
     VkSubmitInfo info;
-    VkQueue queue = VK_NULL_HANDLE;
     VkResult result;
     int i;
     uint32_t family;
 
     if (!vk || !vk->lock_queue || !vk->unlock_queue || nwaits < 0
         || nwaits > MLT_VULKAN_EXPORT_SIDES || nsignals < 0 || nsignals > MLT_VULKAN_EXPORT_SIDES
-        || !s_procs.queue_submit || !s_procs.get_queue)
+        || !s_procs.queue_submit || !s_procs.graphics_queue)
         return 0;
     family = vk->queue_graphics.index;
     for (i = 0; i < nwaits; i++)
@@ -300,8 +300,7 @@ static int submit(pl_vulkan vk,
     info.pSignalSemaphores = nsignals ? signals : NULL;
 
     vk->lock_queue(vk, family, 0);
-    s_procs.get_queue(vk->device, family, 0, &queue);
-    result = queue ? s_procs.queue_submit(queue, 1, &info, fence) : VK_ERROR_UNKNOWN;
+    result = s_procs.queue_submit(s_procs.graphics_queue, 1, &info, fence);
     vk->unlock_queue(vk, family, 0);
     return result == VK_SUCCESS;
 }
