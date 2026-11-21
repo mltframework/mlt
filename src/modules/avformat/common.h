@@ -1,6 +1,6 @@
 /*
  * common.h
- * Copyright (C) 2018-2025 Meltytech, LLC
+ * Copyright (C) 2018-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -22,11 +22,14 @@
 
 #include <framework/mlt.h>
 #include <libavutil/frame.h>
+#include <libavutil/version.h>
 #include <libswscale/swscale.h>
 
 #define MLT_AVFILTER_SWS_FLAGS "bicubic+accurate_rnd+full_chroma_int+full_chroma_inp"
 #define HAVE_FFMPEG_CH_LAYOUT (LIBAVUTIL_VERSION_MAJOR >= 59)
 #define HAVE_FFMPEG_VULKAN (LIBAVUTIL_VERSION_INT >= ((56 << 16) + (39 << 8) + 100))
+/* AVVulkanDeviceContext.qf, libavutil 59.34.100 (FFmpeg 7.1). */
+#define HAVE_FFMPEG_VULKAN_QF (LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(59, 34, 100))
 
 int mlt_to_av_sample_format(mlt_audio_format format);
 int64_t mlt_to_av_channel_layout(mlt_channel_layout layout);

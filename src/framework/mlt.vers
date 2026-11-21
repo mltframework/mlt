@@ -711,4 +711,5 @@ MLT_7.44.0 {
     mlt_properties_revision;
     mlt_frame_get_resize_alpha;
     mlt_frame_set_resize_alpha;
+    mlt_image_format_is_gpu;
 } MLT_7.42.0;

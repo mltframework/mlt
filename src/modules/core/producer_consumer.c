@@ -51,6 +51,18 @@ static int get_image(mlt_frame frame,
     *width = cx->profile->width;
     *height = cx->profile->height;
 
+    // This copies the image as pixels below. A GPU payload is not pixels.
+    if (mlt_image_format_is_gpu(*format)) {
+        static int logged;
+        if (!logged) {
+            logged = 1;
+            mlt_log_info(MLT_PRODUCER_SERVICE(cx->self),
+                         "requested %s but a nested consumer copies pixels; using rgba\n",
+                         mlt_image_format_name(*format));
+        }
+        *format = mlt_image_rgba;
+    }
+
     int result = mlt_frame_get_image(nested_frame, image, format, width, height, writable);
 
     // Allocate the image

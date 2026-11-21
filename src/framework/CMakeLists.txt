@@ -31,6 +31,7 @@ set(MLT_PUBLIC_HEADERS
   mlt_transition.h
   mlt_types.h
   mlt_version.h
+  mlt_vulkan_export.h
 )
 
 add_library(mlt SHARED
@@ -75,6 +76,9 @@ add_custom_target("Other_mlt_Files" SOURCES
 )
 
 add_library(Mlt${MLT_VERSION_MAJOR}::mlt ALIAS mlt)
+
+# Let uninstalled builds, including tests, find chain normalizers through MLT_DATA.
+configure_file(chain_normalizers.ini "${MLT_DATA_OUTPUT_DIRECTORY}/chain_normalizers.ini" COPYONLY)
 
 include(CheckFunctionExists)
 include(CheckSymbolExists)

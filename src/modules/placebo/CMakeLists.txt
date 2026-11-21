@@ -5,11 +5,31 @@ if(NOT libplacebo_FOUND)
 endif()
 
 add_library(mltplacebo MODULE
+  color_space.c color_space.h
   convert.c convert.h
+  deinterlace.c
+  deinterlace.h
   factory.c
+  filter_placebo_blend_mode.c
+  filter_placebo_color_transform.c
+  filter_placebo_deinterlace.c
   filter_placebo_render.c
+  filter_placebo_scale.c
   filter_placebo_shader.c
+  link_placebo_deinterlace.c
+  transition_placebo_blend.c
+  transition_placebo_luma_mix.c
+  transition_common.c transition_common.h
   gpu_context.c gpu_context.h
+  gpu_frame.c gpu_frame.h
+  render_cache.c render_cache.h
+  render_params.c render_params.h
+  shader_service_id.c shader_service_id.h
+  tex_pool.c tex_pool.h
+  vulkan_frame.c vulkan_frame.h
+  vulkan_device.c vulkan_device.h
+  vulkan_publish.c vulkan_publish.h
+  display_export.c display_export.h
 )
 
 file(GLOB YML "*.yml")
@@ -21,7 +41,7 @@ include(GenerateExportHeader)
 generate_export_header(mltplacebo)
 target_compile_options(mltplacebo PRIVATE ${MLT_COMPILE_OPTIONS})
 target_include_directories(mltplacebo PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(mltplacebo PRIVATE mlt PkgConfig::libplacebo)
+target_link_libraries(mltplacebo PRIVATE mlt Threads::Threads PkgConfig::libplacebo)
 
 # Only link D3D11 if libplacebo was built with D3D11 support
 include(CheckCSourceCompiles)
@@ -44,13 +64,30 @@ if(MSVC)
   target_link_libraries(mltplacebo PRIVATE PThreads4W::PThreads4W)
 endif()
 
+if(SDL2_FOUND)
+  target_sources(mltplacebo PRIVATE consumer_placebo_sdl.c)
+  target_compile_definitions(mltplacebo PRIVATE PLACEBO_SDL)
+  target_link_libraries(mltplacebo PRIVATE SDL2::SDL2)
+endif()
+
 set_target_properties(mltplacebo PROPERTIES
   LIBRARY_OUTPUT_DIRECTORY "${MLT_MODULE_OUTPUT_DIRECTORY}")
 
 install(TARGETS mltplacebo LIBRARY DESTINATION ${MLT_INSTALL_MODULE_DIR})
 
-install(FILES
+set(PLACEBO_YML
+  filter_placebo_blend_mode.yml
+  filter_placebo_color_transform.yml
+  filter_placebo_deinterlace.yml
   filter_placebo_render.yml
+  filter_placebo_scale.yml
   filter_placebo_shader.yml
-  DESTINATION ${MLT_INSTALL_DATA_DIR}/placebo
+  link_placebo_deinterlace.yml
+  transition_placebo_blend.yml
+  transition_placebo_luma_mix.yml
 )
+if(SDL2_FOUND)
+  list(APPEND PLACEBO_YML consumer_placebo_sdl.yml)
+endif()
+install(FILES ${PLACEBO_YML} DESTINATION ${MLT_INSTALL_DATA_DIR}/placebo)
+install(DIRECTORY shaders/ DESTINATION ${MLT_INSTALL_DATA_DIR}/placebo/shaders)

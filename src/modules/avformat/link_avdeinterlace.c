@@ -83,6 +83,7 @@ static mlt_image_format validate_format(mlt_image_format format)
     case mlt_image_movit:
     case mlt_image_opengl_texture:
     case mlt_image_private:
+    case mlt_image_vulkan:
     case mlt_image_invalid:
         ret_format = mlt_image_yuv422;
         break;

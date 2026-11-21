@@ -449,6 +449,7 @@ static int generate_test_image(mlt_properties properties,
         case mlt_image_movit:
         case mlt_image_opengl_texture:
         case mlt_image_private:
+        case mlt_image_vulkan:
             *format = mlt_image_yuv422;
             break;
         case mlt_image_invalid:
@@ -509,6 +510,11 @@ int mlt_frame_get_image(mlt_frame self,
     mlt_get_image get_image = mlt_frame_pop_get_image(self);
     mlt_image_format requested_format = *format;
     int error = 0;
+    // Set by a clip with no picture (audio only, blank, empty track) before
+    // this call. That checkerboard is intentional: transitions skip the track
+    // so a clip underneath shows through, and the player shows the card
+    // instead of black. A fetch that fails on a real picture does not set it.
+    int already_test = mlt_properties_get_int(properties, "test_image");
 
     if (get_image) {
         mlt_properties_set_int(properties,
@@ -523,6 +529,8 @@ int mlt_frame_get_image(mlt_frame self,
             mlt_properties_set_int(properties, "format", *format);
         } else {
             error = generate_test_image(properties, buffer, format, width, height, writable);
+            if (!already_test)
+                mlt_properties_set_int(properties, "get_image_error", 1);
         }
     } else if (mlt_properties_get_data(properties, "image", NULL) && buffer) {
         *format = mlt_properties_get_int(properties, "format");
@@ -534,7 +542,11 @@ int mlt_frame_get_image(mlt_frame self,
             mlt_properties_set_int(properties, "format", *format);
         }
     } else {
+        // Any other empty frame is a missed image (for example a second
+        // get_image while a worker still owns the callback).
         error = generate_test_image(properties, buffer, format, width, height, writable);
+        if (!already_test)
+            mlt_properties_set_int(properties, "get_image_error", 1);
     }
 
     return error;
@@ -1154,7 +1166,13 @@ static void copy_image_state(mlt_frame dst, mlt_frame src)
     mlt_properties_pass_list(
         dst_properties,
         src_properties,
-        "progressive,distort,colorspace,full_range,force_full_luma,top_field_first,color_trc");
+        "progressive,distort,colorspace,full_range,force_full_luma,top_field_first,color_trc,"
+        "color_primaries");
+    // A failed fetch shares its checkerboard and returns success. Keep the
+    // flag so the consumer frame is not shown. Do not clear it when a later
+    // share has no error: an outer success must not hide an inner failure.
+    if (mlt_properties_get_int(src_properties, "get_image_error"))
+        mlt_properties_set_int(dst_properties, "get_image_error", 1);
 
     share_data(dst_properties,
                "movit.convert.fence",
@@ -1419,7 +1437,8 @@ mlt_frame mlt_frame_clone(mlt_frame self, int is_deep)
         size = 0;
         data = mlt_properties_get_data(properties, "image", &size);
         mlt_image_format format = mlt_properties_get_int(properties, "format");
-        if (data && format != mlt_image_movit && format != mlt_image_private) {
+        if (data && format != mlt_image_movit && format != mlt_image_private
+            && format != mlt_image_vulkan) {
             int width = mlt_properties_get_int(properties, "width");
             int height = mlt_properties_get_int(properties, "height");
 
@@ -1559,7 +1578,8 @@ mlt_frame mlt_frame_clone_image(mlt_frame self, int is_deep)
     if (is_deep) {
         data = mlt_properties_get_data(properties, "image", &size);
         mlt_image_format format = mlt_properties_get_int(properties, "format");
-        if (data && format != mlt_image_movit && format != mlt_image_private) {
+        if (data && format != mlt_image_movit && format != mlt_image_private
+            && format != mlt_image_vulkan) {
             int width = mlt_properties_get_int(properties, "width");
             int height = mlt_properties_get_int(properties, "height");
 

@@ -1,0 +1,59 @@
+// Copyright (c) 2022-2023 Ivan Bjeliš
+// https://github.com/garamond13/Unsharp-mask-and-Gaussian-blur
+
+//!PARAM sigma
+//!DESC Blur spread (must be greater than zero)
+//!TYPE DYNAMIC float
+10.0
+
+//!PARAM radius
+//!DESC Kernel radius in pixels (integer as float)
+//!TYPE DYNAMIC float
+//!MINIMUM 0.0
+10.0
+
+//!HOOK MAIN
+//!BIND HOOKED
+//!SAVE PASS0
+//!DESC gaussian blur pass1
+
+vec4 hook() {
+    return linearize(textureLod(HOOKED_raw, HOOKED_pos, 0.0) * HOOKED_mul);
+}
+
+//!HOOK MAIN
+//!BIND PASS0
+//!SAVE PASS1
+//!DESC gaussian blur pass2
+
+#define get_weight(x) (exp(-(x) * (x) / (2.0 * sigma * sigma)))
+
+vec4 hook() {
+    float weight;
+    vec4 csum = textureLod(PASS0_raw, PASS0_pos, 0.0) * PASS0_mul;
+    float wsum = 1.0;
+    for(float i = 1.0; i <= radius; ++i) {
+        weight = get_weight(i);
+        csum += (textureLod(PASS0_raw, PASS0_pos + PASS0_pt * vec2(0.0, -i), 0.0) + textureLod(PASS0_raw, PASS0_pos + PASS0_pt * vec2(0.0, i), 0.0)) * PASS0_mul * weight;
+        wsum += 2.0 * weight;
+    }
+    return csum / wsum;
+}
+
+//!HOOK MAIN
+//!BIND PASS1
+//!DESC gaussian blur pass3
+
+#define get_weight(x) (exp(-(x) * (x) / (2.0 * sigma * sigma)))
+
+vec4 hook() {
+    float weight;
+    vec4 csum = textureLod(PASS1_raw, PASS1_pos, 0.0) * PASS1_mul;
+    float wsum = 1.0;
+    for(float i = 1.0; i <= radius; ++i) {
+        weight = get_weight(i);
+        csum += (textureLod(PASS1_raw, PASS1_pos + PASS1_pt * vec2(-i, 0.0), 0.0) + textureLod(PASS1_raw, PASS1_pos + PASS1_pt * vec2(i, 0.0), 0.0)) * PASS1_mul * weight;
+        wsum += 2.0 * weight;
+    }
+    return delinearize(csum / wsum);
+}

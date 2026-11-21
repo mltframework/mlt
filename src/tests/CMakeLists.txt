@@ -80,6 +80,54 @@ if(MOD_QT6)
 endif()
 
 
+# Links the placebo module's shader_service_id.c. No libplacebo dependency.
+add_executable(test_placebo_shader_id test_placebo_shader_id/test_placebo_shader_id.c
+                                       ${CMAKE_SOURCE_DIR}/src/modules/placebo/shader_service_id.c)
+target_include_directories(test_placebo_shader_id PRIVATE ${CMAKE_SOURCE_DIR}/src/modules/placebo)
+target_compile_options(test_placebo_shader_id PRIVATE ${MLT_COMPILE_OPTIONS})
+set_target_properties(test_placebo_shader_id PROPERTIES AUTOMOC OFF)
+add_test(NAME placebo_shader_id COMMAND test_placebo_shader_id)
+
+if(MOD_PLACEBO)
+  add_qt_test(TEST_NAME placebo_blend)
+  add_qt_test(TEST_NAME color_transform)
+  if(TARGET mltplacebo)
+    add_qt_test(TEST_NAME placebo)
+    add_qt_test(
+      TEST_NAME placebo_deinterlace
+      LINK_LIBRARIES Threads::Threads
+      SOURCE_FILES
+        test_placebo_deinterlace/test_placebo_deinterlace.h
+        test_placebo_deinterlace/test_filter.cpp
+        test_placebo_deinterlace/test_link.cpp
+    )
+    add_qt_test(TEST_NAME placebo_luma_mix LINK_LIBRARIES Threads::Threads)
+    foreach(_test placebo placebo_deinterlace placebo_luma_mix)
+      add_dependencies(test_${_test} mltplacebo mltcore)
+    endforeach()
+    set_property(
+      TEST "QtTest:placebo" "QtTest:placebo_deinterlace" "QtTest:placebo_luma_mix"
+      APPEND PROPERTY ENVIRONMENT
+        "MLT_REPOSITORY=${MLT_MODULE_OUTPUT_DIRECTORY}"
+        "MLT_DATA=${MLT_DATA_OUTPUT_DIRECTORY}"
+    )
+    # Load the built libmlt rather than an installed one on the library path.
+    if(UNIX AND NOT APPLE AND CMAKE_VERSION VERSION_GREATER_EQUAL 3.22)
+      set_property(
+        TEST "QtTest:placebo" "QtTest:placebo_deinterlace" "QtTest:placebo_luma_mix"
+        APPEND PROPERTY ENVIRONMENT_MODIFICATION
+          "LD_LIBRARY_PATH=path_list_prepend:${CMAKE_LIBRARY_OUTPUT_DIRECTORY}"
+      )
+    endif()
+  endif()
+  set_property(
+    TEST "QtTest:placebo_blend" "QtTest:color_transform"
+    APPEND PROPERTY ENVIRONMENT
+      "MLT_REPOSITORY=${MLT_MODULE_OUTPUT_DIRECTORY}"
+      "MLT_DATA=${MLT_DATA_OUTPUT_DIRECTORY}"
+  )
+endif()
+
 if(MOD_QT6 AND BUILD_TESTS_WITH_QT6)
   add_qt_test(
     TEST_NAME richtextgradient
@@ -97,6 +145,8 @@ endif()
 
 if(Kwalify_FOUND)
   file(GLOB YML_FILES "${CMAKE_SOURCE_DIR}/src/modules/*/*.yml")
+  file(GLOB_RECURSE SHADER_YML_FILES "${CMAKE_SOURCE_DIR}/src/modules/placebo/shaders/*.yml")
+  list(APPEND YML_FILES ${SHADER_YML_FILES})
   foreach(YML_FILE ${YML_FILES})
     get_filename_component(FILE_NAME ${YML_FILE} NAME)
     file(RELATIVE_PATH KWALIFY_TEST_NAME "${CMAKE_SOURCE_DIR}/src/modules" ${YML_FILE})

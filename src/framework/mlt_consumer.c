@@ -722,7 +722,11 @@ mlt_frame mlt_consumer_get_frame(mlt_consumer self)
                            "consumer.scale",
                            mlt_properties_get(properties, "scale"));
 
-        if (mlt_properties_get(properties, "mlt_color_trc")) {
+        /* color_trc_off is for a consumer that applies the output transfer
+           itself, such as a display that samples the linear image. color_trc
+           still describes the output, which filters use while processing. */
+        if (mlt_properties_get(properties, "mlt_color_trc")
+            && !mlt_properties_get_int(properties, "color_trc_off")) {
             // Add a normalize filter to convert the mlt_color_trc to color_trc
             mlt_filter ct_filter = (mlt_filter) mlt_properties_get_data(properties,
                                                                         "_ct_filter",
@@ -859,8 +863,9 @@ static void *consumer_read_ahead_thread(void *arg)
             mlt_frame_get_image(frame, &image, &priv->image_format, &width, &height, 0);
         }
 
-        // Mark as rendered
-        mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "rendered", 1);
+        // A failed fetch must not become the displayed or encoded picture.
+        if (!mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "get_image_error"))
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "rendered", 1);
         last_pos = start_pos = pos = mlt_frame_get_position(frame);
     }
 
@@ -941,8 +946,9 @@ static void *consumer_read_ahead_thread(void *arg)
                 mlt_log_timings_end(NULL, "mlt_frame_get_image");
             }
 
-            // Indicate the rendered image is available.
-            mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "rendered", 1);
+            // A failed fetch stays unrendered so the previous picture is kept.
+            if (!mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "get_image_error"))
+                mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "rendered", 1);
 
             // Reset consecutively-skipped counter
             skipped = 0;
@@ -1048,7 +1054,10 @@ static void *consumer_read_ahead_thread(void *arg)
 static inline int first_unprocessed_frame(mlt_consumer self)
 {
     consumer_private *priv = self->local;
-    int index = priv->real_time <= 0 ? 0 : priv->process_head;
+    // Speed 0 keeps a single frame at the head. process_head walks toward the
+    // tail while realtime playback is dropping frames, and then skips the
+    // paused frame so a seek is never rendered.
+    int index = (priv->real_time <= 0 || priv->speed == 0) ? 0 : priv->process_head;
     pthread_mutex_lock(&mlt_frame_processing_mutex);
     while (index < mlt_deque_count(priv->queue)
            && MLT_FRAME(mlt_deque_peek(priv->queue, index))->is_processing)
@@ -1144,7 +1153,10 @@ static void *consumer_worker_thread(void *arg)
                             mlt_event_data_from_frame(frame));
             mlt_frame_get_image(frame, &image, &format, &width, &height, 0);
         }
-        mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "rendered", 1);
+        // rendered means safe to show. A failed fetch still wakes waiters
+        // through get_image_error, or the queue stalls.
+        if (video_off || !mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "get_image_error"))
+            mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "rendered", 1);
         mlt_frame_close(frame);
 
         // Tell a waiting thread (non-realtime main consumer thread) that we are done.
@@ -1413,6 +1425,137 @@ void mlt_consumer_purge(mlt_consumer self)
     }
 }
 
+/** Push a frame to the parallel work queue and record its speed.
+ *
+ * A paused frame is the only frame in the queue. Reset process_head so a
+ * worker does not keep looking past it, and wake every worker: they may be
+ * blocked from before the speed changed.
+ */
+
+static void worker_queue_frame(consumer_private *priv, mlt_frame frame)
+{
+    int speed = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "_speed");
+
+    pthread_mutex_lock(&priv->queue_mutex);
+    mlt_deque_push_back(priv->queue, frame);
+    priv->speed = speed;
+    if (speed == 0) {
+        priv->process_head = 0;
+        pthread_cond_broadcast(&priv->queue_cond);
+    } else {
+        pthread_cond_signal(&priv->queue_cond);
+    }
+    pthread_mutex_unlock(&priv->queue_mutex);
+}
+
+/** True once the worker has finished this frame, including a failed fetch.
+ *
+ * \p rendered stays clear on failure so the card is not shown. Waiters must
+ * still wake, or a failed picture stalls the queue.
+ */
+
+static int frame_fetch_finished(mlt_frame frame)
+{
+    mlt_properties properties;
+
+    if (!frame)
+        return 0;
+    properties = MLT_FRAME_PROPERTIES(frame);
+    return mlt_properties_get_int(properties, "rendered")
+           || mlt_properties_get_int(properties, "get_image_error");
+}
+
+/** Wait until the frame at the head of the work queue has been finished.
+ *
+ * \p done_mutex is held across the check so a worker cannot mark the frame
+ * finished and broadcast between the check and the wait. \p queue_mutex is
+ * not held while waiting.
+ */
+
+static void worker_wait_for_rendered(consumer_private *priv)
+{
+    while (priv->ahead && !priv->is_purge) {
+        pthread_mutex_lock(&priv->done_mutex);
+        pthread_mutex_lock(&priv->queue_mutex);
+        mlt_frame front = mlt_deque_count(priv->queue)
+                              ? MLT_FRAME(mlt_deque_peek_front(priv->queue))
+                              : NULL;
+        int finished = frame_fetch_finished(front);
+        pthread_mutex_unlock(&priv->queue_mutex);
+        if (!front || finished) {
+            pthread_mutex_unlock(&priv->done_mutex);
+            break;
+        }
+        pthread_cond_wait(&priv->done_cond, &priv->done_mutex);
+        pthread_mutex_unlock(&priv->done_mutex);
+    }
+}
+
+/** Render a frame the workers did not finish.
+ *
+ * Render here when no worker owns the image callback. When one does, wait
+ * until that fetch finishes. A failed fetch leaves \p rendered clear.
+ */
+
+static int render_unprocessed_frame(mlt_consumer self, mlt_frame frame)
+{
+    consumer_private *priv = self->local;
+    mlt_properties properties = MLT_CONSUMER_PROPERTIES(self);
+    mlt_properties frame_properties = MLT_FRAME_PROPERTIES(frame);
+
+    pthread_mutex_lock(&mlt_frame_processing_mutex);
+    int processing = frame->is_processing;
+    pthread_mutex_unlock(&mlt_frame_processing_mutex);
+
+    if (processing) {
+        while (priv->ahead && !priv->is_purge && !frame_fetch_finished(frame)) {
+            pthread_mutex_lock(&priv->done_mutex);
+            if (priv->ahead && !priv->is_purge && !frame_fetch_finished(frame))
+                pthread_cond_wait(&priv->done_cond, &priv->done_mutex);
+            pthread_mutex_unlock(&priv->done_mutex);
+        }
+    } else {
+        int width = mlt_properties_get_int(properties, "width");
+        int height = mlt_properties_get_int(properties, "height");
+        mlt_image_format format = priv->image_format;
+        uint8_t *image = NULL;
+        int preview_off = mlt_properties_get_int(properties, "preview_off");
+        int preview_format = mlt_properties_get_int(properties, "preview_format");
+
+        if (preview_off && preview_format != 0)
+            format = preview_format;
+        mlt_events_fire(properties, "consumer-frame-render", mlt_event_data_from_frame(frame));
+        mlt_frame_get_image(frame, &image, &format, &width, &height, 0);
+        if (!mlt_properties_get_int(frame_properties, "get_image_error"))
+            mlt_properties_set_int(frame_properties, "rendered", 1);
+    }
+    if (mlt_properties_get_int(frame_properties, "get_image_error"))
+        mlt_properties_set_int(frame_properties, "rendered", 0);
+    return mlt_properties_get_int(frame_properties, "rendered");
+}
+
+/** True while the prefill wait still has a queued frame a worker can start.
+ *
+ * A worker is idle once every queued frame is processing, and an empty queue
+ * (after a purge) has nothing to wait for.
+ *
+ * Lock order: the caller holds \p done_mutex, and this takes \p queue_mutex
+ * inside it, as worker_wait_for_rendered() does. Nothing may take done_mutex
+ * while holding queue_mutex. The worker threads release queue_mutex before they
+ * lock done_mutex to broadcast.
+ */
+
+static int worker_prefill_pending(mlt_consumer self, int prefill)
+{
+    consumer_private *priv = self->local;
+
+    pthread_mutex_lock(&priv->queue_mutex);
+    int index = first_unprocessed_frame(self);
+    int count = mlt_deque_count(priv->queue);
+    pthread_mutex_unlock(&priv->queue_mutex);
+    return index < prefill && index < count;
+}
+
 /** Use multiple worker threads and a work queue.
  */
 
@@ -1457,28 +1600,38 @@ static mlt_frame worker_get_frame(mlt_consumer self, mlt_properties properties)
                                         &priv->channels,
                                         &samples);
                 }
-                pthread_mutex_lock(&priv->queue_mutex);
-                mlt_deque_push_back(priv->queue, frame);
-                pthread_cond_signal(&priv->queue_cond);
-                pthread_mutex_unlock(&priv->queue_mutex);
-                priv->speed = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "_speed");
+                worker_queue_frame(priv, frame);
                 buffer = (priv->speed == 0) ? 1 : buffer;
             }
         }
 
-        // Wait for prefill
-        while (priv->ahead && first_unprocessed_frame(self) < prefill) {
+        // Wait for prefill. A purge, or a frame that is already past the
+        // prefill count, leaves fewer unprocessed frames than prefill asks for.
+        // Nothing queues more while this waits, so only wait while a worker
+        // still has a queued frame to start or finish. The check holds
+        // done_mutex so a worker cannot broadcast between check and wait.
+        while (priv->ahead) {
             pthread_mutex_lock(&priv->done_mutex);
+            if (!priv->ahead || !worker_prefill_pending(self, prefill)) {
+                pthread_mutex_unlock(&priv->done_mutex);
+                break;
+            }
             pthread_cond_wait(&priv->done_cond, &priv->done_mutex);
             pthread_mutex_unlock(&priv->done_mutex);
         }
-        priv->process_head = threads;
+        // Leave process_head at 0 when the prefill ended on a paused frame.
+        if (priv->speed != 0)
+            priv->process_head = threads;
     }
 
     //	mlt_log_verbose( MLT_CONSUMER_SERVICE(self), "size %d done count %d work count %d process_head %d\n",
     //		threads, first_unprocessed_frame( self ), mlt_deque_count( priv->queue ), priv->process_head );
 
-    // Feed the work queupriv->speede
+    // A stop during prefill leaves the filled frames on the queue. Returning
+    // one aliases that pointer; consumer_work_stop closes it too.
+    if (!priv->ahead)
+        return NULL;
+
     while (priv->ahead && mlt_deque_count(priv->queue) < buffer) {
         frame = mlt_consumer_get_frame(self);
         if (frame) {
@@ -1494,24 +1647,19 @@ static mlt_frame worker_get_frame(mlt_consumer self, mlt_properties properties)
                                     &priv->channels,
                                     &samples);
             }
-            pthread_mutex_lock(&priv->queue_mutex);
-            mlt_deque_push_back(priv->queue, frame);
-            pthread_cond_signal(&priv->queue_cond);
-            pthread_mutex_unlock(&priv->queue_mutex);
-            priv->speed = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "_speed");
+            worker_queue_frame(priv, frame);
             buffer = (priv->speed == 0) ? 1 : buffer;
         }
     }
 
-    // Wait if not realtime.
-    while (priv->ahead && priv->real_time < 0 && !priv->is_purge
-           && !(mlt_properties_get_int(MLT_FRAME_PROPERTIES(
-                                           MLT_FRAME(mlt_deque_peek_front(priv->queue))),
-                                       "rendered"))) {
-        pthread_mutex_lock(&priv->done_mutex);
-        pthread_cond_wait(&priv->done_cond, &priv->done_mutex);
-        pthread_mutex_unlock(&priv->done_mutex);
-    }
+    if (!priv->ahead)
+        return NULL;
+
+    // real_time < 0 plays only rendered frames. Realtime mode (real_time > 1)
+    // drops late frames instead, but a paused frame must be rendered too.
+    // Otherwise the consumer drops it and a seek while stopped never appears.
+    if (priv->ahead && !priv->is_purge && (priv->real_time < 0 || priv->speed == 0))
+        worker_wait_for_rendered(priv);
 
     // Get the frame from the queue.
     pthread_mutex_lock(&priv->queue_mutex);
@@ -1530,7 +1678,7 @@ static mlt_frame worker_get_frame(mlt_consumer self, mlt_properties properties)
                 priv->process_head--;
             else
                 priv->consecutive_rendered++;
-        } else {
+        } else if (priv->speed != 0) {
             priv->consecutive_rendered = 0;
             if (priv->process_head < buffer - threads && priv->consecutive_dropped > threads)
                 priv->process_head++;
@@ -1553,9 +1701,9 @@ static mlt_frame worker_get_frame(mlt_consumer self, mlt_properties properties)
                 mlt_properties_set_int(properties, "_buffer", buffer + threads);
                 priv->consecutive_dropped = priv->fps / 2;
             } else {
-                // Tell the consumer to render it
+                // Fetch here, or wait if a worker already owns the callback.
                 mlt_log_verbose(self, "forcing next frame\n");
-                mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "rendered", 1);
+                render_unprocessed_frame(self, frame);
                 priv->consecutive_dropped = 0;
             }
         }
@@ -1568,8 +1716,10 @@ static mlt_frame worker_get_frame(mlt_consumer self, mlt_properties properties)
     if (priv->is_purge) {
         priv->is_purge = 0;
         mlt_frame_close(frame);
-        frame = NULL;
+        return NULL;
     }
+    // Keep the frame so its audio stays with the timeline. rendered is
+    // clear when the picture fetch failed, so display skips the card.
     return frame;
 }
 
