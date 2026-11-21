@@ -3,7 +3,7 @@
  * \brief Image class
  * \see mlt_image_s
  *
- * Copyright (C) 2022-2025 Meltytech, LLC
+ * Copyright (C) 2022-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -135,6 +135,7 @@ MLT_EXPORT void mlt_image_fill_opaque(mlt_image self);
 MLT_EXPORT int mlt_image_is_opaque(mlt_image self);
 MLT_EXPORT const char *mlt_image_format_name(mlt_image_format format);
 MLT_EXPORT mlt_image_format mlt_image_format_id(const char *name);
+MLT_EXPORT int mlt_image_format_is_gpu(mlt_image_format format);
 MLT_EXPORT const char *mlt_image_color_trc_name(mlt_color_trc trc);
 MLT_EXPORT mlt_color_trc mlt_image_color_trc_id(const char *name);
 MLT_EXPORT const char *mlt_image_colorspace_name(mlt_colorspace colorspace);

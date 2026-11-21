@@ -272,6 +272,22 @@ mlt_image_format mlt_image_format_id(const char *name)
     return mlt_image_invalid;
 }
 
+/** Determine whether an image format is a GPU payload rather than pixels.
+ *
+ * The image pointer of such a frame is not a pixel buffer and must not be
+ * copied or read as one.
+ *
+ * \public \memberof mlt_image_s
+ * \param format the image format
+ * \return true if the image is a GPU texture or other module-private payload
+ */
+
+int mlt_image_format_is_gpu(mlt_image_format format)
+{
+    return format == mlt_image_movit || format == mlt_image_opengl_texture
+           || format == mlt_image_private || format == mlt_image_vulkan;
+}
+
 /** Get the short name for a color transfer characteristics.
  *
  * \public \memberof mlt_image_s
