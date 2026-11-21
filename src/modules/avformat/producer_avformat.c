@@ -2858,7 +2858,14 @@ static int keep_vulkan_frame(producer_avformat self, int requested)
            && !software_graph_needed(self);
 }
 
-static int transfer_hw_frame(producer_avformat self)
+/* Unscaled shared Vulkan frames can satisfy a later pull at the same
+   position, even when the current caller needs CPU pixels. */
+static int retain_vulkan_for_readback(producer_avformat self)
+{
+    return self->hwaccel.shared_device && !self->hwaccel.filter_out && keep_vulkan_frame(self, 1);
+}
+
+static int transfer_hw_frame(producer_avformat self, AVFrame **readback)
 {
     AVFrame *sw_video_frame;
     int ret;
@@ -2877,29 +2884,34 @@ static int transfer_hw_frame(producer_avformat self)
                       "av_hwframe_transfer_data() failed %d\n",
                       ret);
         av_frame_free(&sw_video_frame);
-        av_frame_unref(self->video_frame);
+        if (!readback)
+            av_frame_unref(self->video_frame);
         return ret;
     }
     av_frame_copy_props(sw_video_frame, self->video_frame);
     sw_video_frame->width = self->video_frame->width;
     sw_video_frame->height = self->video_frame->height;
-    av_frame_unref(self->video_frame);
-    av_frame_move_ref(self->video_frame, sw_video_frame);
-    av_frame_free(&sw_video_frame);
+    if (readback) {
+        *readback = sw_video_frame;
+    } else {
+        av_frame_unref(self->video_frame);
+        av_frame_move_ref(self->video_frame, sw_video_frame);
+        av_frame_free(&sw_video_frame);
+    }
     return 0;
 }
 
 static int filter_video_frame(producer_avformat self)
 {
     mlt_service service = MLT_PRODUCER_SERVICE(self->parent);
-    if (self->software_rotation && transfer_hw_frame(self) < 0)
+    if (self->software_rotation && transfer_hw_frame(self, NULL) < 0)
         return -1;
 
     int error = setup_filters(self);
     if (error && self->video_frame->format == AV_PIX_FMT_VULKAN) {
         mlt_log_warning(service, "Retrying video filters in software\n");
         self->software_rotation = 1;
-        error = transfer_hw_frame(self);
+        error = transfer_hw_frame(self, NULL);
         if (!error)
             error = setup_filters(self);
     }
@@ -2949,6 +2961,7 @@ static int producer_get_image(mlt_frame frame,
     mlt_properties properties = MLT_PRODUCER_PROPERTIES(producer);
 
     uint8_t *alpha = NULL;
+    AVFrame *readback = NULL;
     int got_picture = 0;
     int image_size = 0;
     mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(self->parent));
@@ -3068,11 +3081,13 @@ static int producer_get_image(mlt_frame frame,
             if (avformat_export_vulkan_frame(self->parent, self->video_frame, frame, buffer, format)
                 == 0)
                 got_picture = 1;
-        } else if (transfer_hw_frame(self) < 0) {
+        } else if (transfer_hw_frame(self, retain_vulkan_for_readback(self) ? &readback : NULL)
+                   < 0) {
             got_picture = 0;
         } else {
+            AVFrame *source = readback ? readback : self->video_frame;
             if (requested_vulkan) {
-                *format = pick_image_format(self->video_frame->format, mlt_image_none);
+                *format = pick_image_format(source->format, mlt_image_none);
                 mlt_properties_clear(frame_properties, "mlt_image_private");
             }
             set_image_size(self, width, height);
@@ -3080,9 +3095,9 @@ static int producer_get_image(mlt_frame frame,
                  = allocate_buffer(frame, codec_params, buffer, *format, *width, *height))) {
                 convert_image(self,
                               frame_properties,
-                              self->video_frame,
+                              source,
                               *buffer,
-                              self->video_frame->format,
+                              source->format,
                               format,
                               *width,
                               *height,
@@ -3268,7 +3283,8 @@ static int producer_get_image(mlt_frame frame,
                                 // when no software filter graph will consume them.
                                 // scale_vulkan, if it ran above, keeps AV_PIX_FMT_VULKAN.
                                 if (!keep_vulkan_frame(self, requested_vulkan || self->autorotate)
-                                    && transfer_hw_frame(self) < 0)
+                                    && !retain_vulkan_for_readback(self)
+                                    && transfer_hw_frame(self, NULL) < 0)
                                     goto exit_get_image;
                             }
                             got_picture = 1;
@@ -3387,19 +3403,24 @@ static int producer_get_image(mlt_frame frame,
                     else
                         got_picture = 0;
                 } else {
-                    if (transfer_hw_frame(self) < 0)
+                    if (transfer_hw_frame(self,
+                                          retain_vulkan_for_readback(self) ? &readback : NULL)
+                        < 0) {
+                        got_picture = 0;
                         goto exit_get_image;
+                    }
+                    AVFrame *source = readback ? readback : self->video_frame;
                     if (requested_vulkan) {
-                        *format = pick_image_format(self->video_frame->format, mlt_image_none);
+                        *format = pick_image_format(source->format, mlt_image_none);
                         mlt_properties_clear(frame_properties, "mlt_image_private");
                     }
                     if ((image_size
                          = allocate_buffer(frame, codec_params, buffer, *format, *width, *height))) {
                         convert_image(self,
                                       frame_properties,
-                                      self->video_frame,
+                                      source,
                                       *buffer,
-                                      self->video_frame->format,
+                                      source->format,
                                       format,
                                       *width,
                                       *height,
@@ -3474,6 +3495,7 @@ static int producer_get_image(mlt_frame frame,
     self->video_expected = position + 1;
 
 exit_get_image:
+    av_frame_free(&readback);
     pthread_mutex_unlock(&self->video_mutex);
 
     mlt_properties_set_int(frame_properties, "progressive", self->progressive);
