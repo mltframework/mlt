@@ -20,6 +20,7 @@
 #include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
+#include "gpu_frame.h"
 #include "render_cache.h"
 #include "render_params.h"
 #include "tex_pool.h"
@@ -53,7 +54,7 @@ static int request_is_gpu(mlt_frame frame, mlt_image_format format)
         return 1;
     if (format != mlt_image_private)
         return 0;
-    if (placebo_frame_wants_tex(frame, format))
+    if (placebo_frame_request(frame, format) == PLACEBO_REQUEST_FILTER)
         return 1;
     subtype = mlt_properties_get(MLT_FRAME_PROPERTIES(frame), MLT_PLACEBO_IMAGE_PRIVATE);
     return subtype && !strcmp(subtype, "placebo");
@@ -129,8 +130,9 @@ static int transfers_match(struct pl_color_space src, enum pl_color_transfer tra
 }
 
 /* Pixel requests have to land in a texture download_rgba can read.
-   rgba64 is 16-bit unorm. Everything else is rgba8. A private request keeps
-   half-float when the output transfer is linear. */
+   rgba64 is 16-bit unorm, as is an encoded image for a GPU consumer. Everything
+   else is rgba8. A private request keeps half-float when the output transfer
+   is linear. */
 static pl_fmt output_tex_format(mlt_filter filter,
                                 pl_gpu gpu,
                                 mlt_color_trc out_trc,
@@ -147,7 +149,7 @@ static pl_fmt output_tex_format(mlt_filter filter,
                             "No half-float texture; linear light stays in rgba8\n");
         }
     }
-    if (requested == mlt_image_rgba64) {
+    if (requested == mlt_image_rgba64 || requested == mlt_image_vulkan) {
         pl_fmt rgba16 = placebo_rgba16_format(gpu);
         if (rgba16)
             return rgba16;
@@ -160,14 +162,14 @@ static pl_fmt output_tex_format(mlt_filter filter,
     return placebo_rgba8_format(gpu);
 }
 
-static int tex_matches_request(pl_tex tex, pl_gpu gpu, mlt_image_format requested)
+/* A texture already in the output's transfer can be used as is when it is also
+   in the format a render would produce. Any texture is fine for a private
+   request. */
+static int tex_matches_request(
+    mlt_filter filter, pl_tex tex, pl_gpu gpu, mlt_color_trc out_trc, mlt_image_format requested)
 {
-    pl_fmt want;
-
-    if (requested == mlt_image_private)
-        return 1;
-    want = requested == mlt_image_rgba64 ? placebo_rgba16_format(gpu) : placebo_rgba8_format(gpu);
-    return placebo_tex_is(tex, want);
+    return requested == mlt_image_private
+           || placebo_tex_is(tex, output_tex_format(filter, gpu, out_trc, requested));
 }
 
 static int convert_trc(mlt_filter filter,
@@ -220,7 +222,7 @@ static int convert_trc(mlt_filter filter,
 
     pl_tex current = is_tex ? placebo_image_get_tex(*image) : NULL;
     int same = transfers_match(src_color, dst_transfer);
-    int tex_usable = is_tex && tex_matches_request(current, gpu, requested);
+    int tex_usable = is_tex && tex_matches_request(filter, current, gpu, out_trc, requested);
     if (same && (tex_usable || (is_vulkan && !need_pixels))) {
         int image_matches = 0;
         if (is_vulkan) {
@@ -248,7 +250,8 @@ static int convert_trc(mlt_filter filter,
         return 1;
     }
 
-    pl_tex dst_tex = placebo_tex_acquire_target(gpu, *width, *height, dst_fmt);
+    pl_tex dst_tex
+        = placebo_acquire_output(gpu, *width, *height, dst_fmt, requested, PLACEBO_TEX_BLIT_DST);
     if (!dst_tex) {
         mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to create dest texture\n");
         if (mapped_vulkan)

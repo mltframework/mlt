@@ -20,8 +20,11 @@
 
 #include "gpu_context.h"
 
+#include "display_export.h"
 #include "render_cache.h"
 #include "tex_pool.h"
+#include "vulkan_device.h"
+#include "vulkan_publish.h"
 
 #include <string.h>
 
@@ -223,224 +226,11 @@ static void save_cache(void)
 
 /* ---------- Vulkan device shared with avformat ---------- */
 
-static void clear_vulkan_publish(void)
-{
-    mlt_properties global = mlt_global_properties();
-    if (global && mlt_properties_get_data(global, "placebo.vulkan", NULL))
-        mlt_properties_set_data(global, "placebo.vulkan", NULL, 0, NULL, NULL);
-}
-
 #ifdef PL_HAVE_VULKAN
-_Static_assert(sizeof(void *) == sizeof(void (*)(void)),
-               "Vulkan lock callbacks are passed through mlt_properties as void *");
-
-/* This bit is VK_DEVICE_QUEUE_CREATE_INTERNALLY_SYNCHRONIZED_BIT_KHR. The
-   system Vulkan headers this module builds against may not define it. */
-#ifndef VK_DEVICE_QUEUE_CREATE_INTERNALLY_SYNCHRONIZED_BIT_KHR
-#define VK_DEVICE_QUEUE_CREATE_INTERNALLY_SYNCHRONIZED_BIT_KHR 0x00000004u
-#endif
-#ifndef VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INTERNALLY_SYNCHRONIZED_QUEUES_FEATURES_KHR
-#define VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INTERNALLY_SYNCHRONIZED_QUEUES_FEATURES_KHR 1000504000
-#endif
-
-/* libplacebo enables VK_KHR_internally_synchronized_queues when the device
-   supports it. FFmpeg then calls vkGetDeviceQueue2 with flags 0 unless it was
-   itself built with that extension, and RADV returns a null queue. Submitting
-   that queue crashes inside the driver. Publish a get_proc_addr that sets the
-   creation bit, and fall back to the caller's flags when the queues were not
-   created that way. */
-static PFN_vkGetInstanceProcAddr s_real_get_proc;
-static PFN_vkGetDeviceProcAddr s_real_get_device_proc;
-static PFN_vkGetDeviceQueue2 s_real_get_device_queue2;
-
-static int vulkan_queues_are_internally_synchronized(pl_vulkan vk)
-{
-    const VkBaseInStructure *in;
-
-    if (!vk || !vk->features)
-        return 0;
-    for (in = (const VkBaseInStructure *) vk->features; in; in = in->pNext) {
-        if (in->sType
-            == VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_INTERNALLY_SYNCHRONIZED_QUEUES_FEATURES_KHR) {
-            const VkBool32 *enabled = (const VkBool32 *) (in + 1);
-            return *enabled == VK_TRUE;
-        }
-    }
-    return 0;
-}
-
-static void VKAPI_CALL wrapped_get_device_queue2(VkDevice device,
-                                                 const VkDeviceQueueInfo2 *info,
-                                                 VkQueue *queue)
-{
-    VkDeviceQueueInfo2 forced;
-
-    if (!queue)
-        return;
-    *queue = VK_NULL_HANDLE;
-    if (!s_real_get_device_queue2 || !info)
-        return;
-
-    forced = *info;
-    forced.flags |= VK_DEVICE_QUEUE_CREATE_INTERNALLY_SYNCHRONIZED_BIT_KHR;
-    s_real_get_device_queue2(device, &forced, queue);
-    if (*queue == VK_NULL_HANDLE && forced.flags != info->flags)
-        s_real_get_device_queue2(device, info, queue);
-}
-
-static PFN_vkVoidFunction VKAPI_CALL wrapped_get_device_proc(VkDevice device, const char *name)
-{
-    if (name && !strcmp(name, "vkGetDeviceQueue2"))
-        return (PFN_vkVoidFunction) wrapped_get_device_queue2;
-    if (!s_real_get_device_proc)
-        return NULL;
-    return s_real_get_device_proc(device, name);
-}
-
-static PFN_vkVoidFunction VKAPI_CALL wrapped_get_instance_proc(VkInstance instance, const char *name)
-{
-    if (name && !strcmp(name, "vkGetDeviceProcAddr"))
-        return (PFN_vkVoidFunction) wrapped_get_device_proc;
-    if (name && !strcmp(name, "vkGetDeviceQueue2"))
-        return (PFN_vkVoidFunction) wrapped_get_device_queue2;
-    if (!s_real_get_proc)
-        return NULL;
-    return s_real_get_proc(instance, name);
-}
-
-static void publish_fn(mlt_properties props, const char *name, const void *fn)
-{
-    void *ptr = NULL;
-    if (!fn)
-        return;
-    memcpy(&ptr, fn, sizeof(ptr));
-    if (ptr)
-        mlt_properties_set_data(props, name, ptr, 0, NULL, NULL);
-}
-
-static void publish_get_proc_addr(mlt_properties props)
-{
-    PFN_vkGetInstanceProcAddr published = s_vulkan->get_proc_addr;
-
-    s_real_get_proc = s_vulkan->get_proc_addr;
-    s_real_get_device_proc = NULL;
-    s_real_get_device_queue2 = NULL;
-    if (s_real_get_proc && vulkan_queues_are_internally_synchronized(s_vulkan)) {
-        s_real_get_device_proc = (PFN_vkGetDeviceProcAddr) s_real_get_proc(s_vk_inst->instance,
-                                                                           "vkGetDeviceProcAddr");
-        if (s_real_get_device_proc)
-            s_real_get_device_queue2 = (PFN_vkGetDeviceQueue2)
-                s_real_get_device_proc(s_vulkan->device, "vkGetDeviceQueue2");
-        if (s_real_get_device_queue2)
-            published = wrapped_get_instance_proc;
-    }
-    publish_fn(props, "get_proc_addr", &published);
-}
-
-/* flags is a queue capability bit such as VK_QUEUE_VIDEO_DECODE_BIT_KHR.
-   index is -1 when no family has that bit. */
-static void find_queue_with_flags(pl_vulkan vk, VkQueueFlags flags, int *index, int *count)
-{
-    *index = -1;
-    *count = 0;
-    if (!flags || !vk || !vk->get_proc_addr || !vk->instance || !vk->phys_device)
-        return;
-
-    PFN_vkGetPhysicalDeviceQueueFamilyProperties get_qf
-        = (PFN_vkGetPhysicalDeviceQueueFamilyProperties)
-              vk->get_proc_addr(vk->instance, "vkGetPhysicalDeviceQueueFamilyProperties");
-    if (!get_qf)
-        return;
-
-    uint32_t num = 0;
-    get_qf(vk->phys_device, &num, NULL);
-    if (!num)
-        return;
-
-    VkQueueFamilyProperties *families = calloc(num, sizeof(*families));
-    if (!families)
-        return;
-    get_qf(vk->phys_device, &num, families);
-    for (uint32_t i = 0; i < num; i++) {
-        if (families[i].queueFlags & flags) {
-            *index = (int) i;
-            *count = (int) families[i].queueCount;
-            break;
-        }
-    }
-    free(families);
-}
-
-/* Caller holds s_mutex. Publishes only after the properties object is complete. */
+/* Caller holds s_mutex. */
 static void publish_vulkan_locked(void)
 {
-    if (!s_vulkan || !s_vk_inst)
-        return;
-
-    mlt_properties global = mlt_global_properties();
-    if (!global || mlt_properties_get_data(global, "placebo.vulkan", NULL))
-        return;
-
-    int decode_index = -1;
-    int decode_count = 0;
-    int encode_index = -1;
-    int encode_count = 0;
-#ifdef VK_KHR_video_decode_queue
-    find_queue_with_flags(s_vulkan, VK_QUEUE_VIDEO_DECODE_BIT_KHR, &decode_index, &decode_count);
-#endif
-#ifdef VK_KHR_video_encode_queue
-    find_queue_with_flags(s_vulkan, VK_QUEUE_VIDEO_ENCODE_BIT_KHR, &encode_index, &encode_count);
-#endif
-
-    mlt_properties props = mlt_properties_new();
-    if (!props)
-        return;
-
-    mlt_properties_set_data(props, "instance", (void *) s_vk_inst->instance, 0, NULL, NULL);
-    mlt_properties_set_data(props, "phys_dev", (void *) s_vulkan->phys_device, 0, NULL, NULL);
-    mlt_properties_set_data(props, "device", (void *) s_vulkan->device, 0, NULL, NULL);
-    publish_get_proc_addr(props);
-    mlt_properties_set_data(props, "features", (void *) s_vulkan->features, 0, NULL, NULL);
-    mlt_properties_set_data(props, "inst_extensions", (void *) s_vk_inst->extensions, 0, NULL, NULL);
-    mlt_properties_set_int(props, "nb_inst_extensions", s_vk_inst->num_extensions);
-    mlt_properties_set_data(props, "dev_extensions", (void *) s_vulkan->extensions, 0, NULL, NULL);
-    mlt_properties_set_int(props, "nb_dev_extensions", s_vulkan->num_extensions);
-    mlt_properties_set_int(props, "queue_graphics_index", (int) s_vulkan->queue_graphics.index);
-    mlt_properties_set_int(props, "queue_graphics_count", (int) s_vulkan->queue_graphics.count);
-    mlt_properties_set_int(props, "queue_compute_index", (int) s_vulkan->queue_compute.index);
-    mlt_properties_set_int(props, "queue_compute_count", (int) s_vulkan->queue_compute.count);
-    mlt_properties_set_int(props, "queue_transfer_index", (int) s_vulkan->queue_transfer.index);
-    mlt_properties_set_int(props, "queue_transfer_count", (int) s_vulkan->queue_transfer.count);
-    mlt_properties_set_int(props, "queue_decode_index", decode_index);
-    mlt_properties_set_int(props, "queue_decode_count", decode_count);
-    mlt_properties_set_int(props, "queue_encode_index", encode_index);
-    mlt_properties_set_int(props, "queue_encode_count", encode_count);
-    publish_fn(props, "lock_queue", &s_vulkan->lock_queue);
-    publish_fn(props, "unlock_queue", &s_vulkan->unlock_queue);
-    mlt_properties_set_data(props, "lock_ctx", (void *) s_vulkan, 0, NULL, NULL);
-
-    /* Set the global property only after every key is populated. */
-    mlt_properties_set_data(global,
-                            "placebo.vulkan",
-                            props,
-                            0,
-                            (mlt_destructor) mlt_properties_close,
-                            NULL);
-    mlt_log_info(
-        NULL,
-        "[placebo] GPU initialized via Vulkan (decode queue %d x %d, encode queue %d x %d)\n",
-        decode_index,
-        decode_count,
-        encode_index,
-        encode_count);
-    if (s_vulkan->extensions) {
-        for (int i = 0; i < s_vulkan->num_extensions; i++) {
-            const char *ext = s_vulkan->extensions[i];
-            if (ext && strstr(ext, "video_encode"))
-                mlt_log_info(NULL, "[placebo] Vulkan device extension %s\n", ext);
-        }
-    }
-    if (s_gpu)
+    if (placebo_vulkan_publish_device(s_vulkan, s_vk_inst) && s_gpu)
         s_published = 1;
 }
 
@@ -487,8 +277,7 @@ static int create_vulkan_device(PFN_vkGetInstanceProcAddr vk_get_proc,
                                 int with_decode,
                                 VkSurfaceKHR surface)
 {
-    const char *opt_exts[16] = {0};
-    int num_opt = 0;
+    struct placebo_ext_list exts = {0};
     VkQueueFlags extra_queues = 0;
 #if defined(VK_KHR_video_decode_queue) && defined(VK_KHR_video_maintenance1)
     VkPhysicalDeviceVideoMaintenance1FeaturesKHR video_maint = {
@@ -506,51 +295,53 @@ static int create_vulkan_device(PFN_vkGetInstanceProcAddr vk_get_proc,
     if (with_decode) {
         extra_queues = VK_QUEUE_VIDEO_DECODE_BIT_KHR;
 #ifdef VK_KHR_video_queue
-        opt_exts[num_opt++] = VK_KHR_VIDEO_QUEUE_EXTENSION_NAME;
+        placebo_ext_add(&exts, VK_KHR_VIDEO_QUEUE_EXTENSION_NAME);
 #endif
-        opt_exts[num_opt++] = VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME;
+        placebo_ext_add(&exts, VK_KHR_VIDEO_DECODE_QUEUE_EXTENSION_NAME);
 #ifdef VK_KHR_video_decode_h264
-        opt_exts[num_opt++] = VK_KHR_VIDEO_DECODE_H264_EXTENSION_NAME;
+        placebo_ext_add(&exts, VK_KHR_VIDEO_DECODE_H264_EXTENSION_NAME);
 #endif
 #ifdef VK_KHR_video_decode_h265
-        opt_exts[num_opt++] = VK_KHR_VIDEO_DECODE_H265_EXTENSION_NAME;
+        placebo_ext_add(&exts, VK_KHR_VIDEO_DECODE_H265_EXTENSION_NAME);
 #endif
 #ifdef VK_KHR_video_decode_av1
-        opt_exts[num_opt++] = VK_KHR_VIDEO_DECODE_AV1_EXTENSION_NAME;
+        placebo_ext_add(&exts, VK_KHR_VIDEO_DECODE_AV1_EXTENSION_NAME);
 #endif
 #ifdef VK_KHR_video_decode_vp9
-        opt_exts[num_opt++] = VK_KHR_VIDEO_DECODE_VP9_EXTENSION_NAME;
+        placebo_ext_add(&exts, VK_KHR_VIDEO_DECODE_VP9_EXTENSION_NAME);
 #endif
 #ifdef VK_KHR_video_maintenance1
-        opt_exts[num_opt++] = VK_KHR_VIDEO_MAINTENANCE_1_EXTENSION_NAME;
+        placebo_ext_add(&exts, VK_KHR_VIDEO_MAINTENANCE_1_EXTENSION_NAME);
         features = &extra_features;
 #endif
 #ifdef VK_KHR_video_encode_queue
         extra_queues |= VK_QUEUE_VIDEO_ENCODE_BIT_KHR;
-        opt_exts[num_opt++] = VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME;
+        placebo_ext_add(&exts, VK_KHR_VIDEO_ENCODE_QUEUE_EXTENSION_NAME);
 #ifdef VK_KHR_video_encode_h264
-        opt_exts[num_opt++] = VK_KHR_VIDEO_ENCODE_H264_EXTENSION_NAME;
+        placebo_ext_add(&exts, VK_KHR_VIDEO_ENCODE_H264_EXTENSION_NAME);
 #endif
 #ifdef VK_KHR_video_encode_h265
-        opt_exts[num_opt++] = VK_KHR_VIDEO_ENCODE_H265_EXTENSION_NAME;
+        placebo_ext_add(&exts, VK_KHR_VIDEO_ENCODE_H265_EXTENSION_NAME);
 #endif
 #endif
-        if (num_opt > (int) (sizeof(opt_exts) / sizeof(opt_exts[0]))) {
-            mlt_log_error(NULL, "[placebo] too many Vulkan device extensions\n");
-            return 0;
-        }
     }
 #else
     (void) with_decode;
 #endif
+    placebo_ext_add_external(&exts);
+    if (exts.overflow) {
+        mlt_log_error(NULL, "[placebo] too many Vulkan device extensions\n");
+        return 0;
+    }
 
     s_vulkan = pl_vulkan_create(s_log,
                                 pl_vulkan_params(.instance = s_vk_inst->instance,
                                                  .get_proc_addr = vk_get_proc,
                                                  .surface = surface,
+                                                 .device = placebo_vulkan_device_from_env(s_vk_inst),
                                                  .extra_queues = extra_queues,
-                                                 .opt_extensions = num_opt ? opt_exts : NULL,
-                                                 .num_opt_extensions = num_opt,
+                                                 .opt_extensions = exts.count ? exts.names : NULL,
+                                                 .num_opt_extensions = exts.count,
                                                  .features = features, ));
     return s_vulkan != NULL;
 }
@@ -855,103 +646,6 @@ pl_gpu placebo_gpu_peek(void)
     return gpu;
 }
 
-static void placebo_tex_destroy(void *ptr)
-{
-    pl_tex tex = (pl_tex) ptr;
-    if (!tex)
-        return;
-    pl_gpu gpu = placebo_gpu_peek();
-    placebo_render_lock();
-    placebo_tex_recycle(gpu, &tex);
-    placebo_render_unlock();
-}
-
-pl_tex placebo_image_get_tex(const uint8_t *image)
-{
-    return (pl_tex) image;
-}
-
-/* ---------- mlt_image_private helpers ---------- */
-
-/* Request state and result state must not share one property:
- * - requests are transient and may nest while multiple placebo filters pull
- *   upstream on the same frame;
- * - results describe the frame's current image payload and must only be set
- *   when that payload really is a placebo texture.
- * If these are conflated, one filter can clear another filter's in-flight
- * request or a non-placebo result can be mistaken for a valid private texture. */
-
-void placebo_frame_set_requested_tex(mlt_frame frame, int requested)
-{
-    mlt_properties props = MLT_FRAME_PROPERTIES(frame);
-    int count = mlt_properties_get_int(props, "_placebo_requested");
-
-    if (requested) {
-        count++;
-    } else if (count > 0) {
-        count--;
-    }
-
-    mlt_properties_set_int(props, "_placebo_requested", count);
-}
-
-int placebo_frame_wants_tex(mlt_frame frame, mlt_image_format format)
-{
-    return format == mlt_image_private
-           && mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "_placebo_requested") > 0;
-}
-
-int placebo_frame_is_tex(mlt_frame frame, mlt_image_format format)
-{
-    const char *image_format = mlt_properties_get(MLT_FRAME_PROPERTIES(frame),
-                                                  MLT_PLACEBO_IMAGE_PRIVATE);
-    return format == mlt_image_private && image_format && !strcmp(image_format, "placebo");
-}
-
-int placebo_frame_is_vulkan(mlt_frame frame, mlt_image_format format)
-{
-    (void) frame;
-    return format == mlt_image_vulkan;
-}
-
-void placebo_request_gpu_image(mlt_frame frame, mlt_image_format *format)
-{
-    (void) frame;
-    if (!format || *format == mlt_image_vulkan)
-        return;
-    if (placebo_vulkan_has_decode_queue())
-        *format = mlt_image_vulkan;
-    else
-        *format = mlt_image_private;
-}
-
-int placebo_frame_get_gpu_image(mlt_frame frame,
-                                uint8_t **image,
-                                mlt_image_format *format,
-                                int *width,
-                                int *height,
-                                int writable)
-{
-    placebo_frame_set_requested_tex(frame, 1);
-    placebo_request_gpu_image(frame, format);
-    int error = mlt_frame_get_image(frame, image, format, width, height, writable);
-    placebo_frame_set_requested_tex(frame, 0);
-    if (!error && !*image) {
-        mlt_log_error(NULL, "[placebo] GPU image request returned no image\n");
-        return 1;
-    }
-    return error;
-}
-
-int placebo_frame_set_tex(mlt_frame frame, pl_tex tex)
-{
-    mlt_properties props = MLT_FRAME_PROPERTIES(frame);
-    mlt_properties_set_int(props, "format", mlt_image_private);
-    mlt_properties_set(props, MLT_PLACEBO_IMAGE_PRIVATE, "placebo");
-    mlt_properties_clear(props, "alpha");
-    return mlt_frame_set_image(frame, (uint8_t *) tex, 0, placebo_tex_destroy);
-}
-
 /* ---------- GPU teardown ---------- */
 
 /* Internal: free all GPU resources. Caller must hold s_mutex. */
@@ -973,7 +667,7 @@ static void release_gpu_locked(void)
 
     /* Drop the published handles before the VkDevice they point at is destroyed.
        Setting NULL runs the properties destructor installed at publish time. */
-    clear_vulkan_publish();
+    placebo_vulkan_unpublish();
 
 #ifdef PL_HAVE_D3D11
     if (s_d3d11) {
@@ -983,6 +677,8 @@ static void release_gpu_locked(void)
 #endif
 
 #ifdef PL_HAVE_VULKAN
+    /* Export images and semaphores use this device. Drop them first. */
+    placebo_display_export_close();
     if (s_vulkan) {
         pl_vulkan_destroy(&s_vulkan);
         s_vulkan = NULL;
@@ -991,9 +687,6 @@ static void release_gpu_locked(void)
         pl_vk_inst_destroy(&s_vk_inst);
         s_vk_inst = NULL;
     }
-    s_real_get_proc = NULL;
-    s_real_get_device_proc = NULL;
-    s_real_get_device_queue2 = NULL;
 #ifdef _WIN32
     if (s_vulkan_dll) {
         FreeLibrary(s_vulkan_dll);

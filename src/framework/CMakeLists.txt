@@ -31,6 +31,7 @@ set(MLT_PUBLIC_HEADERS
   mlt_transition.h
   mlt_types.h
   mlt_version.h
+  mlt_vulkan_export.h
 )
 
 add_library(mlt SHARED

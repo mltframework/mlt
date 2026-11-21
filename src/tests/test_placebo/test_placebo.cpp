@@ -17,6 +17,7 @@
  */
 
 #include <framework/mlt.h>
+#include <framework/mlt_vulkan_export.h>
 #include <mlt++/Mlt.h>
 #include <QtTest>
 
@@ -323,6 +324,113 @@ private Q_SLOTS:
                                         .arg(rgba[component])
                                         .arg(expected)));
         }
+    }
+
+    void CpuFilterAboveGpuReturnsVulkan()
+    {
+        if (!mlt_properties_get_data(mlt_global_properties(), "placebo.vulkan", nullptr))
+            QSKIP("The published placebo backend is not Vulkan");
+        Filter brightness(profile, "brightness");
+        QVERIFY(brightness.is_valid());
+        brightness.set("level", 0.5);
+        Producer producer(profile, "color", "#7f7f7f");
+        QVERIFY(producer.is_valid());
+        std::unique_ptr<Frame> frame(producer.get_frame());
+        QVERIFY(frame && frame->is_valid());
+        frame->set("color_trc", "bt709");
+        renderer->process(*frame);
+        // The CPU filter runs first and leaves rgba, which is then converted
+        // to the requested Vulkan image. Preview consumers import that VkImage.
+        brightness.process(*frame);
+        mlt_image_format format = mlt_image_vulkan;
+        int width = 8;
+        int height = 8;
+        uint8_t *bytes = frame->get_image(format, width, height);
+        QVERIFY(bytes);
+        QCOMPARE(format, mlt_image_vulkan);
+        QCOMPARE(frame->get_int("test_image"), 0);
+        auto *image = reinterpret_cast<mlt_vulkan_image *>(bytes);
+        QVERIFY(image->nb_planes >= 1);
+        QCOMPARE(image->width, 8);
+        QCOMPARE(image->height, 8);
+    }
+
+    // An importer reports its side and its drawn generations, and the module
+    // keeps the state: renders arm only attached sides, and a detached module
+    // hands back the last picture without rendering.
+    void ExportApiTracksSides()
+    {
+        auto *props = static_cast<mlt_properties>(
+            mlt_properties_get_data(mlt_global_properties(), "placebo.vulkan", nullptr));
+        if (!props)
+            QSKIP("The published placebo backend is not Vulkan");
+        auto *api = static_cast<const mlt_vulkan_export_api *>(
+            mlt_properties_get_data(props, "export_api", nullptr));
+        QVERIFY(api);
+        QVERIFY(api->size >= int(sizeof(mlt_vulkan_export_api)));
+
+        Producer producer(profile, "color", "#7f7f7f");
+        std::unique_ptr<Frame> frame(producer.get_frame());
+        QVERIFY(frame && frame->is_valid());
+        frame->set("color_trc", "bt709");
+        renderer->process(*frame);
+        mlt_image_format format = mlt_image_vulkan;
+        int width = 8;
+        int height = 8;
+        auto *image = reinterpret_cast<mlt_vulkan_image *>(frame->get_image(format, width, height));
+        QVERIFY(image);
+
+        mlt_vulkan_export_params params{};
+        params.size = sizeof(params);
+        mlt_vulkan_export_desc none{};
+        none.size = sizeof(none);
+        // Nothing attached and nothing rendered yet: no picture, nothing signaled.
+        QCOMPARE(api->render(image, &params, &none), 0);
+        QCOMPARE(none.generation, 0);
+
+        api->attach(0);
+        mlt_vulkan_export_desc desc{};
+        desc.size = sizeof(desc);
+        if (api->render(image, &params, &desc) != 0) {
+            api->detach(0);
+            QSKIP("This Vulkan device cannot export images and semaphores");
+        }
+        QVERIFY(desc.generation > 0);
+        QCOMPARE(desc.width, 8);
+        QCOMPARE(desc.height, 8);
+        QVERIFY(desc.memory);
+        QCOMPARE(desc.side[0].armed, 1);
+        QCOMPARE(desc.side[1].armed, 0);
+        QVERIFY(desc.side[0].ready && desc.side[0].done);
+
+        QCOMPARE(api->seen(0, desc.slot), 0);
+        api->submitted(0, desc.slot, desc.generation);
+        QCOMPARE(api->seen(0, desc.slot), desc.generation);
+        api->submitted(0, desc.slot, desc.generation - 1); // never goes back
+        QCOMPARE(api->seen(0, desc.slot), desc.generation);
+        QCOMPARE(api->seen(1, desc.slot), 0);
+
+        api->detach(0);
+        mlt_vulkan_export_desc last{};
+        last.size = sizeof(last);
+        QCOMPARE(api->render(image, &params, &last), 0);
+        QCOMPARE(last.generation, desc.generation);
+        QCOMPARE(last.slot, desc.slot);
+
+        // A caller built against a header whose desc ends after generation gets
+        // those fields and nothing is written past them.
+        struct
+        {
+            mlt_vulkan_export_desc whole;
+            int guard;
+        } padded{};
+        padded.whole.size = offsetof(mlt_vulkan_export_desc, generation) + sizeof(int);
+        padded.guard = 0x5a5a5a5a;
+        QCOMPARE(api->render(image, &params, &padded.whole), 0);
+        QCOMPARE(padded.whole.generation, desc.generation);
+        QCOMPARE(padded.whole.width, 8);
+        QCOMPARE(padded.whole.memory_size, uint64_t(0));
+        QCOMPARE(padded.guard, 0x5a5a5a5a);
     }
 
     void LinearHdrRoundTrip_data() { addHdrTransfers(); }

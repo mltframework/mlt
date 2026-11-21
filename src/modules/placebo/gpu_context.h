@@ -88,7 +88,8 @@ int placebo_vulkan_init_display(const char *const *extensions,
    queue_transfer_index/count, queue_decode_index/count (decode index is -1
    when the device has no video decode queue), queue_encode_index/count
    (encode index is -1 when the device has no video encode queue),
-   lock_queue, unlock_queue, lock_ctx. */
+   lock_queue, unlock_queue, lock_ctx, render_export. render_export is a
+   mlt_vulkan_render_export_fn. */
 void placebo_vulkan_publish(void);
 
 /* Non-zero after placebo_vulkan_publish() or a Vulkan display init has
@@ -97,45 +98,5 @@ int placebo_context_is_published(void);
 
 /* Non-zero when a published Vulkan device has a video decode queue. */
 int placebo_vulkan_has_decode_queue(void);
-
-/* Interpret an opaque placebo image payload as a libplacebo texture handle. */
-pl_tex placebo_image_get_tex(const uint8_t *image);
-
-/* Mark or clear a request for a placebo private image during an upstream pull.
-   This is intentionally separate from the actual output marker used by
-   placebo_frame_is_tex()/placebo_frame_set_tex(). A request means "a downstream
-   placebo filter wants private GPU data if a converter can provide it"; it does
-   not mean the frame currently contains such data. Nested requests on the same
-   frame are reference-counted because multiple placebo filters can be stacked
-   during one pull. */
-void placebo_frame_set_requested_tex(mlt_frame frame, int requested);
-
-/* Return non-zero when the current conversion target is a placebo private image
-   request, not merely any mlt_image_private use by some other module. */
-int placebo_frame_wants_tex(mlt_frame frame, mlt_image_format format);
-
-/* Return non-zero when the frame currently stores a placebo private image.
-   This checks the actual image payload marker, not the transient request state. */
-int placebo_frame_is_tex(mlt_frame frame, mlt_image_format format);
-
-/* Return non-zero when the frame currently stores an mlt_image_vulkan texture. */
-int placebo_frame_is_vulkan(mlt_frame frame, mlt_image_format format);
-
-/* Ask upstream for a GPU image. An mlt_image_vulkan request is kept. Otherwise
-   ask for one when this device can decode, else a placebo private texture. */
-void placebo_request_gpu_image(mlt_frame frame, mlt_image_format *format);
-
-/* Pull a GPU image with a balanced, nestable placebo request marker.
-   The caller retains its original requested format separately for output. */
-int placebo_frame_get_gpu_image(mlt_frame frame,
-                                uint8_t **image,
-                                mlt_image_format *format,
-                                int *width,
-                                int *height,
-                                int writable);
-
-/* Store a libplacebo texture on the frame as mlt_image_private.
-   The texture lifetime is owned by the frame image property. */
-int placebo_frame_set_tex(mlt_frame frame, pl_tex tex);
 
 #endif /* GPU_CONTEXT_H */

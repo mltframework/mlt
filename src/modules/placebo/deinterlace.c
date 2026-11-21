@@ -22,6 +22,7 @@
 #include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
+#include "gpu_frame.h"
 #include "tex_pool.h"
 #include "transition_common.h"
 #include "vulkan_frame.h"
@@ -497,15 +498,19 @@ static int dispatch_planes(mlt_service service,
             mlt_log_error(service, "No suitable GPU format for deinterlacing plane %d\n", i);
             return 1;
         }
-        planes[i] = placebo_tex_acquire_work(gpu,
-                                             plane->texture->params.w,
-                                             plane->texture->params.h,
-                                             fmt,
-                                             (fmt->caps & PL_FMT_CAP_STORABLE ? PLACEBO_TEX_STORABLE
-                                                                              : 0)
-                                                 | (fmt->caps & PL_FMT_CAP_HOST_READABLE
-                                                        ? PLACEBO_TEX_HOST_READABLE
-                                                        : 0));
+        /* Without Vulkan input, plane 0 is the output, which a CPU request
+           downloads. The other planes only feed the shader. */
+        const mlt_image_format wanted = !current->is_vulkan
+                                                && (fmt->caps & PL_FMT_CAP_HOST_READABLE)
+                                            ? requested
+                                            : mlt_image_none;
+        planes[i] = placebo_acquire_output(gpu,
+                                           plane->texture->params.w,
+                                           plane->texture->params.h,
+                                           fmt,
+                                           wanted,
+                                           fmt->caps & PL_FMT_CAP_STORABLE ? PLACEBO_TEX_STORABLE
+                                                                           : 0);
         if (!planes[i]) {
             mlt_log_error(service, "Failed to allocate deinterlacing plane %d\n", i);
             return 1;
@@ -571,7 +576,7 @@ static int compose_output(mlt_service service,
     if (planes)
         for (int i = 0; i < src.num_planes; i++)
             src.planes[i].texture = planes[i];
-    *output = placebo_tex_acquire_work(gpu, width, height, output_format, PLACEBO_TEX_HOST_READABLE);
+    *output = placebo_acquire_output(gpu, width, height, output_format, requested, 0);
     if (!*output) {
         mlt_log_error(service, "Failed to allocate deinterlaced output\n");
         return 1;

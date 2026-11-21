@@ -21,6 +21,7 @@
 
 #include "color_space.h"
 #include "gpu_context.h"
+#include "gpu_frame.h"
 #include "render_params.h"
 #include "tex_pool.h"
 #include "vulkan_frame.h"

@@ -20,6 +20,7 @@
 #include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
+#include "gpu_frame.h"
 #include "render_cache.h"
 #include "render_params.h"
 #include "tex_pool.h"
@@ -261,7 +262,8 @@ static int filter_get_image(mlt_frame frame,
     }
 
     placebo_render_lock();
-    pl_tex dst_tex = placebo_tex_acquire_target(gpu, out_w, out_h, dst_fmt);
+    pl_tex dst_tex
+        = placebo_acquire_output(gpu, out_w, out_h, dst_fmt, requested, PLACEBO_TEX_BLIT_DST);
     if (!dst_tex) {
         mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to create dest texture\n");
         placebo_render_unlock();

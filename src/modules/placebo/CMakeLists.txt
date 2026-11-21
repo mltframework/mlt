@@ -21,11 +21,15 @@ add_library(mltplacebo MODULE
   transition_placebo_luma_mix.c
   transition_common.c transition_common.h
   gpu_context.c gpu_context.h
+  gpu_frame.c gpu_frame.h
   render_cache.c render_cache.h
   render_params.c render_params.h
   shader_service_id.c shader_service_id.h
   tex_pool.c tex_pool.h
   vulkan_frame.c vulkan_frame.h
+  vulkan_device.c vulkan_device.h
+  vulkan_publish.c vulkan_publish.h
+  display_export.c display_export.h
 )
 
 file(GLOB YML "*.yml")

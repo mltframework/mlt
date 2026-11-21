@@ -22,9 +22,11 @@
 
 #include "color_space.h"
 #include "gpu_context.h"
+#include "gpu_frame.h"
 #include "render_cache.h"
 #include "render_params.h"
 #include "tex_pool.h"
+#include "vulkan_frame.h"
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
@@ -103,6 +105,7 @@ static int output_is_rgb8(mlt_image_format format)
 static int upload_tex(mlt_frame frame,
                       uint8_t **image,
                       mlt_image_format *format,
+                      mlt_image_format published,
                       int width,
                       int height,
                       pl_gpu gpu,
@@ -122,7 +125,6 @@ static int upload_tex(mlt_frame frame,
                                             .format = rgba_fmt,
                                             .sampleable = true,
                                             .renderable = true,
-                                            .host_readable = true,
                                             .host_writable = true, ));
     if (!tex) {
         placebo_render_unlock();
@@ -136,7 +138,16 @@ static int upload_tex(mlt_frame frame,
     }
     placebo_render_unlock();
 
-    log_conversion(src_format, "cpu", mlt_image_private, rgba_fmt->name);
+    log_conversion(src_format, "cpu", published, rgba_fmt->name);
+    /* published is mlt_image_vulkan for a caller that imports the VkImage: it
+       cannot use a placebo texture. Keep the texture for the placebo filters. */
+    if (published == mlt_image_vulkan)
+        return placebo_frame_publish_tex(frame,
+                                         tex,
+                                         published,
+                                         image,
+                                         format,
+                                         placebo_frame_color_trc(frame, *image, src_format));
     *format = mlt_image_private;
     *image = (uint8_t *) tex;
     if (placebo_frame_set_tex(frame, tex)) {
@@ -149,8 +160,10 @@ static int upload_tex(mlt_frame frame,
     return 0;
 }
 
-/* Copy into dst_fmt without changing the transfer. An rgba64 download is
-   rgba16 unorm. An 8-bit RGB download is rgba8. */
+/* Copy into dst_fmt without changing the transfer, into a texture that can be
+   downloaded. An rgba64 download is rgba16 unorm. An 8-bit RGB download is
+   rgba8. The same format is a plain copy, which a pooled texture needs because
+   it is not host readable. */
 static int render_to_format(
     mlt_frame frame, pl_gpu gpu, pl_tex src, pl_fmt dst_fmt, int width, int height, pl_tex *out)
 {
@@ -162,7 +175,7 @@ static int render_to_format(
         return 1;
     /* Unorm bit-depth changes have no curve to apply. A float texture with
        no transfer is linear light, and guessing sRGB would encode it. */
-    if (transfer == PL_COLOR_TRC_UNKNOWN) {
+    if (transfer == PL_COLOR_TRC_UNKNOWN && !placebo_tex_is(src, dst_fmt)) {
         if (!src_fmt || src_fmt->type != PL_FMT_UNORM)
             return 1;
         transfer = PL_COLOR_TRC_SRGB;
@@ -170,7 +183,11 @@ static int render_to_format(
 
     struct pl_color_space color = placebo_color_space_for_trc(frame, transfer);
     placebo_render_lock();
-    pl_tex dst = placebo_tex_acquire_target(gpu, width, height, dst_fmt);
+    pl_tex dst = placebo_tex_acquire_work(gpu,
+                                          width,
+                                          height,
+                                          dst_fmt,
+                                          PLACEBO_TEX_HOST_READABLE | PLACEBO_TEX_BLIT_DST);
     if (!dst) {
         placebo_render_unlock();
         return 1;
@@ -225,12 +242,14 @@ static int download_rgba(mlt_frame frame,
     src_layout = tex_name(tex);
 
     /* Half-float cannot be read as integer RGB. High-bit-depth YUV uses
-       rgba64 as an intermediate so the CPU converter keeps its precision. */
+       rgba64 as an intermediate so the CPU converter keeps its precision.
+       A pooled texture is not host readable, so even one that is already in
+       the right format is copied into one that is. */
     if (output_format == mlt_image_rgba64 || placebo_is_high_depth_yuv(output_format)) {
         pl_fmt rgba16 = placebo_rgba16_format(gpu);
         produced = mlt_image_rgba64;
         if (!rgba16
-            || (!placebo_tex_is(tex, rgba16)
+            || ((!placebo_tex_is(tex, rgba16) || !tex->params.host_readable)
                 && render_to_format(frame, gpu, tex, rgba16, width, height, &converted))) {
             mlt_log_error(NULL,
                           "[placebo] Refusing to download %s as rgba16 for %s\n",
@@ -240,17 +259,20 @@ static int download_rgba(mlt_frame frame,
         }
         if (converted)
             tex = converted;
-    } else if (!placebo_tex_is(tex, placebo_rgba8_format(gpu))) {
+    } else {
         pl_fmt rgba8 = placebo_rgba8_format(gpu);
-        if (!output_is_rgb8(output_format) || !rgba8
-            || render_to_format(frame, gpu, tex, rgba8, width, height, &converted)) {
-            mlt_log_error(NULL,
-                          "[placebo] Refusing to download %s as rgba8 for %s\n",
-                          src_layout,
-                          mlt_image_format_name(output_format));
-            return 1;
+        const int convert = !placebo_tex_is(tex, rgba8);
+        if (convert || !tex->params.host_readable) {
+            if ((convert && !output_is_rgb8(output_format)) || !rgba8
+                || render_to_format(frame, gpu, tex, rgba8, width, height, &converted)) {
+                mlt_log_error(NULL,
+                              "[placebo] Refusing to download %s as rgba8 for %s\n",
+                              src_layout,
+                              mlt_image_format_name(output_format));
+                return 1;
+            }
+            tex = converted;
         }
-        tex = converted;
     }
 
     log_conversion(*format, src_layout, output_format, tex_name(tex));
@@ -337,7 +359,8 @@ int placebo_convert_image(mlt_frame frame,
     if (!gpu || !rgba8 || !image || width < 1 || height < 1)
         return 1;
 
-    if (output_format == mlt_image_vulkan || placebo_frame_wants_tex(frame, output_format)) {
+    const enum placebo_request request = placebo_frame_request(frame, output_format);
+    if (request != PLACEBO_REQUEST_NONE) {
         placebo_image_source *source = mlt_properties_get_data(props,
                                                                "_placebo_upload_source",
                                                                NULL);
@@ -374,7 +397,14 @@ int placebo_convert_image(mlt_frame frame,
             if (mlt_frame_next_convert_image(frame, image, format, mlt_image_rgba))
                 return 1;
         }
-        return upload_tex(frame, image, format, width, height, gpu, upload_fmt);
+        return upload_tex(frame,
+                          image,
+                          format,
+                          request == PLACEBO_REQUEST_EXTERNAL ? mlt_image_vulkan : mlt_image_private,
+                          width,
+                          height,
+                          gpu,
+                          upload_fmt);
     }
 
     if (placebo_frame_is_tex(frame, *format))

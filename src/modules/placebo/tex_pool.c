@@ -227,13 +227,6 @@ pl_tex placebo_tex_acquire_work(pl_gpu gpu, int w, int h, pl_fmt fmt, int use)
                                              .blit_dst = !!(use & PLACEBO_TEX_BLIT_DST), ));
 }
 
-/* The transfer destination usage is always set, so every output shares one
-   class of idle texture whether or not its filter clears it. */
-pl_tex placebo_tex_acquire_target(pl_gpu gpu, int w, int h, pl_fmt fmt)
-{
-    return placebo_tex_acquire_work(gpu, w, h, fmt, PLACEBO_TEX_HOST_READABLE | PLACEBO_TEX_BLIT_DST);
-}
-
 void placebo_tex_recycle(pl_gpu gpu, pl_tex *tex)
 {
     pool_entry *entry = entry_of(tex ? *tex : NULL);

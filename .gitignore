@@ -71,4 +71,6 @@ src/swig/ruby/markdown/
 CMakeLists.txt.user
 .cache/
 *_export.h
+!src/framework/mlt_vulkan_export.h
+!src/modules/placebo/display_export.h
 vcpkg_installed/

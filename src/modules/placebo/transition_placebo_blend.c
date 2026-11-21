@@ -20,6 +20,7 @@
 #include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
+#include "gpu_frame.h"
 #include "tex_pool.h"
 #include "transition_common.h"
 #include "vulkan_frame.h"
@@ -402,11 +403,7 @@ static int get_image(mlt_frame a_frame,
         goto fail_locked;
     }
 
-    dst = placebo_tex_acquire_work(gpu,
-                                   out_w,
-                                   out_h,
-                                   dst_fmt,
-                                   PLACEBO_TEX_STORABLE | PLACEBO_TEX_HOST_READABLE);
+    dst = placebo_acquire_output(gpu, out_w, out_h, dst_fmt, requested, PLACEBO_TEX_STORABLE);
     if (!dst || blend(gpu, dispatch, a_tex, b_tex, dst, mode)) {
         mlt_log_error(service, "Blend dispatch failed\n");
         goto fail_locked;

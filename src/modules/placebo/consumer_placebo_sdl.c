@@ -19,6 +19,7 @@
 
 #include "color_space.h"
 #include "gpu_context.h"
+#include "gpu_frame.h"
 #include "vulkan_frame.h"
 
 #include <framework/mlt.h>

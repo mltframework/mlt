@@ -48,14 +48,15 @@ enum placebo_tex_use {
     PLACEBO_TEX_BLIT_DST = 1 << 2,      /* cleared with pl_frame_clear */
 };
 
-/* A sampleable, renderable texture, with the extra uses asked for. */
-pl_tex placebo_tex_acquire_work(pl_gpu gpu, int w, int h, pl_fmt fmt, int use);
+/* A sampleable, renderable texture, with the extra uses asked for.
 
-/* An RGBA texture to render a filter's output into. It is host readable so a
-   consumer that wants pixels can download it without another copy, and it can be
-   cleared, which a filter needs for letterbox padding. Every such output shares
-   one class of idle texture. */
-pl_tex placebo_tex_acquire_target(pl_gpu gpu, int w, int h, pl_fmt fmt);
+   Only ask for PLACEBO_TEX_HOST_READABLE on a texture that is downloaded. On a
+   discrete GPU under Windows, a host readable texture is not in device memory,
+   and the first use of a new 4K float one takes about 100 ms, against 2 ms for
+   one that is not. A pipeline that makes a few dozen of them while a player
+   fills its queue waits seconds. A texture that is not host readable can still
+   be downloaded: placebo_convert_image copies it into one that is. */
+pl_tex placebo_tex_acquire_work(pl_gpu gpu, int w, int h, pl_fmt fmt, int use);
 
 /* Return a texture to the pool and clear *tex. A texture that did not come
    from the pool is destroyed instead. The pool marks its textures through

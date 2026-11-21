@@ -20,6 +20,7 @@
 #include "color_space.h"
 #include "convert.h"
 #include "gpu_context.h"
+#include "gpu_frame.h"
 #include "tex_pool.h"
 #include "transition_common.h"
 #include "vulkan_frame.h"
@@ -354,11 +355,8 @@ static int get_image(mlt_frame a_frame,
         goto fail_locked;
     }
 
-    mixed = placebo_tex_acquire_work(gpu,
-                                     out_w,
-                                     out_h,
-                                     working_fmt,
-                                     PLACEBO_TEX_STORABLE | PLACEBO_TEX_HOST_READABLE);
+    /* mixed becomes the result when no encoding step follows. */
+    mixed = placebo_acquire_output(gpu, out_w, out_h, working_fmt, requested, PLACEBO_TEX_STORABLE);
     if (!mixed
         || mix_textures(gpu,
                         dispatch,
@@ -377,11 +375,8 @@ static int get_image(mlt_frame a_frame,
         result = mixed;
         mixed = NULL;
     } else {
-        result = placebo_tex_acquire_work(gpu,
-                                          out_w,
-                                          out_h,
-                                          output_fmt,
-                                          PLACEBO_TEX_STORABLE | PLACEBO_TEX_HOST_READABLE);
+        result
+            = placebo_acquire_output(gpu, out_w, out_h, output_fmt, requested, PLACEBO_TEX_STORABLE);
         if (!result) {
             mlt_log_error(service, "Failed to create luma output texture\n");
             goto fail_locked;
