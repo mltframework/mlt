@@ -3,7 +3,7 @@
  * \brief event handling
  * \see mlt_events_struct
  *
- * Copyright (C) 2004-2021 Meltytech, LLC
+ * Copyright (C) 2004-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -369,6 +369,7 @@ typedef struct
 {
     pthread_cond_t cond;
     pthread_mutex_t mutex;
+    int pending;
 } condition_pair;
 
 /** The event listener callback for the wait functions.
@@ -381,6 +382,7 @@ typedef struct
 static void mlt_events_listen_for(mlt_properties self, condition_pair *pair)
 {
     pthread_mutex_lock(&pair->mutex);
+    pair->pending = 1;
     pthread_cond_signal(&pair->cond);
     pthread_mutex_unlock(&pair->mutex);
 }
@@ -391,6 +393,9 @@ static void mlt_events_listen_for(mlt_properties self, condition_pair *pair)
  * \param self a properties list
  * \param id the name of the event to wait for
  * \return an event
+ *
+ * Notifications received before waiting are retained. Multiple notifications
+ * before a wait are coalesced into one.
  */
 
 mlt_event mlt_events_setup_wait_for(mlt_properties self, const char *id)
@@ -398,7 +403,7 @@ mlt_event mlt_events_setup_wait_for(mlt_properties self, const char *id)
     condition_pair *pair = malloc(sizeof(condition_pair));
     pthread_cond_init(&pair->cond, NULL);
     pthread_mutex_init(&pair->mutex, NULL);
-    pthread_mutex_lock(&pair->mutex);
+    pair->pending = 0;
     return mlt_events_listen(self, pair, id, (mlt_listener) mlt_events_listen_for);
 }
 
@@ -407,13 +412,19 @@ mlt_event mlt_events_setup_wait_for(mlt_properties self, const char *id)
  * \public \memberof mlt_events_struct
  * \param self a properties list
  * \param event an event
+ *
+ * Consumes a pending notification or waits for the next one.
  */
 
 void mlt_events_wait_for(mlt_properties self, mlt_event event)
 {
     if (event != NULL) {
         condition_pair *pair = event->listener_data;
-        pthread_cond_wait(&pair->cond, &pair->mutex);
+        pthread_mutex_lock(&pair->mutex);
+        while (!pair->pending)
+            pthread_cond_wait(&pair->cond, &pair->mutex);
+        pair->pending = 0;
+        pthread_mutex_unlock(&pair->mutex);
     }
 }
 
@@ -422,6 +433,8 @@ void mlt_events_wait_for(mlt_properties self, mlt_event event)
  * \public \memberof mlt_events_struct
  * \param self a properties list
  * \param event an event
+ *
+ * The caller must ensure no wait or event delivery is in progress.
  */
 
 void mlt_events_close_wait_for(mlt_properties self, mlt_event event)
@@ -429,7 +442,6 @@ void mlt_events_close_wait_for(mlt_properties self, mlt_event event)
     if (event != NULL) {
         condition_pair *pair = event->listener_data;
         event->parent = NULL;
-        pthread_mutex_unlock(&pair->mutex);
         pthread_mutex_destroy(&pair->mutex);
         pthread_cond_destroy(&pair->cond);
         free(pair);
