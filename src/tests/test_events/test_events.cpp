@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019-2021 Meltytech, LLC
+ * Copyright (C) 2019-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -18,6 +18,10 @@
 
 #include <QString>
 #include <QtTest>
+
+#include <atomic>
+#include <chrono>
+#include <thread>
 
 #include <mlt++/Mlt.h>
 using namespace Mlt;
@@ -47,6 +51,58 @@ private:
     }
 
 private Q_SLOTS:
+
+    // An event fired before wait must be retained without blocking the sender.
+    void WaitForAlreadyFiredEvent()
+    {
+        Properties properties;
+        mlt_properties p = properties.get_properties();
+        mlt_events_init(p);
+        mlt_events_register(p, "test-event");
+        mlt_event event = mlt_events_setup_wait_for(p, "test-event");
+        QVERIFY(event != nullptr);
+        mlt_events_fire(p, "test-event", mlt_event_data_none());
+        mlt_events_wait_for(p, event);
+        mlt_events_close_wait_for(p, event);
+    }
+
+    // Multiple early events coalesce; a subsequent wait needs another event.
+    void WaitForNextEvent()
+    {
+        Properties properties;
+        mlt_properties p = properties.get_properties();
+        mlt_events_init(p);
+        mlt_events_register(p, "test-event");
+        mlt_event event = mlt_events_setup_wait_for(p, "test-event");
+        QVERIFY(event != nullptr);
+        mlt_events_fire(p, "test-event", mlt_event_data_none());
+        mlt_events_fire(p, "test-event", mlt_event_data_none());
+        mlt_events_wait_for(p, event);
+
+        std::atomic<bool> fired{false};
+        std::thread sender([&] {
+            std::this_thread::sleep_for(std::chrono::milliseconds(50));
+            fired = true;
+            mlt_events_fire(p, "test-event", mlt_event_data_none());
+        });
+        mlt_events_wait_for(p, event);
+        bool receivedNextEvent = fired.load();
+        sender.join();
+        QVERIFY(receivedNextEvent);
+        mlt_events_close_wait_for(p, event);
+    }
+
+    // A prepared waiter can be closed without receiving an event.
+    void CloseWaitWithoutEvent()
+    {
+        Properties properties;
+        mlt_properties p = properties.get_properties();
+        mlt_events_init(p);
+        mlt_events_register(p, "test-event");
+        mlt_event event = mlt_events_setup_wait_for(p, "test-event");
+        QVERIFY(event != nullptr);
+        mlt_events_close_wait_for(p, event);
+    }
 
     void ListenToPropertyChanged()
     {

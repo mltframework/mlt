@@ -19,7 +19,12 @@
 
 #include <QtTest>
 
+#include <QFile>
+#include <QProcess>
+#include <QTemporaryDir>
+
 #include <atomic>
+#include <cstdio>
 
 #include <framework/mlt.h>
 #include <mlt++/Mlt.h>
@@ -46,6 +51,40 @@ public:
     TestModAvformat() { Factory::init(); }
 
     ~TestModAvformat() {}
+
+private:
+    // A deadlocked export cannot be safely stopped as a thread. Run it in a child
+    // process so the parent can terminate it on timeout without hanging the suite.
+    // The environment variable identifies the child and provides its temporary
+    // directory, preventing it from recursively starting another subprocess.
+    void runExportInSubprocess()
+    {
+        QTemporaryDir directory;
+        QVERIFY(directory.isValid());
+        QProcess child;
+        QProcessEnvironment environment = QProcessEnvironment::systemEnvironment();
+        environment.insert("MLT_TEST_EXPORT_COMPLETION_CHILD", directory.path());
+        child.setProcessEnvironment(environment);
+        child.start(QCoreApplication::applicationFilePath(),
+                    {QString::fromLatin1(QTest::currentTestFunction()),
+                     QStringLiteral("-o"),
+                     directory.filePath("result.txt") + QStringLiteral(",txt")});
+        QVERIFY2(child.waitForStarted(), qPrintable(child.errorString()));
+        bool finished = child.waitForFinished(15000);
+        if (!finished) {
+            child.kill();
+            child.waitForFinished();
+        }
+        QByteArray output = child.readAllStandardOutput() + child.readAllStandardError();
+        QFile result(directory.filePath("result.txt"));
+        if (result.open(QIODevice::ReadOnly))
+            output += result.readAll();
+        if (!finished || child.exitStatus() != QProcess::NormalExit || child.exitCode() != 0)
+            fprintf(stderr, "Export test did not complete successfully:\n%s", output.constData());
+        QVERIFY2(finished, "Export test did not finish within 15 seconds");
+        QVERIFY2(child.exitStatus() == QProcess::NormalExit && child.exitCode() == 0,
+                 output.constData());
+    }
 
 private Q_SLOTS:
     void BasicAvformatProducer()
@@ -123,6 +162,44 @@ private Q_SLOTS:
         consumer.connect(producer);
         QCOMPARE(consumer.start(), 0);
         QCOMPARE(consumer.stop(), 0);
+    }
+
+    // Failed startup must return without deadlocking and retain both notifications.
+    void ExportMissingDirectoryWithFatalAndCompletionWait()
+    {
+        if (!qEnvironmentVariableIsSet("MLT_TEST_EXPORT_COMPLETION_CHILD")) {
+            runExportInSubprocess();
+            return;
+        }
+
+        QDir directory(qEnvironmentVariable("MLT_TEST_EXPORT_COMPLETION_CHILD"));
+        Profile profile;
+        profile.set_width(32);
+        profile.set_height(16);
+        Producer producer(profile, "color", "black");
+        Consumer consumer(profile,
+                          "avformat",
+                          directory.filePath("missing/export.nut").toUtf8().constData());
+        QVERIFY(producer.is_valid());
+        QVERIFY(consumer.is_valid());
+        producer.set_in_and_out(0, 4);
+        consumer.set("f", "nut");
+        consumer.set("vcodec", "rawvideo");
+        consumer.set("an", 1);
+        consumer.set("real_time", 0);
+        consumer.connect(producer);
+
+        mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer.get_consumer());
+        mlt_event fatal = mlt_events_setup_wait_for(properties, "consumer-fatal-error");
+        mlt_event stopped = mlt_events_setup_wait_for(properties, "consumer-stopped");
+        QVERIFY(fatal != nullptr);
+        QVERIFY(stopped != nullptr);
+        QVERIFY(consumer.start() != 0);
+        mlt_events_wait_for(properties, fatal);
+        mlt_events_wait_for(properties, stopped);
+        QCOMPARE(consumer.stop(), 0);
+        mlt_events_close_wait_for(properties, fatal);
+        mlt_events_close_wait_for(properties, stopped);
     }
 
     // A format-list request returns without creating a worker, but must still
@@ -269,6 +346,6 @@ private Q_SLOTS:
     }
 };
 
-QTEST_APPLESS_MAIN(TestModAvformat)
+QTEST_GUILESS_MAIN(TestModAvformat)
 
 #include "test_mod_avformat.moc"
