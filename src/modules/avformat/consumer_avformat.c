@@ -317,27 +317,35 @@ static int consumer_stop(mlt_consumer consumer);
 static int consumer_is_stopped(mlt_consumer consumer);
 static void *consumer_thread(void *arg);
 
-/** Start/stop synchronization.
- *
- * start_mutex serializes consumer_start() and consumer_stop(), so a stop cannot
- * run while a start is in progress. The consumer thread reports the outcome of
- * its startup through state (guarded by state_mutex, signalled on state_cond),
- * and consumer_start() does not return until it has.
- */
-
 enum { STARTUP_PENDING, STARTUP_RUNNING, STARTUP_FAILED };
 
 typedef struct
 {
-    pthread_mutex_t start_mutex;
     pthread_mutex_t state_mutex;
     pthread_cond_t state_cond;
     int state;
 } startup_sync;
 
+static startup_sync *startup_sync_new(void)
+{
+    startup_sync *sync = calloc(1, sizeof(*sync));
+    if (!sync)
+        return NULL;
+    if (pthread_mutex_init(&sync->state_mutex, NULL))
+        goto fail_allocation;
+    if (pthread_cond_init(&sync->state_cond, NULL))
+        goto fail_state_mutex;
+    return sync;
+
+fail_state_mutex:
+    pthread_mutex_destroy(&sync->state_mutex);
+fail_allocation:
+    free(sync);
+    return NULL;
+}
+
 static void startup_sync_close(startup_sync *sync)
 {
-    pthread_mutex_destroy(&sync->start_mutex);
     pthread_mutex_destroy(&sync->state_mutex);
     pthread_cond_destroy(&sync->state_cond);
     free(sync);
@@ -381,6 +389,21 @@ mlt_consumer consumer_avformat_init(mlt_profile profile, char *arg)
     if (consumer != NULL) {
         // Get properties from the consumer
         mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
+
+        startup_sync *sync = startup_sync_new();
+        if (!sync) {
+            mlt_log_error(MLT_CONSUMER_SERVICE(consumer),
+                          "failed to initialize startup synchronization\n");
+            mlt_consumer_close(consumer);
+            free(consumer);
+            return NULL;
+        }
+        mlt_properties_set_data(properties,
+                                "_startup_sync",
+                                sync,
+                                0,
+                                (mlt_destructor) startup_sync_close,
+                                NULL);
 
         // Assign close callback
         consumer->close = consumer_close;
@@ -426,17 +449,6 @@ mlt_consumer consumer_avformat_init(mlt_profile profile, char *arg)
                                             "property-changed",
                                             (mlt_listener) property_changed);
         mlt_properties_set_data(properties, "property-changed event", event, 0, NULL, NULL);
-
-        startup_sync *sync = calloc(1, sizeof(*sync));
-        pthread_mutex_init(&sync->start_mutex, NULL);
-        pthread_mutex_init(&sync->state_mutex, NULL);
-        pthread_cond_init(&sync->state_cond, NULL);
-        mlt_properties_set_data(properties,
-                                "_startup_sync",
-                                sync,
-                                0,
-                                (mlt_destructor) startup_sync_close,
-                                NULL);
     }
 
     // Return consumer
@@ -541,6 +553,7 @@ static int consumer_start(mlt_consumer consumer)
     // Get the properties
     mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
     int error = 0;
+    int thread_created = 0;
 
     // Report information about available muxers and codecs as YAML Tiny
     char *s = mlt_properties_get(properties, "f");
@@ -622,12 +635,23 @@ static int consumer_start(mlt_consumer consumer)
     }
 
     startup_sync *sync = get_startup_sync(properties);
-    pthread_mutex_lock(&sync->start_mutex);
-
     // Check that we're not already running
     if (!error && !mlt_properties_get_int(properties, "running")) {
+        pthread_t *previous_thread = mlt_properties_get_data(properties, "thread", NULL);
+        if (previous_thread) {
+            pthread_join(*previous_thread, NULL);
+            mlt_properties_set_data(properties, "thread", NULL, 0, NULL, NULL);
+            mlt_event_unblock(mlt_properties_get_data(properties, "property-changed event", NULL));
+        }
+
         // Allocate a thread
         pthread_t *thread = calloc(1, sizeof(pthread_t));
+        if (!thread) {
+            mlt_log_error(MLT_CONSUMER_SERVICE(consumer),
+                          "failed to allocate the consumer thread handle\n");
+            error = 1;
+            goto done;
+        }
 
         mlt_event_block(mlt_properties_get_data(properties, "property-changed event", NULL));
 
@@ -650,6 +674,7 @@ static int consumer_start(mlt_consumer consumer)
             mlt_log_error(MLT_CONSUMER_SERVICE(consumer), "failed to create the consumer thread\n");
             error = 1;
         } else {
+            thread_created = 1;
             // Wait until the thread is running or has given up
             pthread_mutex_lock(&sync->state_mutex);
             while (sync->state == STARTUP_PENDING)
@@ -669,7 +694,9 @@ static int consumer_start(mlt_consumer consumer)
         }
     }
 
-    pthread_mutex_unlock(&sync->start_mutex);
+done:
+    if (error && !thread_created)
+        mlt_consumer_stopped(consumer);
     return error;
 }
 
@@ -681,18 +708,6 @@ static int consumer_stop(mlt_consumer consumer)
     // Get the properties
     mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer);
     pthread_t *thread = mlt_properties_get_data(properties, "thread", NULL);
-
-    // Called from the consumer thread itself (e.g. by an event listener):
-    // it cannot join itself, and a start may be waiting on it, so only ask it
-    // to stop. The next stop from another thread joins it.
-    if (thread && pthread_equal(*thread, pthread_self())) {
-        mlt_properties_set_int(properties, "running", 0);
-        return 0;
-    }
-
-    startup_sync *sync = get_startup_sync(properties);
-    pthread_mutex_lock(&sync->start_mutex);
-    thread = mlt_properties_get_data(properties, "thread", NULL);
 
     // Check that we're running
     if (thread) {
@@ -706,7 +721,6 @@ static int consumer_stop(mlt_consumer consumer)
         mlt_event_unblock(mlt_properties_get_data(properties, "property-changed event", NULL));
     }
 
-    pthread_mutex_unlock(&sync->start_mutex);
     return 0;
 }
 

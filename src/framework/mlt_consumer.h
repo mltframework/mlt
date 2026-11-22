@@ -34,6 +34,10 @@
  * producers, filters, and transitions. Typically a consumer is used to
  * output audio and/or video to a device, file, or socket.
  *
+ * \note Call init, start, stop, and close for a consumer on the same thread, without
+ * overlapping calls. Listeners invoked during these operations must not call
+ * start, stop, or close on the same consumer.
+ *
  * \extends mlt_service_s
  * \properties \em rescale the scaling algorithm to pass on to all scaling
  * filters, defaults to "bilinear"
