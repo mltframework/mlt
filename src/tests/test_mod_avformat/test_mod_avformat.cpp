@@ -19,9 +19,24 @@
 
 #include <QtTest>
 
+#include <atomic>
+
 #include <framework/mlt.h>
 #include <mlt++/Mlt.h>
 using namespace Mlt;
+
+static void countEvent(mlt_properties, void *data, mlt_event_data)
+{
+    auto calls = static_cast<std::atomic<int> *>(data);
+    ++*calls;
+}
+
+static void onRunningChanged(mlt_properties owner, void *data, mlt_event_data eventData)
+{
+    if (qstrcmp(mlt_event_data_to_string(eventData), "running") == 0
+        && mlt_properties_get_int(owner, "running"))
+        countEvent(owner, data, eventData);
+}
 
 class TestModAvformat : public QObject
 {
@@ -43,6 +58,114 @@ private Q_SLOTS:
     {
         Profile profile;
         Producer producer(profile, "avformat-novalidate:blue.mpg");
+    }
+
+    // Exercise serialized start/stop cycles with each framework rendering mode.
+    void RepeatedStartStop_data()
+    {
+        QTest::addColumn<int>("realTime");
+        QTest::newRow("synchronous") << 0;
+        QTest::newRow("read-ahead") << -1;
+        QTest::newRow("parallel-render") << -2;
+    }
+
+    // Each stop must join the worker and leave the consumer ready for another start.
+    void RepeatedStartStop()
+    {
+        QFETCH(int, realTime);
+        Profile profile;
+        profile.set_width(32);
+        profile.set_height(16);
+        Producer producer(profile, "color", "black");
+        Consumer consumer(profile, "avformat", "unused");
+        QVERIFY(producer.is_valid());
+        QVERIFY(consumer.is_valid());
+        producer.set("eof", "loop");
+        consumer.set("f", "null");
+        consumer.set("vcodec", "rawvideo");
+        consumer.set("an", 1);
+        consumer.set("real_time", realTime);
+        consumer.connect(producer);
+
+        for (int i = 0; i < 3; ++i) {
+            QCOMPARE(consumer.start(), 0);
+            QCOMPARE(consumer.stop(), 0);
+            QVERIFY(consumer.is_stopped());
+        }
+    }
+
+    // Startup failure must deliver a fatal event before start returns an error,
+    // and the same consumer must be reusable after stop and configuration correction.
+    void StartupFailureAndRecovery()
+    {
+        Profile profile;
+        Consumer consumer(profile, "avformat", "unused");
+        QVERIFY(consumer.is_valid());
+        consumer.set("f", "null");
+        consumer.set("an", 1);
+        consumer.set("vn", 1);
+        consumer.set("real_time", -1);
+        std::atomic<int> calls{0};
+        mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer.get_consumer());
+        mlt_event event = mlt_events_listen(properties, &calls, "consumer-fatal-error", countEvent);
+        QVERIFY(event != nullptr);
+        QVERIFY(consumer.start() != 0);
+        QCOMPARE(calls.load(), 1);
+        QVERIFY(consumer.is_valid());
+        QVERIFY(consumer.is_stopped());
+        mlt_events_disconnect(properties, &calls);
+        QCOMPARE(consumer.stop(), 0);
+
+        consumer.set("vn", 0);
+        consumer.set("vcodec", "rawvideo");
+        Producer producer(profile, "color", "black");
+        QVERIFY(producer.is_valid());
+        consumer.connect(producer);
+        QCOMPARE(consumer.start(), 0);
+        QCOMPARE(consumer.stop(), 0);
+    }
+
+    // A format-list request returns without creating a worker, but must still
+    // restore the framework property listener before the consumer is reused.
+    void FormatListRestoresPropertyListener()
+    {
+        Profile profile;
+        Consumer consumer(profile, "avformat", "unused");
+        QVERIFY(consumer.is_valid());
+        consumer.set("real_time", 0);
+        consumer.set("f", "list");
+        QVERIFY(consumer.start() != 0);
+        QCOMPARE(consumer.stop(), 0);
+        consumer.set("width", 32);
+        QCOMPARE(mlt_service_profile(MLT_CONSUMER_SERVICE(consumer.get_consumer()))->width, 32);
+    }
+
+    // A listener must observe the worker setting "running" before start returns,
+    // and the consumer must remain usable for a subsequent stop.
+    void RunningPropertyIsReportedBeforeStartReturns()
+    {
+        Profile profile;
+        profile.set_width(32);
+        profile.set_height(16);
+        Producer producer(profile, "color", "black");
+        Consumer consumer(profile, "avformat", "unused");
+        QVERIFY(producer.is_valid());
+        QVERIFY(consumer.is_valid());
+        producer.set("eof", "loop");
+        consumer.set("f", "null");
+        consumer.set("vcodec", "rawvideo");
+        consumer.set("an", 1);
+        consumer.set("real_time", 0);
+        consumer.connect(producer);
+
+        std::atomic<int> calls{0};
+        mlt_properties properties = MLT_CONSUMER_PROPERTIES(consumer.get_consumer());
+        QVERIFY(mlt_events_listen(properties, &calls, "property-changed", onRunningChanged));
+        QCOMPARE(consumer.start(), 0);
+        QCOMPARE(calls.load(), 1);
+        QVERIFY(consumer.is_valid());
+        QCOMPARE(consumer.stop(), 0);
+        mlt_events_disconnect(properties, &calls);
     }
 
     void LoaderAttachesImageConverters()
