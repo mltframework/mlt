@@ -66,14 +66,6 @@ struct CompanionProxyInfo {
     bool is_side_by_side = true;
 };
 
-struct DualLensFramePayload {
-    DualLensCalibration calibration;
-    float gyro_quat[4] = {1.0f, 0.0f, 0.0f, 0.0f};
-    std::shared_ptr<std::vector<uint8_t>> raw_sbs_rgba;
-    uint32_t raw_sbs_w = 0;
-    uint32_t raw_sbs_h = 0;
-};
-
 using CompanionProxyResolver =
     std::function<std::optional<CompanionProxyInfo>(const std::string& source_path)>;
 

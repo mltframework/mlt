@@ -47,7 +47,6 @@ struct ProducerOsvContext
     int cached_h = 0;
     bool cached_export_mode = false;
     bool cached_use_lrf = false;
-    bool cached_raw_dual = false;
     int cached_stab_mode = -1;
     std::vector<uint8_t> cached_equirect;
 
@@ -420,17 +419,11 @@ static int producer_get_image(mlt_frame frame,
         out_h = (*height > 0) ? *height : 1024;
     }
 
-    mlt_properties frame_props = MLT_FRAME_PROPERTIES(frame);
-    const char *out_mode_prop = mlt_properties_get(props, "osv.output_mode");
-    const bool raw_dual_mode
-        = (mlt_properties_get_int(frame_props, "osv.request_raw_dual") == 1)
-          || (out_mode_prop && std::strcmp(out_mode_prop, "raw_dual") == 0);
-
     // Instantaneous cache hit when user pans/rotates/zooms the 360 viewport on
     // the same frame
-    if (!raw_dual_mode && !cut_changed && position == ctx->cached_position
+    if (!cut_changed && position == ctx->cached_position
         && export_mode == ctx->cached_export_mode && use_lrf == ctx->cached_use_lrf
-        && raw_dual_mode == ctx->cached_raw_dual && stab_mode == ctx->cached_stab_mode
+        && stab_mode == ctx->cached_stab_mode
         && ctx->cached_w == out_w && ctx->cached_h == out_h
         && ctx->cached_equirect.size() == (size_t) out_w * out_h * 4) {
         *width = out_w;
@@ -458,7 +451,7 @@ static int producer_get_image(mlt_frame frame,
     // scale it for fluid, real-time scrubbing without redundant GPU compute
     // re-stitching.
     if (use_lrf) {
-        if (!raw_dual_mode && !ctx->ensureStitcher()) {
+        if (!ctx->ensureStitcher()) {
             std::cerr << "[OSV-MLT] Failed to initialize Vulkan stitcher for LRF mode" << std::endl;
             return 1;
         }
@@ -482,34 +475,6 @@ static int producer_get_image(mlt_frame frame,
                 float gyro[4] = {1.0f, 0.0f, 0.0f, 0.0f};
                 if (ctx->telemetry_source) {
                     ctx->telemetry_source->getStabilizationQuat(source_frame, stab_mode, gyro);
-                }
-
-                if (raw_dual_mode) {
-                    int buf_size = lw * lh * 4;
-                    *width = lw;
-                    *height = lh;
-                    *format = mlt_image_rgba;
-                    *image = (uint8_t *) mlt_pool_alloc(buf_size);
-                    std::memcpy(*image, lrf_img, buf_size);
-                    mlt_frame_close(lrf_frame);
-
-                    auto *payload = new DualLensFramePayload();
-                    payload->calibration = ctx->calibration;
-                    std::memcpy(payload->gyro_quat, gyro, sizeof(gyro));
-                    payload->raw_sbs_rgba = std::make_shared<std::vector<uint8_t>>(
-                        *image, *image + buf_size);
-                    payload->raw_sbs_w = static_cast<uint32_t>(lw);
-                    payload->raw_sbs_h = static_cast<uint32_t>(lh);
-                    mlt_properties_set_data(frame_props,
-                                            "osv.dual_lens_payload",
-                                            payload,
-                                            sizeof(DualLensFramePayload),
-                                            [](void *p) {
-                                                delete static_cast<DualLensFramePayload *>(p);
-                                            },
-                                            nullptr);
-                    mlt_frame_set_image(frame, *image, buf_size, mlt_pool_release);
-                    return 0;
                 }
 
                 *width = out_w;
@@ -548,7 +513,6 @@ static int producer_get_image(mlt_frame frame,
                     ctx->cached_h = out_h;
                     ctx->cached_export_mode = export_mode;
                     ctx->cached_use_lrf = use_lrf;
-                    ctx->cached_raw_dual = false;
                     ctx->cached_stab_mode = stab_mode;
                     ctx->cached_equirect.assign(*image, *image + buf_size);
 
@@ -619,49 +583,6 @@ static int producer_get_image(mlt_frame frame,
 
     mlt_frame_get_image(frame_master, &img_master, &fmt, &w1, &h1, 0);
     mlt_frame_get_image(frame_slave, &img_slave, &fmt, &w0, &h0, 0);
-
-    if (raw_dual_mode && img_master && img_slave && w1 == w0 && h1 == h0) {
-        float gyro[4] = {1.0f, 0.0f, 0.0f, 0.0f};
-        if (ctx->telemetry_source) {
-            ctx->telemetry_source->getStabilizationQuat(source_frame, stab_mode, gyro);
-        }
-
-        int sbs_w = w1 * 2;
-        int sbs_h = h1;
-        int buf_size = sbs_w * sbs_h * 4;
-        *width = sbs_w;
-        *height = sbs_h;
-        *format = mlt_image_rgba;
-        *image = (uint8_t *) mlt_pool_alloc(buf_size);
-
-        size_t row_bytes = static_cast<size_t>(w1) * 4;
-        size_t sbs_stride = static_cast<size_t>(sbs_w) * 4;
-        for (int y = 0; y < sbs_h; ++y) {
-            uint8_t *dst = *image + static_cast<size_t>(y) * sbs_stride;
-            std::memcpy(dst, img_slave + static_cast<size_t>(y) * row_bytes, row_bytes);
-            std::memcpy(dst + row_bytes, img_master + static_cast<size_t>(y) * row_bytes, row_bytes);
-        }
-
-        mlt_frame_close(frame_master);
-        mlt_frame_close(frame_slave);
-
-        auto *payload = new DualLensFramePayload();
-        payload->calibration = ctx->calibration;
-        std::memcpy(payload->gyro_quat, gyro, sizeof(gyro));
-        payload->raw_sbs_rgba = std::make_shared<std::vector<uint8_t>>(*image, *image + buf_size);
-        payload->raw_sbs_w = static_cast<uint32_t>(sbs_w);
-        payload->raw_sbs_h = static_cast<uint32_t>(sbs_h);
-        mlt_properties_set_data(frame_props,
-                                "osv.dual_lens_payload",
-                                payload,
-                                sizeof(DualLensFramePayload),
-                                [](void *p) {
-                                    delete static_cast<DualLensFramePayload *>(p);
-                                },
-                                nullptr);
-        mlt_frame_set_image(frame, *image, buf_size, mlt_pool_release);
-        return 0;
-    }
 
     *width = out_w;
     *height = out_h;

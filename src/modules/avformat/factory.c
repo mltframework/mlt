@@ -42,10 +42,6 @@ extern mlt_producer producer_osv_init(mlt_profile profile,
                                       mlt_service_type type,
                                       const char *id,
                                       char *arg);
-extern mlt_filter filter_dual_lens_reframe_init(mlt_profile profile,
-                                                mlt_service_type type,
-                                                const char *id,
-                                                const char *arg);
 #endif
 extern mlt_filter filter_avfilter_init(mlt_profile, mlt_service_type, const char *, char *);
 extern mlt_link link_avdeinterlace_init(mlt_profile, mlt_service_type, const char *, char *);
@@ -102,10 +98,6 @@ static void *create_service(mlt_profile profile, mlt_service_type type, const ch
     if (!strcmp(id, "osv")) {
         if (type == mlt_service_producer_type)
             return producer_osv_init(profile, type, id, arg);
-    }
-    if (!strcmp(id, "dual_lens_reframe")) {
-        if (type == mlt_service_filter_type)
-            return filter_dual_lens_reframe_init(profile, type, id, arg);
     }
 #endif
     if (!strcmp(id, "avcolor_space"))
@@ -500,11 +492,6 @@ MLTAVFORMAT_EXPORT MLT_REPOSITORY
 #ifdef USE_VULKAN
     MLT_REGISTER(mlt_service_producer_type, "osv", create_service);
     MLT_REGISTER_METADATA(mlt_service_producer_type, "osv", metadata, "producer_osv.yml");
-    MLT_REGISTER(mlt_service_filter_type, "dual_lens_reframe", create_service);
-    MLT_REGISTER_METADATA(mlt_service_filter_type,
-                          "dual_lens_reframe",
-                          metadata,
-                          "filter_dual_lens_reframe.yml");
 #endif
     MLT_REGISTER(mlt_service_filter_type, "avcolour_space", create_service);
     MLT_REGISTER(mlt_service_filter_type, "avcolor_space", create_service);

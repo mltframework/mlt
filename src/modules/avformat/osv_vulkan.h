@@ -21,29 +21,12 @@ struct PushConstants {
 };
 static_assert(sizeof(PushConstants) == 128, "PushConstants must stay <= 128 bytes");
 
-struct ReframeParams {
-    float yaw_deg = 0.0f;
-    float pitch_deg = 0.0f;
-    float roll_deg = 0.0f;
-    float fov_deg = 90.0f;
-    float fisheye = 0.0f;
-};
-
-struct ReframeUniforms {
-    float viewMatrix[16];
-    float tanHalfFov;
-    float fisheyeAmount;
-    float sensorWidth;
-    float sensorHeight;
-};
-
 class OsvVulkanStitcher {
 public:
     OsvVulkanStitcher();
     ~OsvVulkanStitcher();
 
     bool initialize(const std::string& spv_shader_path);
-    bool initializeReframe(const std::string& reframe_spv_path);
     void cleanup();
 
     void setStitchRadius(float radius_meters) { stitchRadius_ = radius_meters; }
@@ -75,33 +58,6 @@ public:
         uint8_t* out_equirect_rgba
     );
 
-    bool reframeFrames(
-        const uint8_t* master_rgba,
-        const uint8_t* slave_rgba,
-        uint32_t sensor_w,
-        uint32_t sensor_h,
-        const LensCalibration& lens_master,
-        const LensCalibration& lens_slave,
-        const float* gyro_quat,
-        const ReframeParams& params,
-        uint32_t out_w,
-        uint32_t out_h,
-        uint8_t* out_rect_rgba
-    );
-
-    bool reframeSideBySide(
-        const uint8_t* sbs_rgba,
-        uint32_t sbs_w,
-        uint32_t sbs_h,
-        const LensCalibration& lens_master,
-        const LensCalibration& lens_slave,
-        const float* gyro_quat,
-        const ReframeParams& params,
-        uint32_t out_w,
-        uint32_t out_h,
-        uint8_t* out_rect_rgba
-    );
-
 private:
     VkInstance instance_ = VK_NULL_HANDLE;
     VkPhysicalDevice physical_device_ = VK_NULL_HANDLE;
@@ -114,17 +70,6 @@ private:
     VkPipelineLayout pipeline_layout_ = VK_NULL_HANDLE;
     VkPipeline pipeline_ = VK_NULL_HANDLE;
     VkCommandPool command_pool_ = VK_NULL_HANDLE;
-
-    // Direct rectilinear reframe pipeline resources
-    VkShaderModule reframe_shader_module_ = VK_NULL_HANDLE;
-    VkDescriptorSetLayout reframe_desc_layout_ = VK_NULL_HANDLE;
-    VkPipelineLayout reframe_pipeline_layout_ = VK_NULL_HANDLE;
-    VkPipeline reframe_pipeline_ = VK_NULL_HANDLE;
-    VkBuffer reframe_ubo_ = VK_NULL_HANDLE;
-    VkDeviceMemory reframe_ubo_mem_ = VK_NULL_HANDLE;
-    void* mapped_reframe_ubo_ = nullptr;
-    VkDescriptorPool reframe_desc_pool_ = VK_NULL_HANDLE;
-    VkDescriptorSet reframe_desc_set_ = VK_NULL_HANDLE;
 
     // Persistent allocated GPU resources
     uint32_t alloc_sensor_w_ = 0;
@@ -187,24 +132,7 @@ private:
 
     bool initVulkanCore();
     bool createPipeline(const std::string& spv_path);
-    bool createReframePipeline(const std::string& spv_path);
     bool ensureResources(uint32_t sensor_w, uint32_t sensor_h, uint32_t out_w, uint32_t out_h);
-    void updateReframeDescriptors();
-    bool executeReframePass(
-        uint32_t sensor_w,
-        uint32_t sensor_h,
-        const LensCalibration& lens_master,
-        const LensCalibration& lens_slave,
-        const float* gyro_quat,
-        const ReframeParams& params,
-        uint32_t out_w,
-        uint32_t out_h,
-        uint8_t* out_rect_rgba,
-        const uint8_t* master_rgba_for_seam,
-        size_t master_stride,
-        const uint8_t* slave_rgba_for_seam,
-        size_t slave_stride
-    );
     bool executeComputePass(
         VkPipeline target_pipeline,
         VkPipelineLayout target_layout,
