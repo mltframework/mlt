@@ -18,6 +18,7 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include "convert.h"
 #include "mltplacebo_export.h"
 #include "shader_service_id.h"
 #include <framework/mlt.h>
@@ -159,6 +160,14 @@ static void register_shaders(mlt_repository repository,
 
 MLTPLACEBO_EXPORT MLT_REPOSITORY
 {
+    /* mlt_frame_get_image calls this when a CPU format is requested from a
+       Vulkan frame and this module is loaded. */
+    mlt_properties_set_data(mlt_global_properties(),
+                            "mlt.convert.vulkan",
+                            (void *) placebo_convert_image,
+                            0,
+                            NULL,
+                            NULL);
     MLT_REGISTER(mlt_service_filter_type, "placebo.render", filter_placebo_render_init);
     MLT_REGISTER(mlt_service_filter_type, "placebo.shader", filter_placebo_shader_init);
     MLT_REGISTER(mlt_service_filter_type, "placebo.scale", filter_placebo_scale_init);

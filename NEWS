@@ -13,6 +13,9 @@ Framework
     with no picture still shows the checkerboard so it composites as transparent.
 
 Modules
+  - Fixed reading a CPU picture from a Vulkan frame. Video scopes and other
+    callers that ask for `yuv420p` or `rgb` after a linear Vulkan preview get
+    pixels instead of the texture pointer, which crashed the read.
   - Fixed Vulkan hardware decoding when `avformat` adopts the shared placebo
     device. The decode queue uses the Vulkan enumerator, so FFmpeg can see
     the codec. Headers without the video decode extension still build, and

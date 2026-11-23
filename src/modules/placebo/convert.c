@@ -37,6 +37,7 @@
 #include <libplacebo/gpu.h>
 #include <libplacebo/renderer.h>
 #include <stdio.h>
+#include <string.h>
 
 void placebo_image_source_release(placebo_image_source *source)
 {
@@ -316,6 +317,126 @@ static int download_rgba(mlt_frame frame,
     return 0;
 }
 
+/* The displayed frame is already a Vulkan texture. Scopes and the player ask
+   for a CPU format afterwards, on a thread that does not own the image.
+   Render into a host-readable texture (encoding to consumer.color_trc when
+   the preview left the picture linear) and hand the pixels to the next
+   converter. The VkImage stays with the frame that owns it. */
+static int download_vulkan(mlt_frame frame,
+                           uint8_t **image,
+                           mlt_image_format *format,
+                           mlt_image_format output_format)
+{
+    pl_gpu gpu = placebo_gpu_get();
+    mlt_properties properties = MLT_FRAME_PROPERTIES(frame);
+    int width = mlt_properties_get_int(properties, "width");
+    int height = mlt_properties_get_int(properties, "height");
+    int high = output_format == mlt_image_rgba64 || placebo_is_high_depth_yuv(output_format);
+    pl_fmt dst_fmt = high ? placebo_rgba16_format(gpu) : placebo_rgba8_format(gpu);
+    mlt_image_format produced = high ? mlt_image_rgba64 : mlt_image_rgba;
+    mlt_color_trc src_trc;
+    const char *consumer_trc;
+    enum pl_color_transfer dst_transfer;
+    enum pl_color_transfer output_transfer;
+    mlt_color_trc stored_trc;
+    struct pl_frame mapped;
+    struct pl_frame pl_dst;
+    struct pl_color_space dst_color;
+    struct pl_render_params params;
+    pl_tex dst = NULL;
+    uint8_t *output = NULL;
+    int size;
+    int ok;
+
+    if (!gpu || !dst_fmt || !image || !*image || width < 1 || height < 1)
+        return 1;
+
+    src_trc = placebo_frame_color_trc(frame, *image, *format);
+    consumer_trc = mlt_properties_get(properties, "consumer.color_trc");
+    stored_trc = consumer_trc ? mlt_image_color_trc_id(consumer_trc) : src_trc;
+    if (stored_trc == mlt_color_trc_none || stored_trc == mlt_color_trc_invalid)
+        stored_trc = src_trc;
+    dst_transfer = placebo_transfer_from_mlt(stored_trc);
+    output_transfer = placebo_frame_output_transfer(frame);
+    if (dst_transfer == PL_COLOR_TRC_UNKNOWN)
+        dst_transfer = placebo_transfer_from_mlt(src_trc);
+    if (output_transfer == PL_COLOR_TRC_UNKNOWN)
+        output_transfer = dst_transfer;
+
+    memset(&mapped, 0, sizeof(mapped));
+    placebo_render_lock();
+    if (!placebo_map_vulkan_image(gpu, *image, &mapped)) {
+        placebo_render_unlock();
+        mlt_log_error(NULL, "[placebo] Failed to map Vulkan image for a CPU read\n");
+        return 1;
+    }
+    dst = placebo_tex_acquire_work(gpu,
+                                   width,
+                                   height,
+                                   dst_fmt,
+                                   PLACEBO_TEX_HOST_READABLE | PLACEBO_TEX_BLIT_DST);
+    if (!dst) {
+        placebo_unmap_vulkan_image(gpu, &mapped);
+        placebo_render_unlock();
+        return 1;
+    }
+
+    dst_color = placebo_color_space_retarget(&mapped.color, dst_transfer, output_transfer);
+    memset(&pl_dst, 0, sizeof(pl_dst));
+    pl_dst.num_planes = 1;
+    pl_dst.planes[0].texture = dst;
+    pl_dst.planes[0].components = 4;
+    pl_dst.planes[0].component_mapping[0] = 0;
+    pl_dst.planes[0].component_mapping[1] = 1;
+    pl_dst.planes[0].component_mapping[2] = 2;
+    pl_dst.planes[0].component_mapping[3] = 3;
+    pl_dst.repr = pl_color_repr_rgb;
+    pl_dst.repr.alpha = PL_ALPHA_INDEPENDENT;
+    pl_dst.color = dst_color;
+    params = placebo_render_params(frame);
+    placebo_render_params_preserve_alpha(&params);
+    ok = placebo_render(PLACEBO_SITE_CONVERT, &mapped, &pl_dst, &params);
+    placebo_unmap_vulkan_image(gpu, &mapped);
+    if (!ok) {
+        placebo_tex_recycle(gpu, &dst);
+        placebo_render_unlock();
+        mlt_log_error(NULL, "[placebo] Failed to render Vulkan image for a CPU read\n");
+        return 1;
+    }
+
+    size = mlt_image_format_size(produced, width, height, NULL);
+    output = mlt_pool_alloc(size);
+    if (!output) {
+        placebo_tex_recycle(gpu, &dst);
+        placebo_render_unlock();
+        return 1;
+    }
+    ok = pl_tex_download(gpu,
+                         pl_tex_transfer_params(.tex = dst,
+                                                .row_pitch = (size_t) width
+                                                             * dst->params.format->texel_size,
+                                                .ptr = output, ));
+    placebo_tex_recycle(gpu, &dst);
+    placebo_render_unlock();
+    if (!ok) {
+        mlt_pool_release(output);
+        mlt_log_error(NULL, "[placebo] Failed to download Vulkan image\n");
+        return 1;
+    }
+
+    *image = output;
+    *format = produced;
+    mlt_properties_set_int(properties, "color_trc", stored_trc);
+    mlt_properties_set_int(properties, "full_range", 1);
+    if (mlt_frame_set_image(frame, output, size, mlt_pool_release)) {
+        mlt_pool_release(output);
+        *image = NULL;
+        return 1;
+    }
+    log_conversion(mlt_image_vulkan, "vulkan", produced, high ? "rgba16" : "rgba8");
+    return 0;
+}
+
 int placebo_convert_image(mlt_frame frame,
                           uint8_t **image,
                           mlt_image_format *format,
@@ -331,10 +452,15 @@ int placebo_convert_image(mlt_frame frame,
         return 1;
 
     /* A Vulkan texture is not a pixel buffer and not a pl_tex. Pass it
-       through when the caller still wants a private image (the next placebo
-       filter maps it). Refuse a CPU format so it cannot be read as pixels. */
+       through when the caller still wants a GPU image (the next placebo
+       filter maps it). A CPU format is downloaded so it cannot be read as
+       the texture struct. */
     if (placebo_frame_is_vulkan(frame, *format)) {
         if (output_format == mlt_image_private || output_format == mlt_image_vulkan)
+            return 0;
+        if (download_vulkan(frame, image, format, output_format))
+            return 1;
+        if (*format == output_format)
             return 0;
         return 1;
     }

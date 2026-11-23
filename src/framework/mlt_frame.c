@@ -499,6 +499,62 @@ static int generate_test_image(mlt_properties properties,
  * \todo Better describe the width and height as inputs.
  */
 
+/* A Vulkan image is a texture, not pixels. The placebo module registers
+   this when it can download one. Missing means the build has no GPU module. */
+static int convert_vulkan_image(mlt_frame self,
+                                uint8_t **buffer,
+                                mlt_image_format *format,
+                                mlt_image_format requested)
+{
+    mlt_convert_image fn;
+
+    if (!buffer || !*buffer || *format != mlt_image_vulkan)
+        return 0;
+    if (requested == mlt_image_none || mlt_image_format_is_gpu(requested))
+        return 0;
+    fn = (mlt_convert_image) mlt_properties_get_data(mlt_global_properties(),
+                                                     "mlt.convert.vulkan",
+                                                     NULL);
+    if (!fn)
+        return 1;
+    return fn(self, buffer, format, requested);
+}
+
+/* Run the converter list, then report the size the image actually has.
+   A CPU request that is still a GPU texture is not pixels: return it as no
+   image instead of a pointer the caller will walk off the end of. */
+static int finish_image(mlt_frame self,
+                        uint8_t **buffer,
+                        mlt_image_format *format,
+                        mlt_image_format requested,
+                        int *width,
+                        int *height)
+{
+    mlt_properties properties = MLT_FRAME_PROPERTIES(self);
+
+    if (!(buffer && *buffer))
+        return 0;
+    if (requested != mlt_image_none) {
+        convert_vulkan_image(self, buffer, format, requested);
+        if (*buffer && mlt_frame_has_convert_image(self))
+            mlt_frame_convert_image(self, buffer, format, requested);
+    }
+    mlt_properties_set_int(properties, "format", *format);
+    int converted_width = mlt_properties_get_int(properties, "width");
+    int converted_height = mlt_properties_get_int(properties, "height");
+    if (converted_width > 0)
+        *width = converted_width;
+    if (converted_height > 0)
+        *height = converted_height;
+    /* The texture survived every converter. It is not a pixel buffer. */
+    if (*buffer && requested != mlt_image_none && !mlt_image_format_is_gpu(requested)
+        && mlt_image_format_is_gpu(*format)) {
+        *buffer = NULL;
+        return 1;
+    }
+    return 0;
+}
+
 int mlt_frame_get_image(mlt_frame self,
                         uint8_t **buffer,
                         mlt_image_format *format,
@@ -524,9 +580,8 @@ int mlt_frame_get_image(mlt_frame self,
         if (!error && buffer && *buffer) {
             mlt_properties_set_int(properties, "width", *width);
             mlt_properties_set_int(properties, "height", *height);
-            if (mlt_frame_has_convert_image(self) && requested_format != mlt_image_none)
-                mlt_frame_convert_image(self, buffer, format, requested_format);
-            mlt_properties_set_int(properties, "format", *format);
+            if (finish_image(self, buffer, format, requested_format, width, height))
+                error = 1;
         } else {
             error = generate_test_image(properties, buffer, format, width, height, writable);
             if (!already_test)
@@ -537,10 +592,8 @@ int mlt_frame_get_image(mlt_frame self,
         *buffer = mlt_properties_get_data(properties, "image", NULL);
         *width = mlt_properties_get_int(properties, "width");
         *height = mlt_properties_get_int(properties, "height");
-        if (mlt_frame_has_convert_image(self) && *buffer && requested_format != mlt_image_none) {
-            mlt_frame_convert_image(self, buffer, format, requested_format);
-            mlt_properties_set_int(properties, "format", *format);
-        }
+        if (finish_image(self, buffer, format, requested_format, width, height))
+            error = 1;
     } else {
         // Any other empty frame is a missed image (for example a second
         // get_image while a worker still owns the callback).
