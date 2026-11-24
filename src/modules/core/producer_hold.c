@@ -1,6 +1,6 @@
 /*
  * producer_hold.c -- frame holding producer
- * Copyright (C) 2003-2014 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -129,10 +129,6 @@ static int producer_get_image(mlt_frame frame,
         // Pass the current image as is
         mlt_frame_set_image(frame, *buffer, size, NULL);
     }
-
-    // Make sure that no further scaling is done
-    mlt_properties_set(properties, "consumer.rescale", "none");
-    mlt_properties_set(properties, "scale", "off");
 
     // All done
     return 0;
