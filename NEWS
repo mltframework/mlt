@@ -14,6 +14,8 @@ Modules
   - Fixed the `qtext` typewriter effect delaying its start after the text is
     edited. The animation stays anchored to the filter in-point. Subtitle cues
     begin typing on the frame the cue is shown.
+  - Fixed the `avformat` producer crashing on video slower than 1 frame per
+    second. The clip plays at its own rate and holds each source frame.
 
 
 Version 7.42.0
