@@ -373,6 +373,23 @@ private Q_SLOTS:
         QCOMPARE(p.get_time("key", mlt_time_smpte_ndf), timeString);
     }
 
+    void TimeCodeRoundTripsAtNtscFps()
+    {
+        const char *names[] = {"atsc_720p_2997", "atsc_720p_5994", "atsc_720p_2398"};
+        for (const char *name : names) {
+            Profile profile(name);
+            Properties p;
+            p.set("_profile", profile.get_profile(), 0);
+            for (int i = 0; i < 200000; ++i) {
+                p.set("key", i);
+                p.set("test", p.get_time("key", mlt_time_smpte_df));
+                QCOMPARE(p.get_int("test"), i);
+                p.set("test", p.get_time("key", mlt_time_smpte_ndf));
+                QCOMPARE(p.get_int("test"), i);
+            }
+        }
+    }
+
     void SetAndGetTimeClock()
     {
         Profile profile;
