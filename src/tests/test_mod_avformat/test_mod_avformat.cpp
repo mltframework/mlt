@@ -90,6 +90,121 @@ private Q_SLOTS:
         mlt_producer_close(raw);
     }
 
+    // Sample the center pixel after a decode. Limited-range red and blue survive
+    // the round trip well enough to tell the two source frames apart.
+    static int centerColor(Producer &producer, int position)
+    {
+        producer.seek(position);
+        QScopedPointer<Frame> frame(producer.get_frame());
+        if (!frame)
+            return -1;
+        mlt_image_format format = mlt_image_rgb;
+        int width = 0;
+        int height = 0;
+        uint8_t *image = frame->get_image(format, width, height);
+        if (!image || width < 1 || height < 1)
+            return -1;
+        const uint8_t *pixel = image + ((height / 2) * width + width / 2) * 3;
+        if (pixel[0] > 150 && pixel[1] < 80 && pixel[2] < 80)
+            return 0;
+        if (pixel[2] > 150 && pixel[0] < 80 && pixel[1] < 80)
+            return 1;
+        return -1;
+    }
+
+    static void setSquare(Profile &profile)
+    {
+        profile.set_width(32);
+        profile.set_height(16);
+        profile.set_progressive(1);
+        profile.set_sample_aspect(1, 1);
+        profile.set_display_aspect(2, 1);
+        profile.set_colorspace(709);
+        profile.set_explicit(1);
+    }
+
+    static bool encodeTwoFrames(Profile &profile, const QByteArray &path)
+    {
+        Producer red(profile, "color", "red");
+        Producer blue(profile, "color", "blue");
+        if (!red.is_valid() || !blue.is_valid())
+            return false;
+        Playlist playlist(profile);
+        playlist.append(red, 0, 0);
+        playlist.append(blue, 0, 0);
+        Consumer encoder(profile, "avformat", path.constData());
+        if (!encoder.is_valid())
+            return false;
+        // MPEG-2 cannot store a rate below 1 fps. libx264 can, and it is what
+        // the slow-clip repro uses.
+        encoder.set("vcodec", "libx264");
+        encoder.set("pix_fmt", "yuv420p");
+        encoder.set("preset", "ultrafast");
+        encoder.set("an", 1);
+        encoder.set("progressive", 1);
+        encoder.set("g", 1);
+        encoder.set("real_time", 0);
+        encoder.set("terminate_on_pause", 1);
+        encoder.connect(playlist);
+        encoder.run();
+        const QFileInfo info(QString::fromUtf8(path));
+        return info.exists() && info.size() > 0;
+    }
+
+    void SlowFrameHoldAndFastRounding()
+    {
+        QTemporaryDir dir;
+        QVERIFY(dir.isValid());
+
+        // Two source frames at 1/2 fps: red, then blue. Each source frame is
+        // two seconds, so a 25 fps project holds red through frame 49.
+        Profile slow;
+        setSquare(slow);
+        slow.set_frame_rate(1, 2);
+        const QByteArray slowPath = dir.filePath("slow.mp4").toUtf8();
+        if (!encodeTwoFrames(slow, slowPath))
+            QSKIP("libx264 did not produce a file");
+
+        Profile project;
+        setSquare(project);
+        project.set_frame_rate(25, 1);
+        Producer slowClip(project, "avformat", slowPath.constData());
+        QVERIFY(slowClip.is_valid());
+        const double probedRate = slowClip.get_double("meta.media.0.stream.frame_rate");
+        QVERIFY(probedRate > 0.0 && probedRate < 1.0);
+        QVERIFY(slowClip.get_length() >= 100);
+        QCOMPARE(centerColor(slowClip, 0), 0);
+        // frame_rate_num is stored when the decoder opens, during the first image.
+        const double slowRate = slowClip.get_double("meta.media.frame_rate_num")
+                                / slowClip.get_double("meta.media.frame_rate_den");
+        QVERIFY(slowRate > 0.0 && slowRate < 1.0);
+        QCOMPARE(centerColor(slowClip, 49), 0);
+        QCOMPARE(centerColor(slowClip, 50), 1);
+        QCOMPARE(centerColor(slowClip, 99), 1);
+
+        // 24 fps in a 30 fps project. Nearest-frame rounding shows the second
+        // source frame at project frame 1. Holding for the full source frame
+        // would still show the first.
+        Profile film;
+        setSquare(film);
+        film.set_frame_rate(24, 1);
+        const QByteArray filmPath = dir.filePath("film.mp4").toUtf8();
+        if (!encodeTwoFrames(film, filmPath))
+            QSKIP("libx264 did not produce a file");
+        Profile video;
+        setSquare(video);
+        video.set_frame_rate(30, 1);
+        Producer filmClip(video, "avformat", filmPath.constData());
+        QVERIFY(filmClip.is_valid());
+        QVERIFY(filmClip.get_double("meta.media.0.stream.frame_rate") >= 1.0);
+        QVERIFY(filmClip.get_length() >= 2);
+        QCOMPARE(centerColor(filmClip, 0), 0);
+        const double filmRate = filmClip.get_double("meta.media.frame_rate_num")
+                                / filmClip.get_double("meta.media.frame_rate_den");
+        QVERIFY(filmRate >= 1.0);
+        QCOMPARE(centerColor(filmClip, 1), 1);
+    }
+
     void DeinterlacerSourceDiscontinuity()
     {
         Profile profile;
