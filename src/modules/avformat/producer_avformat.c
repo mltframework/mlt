@@ -448,11 +448,8 @@ static char *filter_restricted(const char *in)
 
 /** Map a timestamp in seconds to a source-frame index.
 
- *  Rates below 1 fps are the old "not a sane frame rate" line. Anything that
- *  already played keeps nearest-frame rounding, which is how a 24 fps clip
- *  repeats frames in a 30 fps profile. That cut is not the point where half a
- *  source frame exceeds one profile frame. Below it, each source frame is held
- *  for its full duration.
+ *  Below 1 fps, truncate so the source frame stays up for its whole period.
+ *  At 1 fps and above, rounds to the nearest source frame.
  */
 
 static int64_t source_frame_index(double seconds, double source_fps)
@@ -460,7 +457,7 @@ static int64_t source_frame_index(double seconds, double source_fps)
     if (!(source_fps > 0.0) || !isfinite(source_fps) || !isfinite(seconds))
         return 0;
     if (source_fps < 1.0)
-        return (int64_t) (seconds * source_fps);
+        return (int64_t) floor(seconds * source_fps);
     return (int64_t) (seconds * source_fps + 0.5);
 }
 
