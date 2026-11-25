@@ -96,6 +96,7 @@ struct producer_avformat_s
     int video_seekable;
     int seekable; /// This one is used for both audio and file level seekability.
     atomic_int_fast64_t current_position;
+    int64_t last_source_index;
     mlt_position nonseek_position;
     atomic_int top_field_first;
     int progressive;
@@ -239,6 +240,10 @@ mlt_producer producer_avformat_init(mlt_profile profile, const char *service, ch
 
             // Get the properties
             mlt_properties properties = MLT_PRODUCER_PROPERTIES(producer);
+
+            // The factory attaches the profile only after init returns.
+            // guess_frame_rate runs during the open below and needs it.
+            mlt_service_set_profile(MLT_PRODUCER_SERVICE(producer), profile);
 
             // Set the resource property (required for all producers)
             mlt_properties_set(properties, "resource", file);
@@ -441,13 +446,28 @@ static char *filter_restricted(const char *in)
     return out;
 }
 
+/** Map a timestamp in seconds to a source-frame index.
+
+ *  Below 1 fps, truncate so the source frame stays up for its whole period.
+ *  At 1 fps and above, rounds to the nearest source frame.
+ */
+
+static int64_t source_frame_index(double seconds, double source_fps)
+{
+    if (!(source_fps > 0.0) || !isfinite(source_fps) || !isfinite(seconds))
+        return 0;
+    if (source_fps < 1.0)
+        return (int64_t) floor(seconds * source_fps);
+    return (int64_t) (seconds * source_fps + 0.5);
+}
+
 static AVRational guess_frame_rate(producer_avformat self, AVStream *stream)
 {
     AVRational frame_rate = av_guess_frame_rate(self->video_format, stream, NULL);
     double fps = av_q2d(frame_rate);
 
     // Verify and sanitize the frame rate.
-    if (isnan(fps) || isinf(fps) || fps == 0) {
+    if (!(fps > 0.0) || !isfinite(fps)) {
         frame_rate = stream->avg_frame_rate;
         fps = av_q2d(frame_rate);
     }
@@ -460,15 +480,20 @@ static AVRational guess_frame_rate(producer_avformat self, AVStream *stream)
         frame_rate = av_d2q(av_q2d(stream->avg_frame_rate), 1024);
         fps = av_q2d(frame_rate);
     }
-    if (isnan(fps) || isinf(fps) || fps < 1.0) {
-        // Use the profile frame rate if all else fails.
+    // Keep a positive finite rate, including below 1 fps. A missing or
+    // non-finite rate uses the profile attached before open. Do not invent a
+    // rate when that profile is missing.
+    if (!(fps > 0.0) || !isfinite(fps)) {
         mlt_profile profile = mlt_service_profile(MLT_PRODUCER_SERVICE(self->parent));
-        frame_rate.num = profile->frame_rate_num;
-        frame_rate.den = profile->frame_rate_den;
+        if (profile && profile->frame_rate_num > 0 && profile->frame_rate_den > 0) {
+            frame_rate.num = profile->frame_rate_num;
+            frame_rate.den = profile->frame_rate_den;
+        }
     }
 
     // Normalize broadcast frame rates for Matroska
-    if (self->video_format->iformat->name && strstr(self->video_format->iformat->name, "matroska")) {
+    if (frame_rate.den > 0 && self->video_format->iformat->name
+        && strstr(self->video_format->iformat->name, "matroska")) {
         switch (lrint(100000.0 * frame_rate.num / frame_rate.den)) {
         case 2997003:
             frame_rate.num = 30000;
@@ -1548,6 +1573,7 @@ static int producer_open(
             // Initialize position info
             self->first_pts = AV_NOPTS_VALUE;
             self->last_position = POSITION_INITIAL;
+            self->last_source_index = POSITION_INVALID;
 
             AVDictionaryEntry *hwaccel = av_dict_get(params, "hwaccel", NULL, 0);
             AVDictionaryEntry *hwaccel_device = av_dict_get(params, "hwaccel_device", NULL, 0);
@@ -1930,6 +1956,7 @@ static int seek_video(producer_avformat self,
             // Remove the cached info relating to the previous position
             self->current_position = POSITION_INVALID;
             self->last_position = POSITION_INVALID;
+            self->last_source_index = POSITION_INVALID;
             av_frame_unref(self->video_frame);
         }
     }
@@ -2861,8 +2888,10 @@ static int producer_get_image(mlt_frame frame,
     double source_fps = mlt_properties_get_double(properties, "meta.media.frame_rate_num")
                         / mlt_properties_get_double(properties, "meta.media.frame_rate_den");
 
-    // This is the physical frame position in the source
-    int64_t req_position = (int64_t) (position / mlt_producer_get_fps(producer) * source_fps + 0.5);
+    // This is the physical frame position in the source.
+    double producer_fps = mlt_producer_get_fps(producer);
+    double source_seconds = (producer_fps > 0.0) ? (double) position / producer_fps : 0.0;
+    int64_t req_position = source_frame_index(source_seconds, source_fps);
 
     // Determines if we have to decode all frames in a sequence - when there temporal compression is used.
     const AVCodecDescriptor *descriptor = avcodec_descriptor_get(codec_params->codec_id);
@@ -2978,9 +3007,8 @@ static int producer_get_image(mlt_frame frame,
                         pts -= self->first_pts;
                     else if (context->start_time != AV_NOPTS_VALUE)
                         pts -= context->start_time;
-                    int_position = (int64_t) ((av_q2d(self->video_time_base) * pts + delay)
-                                                  * source_fps
-                                              + 0.5);
+                    int_position = source_frame_index(av_q2d(self->video_time_base) * pts + delay,
+                                                      source_fps);
                     if (int_position == self->last_position)
                         int_position = self->last_position + 1;
                 }
@@ -3121,9 +3149,16 @@ static int producer_get_image(mlt_frame frame,
                             pts -= self->first_pts;
                         else if (context->start_time != AV_NOPTS_VALUE)
                             pts -= context->start_time;
-                        int_position = (int64_t) ((av_q2d(self->video_time_base) * pts + delay)
-                                                      * source_fps
-                                                  + 0.5);
+                        int_position = source_frame_index(av_q2d(self->video_time_base) * pts
+                                                              + delay,
+                                                          source_fps);
+                        // Decoder delay means this frame is not the packet just
+                        // sent. Below 1 fps, a timestamp that still falls on the
+                        // source frame already seen is shown on the next hold.
+                        if (source_fps > 0.0 && source_fps < 1.0 && self->last_source_index >= 0
+                            && int_position <= self->last_source_index)
+                            int_position = self->last_source_index + 1;
+                        self->last_source_index = int_position;
                     }
 
                     if (int_position < req_position)
