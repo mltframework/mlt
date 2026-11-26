@@ -78,55 +78,103 @@ static int reserve_buffer(float **buffer, size_t *buffer_floats, size_t floats)
 
 static void mix_audio(double weight_start,
                       double weight_end,
-                      float *buffer_a,
-                      float *buffer_b,
+                      float *restrict buffer_a,
+                      const float *restrict buffer_b,
                       int channels_a,
                       int channels_b,
                       int channels_out,
                       int samples,
                       int power)
 {
-    int i, j;
-    double a, b, v;
+    if (weight_start == weight_end) {
+        const double gain_b = power ? sin(weight_start * M_PI_2) : weight_start;
+        const double gain_a = power ? cos(weight_start * M_PI_2) : 1.0 - weight_start;
+        if (channels_a == channels_out && channels_b == channels_out) {
+            const int total = samples * channels_out;
+            for (int k = 0; k < total; k++) {
+                double a = (double) buffer_a[k];
+                double b = (double) buffer_b[k];
+                buffer_a[k] = (float) (gain_b * b + gain_a * a);
+            }
+        } else {
+            for (int i = 0; i < samples; i++) {
+                float *restrict pa = buffer_a + i * channels_a;
+                const float *restrict pb = buffer_b + i * channels_b;
+                for (int j = 0; j < channels_out; j++) {
+                    double a = (double) pa[j];
+                    double b = (double) pb[j];
+                    pa[j] = (float) (gain_b * b + gain_a * a);
+                }
+            }
+        }
+        return;
+    }
 
     // Compute a smooth ramp over start to end
     double mix = weight_start;
-    double mix_step = (weight_end - weight_start) / samples;
+    const double mix_step = (weight_end - weight_start) / samples;
 
-    for (i = 0; i < samples; i++) {
-        double gain_b = power ? sin(mix * M_PI_2) : mix;
-        double gain_a = power ? cos(mix * M_PI_2) : 1.0 - mix;
-        for (j = 0; j < channels_out; j++) {
-            a = (double) buffer_a[i * channels_a + j];
-            b = (double) buffer_b[i * channels_b + j];
-            v = gain_b * b + gain_a * a;
-            buffer_a[i * channels_a + j] = v;
+    if (power) {
+        for (int i = 0; i < samples; i++) {
+            const double angle = mix * M_PI_2;
+            const double gain_b = sin(angle);
+            const double gain_a = cos(angle);
+            float *restrict pa = buffer_a + i * channels_a;
+            const float *restrict pb = buffer_b + i * channels_b;
+            for (int j = 0; j < channels_out; j++) {
+                double a = (double) pa[j];
+                double b = (double) pb[j];
+                pa[j] = (float) (gain_b * b + gain_a * a);
+            }
+            mix += mix_step;
         }
-        mix += mix_step;
+    } else {
+        for (int i = 0; i < samples; i++) {
+            const double gain_b = mix;
+            const double gain_a = 1.0 - mix;
+            float *restrict pa = buffer_a + i * channels_a;
+            const float *restrict pb = buffer_b + i * channels_b;
+            for (int j = 0; j < channels_out; j++) {
+                double a = (double) pa[j];
+                double b = (double) pb[j];
+                pa[j] = (float) (gain_b * b + gain_a * a);
+            }
+            mix += mix_step;
+        }
     }
 }
 
 static void sum_audio(double weight_start,
                       double weight_end,
-                      float *buffer_a,
-                      float *buffer_b,
+                      float *restrict buffer_a,
+                      const float *restrict buffer_b,
                       int channels_a,
                       int channels_b,
                       int channels_out,
                       int samples)
 {
-    int i, j;
-    double a, b;
+    if (weight_start == weight_end && channels_a == channels_out && channels_b == channels_out) {
+        const double mix = weight_start;
+        const int total = samples * channels_out;
+        for (int k = 0; k < total; k++) {
+            double a = (double) buffer_a[k];
+            double b = (double) buffer_b[k];
+            buffer_a[k] = (float) (mix * b + a);
+        }
+        return;
+    }
 
     // Compute a smooth ramp over start to end
     double mix = weight_start;
-    double mix_step = (weight_end - weight_start) / samples;
+    const double mix_step = (weight_end - weight_start) / samples;
 
-    for (i = 0; i < samples; i++) {
-        for (j = 0; j < channels_out; j++) {
-            a = (double) buffer_a[i * channels_a + j];
-            b = (double) buffer_b[i * channels_b + j];
-            buffer_a[i * channels_a + j] = mix * b + a;
+    for (int i = 0; i < samples; i++) {
+        float *restrict pa = buffer_a + i * channels_a;
+        const float *restrict pb = buffer_b + i * channels_b;
+        for (int j = 0; j < channels_out; j++) {
+            double a = (double) pa[j];
+            double b = (double) pb[j];
+            pa[j] = (float) (mix * b + a);
         }
         mix += mix_step;
     }
