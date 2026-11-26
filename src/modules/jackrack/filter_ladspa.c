@@ -1,6 +1,6 @@
 /*
  * filter_ladspa.c -- filter audio through LADSPA plugins
- * Copyright (C) 2004-2025 Meltytech, LLC
+ * Copyright (C) 2004-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -178,7 +178,9 @@ static int ladspa_get_audio(mlt_frame frame,
         for (i = 0; i < plugin->desc->control_port_count; i++) {
             // Apply the control port values
             char key[20];
-            value = plugin_desc_get_default_control_value(plugin->desc, i, sample_rate);
+            value = plugin_desc_get_default_control_value(plugin->desc,
+                                                          plugin->desc->control_port_indicies[i],
+                                                          sample_rate);
             snprintf(key, sizeof(key), "%d", i);
             if (mlt_properties_get(filter_properties, key))
                 value = mlt_properties_anim_get_double(filter_properties, key, position, length);

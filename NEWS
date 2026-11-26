@@ -26,6 +26,9 @@ Modules
     begin typing on the frame the cue is shown.
   - Fixed the `avformat` producer crashing on video slower than 1 frame per
     second. The clip plays at its own rate and holds each source frame.
+  - Fixed `ladspa` control parameters so `melt -query` names match the
+    properties the filter reads. Plugins whose audio ports come before the
+    controls no longer apply the wrong control or ignore a default of 0.
 
 
 Version 7.42.0

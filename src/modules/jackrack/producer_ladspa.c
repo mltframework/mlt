@@ -1,6 +1,6 @@
 /*
  * producer_ladspa.c -- LADSPA plugin producer
- * Copyright (C) 2013-2014 Meltytech, LLC
+ * Copyright (C) 2013-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -111,7 +111,10 @@ static int producer_get_audio(mlt_frame frame,
             for (index = 0; index < plugin->desc->control_port_count; index++) {
                 // Apply the control port values
                 char key[20];
-                value = plugin_desc_get_default_control_value(plugin->desc, index, sample_rate);
+                value = plugin_desc_get_default_control_value(plugin->desc,
+                                                              plugin->desc
+                                                                  ->control_port_indicies[index],
+                                                              sample_rate);
                 snprintf(key, sizeof(key), "%d", index);
                 if (mlt_properties_get(producer_properties, key))
                     value = mlt_properties_anim_get_double(producer_properties,

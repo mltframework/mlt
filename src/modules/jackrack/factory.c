@@ -204,7 +204,9 @@ static mlt_properties metadata(mlt_service_type type, const char *id, char *data
                                         0,
                                         (mlt_destructor) mlt_properties_close,
                                         NULL);
-                snprintf(key, sizeof(key), "%d", j);
+                /* Property name is the 0-based control index. filter_ladspa reads
+                   that, while port hints are stored by LADSPA port index. */
+                snprintf(key, sizeof(key), "%d", i);
                 mlt_properties_set(p, "identifier", key);
                 add_port_to_metadata(p, desc, j);
                 mlt_properties_set(p, "mutable", "yes");

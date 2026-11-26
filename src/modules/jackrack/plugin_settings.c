@@ -5,7 +5,7 @@
  * Copyright (C) Robert Ham 2002, 2003 (node@users.sourceforge.net)
  *
  * Modification for MLT:
- * Copyright (C) 2004-2014 Meltytech, LLC
+ * Copyright (C) 2004-2026 Meltytech, LLC
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -39,7 +39,9 @@ settings_set_to_default (settings_t * settings, guint32 sample_rate)
   
   for (control = 0; control < settings->desc->control_port_count; control++)
     {
-      value = plugin_desc_get_default_control_value (settings->desc, control, sample_rate);
+      value = plugin_desc_get_default_control_value (settings->desc,
+                                                     settings->desc->control_port_indicies[control],
+                                                     sample_rate);
 
       for (copy = 0; copy < settings->copies; copy++)
         {
