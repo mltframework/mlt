@@ -31,8 +31,8 @@ typedef struct
     uint8_t *image;
     int width;
     int height;
-    double over_cr;
-    double over_cb;
+    uint8_t lut_cb[256];
+    uint8_t lut_cr[256];
 } slice_desc;
 
 static int do_slice_proc(int id, int index, int jobs, void *data)
@@ -41,15 +41,14 @@ static int do_slice_proc(int id, int index, int jobs, void *data)
     slice_desc *desc = (slice_desc *) data;
     int slice_line_start,
         slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
-    int slice_line_end = slice_line_start + slice_height;
-    int line_size = desc->width * 2;
-    int x, y;
-    for (y = slice_line_start; y < slice_line_end; y++) {
-        uint8_t *p = desc->image + y * line_size;
-        for (x = 0; x < line_size; x += 4) {
-            p[x + 1] = CLAMP(((double) p[x + 1] - 127.0) * desc->over_cb + 127.0, 0, 255);
-            p[x + 3] = CLAMP(((double) p[x + 3] - 127.0) * desc->over_cr + 127.0, 0, 255);
-        }
+    const int line_size = desc->width * 2;
+    const uint8_t *lut_cb = desc->lut_cb;
+    const uint8_t *lut_cr = desc->lut_cr;
+    uint8_t *p = desc->image + (size_t) slice_line_start * line_size;
+    const size_t total_bytes = (size_t) slice_height * line_size;
+    for (size_t x = 0; x < total_bytes; x += 4) {
+        p[x + 1] = lut_cb[p[x + 1]];
+        p[x + 3] = lut_cr[p[x + 3]];
     }
     return 0;
 }
@@ -71,10 +70,14 @@ static int filter_get_image(mlt_frame frame,
 
     if (error == 0 && *image) {
         slice_desc desc;
-        desc.over_cr = mlt_properties_anim_get_double(properties, "oversaturate_cr", pos, len)
-                       / 100.0;
-        desc.over_cb = mlt_properties_anim_get_double(properties, "oversaturate_cb", pos, len)
-                       / 100.0;
+        double over_cr = mlt_properties_anim_get_double(properties, "oversaturate_cr", pos, len)
+                         / 100.0;
+        double over_cb = mlt_properties_anim_get_double(properties, "oversaturate_cb", pos, len)
+                         / 100.0;
+        for (int i = 0; i < 256; i++) {
+            desc.lut_cb[i] = (uint8_t) CLAMP(((double) i - 127.0) * over_cb + 127.0, 0, 255);
+            desc.lut_cr[i] = (uint8_t) CLAMP(((double) i - 127.0) * over_cr + 127.0, 0, 255);
+        }
         desc.image = *image;
         desc.width = *width;
         desc.height = *height;
