@@ -17,184 +17,246 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA
  */
 
+#include <emmintrin.h>
+#include <immintrin.h>
 #include <inttypes.h>
-#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
-const static unsigned char const1[] = {
-    0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00, 0xFF, 0x00};
-const static unsigned char const2[] = {
-    0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00, 0x80, 0x00};
+static inline __m128i sse2_div255_epu16(__m128i v, __m128i c128)
+{
+    __m128i t = _mm_srli_epi16(v, 8);
+    t = _mm_add_epi16(t, v);
+    t = _mm_add_epi16(t, c128);
+    return _mm_srli_epi16(t, 8);
+}
 
-#define LOAD_CONSTS \
-    "pxor           %%xmm0, %%xmm0          \n\t" /* clear zero register */ \
-    "movdqu         (%[const1]), %%xmm9     \n\t" /* load const1 */ \
-    "movdqu         (%[const2]), %%xmm10    \n\t" /* load const2 */
+static inline void sse2_blend_dest_alpha(uint8_t *dest_a,
+                                         __m128i src_a16,
+                                         __m128i zero,
+                                         __m128i c255,
+                                         __m128i c128)
+{
+    __m128i da = _mm_unpacklo_epi8(_mm_loadl_epi64((const __m128i *) dest_a), zero);
+    __m128i inv_da = _mm_sub_epi16(c255, da);
+    __m128i prod = _mm_mullo_epi16(src_a16, inv_da);
+    __m128i add = sse2_div255_epu16(prod, c128);
+    da = _mm_add_epi16(da, add);
+    _mm_storel_epi64((__m128i *) dest_a, _mm_packus_epi16(da, zero));
+}
 
-#define LOAD_WEIGHT \
-    "movd           %[weight], %%xmm1       \n\t" /* load weight and decompose */ \
-    "movlhps        %%xmm1, %%xmm1          \n\t" \
-    "pshuflw        $0, %%xmm1, %%xmm1      \n\t" \
-    "pshufhw        $0, %%xmm1, %%xmm1      \n\t"
+static inline void sse2_blend_pixels(
+    uint8_t *dest, const uint8_t *src, __m128i a16, __m128i zero, __m128i c128)
+{
+    __m128i s = _mm_loadu_si128((const __m128i *) src);
+    __m128i d = _mm_loadu_si128((const __m128i *) dest);
 
-#define LOAD_SRC_A \
-    "movq           (%[src_a]), %%xmm2      \n\t" /* load source alpha */ \
-    "punpcklbw      %%xmm0, %%xmm2          \n\t" /* unpack alpha 8 8-bits alphas to 8 16-bits values */
+    __m128i s_lo = _mm_unpacklo_epi8(s, zero);
+    __m128i d_lo = _mm_unpacklo_epi8(d, zero);
+    __m128i s_hi = _mm_unpackhi_epi8(s, zero);
+    __m128i d_hi = _mm_unpackhi_epi8(d, zero);
 
-#define SRC_A_PREMUL \
-    "pmullw         %%xmm1, %%xmm2          \n\t" /* premultiply source alpha */ \
-    "psrlw          $8, %%xmm2              \n\t"
+    __m128i a_lo = _mm_unpacklo_epi16(a16, a16);
+    __m128i a_hi = _mm_unpackhi_epi16(a16, a16);
 
-#define DST_A_CALC \
-    /* DSTa = DSTa + (SRCa * (0xFF - DSTa)) >> 8  */ \
-    "movq           (%[dest_a]), %%xmm3     \n\t" /* load dst alpha */ \
-    "punpcklbw      %%xmm0, %%xmm3          \n\t" /* unpack dst 8 8-bits alphas to 8 16-bits values */ \
-    "movdqa         %%xmm9, %%xmm4          \n\t" \
-    "psubw          %%xmm3, %%xmm4          \n\t" \
-    "pmullw         %%xmm2, %%xmm4          \n\t" \
-    "movdqa         %%xmm4, %%xmm5          \n\t" \
-    "psrlw          $8, %%xmm4              \n\t" \
-    "paddw          %%xmm5, %%xmm4          \n\t" \
-    "paddw          %%xmm10, %%xmm4         \n\t" \
-    "psrlw          $8, %%xmm4              \n\t" \
-    "paddw          %%xmm4, %%xmm3          \n\t" \
-    "packuswb       %%xmm0, %%xmm3          \n\t" \
-    "movq           %%xmm3, (%[dest_a])     \n\t" /* save dst alpha */
+    __m128i diff_lo = _mm_sub_epi16(s_lo, d_lo);
+    __m128i diff_hi = _mm_sub_epi16(s_hi, d_hi);
 
-#define DST_PIX_CALC \
-    "movdqu         (%[src]), %%xmm3        \n\t" /* load src */ \
-    "movdqu         (%[dest]), %%xmm4       \n\t" /* load dst */ \
-    "movdqa         %%xmm3, %%xmm5          \n\t" /* dub src */ \
-    "movdqa         %%xmm4, %%xmm6          \n\t" /* dub dst */ \
-    "punpcklbw      %%xmm0, %%xmm5          \n\t" /* unpack src low */ \
-    "punpcklbw      %%xmm0, %%xmm6          \n\t" /* unpack dst low */ \
-    "punpckhbw      %%xmm0, %%xmm3          \n\t" /* unpack src high */ \
-    "punpckhbw      %%xmm0, %%xmm4          \n\t" /* unpack dst high */ \
-    "movdqa         %%xmm2, %%xmm7          \n\t" /* dub alpha */ \
-    "movdqa         %%xmm2, %%xmm8          \n\t" /* dub alpha */ \
-    "movlhps        %%xmm7, %%xmm7          \n\t" /* dub low */ \
-    "movhlps        %%xmm8, %%xmm8          \n\t" /* dub high */ \
-    "pshuflw        $0x50, %%xmm7, %%xmm7   \n\t" \
-    "pshuflw        $0x50, %%xmm8, %%xmm8   \n\t" \
-    "pshufhw        $0xFA, %%xmm7, %%xmm7   \n\t" \
-    "pshufhw        $0xFA, %%xmm8, %%xmm8   \n\t" \
-    "psubw          %%xmm4, %%xmm3          \n\t" /* src = src - dst */ \
-    "psubw          %%xmm6, %%xmm5          \n\t" \
-    "pmullw         %%xmm8, %%xmm3          \n\t" /* src = src * alpha */ \
-    "pmullw         %%xmm7, %%xmm5          \n\t" \
-    "pmullw         %%xmm9, %%xmm4          \n\t" /* dst = dst * 0xFF */ \
-    "pmullw         %%xmm9, %%xmm6          \n\t" \
-    "paddw          %%xmm3, %%xmm4          \n\t" /* dst = dst + src */ \
-    "paddw          %%xmm5, %%xmm6          \n\t" \
-    "movdqa         %%xmm4, %%xmm3          \n\t" /* dst = ((dst >> 8) + dst + 128) >> 8 */ \
-    "movdqa         %%xmm6, %%xmm5          \n\t" \
-    "psrlw          $8, %%xmm4              \n\t" \
-    "psrlw          $8, %%xmm6              \n\t" \
-    "paddw          %%xmm3, %%xmm4          \n\t" \
-    "paddw          %%xmm5, %%xmm6          \n\t" \
-    "paddw          %%xmm10, %%xmm4         \n\t" \
-    "paddw          %%xmm10, %%xmm6         \n\t" \
-    "psrlw          $8, %%xmm4              \n\t" \
-    "psrlw          $8, %%xmm6              \n\t" \
-    "packuswb       %%xmm4, %%xmm6          \n\t" \
-    "movdqu         %%xmm6, (%[dest])       \n\t" /* store dst */
+    __m128i prod_lo = _mm_mullo_epi16(diff_lo, a_lo);
+    __m128i prod_hi = _mm_mullo_epi16(diff_hi, a_hi);
 
-#define PIX_POINTER_INC \
-    "add            $0x10, %[src]           \n\t" \
-    "add            $0x10, %[dest]          \n\t" \
-    "dec            %[width]                \n\t"
+    /* dst * 255 = (dst << 8) - dst */
+    __m128i d255_lo = _mm_sub_epi16(_mm_slli_epi16(d_lo, 8), d_lo);
+    __m128i d255_hi = _mm_sub_epi16(_mm_slli_epi16(d_hi, 8), d_hi);
 
-#define CLOBBER_XMM \
-    "%xmm0", "%xmm1", "%xmm2", "%xmm3", "%xmm4", "%xmm5", "%xmm6", "%xmm7", "%xmm8", "%xmm9", \
-        "%xmm10"
+    __m128i res_lo = sse2_div255_epu16(_mm_add_epi16(d255_lo, prod_lo), c128);
+    __m128i res_hi = sse2_div255_epu16(_mm_add_epi16(d255_hi, prod_hi), c128);
 
-static void blend_case7(
-    uint8_t *dest, uint8_t *src, int width, uint8_t *src_a, uint8_t *dest_a, int weight)
+    _mm_storeu_si128((__m128i *) dest, _mm_packus_epi16(res_lo, res_hi));
+}
+
+static void blend_sse2_dispatch(uint8_t *restrict dest,
+                                const uint8_t *restrict src,
+                                int width,
+                                const uint8_t *restrict src_a,
+                                uint8_t *restrict dest_a,
+                                int weight,
+                                int cond)
 {
     int w8 = width / 8;
-    __asm__ volatile(LOAD_CONSTS LOAD_WEIGHT
-                     "loop_start7:                           \n\t" LOAD_SRC_A SRC_A_PREMUL
-                         DST_A_CALC DST_PIX_CALC "add            $0x08, %[src_a]         \n\t"
-                     "add            $0x08, %[dest_a]        \n\t" PIX_POINTER_INC
-                     "jnz            loop_start7             \n\t"
-                     : [weight] "+r"(weight),
-                       [src_a] "+r"(src_a),
-                       [src] "+r"(src),
-                       [dest] "+r"(dest),
-                       [dest_a] "+r"(dest_a),
-                       [width] "+r"(w8)
-                     : [const1] "r"(const1), [const2] "r"(const2)
-                     : CLOBBER_XMM);
-};
+    const __m128i zero = _mm_setzero_si128();
+    const __m128i c255 = _mm_set1_epi16(0x00FF);
+    const __m128i c128 = _mm_set1_epi16(0x0080);
+    const __m128i wv = _mm_set1_epi16((short) weight);
 
-//  | 3   | dest_a == NULL | src_a != NULL | weight != 256 | blend: premultiply src alpha
-static void blend_case3(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a, int weight)
-{
-    int w8 = width / 8;
-    __asm__ volatile(
-        LOAD_CONSTS LOAD_WEIGHT
-        "loop_start3:                           \n\t" LOAD_SRC_A SRC_A_PREMUL DST_PIX_CALC
-        "add            $0x08, %[src_a]         \n\t" PIX_POINTER_INC
-        "jnz            loop_start3             \n\t"
-        : [weight] "+r"(weight), [src_a] "+r"(src_a), [src] "+r"(src), [dest] "+r"(dest), [width] "+r"(w8)
-        : [const1] "r"(const1), [const2] "r"(const2)
-        : CLOBBER_XMM);
-};
+    switch (cond) {
+    case 1:
+        for (; w8 > 0; w8--, src += 16, dest += 16) {
+            sse2_blend_pixels(dest, src, wv, zero, c128);
+        }
+        break;
+    case 2:
+        for (; w8 > 0; w8--, src += 16, dest += 16, src_a += 8) {
+            __m128i a16 = _mm_unpacklo_epi8(_mm_loadl_epi64((const __m128i *) src_a), zero);
+            sse2_blend_pixels(dest, src, a16, zero, c128);
+        }
+        break;
+    case 3:
+        for (; w8 > 0; w8--, src += 16, dest += 16, src_a += 8) {
+            __m128i a16 = _mm_unpacklo_epi8(_mm_loadl_epi64((const __m128i *) src_a), zero);
+            a16 = _mm_srli_epi16(_mm_mullo_epi16(a16, wv), 8);
+            sse2_blend_pixels(dest, src, a16, zero, c128);
+        }
+        break;
+    case 5:
+        for (; w8 > 0; w8--, src += 16, dest += 16, dest_a += 8) {
+            sse2_blend_dest_alpha(dest_a, wv, zero, c255, c128);
+            sse2_blend_pixels(dest, src, wv, zero, c128);
+        }
+        break;
+    case 6:
+        for (; w8 > 0; w8--, src += 16, dest += 16, src_a += 8, dest_a += 8) {
+            __m128i a16 = _mm_unpacklo_epi8(_mm_loadl_epi64((const __m128i *) src_a), zero);
+            sse2_blend_dest_alpha(dest_a, a16, zero, c255, c128);
+            sse2_blend_pixels(dest, src, a16, zero, c128);
+        }
+        break;
+    case 7:
+        for (; w8 > 0; w8--, src += 16, dest += 16, src_a += 8, dest_a += 8) {
+            __m128i a16 = _mm_unpacklo_epi8(_mm_loadl_epi64((const __m128i *) src_a), zero);
+            a16 = _mm_srli_epi16(_mm_mullo_epi16(a16, wv), 8);
+            sse2_blend_dest_alpha(dest_a, a16, zero, c255, c128);
+            sse2_blend_pixels(dest, src, a16, zero, c128);
+        }
+        break;
+    default:
+        break;
+    }
+}
 
-//  | 2   | dest_a == NULL | src_a != NULL | weight == 255 | blend: only src alpha
-static void blend_case2(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a)
+#if defined(__GNUC__) || defined(__clang__)
+__attribute__((target("avx2"))) static inline __m256i avx2_div255_epu16(__m256i v, __m256i c128)
 {
-    int w8 = width / 8;
-    __asm__ volatile(LOAD_CONSTS
-                     "loop_start2:                           \n\t" LOAD_SRC_A DST_PIX_CALC
-                     "add            $0x08, %[src_a]         \n\t" PIX_POINTER_INC
-                     "jnz            loop_start2             \n\t"
-                     : [src_a] "+r"(src_a), [src] "+r"(src), [dest] "+r"(dest), [width] "+r"(w8)
-                     : [const1] "r"(const1), [const2] "r"(const2)
-                     : CLOBBER_XMM);
-};
+    __m256i t = _mm256_srli_epi16(v, 8);
+    t = _mm256_add_epi16(t, v);
+    t = _mm256_add_epi16(t, c128);
+    return _mm256_srli_epi16(t, 8);
+}
 
-//  | 1   | dest_a == NULL | src_a == NULL | weight != 256 | blend: with given alpha
-static void blend_case1(uint8_t *dest, uint8_t *src, int width, int weight)
+__attribute__((target("avx2"))) static inline void avx2_blend_dest_alpha(
+    uint8_t *dest_a, __m256i src_a16, __m256i c255, __m256i c128)
 {
-    int w8 = width / 8;
-    __asm__ volatile(LOAD_CONSTS LOAD_WEIGHT
-                     "loop_start1:                           \n\t"
-                     "movdqa         %%xmm1, %%xmm2          \n\t" /* src alpha cames from weight */
-                     DST_PIX_CALC PIX_POINTER_INC "jnz            loop_start1             \n\t"
-                     : [weight] "+r"(weight), [src] "+r"(src), [dest] "+r"(dest), [width] "+r"(w8)
-                     : [const1] "r"(const1), [const2] "r"(const2)
-                     : CLOBBER_XMM);
-};
+    __m256i da = _mm256_cvtepu8_epi16(_mm_loadu_si128((const __m128i *) dest_a));
+    __m256i inv_da = _mm256_sub_epi16(c255, da);
+    __m256i prod = _mm256_mullo_epi16(src_a16, inv_da);
+    __m256i add = avx2_div255_epu16(prod, c128);
+    da = _mm256_add_epi16(da, add);
+    __m256i packed = _mm256_packus_epi16(da, da);
+    packed = _mm256_permute4x64_epi64(packed, 0xD8);
+    _mm_storeu_si128((__m128i *) dest_a, _mm256_castsi256_si128(packed));
+}
 
-//  | 5   | dest_a != NULL | src_a == NULL | weight != 256 | blend: with given alpha
-static void blend_case5(uint8_t *dest, uint8_t *src, int width, uint8_t *dest_a, int weight)
+__attribute__((target("avx2"))) static inline void avx2_blend_pixels(
+    uint8_t *dest, const uint8_t *src, __m256i a16, __m256i zero, __m256i c128)
 {
-    int w8 = width / 8;
-    __asm__ volatile(
-        LOAD_CONSTS LOAD_WEIGHT
-        "loop_start5:                           \n\t"
-        "movdqa         %%xmm1, %%xmm2          \n\t" /* source alpha comes from weight */
-        DST_A_CALC DST_PIX_CALC "add            $0x08, %[dest_a]        \n\t" PIX_POINTER_INC
-        "jnz            loop_start5             \n\t"
-        : [weight] "+r"(weight), [src] "+r"(src), [dest] "+r"(dest), [dest_a] "+r"(dest_a), [width] "+r"(w8)
-        : [const1] "r"(const1), [const2] "r"(const2)
-        : CLOBBER_XMM);
-};
+    __m256i s = _mm256_loadu_si256((const __m256i *) src);
+    __m256i d = _mm256_loadu_si256((const __m256i *) dest);
 
-//  | 6   | dest_a != NULL | src_a != NULL | weight == 256 | blend: full blend without src alpha premutiply
-static void blend_case6(uint8_t *dest, uint8_t *src, int width, uint8_t *src_a, uint8_t *dest_a)
+    /* a16 holds [a0..a3, a4..a7 | a8..a11, a12..a15], matching unpacklo/unpackhi_epi8(s, 0) directly */
+    __m256i a_lo = _mm256_unpacklo_epi16(a16, a16);
+    __m256i a_hi = _mm256_unpackhi_epi16(a16, a16);
+
+    __m256i s_lo = _mm256_unpacklo_epi8(s, zero);
+    __m256i d_lo = _mm256_unpacklo_epi8(d, zero);
+    __m256i s_hi = _mm256_unpackhi_epi8(s, zero);
+    __m256i d_hi = _mm256_unpackhi_epi8(d, zero);
+
+    __m256i prod_lo = _mm256_mullo_epi16(_mm256_sub_epi16(s_lo, d_lo), a_lo);
+    __m256i prod_hi = _mm256_mullo_epi16(_mm256_sub_epi16(s_hi, d_hi), a_hi);
+
+    __m256i d255_lo = _mm256_sub_epi16(_mm256_slli_epi16(d_lo, 8), d_lo);
+    __m256i d255_hi = _mm256_sub_epi16(_mm256_slli_epi16(d_hi, 8), d_hi);
+
+    __m256i res_lo = avx2_div255_epu16(_mm256_add_epi16(d255_lo, prod_lo), c128);
+    __m256i res_hi = avx2_div255_epu16(_mm256_add_epi16(d255_hi, prod_hi), c128);
+
+    _mm256_storeu_si256((__m256i *) dest, _mm256_packus_epi16(res_lo, res_hi));
+}
+
+__attribute__((target("avx2"))) static void blend_avx2_dispatch(uint8_t *restrict dest,
+                                                                const uint8_t *restrict src,
+                                                                int width,
+                                                                const uint8_t *restrict src_a,
+                                                                uint8_t *restrict dest_a,
+                                                                int weight,
+                                                                int cond)
 {
-    int w8 = width / 8;
-    __asm__ volatile(
-        LOAD_CONSTS "loop_start6:                           \n\t" LOAD_SRC_A DST_A_CALC DST_PIX_CALC
-                    "add            $0x08, %[src_a]         \n\t"
-                    "add            $0x08, %[dest_a]        \n\t" PIX_POINTER_INC
-                    "jnz            loop_start6             \n\t"
-        : [src_a] "+r"(src_a), [src] "+r"(src), [dest] "+r"(dest), [dest_a] "+r"(dest_a), [width] "+r"(w8)
-        : [const1] "r"(const1), [const2] "r"(const2)
-        : CLOBBER_XMM);
-};
+    int w16 = width / 16;
+    const __m256i zero = _mm256_setzero_si256();
+    const __m256i c255 = _mm256_set1_epi16(0x00FF);
+    const __m256i c128 = _mm256_set1_epi16(0x0080);
+    const __m256i wv = _mm256_set1_epi16((short) weight);
+
+    switch (cond) {
+    case 1:
+        for (; w16 > 0; w16--, src += 32, dest += 32) {
+            avx2_blend_pixels(dest, src, wv, zero, c128);
+        }
+        break;
+    case 2:
+        for (; w16 > 0; w16--, src += 32, dest += 32, src_a += 16) {
+            __m256i a16 = _mm256_cvtepu8_epi16(_mm_loadu_si128((const __m128i *) src_a));
+            avx2_blend_pixels(dest, src, a16, zero, c128);
+        }
+        break;
+    case 3:
+        for (; w16 > 0; w16--, src += 32, dest += 32, src_a += 16) {
+            __m256i a16 = _mm256_cvtepu8_epi16(_mm_loadu_si128((const __m128i *) src_a));
+            a16 = _mm256_srli_epi16(_mm256_mullo_epi16(a16, wv), 8);
+            avx2_blend_pixels(dest, src, a16, zero, c128);
+        }
+        break;
+    case 5:
+        for (; w16 > 0; w16--, src += 32, dest += 32, dest_a += 16) {
+            avx2_blend_dest_alpha(dest_a, wv, c255, c128);
+            avx2_blend_pixels(dest, src, wv, zero, c128);
+        }
+        break;
+    case 6:
+        for (; w16 > 0; w16--, src += 32, dest += 32, src_a += 16, dest_a += 16) {
+            __m256i a16 = _mm256_cvtepu8_epi16(_mm_loadu_si128((const __m128i *) src_a));
+            avx2_blend_dest_alpha(dest_a, a16, c255, c128);
+            avx2_blend_pixels(dest, src, a16, zero, c128);
+        }
+        break;
+    case 7:
+        for (; w16 > 0; w16--, src += 32, dest += 32, src_a += 16, dest_a += 16) {
+            __m256i a16 = _mm256_cvtepu8_epi16(_mm_loadu_si128((const __m128i *) src_a));
+            a16 = _mm256_srli_epi16(_mm256_mullo_epi16(a16, wv), 8);
+            avx2_blend_dest_alpha(dest_a, a16, c255, c128);
+            avx2_blend_pixels(dest, src, a16, zero, c128);
+        }
+        break;
+    default:
+        break;
+    }
+
+    int rem = width & 15;
+    if (rem >= 8) {
+        blend_sse2_dispatch(dest, src, rem, src_a, dest_a, weight, cond);
+    }
+}
+
+static int has_avx2(void)
+{
+    static int cached = -1;
+    if (cached < 0) {
+        __builtin_cpu_init();
+        cached = __builtin_cpu_supports("avx2") ? 1 : 0;
+    }
+    return cached;
+}
+#endif
 
 void composite_line_yuv_sse2_simple(
     uint8_t *dest, uint8_t *src, int width, uint8_t *src_a, uint8_t *dest_a, int weight)
@@ -214,31 +276,21 @@ void composite_line_yuv_sse2_simple(
 
     int cond = ((dest_a != NULL) ? 4 : 0) + ((src_a != NULL) ? 2 : 0) + ((weight != 256) ? 1 : 0);
 
-    switch (cond) {
-    case 0:
+    if (cond == 0) {
         memcpy(dest, src, 2 * width);
-        break;
-    case 1:
-        blend_case1(dest, src, width, weight);
-        break;
-    case 2:
-        blend_case2(dest, src, width, src_a);
-        break;
-    case 3:
-        blend_case3(dest, src, width, src_a, weight);
-        break;
-    case 4:
+        return;
+    }
+    if (cond == 4) {
         memcpy(dest, src, 2 * width);
         memset(dest_a, 0xFF, width);
-        break;
-    case 5:
-        blend_case5(dest, src, width, dest_a, weight);
-        break;
-    case 6:
-        blend_case6(dest, src, width, src_a, dest_a);
-        break;
-    case 7:
-        blend_case7(dest, src, width, src_a, dest_a, weight);
-        break;
-    };
-};
+        return;
+    }
+
+#if defined(__GNUC__) || defined(__clang__)
+    if (width >= 16 && has_avx2()) {
+        blend_avx2_dispatch(dest, src, width, src_a, dest_a, weight, cond);
+        return;
+    }
+#endif
+    blend_sse2_dispatch(dest, src, width, src_a, dest_a, weight, cond);
+}

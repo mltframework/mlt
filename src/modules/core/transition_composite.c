@@ -27,6 +27,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 
 typedef void (*composite_line_fn)(uint8_t *dest,
@@ -299,17 +300,30 @@ static int sliced_composite_proc(int id, int idx, int jobs, void *cookie)
     struct sliced_composite_desc ctx = *((struct sliced_composite_desc *) cookie);
     int i, ho, hs = mlt_slices_size_slice(jobs, idx, ctx.height_src, &ho);
 
-    for (i = 0; i < ctx.height_src; i += ctx.step) {
-        if (i >= ho && i < (ho + hs))
-            ctx.line_fn(ctx.p_dest,
-                        ctx.p_src,
-                        ctx.width_src,
-                        ctx.alpha_b,
-                        ctx.alpha_a,
-                        ctx.weight,
-                        ctx.p_luma,
-                        ctx.i_softness,
-                        ctx.luma_step);
+    int start_idx = (ho + ctx.step - 1) / ctx.step;
+    int end_row = ho + hs;
+    if (end_row > ctx.height_src)
+        end_row = ctx.height_src;
+
+    ctx.p_src += (ptrdiff_t) start_idx * ctx.stride_src;
+    ctx.p_dest += (ptrdiff_t) start_idx * ctx.stride_dest;
+    if (ctx.alpha_b)
+        ctx.alpha_b += (ptrdiff_t) start_idx * ctx.alpha_b_stride;
+    if (ctx.alpha_a)
+        ctx.alpha_a += (ptrdiff_t) start_idx * ctx.alpha_a_stride;
+    if (ctx.p_luma)
+        ctx.p_luma += (ptrdiff_t) start_idx * ctx.alpha_b_stride;
+
+    for (i = start_idx * ctx.step; i < end_row; i += ctx.step) {
+        ctx.line_fn(ctx.p_dest,
+                    ctx.p_src,
+                    ctx.width_src,
+                    ctx.alpha_b,
+                    ctx.alpha_a,
+                    ctx.weight,
+                    ctx.p_luma,
+                    ctx.i_softness,
+                    ctx.luma_step);
 
         ctx.p_src += ctx.stride_src;
         ctx.p_dest += ctx.stride_dest;
