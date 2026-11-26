@@ -1,6 +1,6 @@
 /*
  * producer_colour.c
- * Copyright (C) 2003-2025 Meltytech, LLC
+ * Copyright (C) 2003-2026 Meltytech, LLC
  *
  * This library is free software; you can redistribute it and/or
  * modify it under the terms of the GNU Lesser General Public
@@ -130,8 +130,6 @@ static int producer_get_image(mlt_frame frame,
         mlt_properties_set_int(producer_props, "_format", *format);
         mlt_properties_set(producer_props, "_resource", now);
 
-        mlt_service_unlock(MLT_PRODUCER_SERVICE(producer));
-
         if (!strcmp(now, "checkerboard")) {
             struct mlt_image_s img;
             mlt_image_set_values(&img, NULL, *format, *width, *height);
@@ -210,8 +208,6 @@ static int producer_get_image(mlt_frame frame,
                               mlt_image_format_name(*format));
             }
         }
-    } else {
-        mlt_service_unlock(MLT_PRODUCER_SERVICE(producer));
     }
 
     // Create the alpha channel
@@ -233,6 +229,9 @@ static int producer_get_image(mlt_frame frame,
         *buffer = mlt_pool_alloc(size);
         memcpy(*buffer, image, size);
     }
+
+    // The cached image may be replaced by another thread once unlocked
+    mlt_service_unlock(MLT_PRODUCER_SERVICE(producer));
 
     // Now update properties so we free the copy after
     mlt_frame_set_image(frame, *buffer, size, mlt_pool_release);
