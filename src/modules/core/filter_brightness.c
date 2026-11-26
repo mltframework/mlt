@@ -32,6 +32,10 @@ struct sliced_desc
     double level;
     double alpha_level;
     int full_range;
+    uint8_t rgb_lut[256];
+    uint8_t alpha_lut[256];
+    uint8_t y_lut[256];
+    uint8_t uv_lut[256];
 };
 
 static int sliced_proc(int id, int index, int jobs, void *cookie)
@@ -41,42 +45,63 @@ static int sliced_proc(int id, int index, int jobs, void *cookie)
     int slice_line_start,
         slice_height = mlt_slices_size_slice(jobs, index, ctx->image->height, &slice_line_start);
 
+    // Fast fused single-pass path when scaling both RGB and alpha on 8-bit RGBA.
+    if (ctx->image->format == mlt_image_rgba && ctx->level != 1.0 && ctx->alpha_level != 1.0) {
+        const uint8_t *restrict rgb_lut = ctx->rgb_lut;
+        const uint8_t *restrict alpha_lut = ctx->alpha_lut;
+        int width = ctx->image->width;
+        for (int line = 0; line < slice_height; line++) {
+            uint8_t *restrict p = ctx->image->planes[0]
+                                  + ((slice_line_start + line) * ctx->image->strides[0]);
+            for (int pixel = 0; pixel < width; pixel++) {
+                p[0] = rgb_lut[p[0]];
+                p[1] = rgb_lut[p[1]];
+                p[2] = rgb_lut[p[2]];
+                p[3] = alpha_lut[p[3]];
+                p += 4;
+            }
+        }
+        return 0;
+    }
+
     // Only process if level is something other than 1
     if (ctx->level != 1.0) {
         if (ctx->image->format == mlt_image_yuv422) {
-            int32_t m = ctx->level * (1 << 16);
-            int32_t n = 128 * ((1 << 16) - m);
-            int min = ctx->full_range ? 0 : 16;
-            int max_luma = ctx->full_range ? 255 : 235;
-            int max_chroma = ctx->full_range ? 255 : 240;
+            const uint8_t *restrict y_lut = ctx->y_lut;
+            const uint8_t *restrict uv_lut = ctx->uv_lut;
+            int width = ctx->image->width;
             for (int line = 0; line < slice_height; line++) {
-                uint8_t *p = ctx->image->planes[0]
-                             + ((slice_line_start + line) * ctx->image->strides[0]);
-                for (int pixel = 0; pixel < ctx->image->width; pixel++) {
-                    p[0] = CLAMP((p[0] * m) >> 16, min, max_luma);
-                    p[1] = CLAMP((p[1] * m + n) >> 16, min, max_chroma);
+                uint8_t *restrict p = ctx->image->planes[0]
+                                      + ((slice_line_start + line) * ctx->image->strides[0]);
+                for (int pixel = 0; pixel < width; pixel++) {
+                    p[0] = y_lut[p[0]];
+                    p[1] = uv_lut[p[1]];
                     p += 2;
                 }
             }
         } else if (ctx->image->format == mlt_image_rgba) {
+            const uint8_t *restrict rgb_lut = ctx->rgb_lut;
+            int width = ctx->image->width;
             for (int line = 0; line < slice_height; line++) {
-                uint8_t *p = ctx->image->planes[0]
-                             + ((slice_line_start + line) * ctx->image->strides[0]);
-                for (int pixel = 0; pixel < ctx->image->width; pixel++) {
-                    p[0] = CLAMP(round((double) p[0] * ctx->level), 0, 255);
-                    p[1] = CLAMP(round((double) p[1] * ctx->level), 0, 255);
-                    p[2] = CLAMP(round((double) p[2] * ctx->level), 0, 255);
+                uint8_t *restrict p = ctx->image->planes[0]
+                                      + ((slice_line_start + line) * ctx->image->strides[0]);
+                for (int pixel = 0; pixel < width; pixel++) {
+                    p[0] = rgb_lut[p[0]];
+                    p[1] = rgb_lut[p[1]];
+                    p[2] = rgb_lut[p[2]];
                     p += 4;
                 }
             }
         } else if (ctx->image->format == mlt_image_rgb) {
+            const uint8_t *restrict rgb_lut = ctx->rgb_lut;
+            int width = ctx->image->width;
             for (int line = 0; line < slice_height; line++) {
-                uint8_t *p = ctx->image->planes[0]
-                             + ((slice_line_start + line) * ctx->image->strides[0]);
-                for (int pixel = 0; pixel < ctx->image->width; pixel++) {
-                    p[0] = CLAMP(round((double) p[0] * ctx->level), 0, 255);
-                    p[1] = CLAMP(round((double) p[1] * ctx->level), 0, 255);
-                    p[2] = CLAMP(round((double) p[2] * ctx->level), 0, 255);
+                uint8_t *restrict p = ctx->image->planes[0]
+                                      + ((slice_line_start + line) * ctx->image->strides[0]);
+                for (int pixel = 0; pixel < width; pixel++) {
+                    p[0] = rgb_lut[p[0]];
+                    p[1] = rgb_lut[p[1]];
+                    p[2] = rgb_lut[p[2]];
                     p += 3;
                 }
             }
@@ -97,12 +122,13 @@ static int sliced_proc(int id, int index, int jobs, void *cookie)
     // Process the alpha channel if requested.
     if (ctx->alpha_level != 1.0) {
         if (ctx->image->format == mlt_image_rgba) {
+            const uint8_t *restrict alpha_lut = ctx->alpha_lut;
+            int components_in_row = ctx->image->width * 4;
             for (int line = 0; line < slice_height; line++) {
-                uint8_t *p = ctx->image->planes[0]
-                             + ((slice_line_start + line) * ctx->image->strides[0]) + 3;
-                int components_in_row = ctx->image->width * 4;
+                uint8_t *restrict p = ctx->image->planes[0]
+                                      + ((slice_line_start + line) * ctx->image->strides[0]) + 3;
                 for (int col = 0; col < components_in_row; col += 4) {
-                    p[col] = CLAMP(round((double) p[col] * ctx->alpha_level), 0, 255);
+                    p[col] = alpha_lut[p[col]];
                 }
             }
         } else if (ctx->image->format == mlt_image_rgba64) {
@@ -115,11 +141,13 @@ static int sliced_proc(int id, int index, int jobs, void *cookie)
                 }
             }
         } else if (ctx->image->planes[3]) {
+            const uint8_t *restrict alpha_lut = ctx->alpha_lut;
+            int width = ctx->image->width;
             for (int line = 0; line < slice_height; line++) {
-                uint8_t *p = ctx->image->planes[3]
-                             + ((slice_line_start + line) * ctx->image->strides[3]);
-                for (int pixel = 0; pixel < ctx->image->width; pixel++) {
-                    p[pixel] = CLAMP(round((double) p[pixel] * ctx->alpha_level), 0, 255);
+                uint8_t *restrict p = ctx->image->planes[3]
+                                      + ((slice_line_start + line) * ctx->image->strides[3]);
+                for (int pixel = 0; pixel < width; pixel++) {
+                    p[pixel] = alpha_lut[p[pixel]];
                 }
             }
         }
@@ -235,6 +263,28 @@ static int filter_get_image(mlt_frame frame,
         desc.alpha_level = alpha_level;
         desc.image = &proc_image;
         desc.full_range = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "full_range");
+
+        if (level != 1.0 && proc_image.format == mlt_image_yuv422) {
+            int32_t m = level * (1 << 16);
+            int32_t n = 128 * ((1 << 16) - m);
+            int min = desc.full_range ? 0 : 16;
+            int max_luma = desc.full_range ? 255 : 235;
+            int max_chroma = desc.full_range ? 255 : 240;
+            for (int i = 0; i < 256; i++) {
+                desc.y_lut[i] = (uint8_t) CLAMP((i * m) >> 16, min, max_luma);
+                desc.uv_lut[i] = (uint8_t) CLAMP((i * m + n) >> 16, min, max_chroma);
+            }
+        } else if (level != 1.0 && (proc_image.format == mlt_image_rgb || proc_image.format == mlt_image_rgba)) {
+            for (int i = 0; i < 256; i++) {
+                desc.rgb_lut[i] = (uint8_t) CLAMP(round((double) i * level), 0, 255);
+            }
+        }
+        if (alpha_level != 1.0
+            && (proc_image.format == mlt_image_rgba || proc_image.planes[3] != NULL)) {
+            for (int i = 0; i < 256; i++) {
+                desc.alpha_lut[i] = (uint8_t) CLAMP(round((double) i * alpha_level), 0, 255);
+            }
+        }
 
         threads = CLAMP(threads, 0, mlt_slices_count_normal());
         if (threads == 1) {
