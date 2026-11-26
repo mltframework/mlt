@@ -21,6 +21,8 @@
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_profile.h>
+#include <framework/mlt_slices.h>
+#include <stdint.h>
 
 #include "cJSON.h"
 
@@ -86,12 +88,6 @@ static inline void lerpHalf(const PointF *a, const PointF *b, PointF *result)
     result->y = (a->y + b->y) * .5;
 }
 
-/** Helper for using qsort with an array of integers. */
-int ncompare(const void *a, const void *b)
-{
-    return *(const int *) a - *(const int *) b;
-}
-
 /** Turns a json array with two children into a point (x, y tuple). */
 static void jsonGetPoint(cJSON *json, PointF *point)
 {
@@ -130,61 +126,171 @@ static int json2BCurves(cJSON *array, BPointF **points)
     return i;
 }
 
-/** Blurs \param src horizontally. \See function blur. */
-static void blurHorizontal(uint8_t *src, uint8_t *dst, int width, int height, int radius)
+#define ROTO_BLUR_INV_SHIFT 40
+#define ROTO_BLUR_V_TILE_W 256
+
+typedef struct
 {
-    int x, y, kx, yOff, total, amount, amountInit;
-    amountInit = radius * 2 + 1;
-    for (y = 0; y < height; ++y) {
-        total = 0;
-        yOff = y * width;
-        // Process entire window for first pixel
-        int size = MIN(radius + 1, width);
-        for (kx = 0; kx < size; ++kx)
-            total += src[yOff + kx];
-        dst[yOff] = total / (radius + 1);
-        // Subsequent pixels just update window total
-        for (x = 1; x < width; ++x) {
-            amount = amountInit;
-            // Subtract pixel leaving window
-            if (x - radius - 1 >= 0)
-                total -= src[yOff + x - radius - 1];
-            else
-                amount -= radius - x;
-            // Add pixel entering window
-            if (x + radius < width)
-                total += src[yOff + x + radius];
-            else
-                amount -= radius - width + x;
-            dst[yOff + x] = total / amount;
+    const uint8_t *src;
+    uint8_t *dst;
+    int width;
+    int height;
+    int radius;
+} roto_blur_desc;
+
+static int blur_h_slice(int id, int index, int jobs, void *data)
+{
+    (void) id;
+    roto_blur_desc *d = (roto_blur_desc *) data;
+    int y_start, slice_h = mlt_slices_size_slice(jobs, index, d->height, &y_start);
+    const int y_end = y_start + slice_h;
+    const int width = d->width;
+    const int radius = d->radius;
+    const int amountInit = radius * 2 + 1;
+    const int size = MIN(radius + 1, width);
+    const int mid_start = radius + 1;
+    const int mid_end = width - radius;
+    const uint64_t inv_init = ((1ULL << ROTO_BLUR_INV_SHIFT) + (uint64_t) amountInit - 1)
+                              / (uint64_t) amountInit;
+
+    if (mid_start < mid_end) {
+        for (int y = y_start; y < y_end; ++y) {
+            const uint8_t *s = d->src + (size_t) y * width;
+            uint8_t *o = d->dst + (size_t) y * width;
+            int total = 0;
+            for (int kx = 0; kx < size; ++kx)
+                total += s[kx];
+            o[0] = (uint8_t) (total / (radius + 1));
+            for (int x = 1; x < mid_start; ++x) {
+                total += s[x + radius];
+                o[x] = (uint8_t) (total / (amountInit - (radius - x)));
+            }
+            for (int x = mid_start; x < mid_end; ++x) {
+                total += s[x + radius] - s[x - radius - 1];
+                o[x] = (uint8_t) (((uint64_t) total * inv_init) >> ROTO_BLUR_INV_SHIFT);
+            }
+            for (int x = mid_end; x < width; ++x) {
+                total -= s[x - radius - 1];
+                o[x] = (uint8_t) (total / (amountInit - (radius - width + x)));
+            }
+        }
+    } else {
+        for (int y = y_start; y < y_end; ++y) {
+            const uint8_t *s = d->src + (size_t) y * width;
+            uint8_t *o = d->dst + (size_t) y * width;
+            int total = 0;
+            for (int kx = 0; kx < size; ++kx)
+                total += s[kx];
+            o[0] = (uint8_t) (total / (radius + 1));
+            for (int x = 1; x < width; ++x) {
+                int amount = amountInit;
+                if (x - radius - 1 >= 0)
+                    total -= s[x - radius - 1];
+                else
+                    amount -= radius - x;
+                if (x + radius < width)
+                    total += s[x + radius];
+                else
+                    amount -= radius - width + x;
+                o[x] = (uint8_t) (total / amount);
+            }
         }
     }
+    return 0;
 }
 
-/** Blurs \param src vertically. \See function blur. */
-static void blurVertical(uint8_t *src, uint8_t *dst, int width, int height, int radius)
+static int blur_v_slice(int id, int index, int jobs, void *data)
 {
-    int x, y, ky, total, amount, amountInit;
-    amountInit = radius * 2 + 1;
-    for (x = 0; x < width; ++x) {
-        total = 0;
-        int size = MIN(radius + 1, height);
-        for (ky = 0; ky < size; ++ky)
-            total += src[x + ky * width];
-        dst[x] = total / (radius + 1);
-        for (y = 1; y < height; ++y) {
-            amount = amountInit;
-            if (y - radius - 1 >= 0)
-                total -= src[(y - radius - 1) * width + x];
-            else
-                amount -= radius - y;
-            if (y + radius < height)
-                total += src[(y + radius) * width + x];
-            else
-                amount -= radius - height + y;
-            dst[y * width + x] = total / amount;
+    (void) id;
+    roto_blur_desc *d = (roto_blur_desc *) data;
+    int x_start, slice_w = mlt_slices_size_slice(jobs, index, d->width, &x_start);
+    const int x_end = x_start + slice_w;
+    const int width = d->width;
+    const int height = d->height;
+    const int radius = d->radius;
+    const int amountInit = radius * 2 + 1;
+    const int size = MIN(radius + 1, height);
+    const int mid_start = radius + 1;
+    const int mid_end = height - radius;
+    const uint64_t inv_init = ((1ULL << ROTO_BLUR_INV_SHIFT) + (uint64_t) amountInit - 1)
+                              / (uint64_t) amountInit;
+    int32_t acc[ROTO_BLUR_V_TILE_W];
+
+    if (mid_start < mid_end) {
+        for (int tx = x_start; tx < x_end; tx += ROTO_BLUR_V_TILE_W) {
+            const int tw = (tx + ROTO_BLUR_V_TILE_W <= x_end) ? ROTO_BLUR_V_TILE_W : (x_end - tx);
+            const uint8_t *s_base = d->src + tx;
+            uint8_t *o_base = d->dst + tx;
+
+            for (int k = 0; k < tw; ++k)
+                acc[k] = 0;
+            for (int ky = 0; ky < size; ++ky) {
+                const uint8_t *row = s_base + (size_t) ky * width;
+                for (int k = 0; k < tw; ++k)
+                    acc[k] += row[k];
+            }
+            const int div0 = radius + 1;
+            const uint64_t inv0 = ((1ULL << ROTO_BLUR_INV_SHIFT) + (uint64_t) div0 - 1)
+                                  / (uint64_t) div0;
+            for (int k = 0; k < tw; ++k)
+                o_base[k] = (uint8_t) (((uint64_t) acc[k] * inv0) >> ROTO_BLUR_INV_SHIFT);
+
+            for (int y = 1; y < mid_start; ++y) {
+                const uint8_t *row_add = s_base + (size_t) (y + radius) * width;
+                uint8_t *o = o_base + (size_t) y * width;
+                const int amt = amountInit - (radius - y);
+                const uint64_t inv = ((1ULL << ROTO_BLUR_INV_SHIFT) + (uint64_t) amt - 1)
+                                     / (uint64_t) amt;
+                for (int k = 0; k < tw; ++k) {
+                    int v = acc[k] + row_add[k];
+                    acc[k] = v;
+                    o[k] = (uint8_t) (((uint64_t) v * inv) >> ROTO_BLUR_INV_SHIFT);
+                }
+            }
+            for (int y = mid_start; y < mid_end; ++y) {
+                const uint8_t *row_add = s_base + (size_t) (y + radius) * width;
+                const uint8_t *row_sub = s_base + (size_t) (y - radius - 1) * width;
+                uint8_t *o = o_base + (size_t) y * width;
+                for (int k = 0; k < tw; ++k) {
+                    int v = acc[k] + row_add[k] - row_sub[k];
+                    acc[k] = v;
+                    o[k] = (uint8_t) (((uint64_t) v * inv_init) >> ROTO_BLUR_INV_SHIFT);
+                }
+            }
+            for (int y = mid_end; y < height; ++y) {
+                const uint8_t *row_sub = s_base + (size_t) (y - radius - 1) * width;
+                uint8_t *o = o_base + (size_t) y * width;
+                const int amt = amountInit - (radius - height + y);
+                const uint64_t inv = ((1ULL << ROTO_BLUR_INV_SHIFT) + (uint64_t) amt - 1)
+                                     / (uint64_t) amt;
+                for (int k = 0; k < tw; ++k) {
+                    int v = acc[k] - row_sub[k];
+                    acc[k] = v;
+                    o[k] = (uint8_t) (((uint64_t) v * inv) >> ROTO_BLUR_INV_SHIFT);
+                }
+            }
+        }
+    } else {
+        for (int x = x_start; x < x_end; ++x) {
+            int total = 0;
+            for (int ky = 0; ky < size; ++ky)
+                total += d->src[x + ky * width];
+            d->dst[x] = (uint8_t) (total / (radius + 1));
+            for (int y = 1; y < height; ++y) {
+                int amount = amountInit;
+                if (y - radius - 1 >= 0)
+                    total -= d->src[(y - radius - 1) * width + x];
+                else
+                    amount -= radius - y;
+                if (y + radius < height)
+                    total += d->src[(y + radius) * width + x];
+                else
+                    amount -= radius - height + y;
+                d->dst[y * width + x] = (uint8_t) (total / amount);
+            }
         }
     }
+    return 0;
 }
 
 /**
@@ -197,17 +303,18 @@ static void blurVertical(uint8_t *src, uint8_t *dst, int width, int height, int 
  */
 static void blur(uint8_t *map, int width, int height, int radius, int passes)
 {
-    uint8_t *src = mlt_pool_alloc(width * height);
     uint8_t *tmp = mlt_pool_alloc(width * height);
+    roto_blur_desc desc = {0, 0, width, height, radius};
 
-    int i;
-    for (i = 0; i < passes; ++i) {
-        memcpy(src, map, width * height);
-        blurHorizontal(src, tmp, width, height, radius);
-        blurVertical(tmp, map, width, height, radius);
+    for (int i = 0; i < passes; ++i) {
+        desc.src = map;
+        desc.dst = tmp;
+        mlt_slices_run_normal(0, blur_h_slice, &desc);
+        desc.src = tmp;
+        desc.dst = map;
+        mlt_slices_run_normal(0, blur_v_slice, &desc);
     }
 
-    mlt_pool_release(src);
     mlt_pool_release(tmp);
 }
 
@@ -228,31 +335,47 @@ static void fillMap(PointF *vertices, int count, int width, int height, int inve
     value = !invert * 255;
     memset(map, invert * 255, width * height);
 
-    // Loop through the rows of the image
-    for (pixelY = 0; pixelY < height; pixelY++) {
-        /*
-         * Build a list of nodes.
-         * nodes are located at the borders of the polygon
-         * and therefore indicate a move from in to out or vice versa
-         */
-        nodes = 0;
-        for (i = 0, j = count - 1; i < count; j = i++)
-            if ((vertices[i].y > (double) pixelY) != (vertices[j].y > (double) pixelY))
-                nodeX[nodes++] = (int) (vertices[i].x
-                                        + (pixelY - vertices[i].y) / (vertices[j].y - vertices[i].y)
-                                              * (vertices[j].x - vertices[i].x));
+    if (count <= 0)
+        return;
 
-        qsort(nodeX, nodes, sizeof(int), ncompare);
+    double minYf = vertices[0].y, maxYf = vertices[0].y;
+    for (i = 1; i < count; i++) {
+        if (vertices[i].y < minYf)
+            minYf = vertices[i].y;
+        if (vertices[i].y > maxYf)
+            maxYf = vertices[i].y;
+    }
+    int yStart = MAX(0, (int) floor(minYf));
+    int yEnd = MIN(height, (int) ceil(maxYf) + 1);
+
+    // Loop through the active rows of the image
+    for (pixelY = yStart; pixelY < yEnd; pixelY++) {
+        double py = (double) pixelY;
+        nodes = 0;
+        for (i = 0, j = count - 1; i < count; j = i++) {
+            double yi = vertices[i].y;
+            double yj = vertices[j].y;
+            if ((yi > py) != (yj > py)) {
+                int x = (int) (vertices[i].x + (py - yi) / (yj - yi) * (vertices[j].x - vertices[i].x));
+                int k = nodes++;
+                while (k > 0 && nodeX[k - 1] > x) {
+                    nodeX[k] = nodeX[k - 1];
+                    k--;
+                }
+                nodeX[k] = x;
+            }
+        }
 
         // Set map values for points between the node pairs to 1
+        uint8_t *row = map + (size_t) width * pixelY;
         for (i = 0; i < nodes; i += 2) {
             if (nodeX[i] >= width)
                 break;
 
             if (nodeX[i + 1] > 0) {
-                nodeX[i] = MAX(0, nodeX[i]);
-                nodeX[i + 1] = MIN(nodeX[i + 1], width);
-                memset(map + width * pixelY + nodeX[i], value, nodeX[i + 1] - nodeX[i]);
+                int x0 = MAX(0, nodeX[i]);
+                int x1 = MIN(nodeX[i + 1], width);
+                memset(row + x0, value, x1 - x0);
             }
         }
     }
@@ -309,6 +432,48 @@ static void curvePoints(BPointF p1, BPointF p2, PointF **points, int *count, int
 
 /** Do it :-).
 */
+typedef struct
+{
+    uint8_t *image;
+    const uint8_t *map;
+    int width;
+    int height;
+    int op;
+} roto_alpha_desc;
+
+static int apply_rgba_alpha_slice(int id, int index, int jobs, void *data)
+{
+    (void) id;
+    roto_alpha_desc *d = (roto_alpha_desc *) data;
+    int y_start, slice_h = mlt_slices_size_slice(jobs, index, d->height, &y_start);
+    int n = slice_h * d->width;
+    const uint8_t *m = d->map + (size_t) y_start * d->width;
+    uint8_t *p = d->image + (size_t) y_start * d->width * 4;
+    switch (d->op) {
+    case ALPHA_CLEAR:
+        for (int i = 0; i < n; i++)
+            p[i * 4 + 3] = m[i];
+        break;
+    case ALPHA_MAX:
+        for (int i = 0; i < n; i++)
+            p[i * 4 + 3] = MAX(p[i * 4 + 3], m[i]);
+        break;
+    case ALPHA_MIN:
+        for (int i = 0; i < n; i++)
+            p[i * 4 + 3] = MIN(p[i * 4 + 3], m[i]);
+        break;
+    case ALPHA_ADD:
+        for (int i = 0; i < n; i++)
+            p[i * 4 + 3] = (uint8_t) MIN(p[i * 4 + 3] + m[i], 255);
+        break;
+    case ALPHA_SUB:
+        for (int i = 0; i < n; i++)
+            p[i * 4 + 3] = (uint8_t) MAX(p[i * 4 + 3] - m[i], 0);
+        break;
+    }
+    return 0;
+}
+
 static int filter_get_image(mlt_frame frame,
                             uint8_t **image,
                             mlt_image_format *format,
@@ -404,8 +569,10 @@ static int filter_get_image(mlt_frame frame,
                 blur(map, *width, *height, feather, mlt_properties_get_int(unique, "feather_passes"));
             }
 
-            int bpp;
-            size = mlt_image_format_size(*format, *width, *height, &bpp);
+            int bpp = (*format == mlt_image_rgba) ? 4
+                      : (*format == mlt_image_rgb) ? 3
+                      : (*format == mlt_image_yuv422) ? 2 : 1;
+            size = (*format == mlt_image_yuv420p) ? (length * 3 / 2) : (length * bpp);
             uint8_t *p = *image;
             uint8_t *q = *image + size;
 
@@ -447,44 +614,15 @@ static int filter_get_image(mlt_frame frame,
                 break;
             case MODE_ALPHA:
                 switch (*format) {
-                case mlt_image_rgba:
-                    switch (mlt_properties_get_int(unique, "alpha_operation")) {
-                    case ALPHA_CLEAR:
-                        while (p != q) {
-                            p[3] = map[i++];
-                            p += 4;
-                        }
-                        break;
-                    case ALPHA_MAX:
-                        while (p != q) {
-                            p[3] = MAX(p[3], map[i]);
-                            p += 4;
-                            i++;
-                        }
-                        break;
-                    case ALPHA_MIN:
-                        while (p != q) {
-                            p[3] = MIN(p[3], map[i]);
-                            p += 4;
-                            i++;
-                        }
-                        break;
-                    case ALPHA_ADD:
-                        while (p != q) {
-                            p[3] = MIN(p[3] + map[i], 255);
-                            p += 4;
-                            i++;
-                        }
-                        break;
-                    case ALPHA_SUB:
-                        while (p != q) {
-                            p[3] = MAX(p[3] - map[i], 0);
-                            p += 4;
-                            i++;
-                        }
-                        break;
-                    }
+                case mlt_image_rgba: {
+                    roto_alpha_desc ad = {*image,
+                                          map,
+                                          *width,
+                                          *height,
+                                          mlt_properties_get_int(unique, "alpha_operation")};
+                    mlt_slices_run_normal(0, apply_rgba_alpha_slice, &ad);
                     break;
+                }
                 default:
                     alpha = mlt_frame_get_alpha(frame);
                     if (!alpha) {
