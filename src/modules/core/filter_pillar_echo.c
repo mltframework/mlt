@@ -23,6 +23,7 @@
 #include <framework/mlt_log.h>
 
 #include <math.h>
+#include <stdlib.h>
 #include <string.h>
 
 /** Constrain a rect to be within the max dimensions
@@ -69,86 +70,109 @@ static int scale_sliced_proc_rgba32(int id, int index, int jobs, void *data)
     int slice_line_start,
         slice_height = mlt_slices_size_slice(jobs, index, src->height, &slice_line_start);
     int slice_line_end = slice_line_start + slice_height;
-    double srcScale = rect.h / (double) src->height;
-    int linesize = src->width * 4;
-    uint8_t *d = dst->planes[0] + (slice_line_start * linesize);
+    const int width = src->width;
+    const int height = src->height;
+    const double srcScale = rect.h / (double) height;
+    const int linesize = width * 4;
+    const uint8_t *src_plane = src->planes[0];
+    uint8_t *d = dst->planes[0] + (size_t) slice_line_start * linesize;
+
+    int *x_off = (int *) malloc((size_t) width * sizeof(int));
+    double *x_fleft = (double *) malloc((size_t) width * sizeof(double));
+    double *x_fright = (double *) malloc((size_t) width * sizeof(double));
+    if (!x_off || !x_fleft || !x_fright) {
+        free(x_off);
+        free(x_fleft);
+        free(x_fright);
+        return 1;
+    }
+    for (int x = 0; x < width; x++) {
+        double srcX = rect.x + (double) x * srcScale;
+        int srcXindex = (int) floor(srcX);
+        double fright = srcX - srcXindex;
+        x_off[x] = srcXindex * 4;
+        x_fright[x] = fright;
+        x_fleft[x] = 1.0 - fright;
+    }
+
+    const int x_limit = width - 1;
     for (int y = slice_line_start; y < slice_line_end; y++) {
         double srcY = rect.y + (double) y * srcScale;
-        int srcYindex = floor(srcY);
+        int srcYindex = (int) floor(srcY);
         double fbottom = srcY - srcYindex;
         double ftop = 1.0 - fbottom;
+        const uint8_t *row_t = src_plane + (size_t) srcYindex * linesize;
 
-        int x = 0;
-        for (x = 0; x < src->width; x++) {
-            double srcX = rect.x + (double) x * srcScale;
-            int srcXindex = floor(srcX);
-            double fright = srcX - srcXindex;
-            double fleft = 1.0 - fright;
-
-            double valueSum[] = {0.0, 0.0, 0.0, 0.0};
-            double factorSum[] = {0.0, 0.0, 0.0, 0.0};
-
-            uint8_t *s = src->planes[0] + (srcYindex * linesize) + (srcXindex * 4);
-
-            // Top Left
-            double ftl = ftop * fleft;
-            valueSum[0] += s[0] * ftl;
-            factorSum[0] += ftl;
-            valueSum[1] += s[1] * ftl;
-            factorSum[1] += ftl;
-            valueSum[2] += s[2] * ftl;
-            factorSum[2] += ftl;
-            valueSum[3] += s[3] * ftl;
-            factorSum[3] += ftl;
-
-            // Top Right
-            if (x < src->width - 1) {
-                double ftr = ftop * fright;
-                valueSum[0] += s[4] * ftr;
-                factorSum[0] += ftr;
-                valueSum[1] += s[5] * ftr;
-                factorSum[1] += ftr;
-                valueSum[2] += s[6] * ftr;
-                factorSum[2] += ftr;
-                valueSum[3] += s[7] * ftr;
-                factorSum[3] += ftr;
-            }
-
-            if (y < src->height - 1) {
-                uint8_t *sb = s + linesize;
-
-                // Bottom Left
-                double fbl = fbottom * fleft;
-                valueSum[0] += sb[0] * fbl;
-                factorSum[0] += fbl;
-                valueSum[1] += sb[1] * fbl;
-                factorSum[1] += fbl;
-                valueSum[2] += sb[2] * fbl;
-                factorSum[2] += fbl;
-                valueSum[3] += sb[3] * fbl;
-                factorSum[3] += fbl;
-
-                // Bottom Right
-                if (x < src->width - 1) {
-                    double fbr = fbottom * fright;
-                    valueSum[0] += sb[4] * fbr;
-                    factorSum[0] += fbr;
-                    valueSum[1] += sb[5] * fbr;
-                    factorSum[1] += fbr;
-                    valueSum[2] += sb[6] * fbr;
-                    factorSum[2] += fbr;
-                    valueSum[3] += sb[7] * fbr;
-                    factorSum[3] += fbr;
+        if (y < height - 1) {
+            const uint8_t *row_b = row_t + linesize;
+            for (int x = 0; x < x_limit; x++) {
+                const double fleft = x_fleft[x];
+                const double fright = x_fright[x];
+                const double ftl = ftop * fleft;
+                const double ftr = ftop * fright;
+                const double fbl = fbottom * fleft;
+                const double fbr = fbottom * fright;
+                const double factorSum = ftl + ftr + fbl + fbr;
+                const uint8_t *s = row_t + x_off[x];
+                const uint8_t *sb = row_b + x_off[x];
+                const double v0 = s[0] * ftl + s[4] * ftr + sb[0] * fbl + sb[4] * fbr;
+                const double v1 = s[1] * ftl + s[5] * ftr + sb[1] * fbl + sb[5] * fbr;
+                const double v2 = s[2] * ftl + s[6] * ftr + sb[2] * fbl + sb[6] * fbr;
+                const double v3 = s[3] * ftl + s[7] * ftr + sb[3] * fbl + sb[7] * fbr;
+                if (factorSum == 1.0) {
+                    d[0] = (uint8_t) (v0 + 0.5);
+                    d[1] = (uint8_t) (v1 + 0.5);
+                    d[2] = (uint8_t) (v2 + 0.5);
+                    d[3] = (uint8_t) (v3 + 0.5);
+                } else {
+                    d[0] = (uint8_t) round(v0 / factorSum);
+                    d[1] = (uint8_t) round(v1 / factorSum);
+                    d[2] = (uint8_t) round(v2 / factorSum);
+                    d[3] = (uint8_t) round(v3 / factorSum);
                 }
+                d += 4;
             }
-
-            d[0] = (uint8_t) round(valueSum[0] / factorSum[0]);
-            d[1] = (uint8_t) round(valueSum[1] / factorSum[1]);
-            d[2] = (uint8_t) round(valueSum[2] / factorSum[2]);
-            d[3] = (uint8_t) round(valueSum[3] / factorSum[3]);
-            d += 4;
+            if (width > 0) {
+                int x = x_limit;
+                const double fleft = x_fleft[x];
+                const double ftl = ftop * fleft;
+                const double fbl = fbottom * fleft;
+                const double factorSum = ftl + fbl;
+                const uint8_t *s = row_t + x_off[x];
+                const uint8_t *sb = row_b + x_off[x];
+                d[0] = (uint8_t) round((s[0] * ftl + sb[0] * fbl) / factorSum);
+                d[1] = (uint8_t) round((s[1] * ftl + sb[1] * fbl) / factorSum);
+                d[2] = (uint8_t) round((s[2] * ftl + sb[2] * fbl) / factorSum);
+                d[3] = (uint8_t) round((s[3] * ftl + sb[3] * fbl) / factorSum);
+                d += 4;
+            }
+        } else {
+            for (int x = 0; x < x_limit; x++) {
+                const double ftl = ftop * x_fleft[x];
+                const double ftr = ftop * x_fright[x];
+                const double factorSum = ftl + ftr;
+                const uint8_t *s = row_t + x_off[x];
+                d[0] = (uint8_t) round((s[0] * ftl + s[4] * ftr) / factorSum);
+                d[1] = (uint8_t) round((s[1] * ftl + s[5] * ftr) / factorSum);
+                d[2] = (uint8_t) round((s[2] * ftl + s[6] * ftr) / factorSum);
+                d[3] = (uint8_t) round((s[3] * ftl + s[7] * ftr) / factorSum);
+                d += 4;
+            }
+            if (width > 0) {
+                int x = x_limit;
+                const double ftl = ftop * x_fleft[x];
+                const uint8_t *s = row_t + x_off[x];
+                d[0] = (uint8_t) round((s[0] * ftl) / ftl);
+                d[1] = (uint8_t) round((s[1] * ftl) / ftl);
+                d[2] = (uint8_t) round((s[2] * ftl) / ftl);
+                d[3] = (uint8_t) round((s[3] * ftl) / ftl);
+                d += 4;
+            }
         }
     }
+    free(x_off);
+    free(x_fleft);
+    free(x_fright);
     return 0;
 }
 
@@ -162,86 +186,109 @@ static int scale_sliced_proc_rgba64(int id, int index, int jobs, void *data)
     int slice_line_start,
         slice_height = mlt_slices_size_slice(jobs, index, src->height, &slice_line_start);
     int slice_line_end = slice_line_start + slice_height;
-    double srcScale = rect.h / (double) src->height;
-    int linesize = src->width * 4;
-    uint16_t *d = (uint16_t *) dst->planes[0] + (slice_line_start * linesize);
+    const int width = src->width;
+    const int height = src->height;
+    const double srcScale = rect.h / (double) height;
+    const int linesize = width * 4;
+    const uint16_t *src_plane = (const uint16_t *) src->planes[0];
+    uint16_t *d = (uint16_t *) dst->planes[0] + (size_t) slice_line_start * linesize;
+
+    int *x_off = (int *) malloc((size_t) width * sizeof(int));
+    double *x_fleft = (double *) malloc((size_t) width * sizeof(double));
+    double *x_fright = (double *) malloc((size_t) width * sizeof(double));
+    if (!x_off || !x_fleft || !x_fright) {
+        free(x_off);
+        free(x_fleft);
+        free(x_fright);
+        return 1;
+    }
+    for (int x = 0; x < width; x++) {
+        double srcX = rect.x + (double) x * srcScale;
+        int srcXindex = (int) floor(srcX);
+        double fright = srcX - srcXindex;
+        x_off[x] = srcXindex * 4;
+        x_fright[x] = fright;
+        x_fleft[x] = 1.0 - fright;
+    }
+
+    const int x_limit = width - 1;
     for (int y = slice_line_start; y < slice_line_end; y++) {
         double srcY = rect.y + (double) y * srcScale;
-        int srcYindex = floor(srcY);
+        int srcYindex = (int) floor(srcY);
         double fbottom = srcY - srcYindex;
         double ftop = 1.0 - fbottom;
+        const uint16_t *row_t = src_plane + (size_t) srcYindex * linesize;
 
-        int x = 0;
-        for (x = 0; x < src->width; x++) {
-            double srcX = rect.x + (double) x * srcScale;
-            int srcXindex = floor(srcX);
-            double fright = srcX - srcXindex;
-            double fleft = 1.0 - fright;
-
-            double valueSum[] = {0.0, 0.0, 0.0, 0.0};
-            double factorSum[] = {0.0, 0.0, 0.0, 0.0};
-
-            uint16_t *s = (uint16_t *) src->planes[0] + (srcYindex * linesize) + (srcXindex * 4);
-
-            // Top Left
-            double ftl = ftop * fleft;
-            valueSum[0] += s[0] * ftl;
-            factorSum[0] += ftl;
-            valueSum[1] += s[1] * ftl;
-            factorSum[1] += ftl;
-            valueSum[2] += s[2] * ftl;
-            factorSum[2] += ftl;
-            valueSum[3] += s[3] * ftl;
-            factorSum[3] += ftl;
-
-            // Top Right
-            if (x < src->width - 1) {
-                double ftr = ftop * fright;
-                valueSum[0] += s[4] * ftr;
-                factorSum[0] += ftr;
-                valueSum[1] += s[5] * ftr;
-                factorSum[1] += ftr;
-                valueSum[2] += s[6] * ftr;
-                factorSum[2] += ftr;
-                valueSum[3] += s[7] * ftr;
-                factorSum[3] += ftr;
-            }
-
-            if (y < src->height - 1) {
-                uint16_t *sb = s + linesize;
-
-                // Bottom Left
-                double fbl = fbottom * fleft;
-                valueSum[0] += sb[0] * fbl;
-                factorSum[0] += fbl;
-                valueSum[1] += sb[1] * fbl;
-                factorSum[1] += fbl;
-                valueSum[2] += sb[2] * fbl;
-                factorSum[2] += fbl;
-                valueSum[3] += sb[3] * fbl;
-                factorSum[3] += fbl;
-
-                // Bottom Right
-                if (x < src->width - 1) {
-                    double fbr = fbottom * fright;
-                    valueSum[0] += sb[4] * fbr;
-                    factorSum[0] += fbr;
-                    valueSum[1] += sb[5] * fbr;
-                    factorSum[1] += fbr;
-                    valueSum[2] += sb[6] * fbr;
-                    factorSum[2] += fbr;
-                    valueSum[3] += sb[7] * fbr;
-                    factorSum[3] += fbr;
+        if (y < height - 1) {
+            const uint16_t *row_b = row_t + linesize;
+            for (int x = 0; x < x_limit; x++) {
+                const double fleft = x_fleft[x];
+                const double fright = x_fright[x];
+                const double ftl = ftop * fleft;
+                const double ftr = ftop * fright;
+                const double fbl = fbottom * fleft;
+                const double fbr = fbottom * fright;
+                const double factorSum = ftl + ftr + fbl + fbr;
+                const uint16_t *s = row_t + x_off[x];
+                const uint16_t *sb = row_b + x_off[x];
+                const double v0 = s[0] * ftl + s[4] * ftr + sb[0] * fbl + sb[4] * fbr;
+                const double v1 = s[1] * ftl + s[5] * ftr + sb[1] * fbl + sb[5] * fbr;
+                const double v2 = s[2] * ftl + s[6] * ftr + sb[2] * fbl + sb[6] * fbr;
+                const double v3 = s[3] * ftl + s[7] * ftr + sb[3] * fbl + sb[7] * fbr;
+                if (factorSum == 1.0) {
+                    d[0] = (uint16_t) (v0 + 0.5);
+                    d[1] = (uint16_t) (v1 + 0.5);
+                    d[2] = (uint16_t) (v2 + 0.5);
+                    d[3] = (uint16_t) (v3 + 0.5);
+                } else {
+                    d[0] = (uint16_t) round(v0 / factorSum);
+                    d[1] = (uint16_t) round(v1 / factorSum);
+                    d[2] = (uint16_t) round(v2 / factorSum);
+                    d[3] = (uint16_t) round(v3 / factorSum);
                 }
+                d += 4;
             }
-
-            d[0] = (uint16_t) round(valueSum[0] / factorSum[0]);
-            d[1] = (uint16_t) round(valueSum[1] / factorSum[1]);
-            d[2] = (uint16_t) round(valueSum[2] / factorSum[2]);
-            d[3] = (uint16_t) round(valueSum[3] / factorSum[3]);
-            d += 4;
+            if (width > 0) {
+                int x = x_limit;
+                const double fleft = x_fleft[x];
+                const double ftl = ftop * fleft;
+                const double fbl = fbottom * fleft;
+                const double factorSum = ftl + fbl;
+                const uint16_t *s = row_t + x_off[x];
+                const uint16_t *sb = row_b + x_off[x];
+                d[0] = (uint16_t) round((s[0] * ftl + sb[0] * fbl) / factorSum);
+                d[1] = (uint16_t) round((s[1] * ftl + sb[1] * fbl) / factorSum);
+                d[2] = (uint16_t) round((s[2] * ftl + sb[2] * fbl) / factorSum);
+                d[3] = (uint16_t) round((s[3] * ftl + sb[3] * fbl) / factorSum);
+                d += 4;
+            }
+        } else {
+            for (int x = 0; x < x_limit; x++) {
+                const double ftl = ftop * x_fleft[x];
+                const double ftr = ftop * x_fright[x];
+                const double factorSum = ftl + ftr;
+                const uint16_t *s = row_t + x_off[x];
+                d[0] = (uint16_t) round((s[0] * ftl + s[4] * ftr) / factorSum);
+                d[1] = (uint16_t) round((s[1] * ftl + s[5] * ftr) / factorSum);
+                d[2] = (uint16_t) round((s[2] * ftl + s[6] * ftr) / factorSum);
+                d[3] = (uint16_t) round((s[3] * ftl + s[7] * ftr) / factorSum);
+                d += 4;
+            }
+            if (width > 0) {
+                int x = x_limit;
+                const double ftl = ftop * x_fleft[x];
+                const uint16_t *s = row_t + x_off[x];
+                d[0] = (uint16_t) round((s[0] * ftl) / ftl);
+                d[1] = (uint16_t) round((s[1] * ftl) / ftl);
+                d[2] = (uint16_t) round((s[2] * ftl) / ftl);
+                d[3] = (uint16_t) round((s[3] * ftl) / ftl);
+                d += 4;
+            }
         }
     }
+    free(x_off);
+    free(x_fleft);
+    free(x_fright);
     return 0;
 }
 
