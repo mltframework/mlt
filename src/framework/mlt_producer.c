@@ -27,6 +27,7 @@
 #include "mlt_parser.h"
 #include "mlt_profile.h"
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -618,8 +619,25 @@ char *mlt_producer_get_length_time(mlt_producer self, mlt_time_format format)
 
 void mlt_producer_prepare_next(mlt_producer self)
 {
-    if (mlt_producer_get_speed(self) != 0)
-        mlt_producer_seek(self, mlt_producer_position(self) + mlt_producer_get_speed(self));
+    double speed = mlt_producer_get_speed(self);
+    if (speed == 0)
+        return;
+    if (speed == floor(speed)) {
+        mlt_producer_seek(self, mlt_producer_position(self) + speed);
+        return;
+    }
+    // Keep the fractional part of the position, otherwise speeds like 1.5 or 0.5
+    // are truncated to whole frames (1.5 plays at 1, 0.5 never moves). The fraction is only kept
+    // while nobody else moved the producer.
+    mlt_properties properties = MLT_PRODUCER_PROPERTIES(self);
+    double position = mlt_producer_position(self);
+    if (mlt_properties_get_position(properties, "_fraction_position") == mlt_producer_position(self))
+        position += mlt_properties_get_double(properties, "_fraction");
+    double next = position + speed;
+    mlt_position target = (mlt_position) floor(next);
+    mlt_producer_seek(self, target);
+    mlt_properties_set_double(properties, "_fraction", next - target);
+    mlt_properties_set_position(properties, "_fraction_position", mlt_producer_position(self));
 }
 
 /** Get a frame.

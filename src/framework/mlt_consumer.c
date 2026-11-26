@@ -27,6 +27,7 @@
 #include "mlt_producer.h"
 #include "mlt_profile.h"
 
+#include <math.h>
 #include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -778,6 +779,28 @@ static inline long time_difference(struct timeval *time1)
  * \param arg a consumer
  */
 
+/* "_speed" is a double. Read as an integer, speeds between -1 and 1 (0.5) looked
+ * like a pause; keep 0 only for a real pause. */
+static int frame_speed_class(mlt_frame frame)
+{
+    double speed = mlt_properties_get_double(MLT_FRAME_PROPERTIES(frame), "_speed");
+    if (speed == 0.0)
+        return 0;
+    int result = (int) speed;
+    return result != 0 ? result : (speed > 0.0 ? 1 : -1);
+}
+
+/* Whether the frame follows the previous one during playback at that speed. At a
+ * speed other than 1 the position moves by floor(speed) or ceil(speed) frames (it may repeat when
+ * slower than 1), which is not a seek. */
+static int position_continues(double speed, mlt_position pos, mlt_position last_pos)
+{
+    if (speed == 1.0 || speed == 0.0)
+        return pos == last_pos + 1;
+    double step = pos - last_pos;
+    return step >= floor(speed) && step <= ceil(speed);
+}
+
 static void *consumer_read_ahead_thread(void *arg)
 {
     // The argument is the consumer
@@ -818,6 +841,7 @@ static void *consumer_read_ahead_thread(void *arg)
     mlt_position pos = 0;
     mlt_position start_pos = 0;
     mlt_position last_pos = 0;
+    double frame_speed = 1.0;
     int frame_duration = mlt_properties_get_int(properties, "frame_duration");
     int drop_max = mlt_properties_get_int(properties, "drop_max");
 
@@ -831,8 +855,8 @@ static void *consumer_read_ahead_thread(void *arg)
 
     // Get the first frame
     frame = mlt_consumer_get_frame(self);
-    if (priv->speed != mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "_speed")) {
-        priv->speed = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "_speed");
+    if (priv->speed != frame_speed_class(frame)) {
+        priv->speed = frame_speed_class(frame);
         // get_frame might want to recalculate the minimum queue size if the speed has changed.
         pthread_cond_broadcast(&priv->queue_cond);
     }
@@ -895,7 +919,8 @@ static void *consumer_read_ahead_thread(void *arg)
         if (frame == NULL)
             continue;
         pos = mlt_frame_get_position(frame);
-        priv->speed = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "_speed");
+        priv->speed = frame_speed_class(frame);
+        frame_speed = mlt_properties_get_double(MLT_FRAME_PROPERTIES(frame), "_speed");
 
         // WebVfx uses this to setup a consumer-stopping event handler.
         mlt_properties_set_data(MLT_FRAME_PROPERTIES(frame), "consumer", self, 0, NULL, NULL);
@@ -978,7 +1003,7 @@ static void *consumer_read_ahead_thread(void *arg)
         }
 
         // Determine if we started, resumed, or seeked
-        if (pos != last_pos + 1) {
+        if (!position_continues(frame_speed, pos, last_pos)) {
             start_pos = pos;
             if (priv->speed) {
                 priv->preroll = 1;
@@ -1130,7 +1155,7 @@ static void *consumer_worker_thread(void *arg)
 
 #ifdef DEINTERLACE_ON_NOT_NORMAL_SPEED
         // All non normal playback frames should be shown
-        if (mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "_speed") != 1)
+        if (frame_speed_class(frame) != 1)
             mlt_properties_set_int(MLT_FRAME_PROPERTIES(frame), "consumer.progressive", 1);
 #endif
 
@@ -1461,7 +1486,7 @@ static mlt_frame worker_get_frame(mlt_consumer self, mlt_properties properties)
                 mlt_deque_push_back(priv->queue, frame);
                 pthread_cond_signal(&priv->queue_cond);
                 pthread_mutex_unlock(&priv->queue_mutex);
-                priv->speed = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "_speed");
+                priv->speed = frame_speed_class(frame);
                 buffer = (priv->speed == 0) ? 1 : buffer;
             }
         }
@@ -1498,7 +1523,7 @@ static mlt_frame worker_get_frame(mlt_consumer self, mlt_properties properties)
             mlt_deque_push_back(priv->queue, frame);
             pthread_cond_signal(&priv->queue_cond);
             pthread_mutex_unlock(&priv->queue_mutex);
-            priv->speed = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "_speed");
+            priv->speed = frame_speed_class(frame);
             buffer = (priv->speed == 0) ? 1 : buffer;
         }
     }
