@@ -24,6 +24,9 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
 
 static const float MAX_OVERLAP_RANGE = 29.9;
 
@@ -65,7 +68,29 @@ typedef struct
     float overlap_range;
 } sliced_desc;
 
-static int hueToRegion(float h)
+static inline long fast_lrint_double(double x)
+{
+#ifdef __SSE2__
+    return _mm_cvtsd_si32(_mm_set_sd(x));
+#else
+    return lrint(x);
+#endif
+}
+
+static float u8_to_float_lut[256];
+static int u8_lut_initialized = 0;
+
+static void init_u8_lut(void)
+{
+    if (!u8_lut_initialized) {
+        for (int i = 0; i < 256; i++) {
+            u8_to_float_lut[i] = (float) ((double) i / 255.0);
+        }
+        u8_lut_initialized = 1;
+    }
+}
+
+static inline int hueToRegion(float h)
 {
     for (int i = 0; i < HSL_REGION_COUNT; i++) {
         if (h < hueRegions[i].end) {
@@ -75,13 +100,13 @@ static int hueToRegion(float h)
     return HSL_REGION_RED;
 }
 
-static void adjust_pixel(float *r, float *g, float *b, sliced_desc *desc)
+static inline int adjust_pixel(float *r, float *g, float *b, const sliced_desc *desc)
 {
     float h, s, l;
     rgbToHsl(*r, *g, *b, &h, &s, &l);
-    if (s == 0) {
+    if (s == 0.0f) {
         // No color. Do not adjust.
-        return;
+        return 0;
     }
 
     int region = hueToRegion(h);
@@ -89,50 +114,55 @@ static void adjust_pixel(float *r, float *g, float *b, sliced_desc *desc)
     float s_scale = desc->s_scale[region];
     float l_scale = desc->l_scale[region];
 
-    if (desc->overlap != 0.0) {
+    if (desc->overlap != 0.0f) {
         int o_region = region;
-        float o_strength = 0.0;
+        float o_strength = 0.0f;
+        float overlap_range = desc->overlap_range;
         if (region == HSL_REGION_RED) {
             // Special case to handle red wrap around
             if (h > hueRegions[HSL_REGION_RED].beg
-                && h < (hueRegions[HSL_REGION_RED].beg + desc->overlap_range)) {
+                && h < (hueRegions[HSL_REGION_RED].beg + overlap_range)) {
                 o_region = HSL_REGION_MAGENTA;
                 o_strength = (h - hueRegions[region].beg) / desc->overlap_range;
             } else if (h < hueRegions[HSL_REGION_RED].end
-                       && h > (hueRegions[HSL_REGION_RED].end - desc->overlap_range)) {
+                       && h > (hueRegions[HSL_REGION_RED].end - overlap_range)) {
                 o_region = HSL_REGION_YELLOW;
                 o_strength = (hueRegions[region].end - h) / desc->overlap_range;
             }
-        } else if (h < (hueRegions[region].beg + desc->overlap_range)) {
+        } else if (h < (hueRegions[region].beg + overlap_range)) {
             o_region = (region - 1 + HSL_REGION_COUNT) % HSL_REGION_COUNT;
             o_strength = (h - hueRegions[region].beg) / desc->overlap_range;
-        } else if (h > (hueRegions[region].end - desc->overlap_range)) {
+        } else if (h > (hueRegions[region].end - overlap_range)) {
             o_region = (region + 1) % HSL_REGION_COUNT;
             o_strength = (hueRegions[region].end - h) / desc->overlap_range;
         }
         if (o_region != region) {
+            double inv_strength = 1.0 - o_strength;
             float edge_hshift = (desc->h_shift[region] + desc->h_shift[o_region]) / 2.0;
-            h_shift = (desc->h_shift[region] * o_strength) + (edge_hshift * (1.0 - o_strength));
+            h_shift = (desc->h_shift[region] * o_strength) + (edge_hshift * inv_strength);
             float edge_sscale = (desc->s_scale[region] + desc->s_scale[o_region]) / 2.0;
-            s_scale = (desc->s_scale[region] * o_strength) + (edge_sscale * (1.0 - o_strength));
+            s_scale = (desc->s_scale[region] * o_strength) + (edge_sscale * inv_strength);
             float edge_lscale = (desc->l_scale[region] + desc->l_scale[o_region]) / 2.0;
-            l_scale = (desc->l_scale[region] * o_strength) + (edge_lscale * (1.0 - o_strength));
+            l_scale = (desc->l_scale[region] * o_strength) + (edge_lscale * inv_strength);
         }
     }
 
-    if (h_shift == 0.0 && s_scale == 1.0 && l_scale == 1.0) {
+    if (h_shift == 0.0f && s_scale == 1.0f && l_scale == 1.0f) {
         // No adjustment for this pixel
-        return;
+        return 0;
     }
 
     // Apply the adjustment
     h = h + h_shift;
-    h = fmod(h, 1.0);
+    if (h >= 1.0f || h <= -1.0f) {
+        h -= (float) (int) h;
+    }
     s = s * s_scale;
-    s = s < 0.0 ? 0.0 : s > 1.0 ? 1.0 : s;
+    s = s < 0.0f ? 0.0f : s > 1.0f ? 1.0f : s;
     l = l * l_scale;
-    l = l < 0.0 ? 0.0 : l > 1.0 ? 1.0 : l;
+    l = l < 0.0f ? 0.0f : l > 1.0f ? 1.0f : l;
     hslToRgb(h, s, l, r, g, b);
+    return 1;
 }
 
 static int sliced_proc(int id, int index, int jobs, void *data)
@@ -145,43 +175,49 @@ static int sliced_proc(int id, int index, int jobs, void *data)
 
     switch (desc->format) {
     case mlt_image_rgb: {
-        uint8_t *sample = desc->image + slice_line_start * desc->width * 3;
+        uint8_t *restrict sample = desc->image + slice_line_start * desc->width * 3;
+        const float *restrict lut = u8_to_float_lut;
         for (int i = 0; i < total; i++) {
-            float r = sample[0] / 255.0;
-            float g = sample[1] / 255.0;
-            float b = sample[2] / 255.0;
-            adjust_pixel(&r, &g, &b, desc);
-            sample[0] = lrint(r * 255.0);
-            sample[1] = lrint(g * 255.0);
-            sample[2] = lrint(b * 255.0);
+            float r = lut[sample[0]];
+            float g = lut[sample[1]];
+            float b = lut[sample[2]];
+            if (adjust_pixel(&r, &g, &b, desc)) {
+                sample[0] = (uint8_t) fast_lrint_double((double) r * 255.0);
+                sample[1] = (uint8_t) fast_lrint_double((double) g * 255.0);
+                sample[2] = (uint8_t) fast_lrint_double((double) b * 255.0);
+            }
             sample += 3;
         }
         break;
     }
     case mlt_image_rgba: {
-        uint8_t *sample = desc->image + slice_line_start * desc->width * 4;
+        uint8_t *restrict sample = desc->image + slice_line_start * desc->width * 4;
+        const float *restrict lut = u8_to_float_lut;
         for (int i = 0; i < total; i++) {
-            float r = sample[0] / 255.0;
-            float g = sample[1] / 255.0;
-            float b = sample[2] / 255.0;
-            adjust_pixel(&r, &g, &b, desc);
-            sample[0] = lrint(r * 255.0);
-            sample[1] = lrint(g * 255.0);
-            sample[2] = lrint(b * 255.0);
+            float r = lut[sample[0]];
+            float g = lut[sample[1]];
+            float b = lut[sample[2]];
+            if (adjust_pixel(&r, &g, &b, desc)) {
+                sample[0] = (uint8_t) fast_lrint_double((double) r * 255.0);
+                sample[1] = (uint8_t) fast_lrint_double((double) g * 255.0);
+                sample[2] = (uint8_t) fast_lrint_double((double) b * 255.0);
+            }
             sample += 4;
         }
         break;
     }
     case mlt_image_rgba64: {
-        uint16_t *sample = (uint16_t *) desc->image + slice_line_start * desc->width * 4;
+        uint16_t *restrict sample = (uint16_t *) desc->image + slice_line_start * desc->width * 4;
+        const float inv65535 = 1.0f / 65535.0f;
         for (int i = 0; i < total; i++) {
-            float r = sample[0] / 65535.0;
-            float g = sample[1] / 65535.0;
-            float b = sample[2] / 65535.0;
-            adjust_pixel(&r, &g, &b, desc);
-            sample[0] = lrint(r * 65535.0);
-            sample[1] = lrint(g * 65535.0);
-            sample[2] = lrint(b * 65535.0);
+            float r = (float) sample[0] * inv65535;
+            float g = (float) sample[1] * inv65535;
+            float b = (float) sample[2] * inv65535;
+            if (adjust_pixel(&r, &g, &b, desc)) {
+                sample[0] = (uint16_t) fast_lrint_double((double) r * 65535.0);
+                sample[1] = (uint16_t) fast_lrint_double((double) g * 65535.0);
+                sample[2] = (uint16_t) fast_lrint_double((double) b * 65535.0);
+            }
             sample += 4;
         }
         break;
@@ -275,6 +311,7 @@ static int filter_get_image(mlt_frame frame,
             desc.l_scale[i] /= 100.0;
         }
         desc.overlap /= 100.0;
+        init_u8_lut();
         desc.overlap_range = desc.overlap * MAX_OVERLAP_RANGE / 360.0;
         // Perform the processing
         desc.format = *format;
