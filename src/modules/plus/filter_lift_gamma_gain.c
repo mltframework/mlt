@@ -30,6 +30,8 @@ typedef struct
     uint16_t *rlut16;
     uint16_t *glut16;
     uint16_t *blut16;
+    int lut8_valid;
+    int lut16_valid;
     double rlift, glift, blift;
     double rgamma, ggamma, bgamma;
     double rgain, ggain, bgain;
@@ -42,59 +44,121 @@ typedef struct
     mlt_image_format format;
     int width;
     int height;
-    uint8_t *rlut;
-    uint8_t *glut;
-    uint8_t *blut;
+    const uint8_t *rlut;
+    const uint8_t *glut;
+    const uint8_t *blut;
+    const uint16_t *rlut16;
+    const uint16_t *glut16;
+    const uint16_t *blut16;
+} sliced_desc;
+
+typedef struct
+{
     uint16_t *rlut16;
     uint16_t *glut16;
     uint16_t *blut16;
-} sliced_desc;
+    double rlift, glift, blift;
+    double rgamma_exp, ggamma_exp, bgamma_exp;
+    double rgain_scale, ggain_scale, bgain_scale;
+    int g_same_as_r;
+    int b_same_as_r;
+    int b_same_as_g;
+} lut16_desc;
 
-// Helper function to calculate lift-gamma-gain to a normalized [0.0, 1.0] value
-static inline void calc_lift_gamma_gain(double normalized,
-                                        double *r,
-                                        double *g,
-                                        double *b,
-                                        double rlift,
-                                        double glift,
-                                        double blift,
-                                        double rgamma,
-                                        double ggamma,
-                                        double bgamma,
-                                        double rgain,
-                                        double ggain,
-                                        double bgain)
+// Helper function to calculate lift-gamma-gain using precomputed loop invariants
+static inline void calc_lift_gamma_gain_fast(double normalized,
+                                             double *r,
+                                             double *g,
+                                             double *b,
+                                             double rlift,
+                                             double glift,
+                                             double blift,
+                                             double rgamma_exp,
+                                             double ggamma_exp,
+                                             double bgamma_exp,
+                                             double rgain_scale,
+                                             double ggain_scale,
+                                             double bgain_scale,
+                                             int g_same_as_r,
+                                             int b_same_as_r,
+                                             int b_same_as_g)
 {
     // Convert to gamma 2.2
-    double gamma22 = pow(normalized, 1.0 / 2.2);
-    *r = gamma22;
-    *g = gamma22;
-    *b = gamma22;
+    const double gamma22 = pow(normalized, 1.0 / 2.2);
+    const double one_minus_gamma22 = 1.0 - gamma22;
 
-    // Apply lift
-    *r += rlift * (1.0 - *r);
-    *g += glift * (1.0 - *g);
-    *b += blift * (1.0 - *b);
+    double rv = gamma22 + rlift * one_minus_gamma22;
+    rv = MAX(rv, 0.0);
+    rv = pow(rv, rgamma_exp) * rgain_scale;
+    rv = CLAMP(rv, 0.0, 1.0);
+    *r = rv;
 
-    // Clamp negative values
-    *r = MAX(*r, 0.0);
-    *g = MAX(*g, 0.0);
-    *b = MAX(*b, 0.0);
+    double gv;
+    if (g_same_as_r) {
+        gv = rv;
+    } else {
+        gv = gamma22 + glift * one_minus_gamma22;
+        gv = MAX(gv, 0.0);
+        gv = pow(gv, ggamma_exp) * ggain_scale;
+        gv = CLAMP(gv, 0.0, 1.0);
+    }
+    *g = gv;
 
-    // Apply gamma
-    *r = pow(*r, 2.2 / rgamma);
-    *g = pow(*g, 2.2 / ggamma);
-    *b = pow(*b, 2.2 / bgamma);
+    double bv;
+    if (b_same_as_r) {
+        bv = rv;
+    } else if (b_same_as_g) {
+        bv = gv;
+    } else {
+        bv = gamma22 + blift * one_minus_gamma22;
+        bv = MAX(bv, 0.0);
+        bv = pow(bv, bgamma_exp) * bgain_scale;
+        bv = CLAMP(bv, 0.0, 1.0);
+    }
+    *b = bv;
+}
 
-    // Apply gain
-    *r *= pow(rgain, 1.0 / rgamma);
-    *g *= pow(ggain, 1.0 / ggamma);
-    *b *= pow(bgain, 1.0 / bgamma);
+static int lut16_slice_proc(int id, int index, int jobs, void *data)
+{
+    (void) id;
+    const lut16_desc *d = (const lut16_desc *) data;
+    int start;
+    const int count = mlt_slices_size_slice(jobs, index, 65536, &start);
+    const int end = start + count;
+    uint16_t *restrict rlut16 = d->rlut16;
+    uint16_t *restrict glut16 = d->glut16;
+    uint16_t *restrict blut16 = d->blut16;
+    const double rlift = d->rlift, glift = d->glift, blift = d->blift;
+    const double rgamma_exp = d->rgamma_exp, ggamma_exp = d->ggamma_exp, bgamma_exp = d->bgamma_exp;
+    const double rgain_scale = d->rgain_scale, ggain_scale = d->ggain_scale,
+                 bgain_scale = d->bgain_scale;
+    const int g_same_as_r = d->g_same_as_r;
+    const int b_same_as_r = d->b_same_as_r;
+    const int b_same_as_g = d->b_same_as_g;
 
-    // Clamp values
-    *r = CLAMP(*r, 0.0, 1.0);
-    *g = CLAMP(*g, 0.0, 1.0);
-    *b = CLAMP(*b, 0.0, 1.0);
+    for (int i = start; i < end; i++) {
+        double r, g, b;
+        calc_lift_gamma_gain_fast((double) i / 65535.0,
+                                  &r,
+                                  &g,
+                                  &b,
+                                  rlift,
+                                  glift,
+                                  blift,
+                                  rgamma_exp,
+                                  ggamma_exp,
+                                  bgamma_exp,
+                                  rgain_scale,
+                                  ggain_scale,
+                                  bgain_scale,
+                                  g_same_as_r,
+                                  b_same_as_r,
+                                  b_same_as_g);
+        rlut16[i] = lrint(r * 65535.0);
+        glut16[i] = lrint(g * 65535.0);
+        blut16[i] = lrint(b * 65535.0);
+    }
+    return 0;
 }
 
 static int refresh_lut(mlt_filter filter, mlt_frame frame, mlt_image_format format)
@@ -119,102 +183,110 @@ static int refresh_lut(mlt_filter filter, mlt_frame frame, mlt_image_format form
                           || self->bgain != bgain);
 
     if (params_changed) {
-        // Free existing LUTs to force regeneration
-        free(self->rlut);
-        free(self->glut);
-        free(self->blut);
-        free(self->rlut16);
-        free(self->glut16);
-        free(self->blut16);
-        self->rlut = NULL;
-        self->glut = NULL;
-        self->blut = NULL;
-        self->rlut16 = NULL;
-        self->glut16 = NULL;
-        self->blut16 = NULL;
+        self->lut8_valid = 0;
+        self->lut16_valid = 0;
     }
 
     // Determine which LUT is needed for this format
     int need_lut8 = (format == mlt_image_rgb || format == mlt_image_rgba);
     int need_lut16 = (format == mlt_image_rgba64);
 
-    // Allocate and generate 8-bit LUT if needed
-    if (need_lut8 && !self->rlut) {
-        self->rlut = malloc(256 * sizeof(uint8_t));
-        self->glut = malloc(256 * sizeof(uint8_t));
-        self->blut = malloc(256 * sizeof(uint8_t));
+    if ((need_lut8 && !self->lut8_valid) || (need_lut16 && !self->lut16_valid)) {
+        const double rgamma_exp = 2.2 / rgamma;
+        const double ggamma_exp = 2.2 / ggamma;
+        const double bgamma_exp = 2.2 / bgamma;
+        const double rgain_scale = pow(rgain, 1.0 / rgamma);
+        const double ggain_scale = pow(ggain, 1.0 / ggamma);
+        const double bgain_scale = pow(bgain, 1.0 / bgamma);
+        const int g_same_as_r = (glift == rlift && ggamma == rgamma && ggain == rgain);
+        const int b_same_as_r = (blift == rlift && bgamma == rgamma && bgain == rgain);
+        const int b_same_as_g = (blift == glift && bgamma == ggamma && bgain == ggain);
 
-        if (!self->rlut || !self->glut || !self->blut) {
-            mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to allocate 8-bit LUTs\n");
-            free(self->rlut);
-            free(self->glut);
-            free(self->blut);
-            self->rlut = NULL;
-            self->glut = NULL;
-            self->blut = NULL;
-            return 1;
+        // Allocate and generate 8-bit LUT if needed
+        if (need_lut8 && !self->lut8_valid) {
+            if (!self->rlut) {
+                self->rlut = malloc(256 * sizeof(uint8_t));
+                self->glut = malloc(256 * sizeof(uint8_t));
+                self->blut = malloc(256 * sizeof(uint8_t));
+
+                if (!self->rlut || !self->glut || !self->blut) {
+                    mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to allocate 8-bit LUTs\n");
+                    free(self->rlut);
+                    free(self->glut);
+                    free(self->blut);
+                    self->rlut = NULL;
+                    self->glut = NULL;
+                    self->blut = NULL;
+                    return 1;
+                }
+            }
+
+            uint8_t *restrict rlut = self->rlut;
+            uint8_t *restrict glut = self->glut;
+            uint8_t *restrict blut = self->blut;
+            for (int i = 0; i < 256; i++) {
+                double r, g, b;
+                calc_lift_gamma_gain_fast((double) i / 255.0,
+                                          &r,
+                                          &g,
+                                          &b,
+                                          rlift,
+                                          glift,
+                                          blift,
+                                          rgamma_exp,
+                                          ggamma_exp,
+                                          bgamma_exp,
+                                          rgain_scale,
+                                          ggain_scale,
+                                          bgain_scale,
+                                          g_same_as_r,
+                                          b_same_as_r,
+                                          b_same_as_g);
+
+                // Update 8-bit LUT
+                rlut[i] = lrint(r * 255.0);
+                glut[i] = lrint(g * 255.0);
+                blut[i] = lrint(b * 255.0);
+            }
+            self->lut8_valid = 1;
         }
 
-        for (int i = 0; i < 256; i++) {
-            double r, g, b;
-            calc_lift_gamma_gain((double) i / 255.0,
-                                 &r,
-                                 &g,
-                                 &b,
-                                 rlift,
-                                 glift,
-                                 blift,
-                                 rgamma,
-                                 ggamma,
-                                 bgamma,
-                                 rgain,
-                                 ggain,
-                                 bgain);
+        // Allocate and generate 16-bit LUT if needed
+        if (need_lut16 && !self->lut16_valid) {
+            if (!self->rlut16) {
+                self->rlut16 = malloc(65536 * sizeof(uint16_t));
+                self->glut16 = malloc(65536 * sizeof(uint16_t));
+                self->blut16 = malloc(65536 * sizeof(uint16_t));
 
-            // Update 8-bit LUT
-            self->rlut[i] = lrint(r * 255.0);
-            self->glut[i] = lrint(g * 255.0);
-            self->blut[i] = lrint(b * 255.0);
-        }
-    }
+                if (!self->rlut16 || !self->glut16 || !self->blut16) {
+                    mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to allocate 16-bit LUTs\n");
+                    free(self->rlut16);
+                    free(self->glut16);
+                    free(self->blut16);
+                    self->rlut16 = NULL;
+                    self->glut16 = NULL;
+                    self->blut16 = NULL;
+                    return 1;
+                }
+            }
 
-    // Allocate and generate 16-bit LUT if needed
-    if (need_lut16 && !self->rlut16) {
-        self->rlut16 = malloc(65536 * sizeof(uint16_t));
-        self->glut16 = malloc(65536 * sizeof(uint16_t));
-        self->blut16 = malloc(65536 * sizeof(uint16_t));
-
-        if (!self->rlut16 || !self->glut16 || !self->blut16) {
-            mlt_log_error(MLT_FILTER_SERVICE(filter), "Failed to allocate 16-bit LUTs\n");
-            free(self->rlut16);
-            free(self->glut16);
-            free(self->blut16);
-            self->rlut16 = NULL;
-            self->glut16 = NULL;
-            self->blut16 = NULL;
-            return 1;
-        }
-
-        for (int i = 0; i < 65536; i++) {
-            double r, g, b;
-            calc_lift_gamma_gain((double) i / 65535.0,
-                                 &r,
-                                 &g,
-                                 &b,
-                                 rlift,
-                                 glift,
-                                 blift,
-                                 rgamma,
-                                 ggamma,
-                                 bgamma,
-                                 rgain,
-                                 ggain,
-                                 bgain);
-
-            // Update 16-bit LUT
-            self->rlut16[i] = lrint(r * 65535.0);
-            self->glut16[i] = lrint(g * 65535.0);
-            self->blut16[i] = lrint(b * 65535.0);
+            lut16_desc ldesc = {.rlut16 = self->rlut16,
+                                .glut16 = self->glut16,
+                                .blut16 = self->blut16,
+                                .rlift = rlift,
+                                .glift = glift,
+                                .blift = blift,
+                                .rgamma_exp = rgamma_exp,
+                                .ggamma_exp = ggamma_exp,
+                                .bgamma_exp = bgamma_exp,
+                                .rgain_scale = rgain_scale,
+                                .ggain_scale = ggain_scale,
+                                .bgain_scale = bgain_scale,
+                                .g_same_as_r = g_same_as_r,
+                                .b_same_as_r = b_same_as_r,
+                                .b_same_as_g = b_same_as_g};
+            mlt_slices_run_normal(0, lut16_slice_proc, &ldesc);
+            self->lut16_valid = 1;
         }
     }
 
@@ -237,47 +309,91 @@ static int refresh_lut(mlt_filter filter, mlt_frame frame, mlt_image_format form
 static int sliced_proc(int id, int index, int jobs, void *data)
 {
     (void) id; // unused
-    sliced_desc *desc = ((sliced_desc *) data);
-    int slice_line_start,
-        slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
-    int total = desc->width * slice_height + 1;
-    uint8_t *sample = desc->image
-                      + slice_line_start
-                            * mlt_image_format_size(desc->format, desc->width, 1, NULL);
+    const sliced_desc *desc = (const sliced_desc *) data;
+    int slice_line_start;
+    const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
+    const int pixels = desc->width * slice_height;
 
     switch (desc->format) {
-    case mlt_image_rgb:
-        while (--total) {
-            *sample = desc->rlut[*sample];
-            sample++;
-            *sample = desc->glut[*sample];
-            sample++;
-            *sample = desc->blut[*sample];
-            sample++;
+    case mlt_image_rgb: {
+        uint8_t *restrict sample = desc->image + (size_t) slice_line_start * desc->width * 3;
+        const uint8_t *restrict rlut = desc->rlut;
+        const uint8_t *restrict glut = desc->glut;
+        const uint8_t *restrict blut = desc->blut;
+        int p = 0;
+        for (; p + 4 <= pixels; p += 4, sample += 12) {
+            sample[0] = rlut[sample[0]];
+            sample[1] = glut[sample[1]];
+            sample[2] = blut[sample[2]];
+            sample[3] = rlut[sample[3]];
+            sample[4] = glut[sample[4]];
+            sample[5] = blut[sample[5]];
+            sample[6] = rlut[sample[6]];
+            sample[7] = glut[sample[7]];
+            sample[8] = blut[sample[8]];
+            sample[9] = rlut[sample[9]];
+            sample[10] = glut[sample[10]];
+            sample[11] = blut[sample[11]];
+        }
+        for (; p < pixels; p++, sample += 3) {
+            sample[0] = rlut[sample[0]];
+            sample[1] = glut[sample[1]];
+            sample[2] = blut[sample[2]];
         }
         break;
-    case mlt_image_rgba:
-        while (--total) {
-            *sample = desc->rlut[*sample];
-            sample++;
-            *sample = desc->glut[*sample];
-            sample++;
-            *sample = desc->blut[*sample];
-            sample++;
-            sample++; // Skip alpha
+    }
+    case mlt_image_rgba: {
+        uint8_t *restrict sample = desc->image + (size_t) slice_line_start * desc->width * 4;
+        const uint8_t *restrict rlut = desc->rlut;
+        const uint8_t *restrict glut = desc->glut;
+        const uint8_t *restrict blut = desc->blut;
+        int p = 0;
+        for (; p + 4 <= pixels; p += 4, sample += 16) {
+            sample[0] = rlut[sample[0]];
+            sample[1] = glut[sample[1]];
+            sample[2] = blut[sample[2]];
+            sample[4] = rlut[sample[4]];
+            sample[5] = glut[sample[5]];
+            sample[6] = blut[sample[6]];
+            sample[8] = rlut[sample[8]];
+            sample[9] = glut[sample[9]];
+            sample[10] = blut[sample[10]];
+            sample[12] = rlut[sample[12]];
+            sample[13] = glut[sample[13]];
+            sample[14] = blut[sample[14]];
+        }
+        for (; p < pixels; p++, sample += 4) {
+            sample[0] = rlut[sample[0]];
+            sample[1] = glut[sample[1]];
+            sample[2] = blut[sample[2]];
         }
         break;
+    }
     case mlt_image_rgba64: {
-        int pixels = desc->width * slice_height;
-        uint16_t *s = (uint16_t *) sample;
-        for (int p = 0; p < pixels; p++) {
-            *s = desc->rlut16[*s];
-            s++;
-            *s = desc->glut16[*s];
-            s++;
-            *s = desc->blut16[*s];
-            s++;
-            s++; // Skip alpha
+        uint16_t *restrict s = (uint16_t *) (desc->image
+                                             + (size_t) slice_line_start * desc->width * 8);
+        const uint16_t *restrict rlut16 = desc->rlut16;
+        const uint16_t *restrict glut16 = desc->glut16;
+        const uint16_t *restrict blut16 = desc->blut16;
+        int p = 0;
+        for (; p + 4 <= pixels; p += 4, s += 16) {
+            s[0] = rlut16[s[0]];
+            s[1] = glut16[s[1]];
+            s[2] = blut16[s[2]];
+            s[4] = rlut16[s[4]];
+            s[5] = glut16[s[5]];
+            s[6] = blut16[s[6]];
+            s[8] = rlut16[s[8]];
+            s[9] = glut16[s[9]];
+            s[10] = blut16[s[10]];
+            s[12] = rlut16[s[12]];
+            s[13] = glut16[s[13]];
+            s[14] = blut16[s[14]];
+        }
+        for (; p < pixels; p++, s += 4) {
+            s[0] = rlut16[s[0]];
+            s[1] = glut16[s[1]];
+            s[2] = blut16[s[2]];
         }
         break;
     }
