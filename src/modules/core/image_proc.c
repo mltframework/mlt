@@ -22,6 +22,7 @@
 #include <framework/mlt_slices.h>
 
 #include <math.h>
+#include <stdint.h>
 
 typedef struct
 {
@@ -30,6 +31,21 @@ typedef struct
     int radius;
 } blur_slice_desc;
 
+/*
+ * For odd diameter = 2 * radius + 1 and non-negative integer acc,
+ * acc / (double) diameter can never be a half-integer, so
+ * lrint((double) acc / diameter) == (acc + radius) / diameter.
+ * Using a 40-bit fixed-point reciprocal is exact for all 8-bit sums up to
+ * diameter <= 16385 (max sum < 2^22, sum * diam < 2^36 << 2^40).
+ */
+#define BLUR_INV_SHIFT 40
+#define BLUR_V_TILE_W 64
+
+static inline uint8_t blur_div_u8(int acc, int radius, uint64_t inv_diam)
+{
+    return (uint8_t) (((uint64_t) (acc + radius) * inv_diam) >> BLUR_INV_SHIFT);
+}
+
 static int blur_h_proc_rgba(int id, int index, int jobs, void *data)
 {
     (void) id; // unused
@@ -37,70 +53,73 @@ static int blur_h_proc_rgba(int id, int index, int jobs, void *data)
     int slice_line_start,
         slice_height = mlt_slices_size_slice(jobs, index, desc->src->height, &slice_line_start);
     int slice_line_end = slice_line_start + slice_height;
-    int accumulator[] = {0, 0, 0, 0};
-    int x = 0;
-    int y = 0;
-    int step = 4;
-    int linesize = step * desc->src->width;
+    const int width = desc->src->width;
+    const int step = 4;
+    const int linesize = step * width;
     int radius = desc->radius;
 
-    if (desc->radius > (desc->src->width / 2)) {
-        radius = desc->src->width / 2;
+    if (radius > (width / 2)) {
+        radius = width / 2;
     }
-    double diameter = (radius * 2) + 1;
+    const int diameter = (radius * 2) + 1;
+    const uint64_t inv_diam = ((1ULL << BLUR_INV_SHIFT) + (uint64_t) diameter - 1)
+                              / (uint64_t) diameter;
+    const int mid_end = width - radius;
 
-    for (y = slice_line_start; y < slice_line_end; y++) {
-        uint8_t *first = desc->src->planes[0] + (y * linesize);
-        uint8_t *last = first + linesize - step;
-        uint8_t *s1 = first;
-        uint8_t *s2 = first;
+    for (int y = slice_line_start; y < slice_line_end; y++) {
+        const uint8_t *first = desc->src->planes[0] + (y * linesize);
+        const uint8_t *last = first + linesize - step;
+        const uint8_t *s1 = first;
+        const uint8_t *s2 = first;
         uint8_t *d = desc->dst->planes[0] + (y * linesize);
-        accumulator[0] = first[0] * (radius + 1);
-        accumulator[1] = first[1] * (radius + 1);
-        accumulator[2] = first[2] * (radius + 1);
-        accumulator[3] = first[3] * (radius + 1);
+        const int f0 = first[0], f1 = first[1], f2 = first[2], f3 = first[3];
+        const int l0 = last[0], l1 = last[1], l2 = last[2], l3 = last[3];
+        int a0 = f0 * (radius + 1);
+        int a1 = f1 * (radius + 1);
+        int a2 = f2 * (radius + 1);
+        int a3 = f3 * (radius + 1);
 
-        for (x = 0; x < radius; x++) {
-            accumulator[0] += s1[0];
-            accumulator[1] += s1[1];
-            accumulator[2] += s1[2];
-            accumulator[3] += s1[3];
+        for (int x = 0; x < radius; x++) {
+            a0 += s1[0];
+            a1 += s1[1];
+            a2 += s1[2];
+            a3 += s1[3];
             s1 += step;
         }
-        for (x = 0; x <= radius; x++) {
-            accumulator[0] += s1[0] - first[0];
-            accumulator[1] += s1[1] - first[1];
-            accumulator[2] += s1[2] - first[2];
-            accumulator[3] += s1[3] - first[3];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
-            d[3] = lrint((double) accumulator[3] / diameter);
+        for (int x = 0; x <= radius; x++) {
+            a0 += s1[0] - f0;
+            a1 += s1[1] - f1;
+            a2 += s1[2] - f2;
+            a3 += s1[3] - f3;
+            d[0] = blur_div_u8(a0, radius, inv_diam);
+            d[1] = blur_div_u8(a1, radius, inv_diam);
+            d[2] = blur_div_u8(a2, radius, inv_diam);
+            d[3] = blur_div_u8(a3, radius, inv_diam);
             s1 += step;
             d += step;
         }
-        for (x = radius + 1; x < desc->src->width - radius; x++) {
-            accumulator[0] += s1[0] - s2[0];
-            accumulator[1] += s1[1] - s2[1];
-            accumulator[2] += s1[2] - s2[2];
-            accumulator[3] += s1[3] - s2[3];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
-            d[3] = lrint((double) accumulator[3] / diameter);
+        for (int x = radius + 1; x < mid_end; x++) {
+            a0 += s1[0] - s2[0];
+            a1 += s1[1] - s2[1];
+            a2 += s1[2] - s2[2];
+            a3 += s1[3] - s2[3];
+            d[0] = blur_div_u8(a0, radius, inv_diam);
+            d[1] = blur_div_u8(a1, radius, inv_diam);
+            d[2] = blur_div_u8(a2, radius, inv_diam);
+            d[3] = blur_div_u8(a3, radius, inv_diam);
             s1 += step;
             s2 += step;
             d += step;
         }
-        for (x = desc->src->width - radius; x < desc->src->width; x++) {
-            accumulator[0] += last[0] - s2[0];
-            accumulator[1] += last[1] - s2[1];
-            accumulator[2] += last[2] - s2[2];
-            accumulator[3] += last[3] - s2[3];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
-            d[3] = lrint((double) accumulator[3] / diameter);
+        for (int x = mid_end; x < width; x++) {
+            a0 += l0 - s2[0];
+            a1 += l1 - s2[1];
+            a2 += l2 - s2[2];
+            a3 += l3 - s2[3];
+            d[0] = blur_div_u8(a0, radius, inv_diam);
+            d[1] = blur_div_u8(a1, radius, inv_diam);
+            d[2] = blur_div_u8(a2, radius, inv_diam);
+            d[3] = blur_div_u8(a3, radius, inv_diam);
             s2 += step;
             d += step;
         }
@@ -112,73 +131,68 @@ static int blur_v_proc_rgba(int id, int index, int jobs, void *data)
 {
     (void) id; // unused
     blur_slice_desc *desc = ((blur_slice_desc *) data);
-    int slice_row_start,
-        slice_width = mlt_slices_size_slice(jobs, index, desc->src->width, &slice_row_start);
-    int slice_row_end = slice_row_start + slice_width;
-    int accumulator[] = {0, 0, 0, 0};
-    int x = 0;
-    int y = 0;
-    int step = 4;
-    int linesize = step * desc->src->width;
+    int slice_col_start,
+        slice_width = mlt_slices_size_slice(jobs, index, desc->src->width, &slice_col_start);
+    const int slice_col_end = slice_col_start + slice_width;
+    const int height = desc->src->height;
+    const int linesize = 4 * desc->src->width;
     int radius = desc->radius;
 
-    if (desc->radius > (desc->src->height / 2)) {
-        radius = desc->src->height / 2;
+    if (radius > (height / 2)) {
+        radius = height / 2;
     }
-    double diameter = (radius * 2) + 1;
+    const int diameter = (radius * 2) + 1;
+    const uint64_t inv_diam = ((1ULL << BLUR_INV_SHIFT) + (uint64_t) diameter - 1)
+                              / (uint64_t) diameter;
+    const int mid_end = height - radius;
+    const uint8_t *src_base = desc->src->planes[0];
+    uint8_t *dst_base = desc->dst->planes[0];
+    int32_t acc[BLUR_V_TILE_W * 4];
 
-    for (x = slice_row_start; x < slice_row_end; x++) {
-        uint8_t *first = desc->src->planes[0] + (x * step);
-        uint8_t *last = first + (linesize * (desc->src->height - 1));
-        uint8_t *s1 = first;
-        uint8_t *s2 = first;
-        uint8_t *d = desc->dst->planes[0] + (x * step);
-        accumulator[0] = first[0] * (radius + 1);
-        accumulator[1] = first[1] * (radius + 1);
-        accumulator[2] = first[2] * (radius + 1);
-        accumulator[3] = first[3] * (radius + 1);
+    for (int tx = slice_col_start; tx < slice_col_end; tx += BLUR_V_TILE_W) {
+        const int tw = (tx + BLUR_V_TILE_W <= slice_col_end) ? BLUR_V_TILE_W : (slice_col_end - tx);
+        const int n = tw * 4;
+        const int byte_off = tx * 4;
+        const uint8_t *first_row = src_base + byte_off;
+        const uint8_t *last_row = first_row + (size_t) linesize * (height - 1);
+        const uint8_t *s1 = first_row;
+        const uint8_t *s2 = first_row;
+        uint8_t *d = dst_base + byte_off;
 
-        for (y = 0; y < radius; y++) {
-            accumulator[0] += s1[0];
-            accumulator[1] += s1[1];
-            accumulator[2] += s1[2];
-            accumulator[3] += s1[3];
+        for (int k = 0; k < n; k++) {
+            acc[k] = first_row[k] * (radius + 1);
+        }
+        for (int y = 0; y < radius; y++) {
+            for (int k = 0; k < n; k++) {
+                acc[k] += s1[k];
+            }
             s1 += linesize;
         }
-        for (y = 0; y <= radius; y++) {
-            accumulator[0] += s1[0] - first[0];
-            accumulator[1] += s1[1] - first[1];
-            accumulator[2] += s1[2] - first[2];
-            accumulator[3] += s1[3] - first[3];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
-            d[3] = lrint((double) accumulator[3] / diameter);
+        for (int y = 0; y <= radius; y++) {
+            for (int k = 0; k < n; k++) {
+                int v = acc[k] + s1[k] - first_row[k];
+                acc[k] = v;
+                d[k] = blur_div_u8(v, radius, inv_diam);
+            }
             s1 += linesize;
             d += linesize;
         }
-        for (y = radius + 1; y < desc->src->height - radius; y++) {
-            accumulator[0] += s1[0] - s2[0];
-            accumulator[1] += s1[1] - s2[1];
-            accumulator[2] += s1[2] - s2[2];
-            accumulator[3] += s1[3] - s2[3];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
-            d[3] = lrint((double) accumulator[3] / diameter);
+        for (int y = radius + 1; y < mid_end; y++) {
+            for (int k = 0; k < n; k++) {
+                int v = acc[k] + s1[k] - s2[k];
+                acc[k] = v;
+                d[k] = blur_div_u8(v, radius, inv_diam);
+            }
             s1 += linesize;
             s2 += linesize;
             d += linesize;
         }
-        for (y = desc->src->height - radius; y < desc->src->height; y++) {
-            accumulator[0] += last[0] - s2[0];
-            accumulator[1] += last[1] - s2[1];
-            accumulator[2] += last[2] - s2[2];
-            accumulator[3] += last[3] - s2[3];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
-            d[3] = lrint((double) accumulator[3] / diameter);
+        for (int y = mid_end; y < height; y++) {
+            for (int k = 0; k < n; k++) {
+                int v = acc[k] + last_row[k] - s2[k];
+                acc[k] = v;
+                d[k] = blur_div_u8(v, radius, inv_diam);
+            }
             s2 += linesize;
             d += linesize;
         }
@@ -193,62 +207,65 @@ static int blur_h_proc_rgbx(int id, int index, int jobs, void *data)
     int slice_line_start,
         slice_height = mlt_slices_size_slice(jobs, index, desc->src->height, &slice_line_start);
     int slice_line_end = slice_line_start + slice_height;
-    int accumulator[] = {0, 0, 0};
-    int x = 0;
-    int y = 0;
-    int step = 4;
-    int linesize = step * desc->src->width;
+    const int width = desc->src->width;
+    const int step = 4;
+    const int linesize = step * width;
     int radius = desc->radius;
 
-    if (desc->radius > (desc->src->width / 2)) {
-        radius = desc->src->width / 2;
+    if (radius > (width / 2)) {
+        radius = width / 2;
     }
-    double diameter = (radius * 2) + 1;
+    const int diameter = (radius * 2) + 1;
+    const uint64_t inv_diam = ((1ULL << BLUR_INV_SHIFT) + (uint64_t) diameter - 1)
+                              / (uint64_t) diameter;
+    const int mid_end = width - radius;
 
-    for (y = slice_line_start; y < slice_line_end; y++) {
-        uint8_t *first = desc->src->planes[0] + (y * linesize);
-        uint8_t *last = first + linesize - step;
-        uint8_t *s1 = first;
-        uint8_t *s2 = first;
+    for (int y = slice_line_start; y < slice_line_end; y++) {
+        const uint8_t *first = desc->src->planes[0] + (y * linesize);
+        const uint8_t *last = first + linesize - step;
+        const uint8_t *s1 = first;
+        const uint8_t *s2 = first;
         uint8_t *d = desc->dst->planes[0] + (y * linesize);
-        accumulator[0] = first[0] * (radius + 1);
-        accumulator[1] = first[1] * (radius + 1);
-        accumulator[2] = first[2] * (radius + 1);
+        const int f0 = first[0], f1 = first[1], f2 = first[2];
+        const int l0 = last[0], l1 = last[1], l2 = last[2];
+        int a0 = f0 * (radius + 1);
+        int a1 = f1 * (radius + 1);
+        int a2 = f2 * (radius + 1);
 
-        for (x = 0; x < radius; x++) {
-            accumulator[0] += s1[0];
-            accumulator[1] += s1[1];
-            accumulator[2] += s1[2];
+        for (int x = 0; x < radius; x++) {
+            a0 += s1[0];
+            a1 += s1[1];
+            a2 += s1[2];
             s1 += step;
         }
-        for (x = 0; x <= radius; x++) {
-            accumulator[0] += s1[0] - first[0];
-            accumulator[1] += s1[1] - first[1];
-            accumulator[2] += s1[2] - first[2];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
+        for (int x = 0; x <= radius; x++) {
+            a0 += s1[0] - f0;
+            a1 += s1[1] - f1;
+            a2 += s1[2] - f2;
+            d[0] = blur_div_u8(a0, radius, inv_diam);
+            d[1] = blur_div_u8(a1, radius, inv_diam);
+            d[2] = blur_div_u8(a2, radius, inv_diam);
             s1 += step;
             d += step;
         }
-        for (x = radius + 1; x < desc->src->width - radius; x++) {
-            accumulator[0] += s1[0] - s2[0];
-            accumulator[1] += s1[1] - s2[1];
-            accumulator[2] += s1[2] - s2[2];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
+        for (int x = radius + 1; x < mid_end; x++) {
+            a0 += s1[0] - s2[0];
+            a1 += s1[1] - s2[1];
+            a2 += s1[2] - s2[2];
+            d[0] = blur_div_u8(a0, radius, inv_diam);
+            d[1] = blur_div_u8(a1, radius, inv_diam);
+            d[2] = blur_div_u8(a2, radius, inv_diam);
             s1 += step;
             s2 += step;
             d += step;
         }
-        for (x = desc->src->width - radius; x < desc->src->width; x++) {
-            accumulator[0] += last[0] - s2[0];
-            accumulator[1] += last[1] - s2[1];
-            accumulator[2] += last[2] - s2[2];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
+        for (int x = mid_end; x < width; x++) {
+            a0 += l0 - s2[0];
+            a1 += l1 - s2[1];
+            a2 += l2 - s2[2];
+            d[0] = blur_div_u8(a0, radius, inv_diam);
+            d[1] = blur_div_u8(a1, radius, inv_diam);
+            d[2] = blur_div_u8(a2, radius, inv_diam);
             s2 += step;
             d += step;
         }
@@ -260,65 +277,90 @@ static int blur_v_proc_rgbx(int id, int index, int jobs, void *data)
 {
     (void) id; // unused
     blur_slice_desc *desc = ((blur_slice_desc *) data);
-    int slice_row_start,
-        slice_width = mlt_slices_size_slice(jobs, index, desc->src->width, &slice_row_start);
-    int slice_row_end = slice_row_start + slice_width;
-    int accumulator[] = {0, 0, 0};
-    int x = 0;
-    int y = 0;
-    int step = 4;
-    int linesize = step * desc->src->width;
+    int slice_col_start,
+        slice_width = mlt_slices_size_slice(jobs, index, desc->src->width, &slice_col_start);
+    const int slice_col_end = slice_col_start + slice_width;
+    const int height = desc->src->height;
+    const int linesize = 4 * desc->src->width;
     int radius = desc->radius;
 
-    if (desc->radius > (desc->src->height / 2)) {
-        radius = desc->src->height / 2;
+    if (radius > (height / 2)) {
+        radius = height / 2;
     }
-    double diameter = (radius * 2) + 1;
+    const int diameter = (radius * 2) + 1;
+    const uint64_t inv_diam = ((1ULL << BLUR_INV_SHIFT) + (uint64_t) diameter - 1)
+                              / (uint64_t) diameter;
+    const int mid_end = height - radius;
+    const uint8_t *src_base = desc->src->planes[0];
+    uint8_t *dst_base = desc->dst->planes[0];
+    int32_t acc[BLUR_V_TILE_W * 4];
 
-    for (x = slice_row_start; x < slice_row_end; x++) {
-        uint8_t *first = desc->src->planes[0] + (x * step);
-        uint8_t *last = first + (linesize * (desc->src->height - 1));
-        uint8_t *s1 = first;
-        uint8_t *s2 = first;
-        uint8_t *d = desc->dst->planes[0] + (x * step);
-        accumulator[0] = first[0] * (radius + 1);
-        accumulator[1] = first[1] * (radius + 1);
-        accumulator[2] = first[2] * (radius + 1);
+    for (int tx = slice_col_start; tx < slice_col_end; tx += BLUR_V_TILE_W) {
+        const int tw = (tx + BLUR_V_TILE_W <= slice_col_end) ? BLUR_V_TILE_W : (slice_col_end - tx);
+        const int n = tw * 4;
+        const int byte_off = tx * 4;
+        const uint8_t *first_row = src_base + byte_off;
+        const uint8_t *last_row = first_row + (size_t) linesize * (height - 1);
+        const uint8_t *s1 = first_row;
+        const uint8_t *s2 = first_row;
+        uint8_t *d = dst_base + byte_off;
 
-        for (y = 0; y < radius; y++) {
-            accumulator[0] += s1[0];
-            accumulator[1] += s1[1];
-            accumulator[2] += s1[2];
+        for (int k = 0; k < n; k += 4) {
+            acc[k] = first_row[k] * (radius + 1);
+            acc[k + 1] = first_row[k + 1] * (radius + 1);
+            acc[k + 2] = first_row[k + 2] * (radius + 1);
+        }
+        for (int y = 0; y < radius; y++) {
+            for (int k = 0; k < n; k += 4) {
+                acc[k] += s1[k];
+                acc[k + 1] += s1[k + 1];
+                acc[k + 2] += s1[k + 2];
+            }
             s1 += linesize;
         }
-        for (y = 0; y <= radius; y++) {
-            accumulator[0] += s1[0] - first[0];
-            accumulator[1] += s1[1] - first[1];
-            accumulator[2] += s1[2] - first[2];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
+        for (int y = 0; y <= radius; y++) {
+            for (int k = 0; k < n; k += 4) {
+                int v0 = acc[k] + s1[k] - first_row[k];
+                int v1 = acc[k + 1] + s1[k + 1] - first_row[k + 1];
+                int v2 = acc[k + 2] + s1[k + 2] - first_row[k + 2];
+                acc[k] = v0;
+                acc[k + 1] = v1;
+                acc[k + 2] = v2;
+                d[k] = blur_div_u8(v0, radius, inv_diam);
+                d[k + 1] = blur_div_u8(v1, radius, inv_diam);
+                d[k + 2] = blur_div_u8(v2, radius, inv_diam);
+            }
             s1 += linesize;
             d += linesize;
         }
-        for (y = radius + 1; y < desc->src->height - radius; y++) {
-            accumulator[0] += s1[0] - s2[0];
-            accumulator[1] += s1[1] - s2[1];
-            accumulator[2] += s1[2] - s2[2];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
+        for (int y = radius + 1; y < mid_end; y++) {
+            for (int k = 0; k < n; k += 4) {
+                int v0 = acc[k] + s1[k] - s2[k];
+                int v1 = acc[k + 1] + s1[k + 1] - s2[k + 1];
+                int v2 = acc[k + 2] + s1[k + 2] - s2[k + 2];
+                acc[k] = v0;
+                acc[k + 1] = v1;
+                acc[k + 2] = v2;
+                d[k] = blur_div_u8(v0, radius, inv_diam);
+                d[k + 1] = blur_div_u8(v1, radius, inv_diam);
+                d[k + 2] = blur_div_u8(v2, radius, inv_diam);
+            }
             s1 += linesize;
             s2 += linesize;
             d += linesize;
         }
-        for (y = desc->src->height - radius; y < desc->src->height; y++) {
-            accumulator[0] += last[0] - s2[0];
-            accumulator[1] += last[1] - s2[1];
-            accumulator[2] += last[2] - s2[2];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
+        for (int y = mid_end; y < height; y++) {
+            for (int k = 0; k < n; k += 4) {
+                int v0 = acc[k] + last_row[k] - s2[k];
+                int v1 = acc[k + 1] + last_row[k + 1] - s2[k + 1];
+                int v2 = acc[k + 2] + last_row[k + 2] - s2[k + 2];
+                acc[k] = v0;
+                acc[k + 1] = v1;
+                acc[k + 2] = v2;
+                d[k] = blur_div_u8(v0, radius, inv_diam);
+                d[k + 1] = blur_div_u8(v1, radius, inv_diam);
+                d[k + 2] = blur_div_u8(v2, radius, inv_diam);
+            }
             s2 += linesize;
             d += linesize;
         }
@@ -333,70 +375,69 @@ static int blur_h_proc_rgba64(int id, int index, int jobs, void *data)
     int slice_line_start,
         slice_height = mlt_slices_size_slice(jobs, index, desc->src->height, &slice_line_start);
     int slice_line_end = slice_line_start + slice_height;
-    int accumulator[] = {0, 0, 0, 0};
-    int x = 0;
-    int y = 0;
-    int step = 4;
-    int linesize = step * desc->src->width;
+    const int width = desc->src->width;
+    const int step = 4;
+    const int linesize = step * width;
     int radius = desc->radius;
 
-    if (desc->radius > (desc->src->width / 2)) {
-        radius = desc->src->width / 2;
+    if (radius > (width / 2)) {
+        radius = width / 2;
     }
-    double diameter = (radius * 2) + 1;
+    const int diameter = (radius * 2) + 1;
+    const int mid_end = width - radius;
 
-    for (y = slice_line_start; y < slice_line_end; y++) {
-        uint16_t *first = (uint16_t *) desc->src->planes[0] + (y * linesize);
-        uint16_t *last = first + linesize - step;
-        uint16_t *s1 = first;
-        uint16_t *s2 = first;
+    for (int y = slice_line_start; y < slice_line_end; y++) {
+        const uint16_t *first = (const uint16_t *) desc->src->planes[0] + (y * linesize);
+        const uint16_t *last = first + linesize - step;
+        const uint16_t *s1 = first;
+        const uint16_t *s2 = first;
         uint16_t *d = (uint16_t *) desc->dst->planes[0] + (y * linesize);
-        accumulator[0] = first[0] * (radius + 1);
-        accumulator[1] = first[1] * (radius + 1);
-        accumulator[2] = first[2] * (radius + 1);
-        accumulator[3] = first[3] * (radius + 1);
+        int a0 = first[0] * (radius + 1);
+        int a1 = first[1] * (radius + 1);
+        int a2 = first[2] * (radius + 1);
+        int a3 = first[3] * (radius + 1);
 
-        for (x = 0; x < radius; x++) {
-            accumulator[0] += s1[0];
-            accumulator[1] += s1[1];
-            accumulator[2] += s1[2];
-            accumulator[3] += s1[3];
+        for (int x = 0; x < radius; x++) {
+            a0 += s1[0];
+            a1 += s1[1];
+            a2 += s1[2];
+            a3 += s1[3];
             s1 += step;
         }
-        for (x = 0; x <= radius; x++) {
-            accumulator[0] += s1[0] - first[0];
-            accumulator[1] += s1[1] - first[1];
-            accumulator[2] += s1[2] - first[2];
-            accumulator[3] += s1[3] - first[3];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
-            d[3] = lrint((double) accumulator[3] / diameter);
+        for (int x = 0; x <= radius; x++) {
+            a0 += s1[0] - first[0];
+            a1 += s1[1] - first[1];
+            a2 += s1[2] - first[2];
+            a3 += s1[3] - first[3];
+            d[0] = (uint16_t) ((a0 + radius) / diameter);
+            d[1] = (uint16_t) ((a1 + radius) / diameter);
+            d[2] = (uint16_t) ((a2 + radius) / diameter);
+            d[3] = (uint16_t) ((a3 + radius) / diameter);
             s1 += step;
             d += step;
         }
-        for (x = radius + 1; x < desc->src->width - radius; x++) {
-            accumulator[0] += s1[0] - s2[0];
-            accumulator[1] += s1[1] - s2[1];
-            accumulator[2] += s1[2] - s2[2];
-            accumulator[3] += s1[3] - s2[3];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
-            d[3] = lrint((double) accumulator[3] / diameter);
+        for (int x = radius + 1; x < mid_end; x++) {
+            a0 += s1[0] - s2[0];
+            a1 += s1[1] - s2[1];
+            a2 += s1[2] - s2[2];
+            a3 += s1[3] - s2[3];
+            d[0] = (uint16_t) ((a0 + radius) / diameter);
+            d[1] = (uint16_t) ((a1 + radius) / diameter);
+            d[2] = (uint16_t) ((a2 + radius) / diameter);
+            d[3] = (uint16_t) ((a3 + radius) / diameter);
             s1 += step;
             s2 += step;
             d += step;
         }
-        for (x = desc->src->width - radius; x < desc->src->width; x++) {
-            accumulator[0] += last[0] - s2[0];
-            accumulator[1] += last[1] - s2[1];
-            accumulator[2] += last[2] - s2[2];
-            accumulator[3] += last[3] - s2[3];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
-            d[3] = lrint((double) accumulator[3] / diameter);
+        for (int x = mid_end; x < width; x++) {
+            a0 += last[0] - s2[0];
+            a1 += last[1] - s2[1];
+            a2 += last[2] - s2[2];
+            a3 += last[3] - s2[3];
+            d[0] = (uint16_t) ((a0 + radius) / diameter);
+            d[1] = (uint16_t) ((a1 + radius) / diameter);
+            d[2] = (uint16_t) ((a2 + radius) / diameter);
+            d[3] = (uint16_t) ((a3 + radius) / diameter);
             s2 += step;
             d += step;
         }
@@ -408,73 +449,66 @@ static int blur_v_proc_rgba64(int id, int index, int jobs, void *data)
 {
     (void) id; // unused
     blur_slice_desc *desc = ((blur_slice_desc *) data);
-    int slice_row_start,
-        slice_width = mlt_slices_size_slice(jobs, index, desc->src->width, &slice_row_start);
-    int slice_row_end = slice_row_start + slice_width;
-    int accumulator[] = {0, 0, 0, 0};
-    int x = 0;
-    int y = 0;
-    int step = 4;
-    int linesize = step * desc->src->width;
+    int slice_col_start,
+        slice_width = mlt_slices_size_slice(jobs, index, desc->src->width, &slice_col_start);
+    const int slice_col_end = slice_col_start + slice_width;
+    const int height = desc->src->height;
+    const int linesize = 4 * desc->src->width;
     int radius = desc->radius;
 
-    if (desc->radius > (desc->src->height / 2)) {
-        radius = desc->src->height / 2;
+    if (radius > (height / 2)) {
+        radius = height / 2;
     }
-    double diameter = (radius * 2) + 1;
+    const int diameter = (radius * 2) + 1;
+    const int mid_end = height - radius;
+    const uint16_t *src_base = (const uint16_t *) desc->src->planes[0];
+    uint16_t *dst_base = (uint16_t *) desc->dst->planes[0];
+    int32_t acc[BLUR_V_TILE_W * 4];
 
-    for (x = slice_row_start; x < slice_row_end; x++) {
-        uint16_t *first = (uint16_t *) desc->src->planes[0] + (x * step);
-        uint16_t *last = first + (linesize * (desc->src->height - 1));
-        uint16_t *s1 = first;
-        uint16_t *s2 = first;
-        uint16_t *d = (uint16_t *) desc->dst->planes[0] + (x * step);
-        accumulator[0] = first[0] * (radius + 1);
-        accumulator[1] = first[1] * (radius + 1);
-        accumulator[2] = first[2] * (radius + 1);
-        accumulator[3] = first[3] * (radius + 1);
+    for (int tx = slice_col_start; tx < slice_col_end; tx += BLUR_V_TILE_W) {
+        const int tw = (tx + BLUR_V_TILE_W <= slice_col_end) ? BLUR_V_TILE_W : (slice_col_end - tx);
+        const int n = tw * 4;
+        const int off = tx * 4;
+        const uint16_t *first_row = src_base + off;
+        const uint16_t *last_row = first_row + (size_t) linesize * (height - 1);
+        const uint16_t *s1 = first_row;
+        const uint16_t *s2 = first_row;
+        uint16_t *d = dst_base + off;
 
-        for (y = 0; y < radius; y++) {
-            accumulator[0] += s1[0];
-            accumulator[1] += s1[1];
-            accumulator[2] += s1[2];
-            accumulator[3] += s1[3];
+        for (int k = 0; k < n; k++) {
+            acc[k] = first_row[k] * (radius + 1);
+        }
+        for (int y = 0; y < radius; y++) {
+            for (int k = 0; k < n; k++) {
+                acc[k] += s1[k];
+            }
             s1 += linesize;
         }
-        for (y = 0; y <= radius; y++) {
-            accumulator[0] += s1[0] - first[0];
-            accumulator[1] += s1[1] - first[1];
-            accumulator[2] += s1[2] - first[2];
-            accumulator[3] += s1[3] - first[3];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
-            d[3] = lrint((double) accumulator[3] / diameter);
+        for (int y = 0; y <= radius; y++) {
+            for (int k = 0; k < n; k++) {
+                int v = acc[k] + s1[k] - first_row[k];
+                acc[k] = v;
+                d[k] = (uint16_t) ((v + radius) / diameter);
+            }
             s1 += linesize;
             d += linesize;
         }
-        for (y = radius + 1; y < desc->src->height - radius; y++) {
-            accumulator[0] += s1[0] - s2[0];
-            accumulator[1] += s1[1] - s2[1];
-            accumulator[2] += s1[2] - s2[2];
-            accumulator[3] += s1[3] - s2[3];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
-            d[3] = lrint((double) accumulator[3] / diameter);
+        for (int y = radius + 1; y < mid_end; y++) {
+            for (int k = 0; k < n; k++) {
+                int v = acc[k] + s1[k] - s2[k];
+                acc[k] = v;
+                d[k] = (uint16_t) ((v + radius) / diameter);
+            }
             s1 += linesize;
             s2 += linesize;
             d += linesize;
         }
-        for (y = desc->src->height - radius; y < desc->src->height; y++) {
-            accumulator[0] += last[0] - s2[0];
-            accumulator[1] += last[1] - s2[1];
-            accumulator[2] += last[2] - s2[2];
-            accumulator[3] += last[3] - s2[3];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
-            d[3] = lrint((double) accumulator[3] / diameter);
+        for (int y = mid_end; y < height; y++) {
+            for (int k = 0; k < n; k++) {
+                int v = acc[k] + last_row[k] - s2[k];
+                acc[k] = v;
+                d[k] = (uint16_t) ((v + radius) / diameter);
+            }
             s2 += linesize;
             d += linesize;
         }
@@ -489,62 +523,61 @@ static int blur_h_proc_rgbx64(int id, int index, int jobs, void *data)
     int slice_line_start,
         slice_height = mlt_slices_size_slice(jobs, index, desc->src->height, &slice_line_start);
     int slice_line_end = slice_line_start + slice_height;
-    int accumulator[] = {0, 0, 0};
-    int x = 0;
-    int y = 0;
-    int step = 4;
-    int linesize = step * desc->src->width;
+    const int width = desc->src->width;
+    const int step = 4;
+    const int linesize = step * width;
     int radius = desc->radius;
 
-    if (desc->radius > (desc->src->width / 2)) {
-        radius = desc->src->width / 2;
+    if (radius > (width / 2)) {
+        radius = width / 2;
     }
-    double diameter = (radius * 2) + 1;
+    const int diameter = (radius * 2) + 1;
+    const int mid_end = width - radius;
 
-    for (y = slice_line_start; y < slice_line_end; y++) {
-        uint16_t *first = (uint16_t *) desc->src->planes[0] + (y * linesize);
-        uint16_t *last = first + linesize - step;
-        uint16_t *s1 = first;
-        uint16_t *s2 = first;
+    for (int y = slice_line_start; y < slice_line_end; y++) {
+        const uint16_t *first = (const uint16_t *) desc->src->planes[0] + (y * linesize);
+        const uint16_t *last = first + linesize - step;
+        const uint16_t *s1 = first;
+        const uint16_t *s2 = first;
         uint16_t *d = (uint16_t *) desc->dst->planes[0] + (y * linesize);
-        accumulator[0] = first[0] * (radius + 1);
-        accumulator[1] = first[1] * (radius + 1);
-        accumulator[2] = first[2] * (radius + 1);
+        int a0 = first[0] * (radius + 1);
+        int a1 = first[1] * (radius + 1);
+        int a2 = first[2] * (radius + 1);
 
-        for (x = 0; x < radius; x++) {
-            accumulator[0] += s1[0];
-            accumulator[1] += s1[1];
-            accumulator[2] += s1[2];
+        for (int x = 0; x < radius; x++) {
+            a0 += s1[0];
+            a1 += s1[1];
+            a2 += s1[2];
             s1 += step;
         }
-        for (x = 0; x <= radius; x++) {
-            accumulator[0] += s1[0] - first[0];
-            accumulator[1] += s1[1] - first[1];
-            accumulator[2] += s1[2] - first[2];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
+        for (int x = 0; x <= radius; x++) {
+            a0 += s1[0] - first[0];
+            a1 += s1[1] - first[1];
+            a2 += s1[2] - first[2];
+            d[0] = (uint16_t) ((a0 + radius) / diameter);
+            d[1] = (uint16_t) ((a1 + radius) / diameter);
+            d[2] = (uint16_t) ((a2 + radius) / diameter);
             s1 += step;
             d += step;
         }
-        for (x = radius + 1; x < desc->src->width - radius; x++) {
-            accumulator[0] += s1[0] - s2[0];
-            accumulator[1] += s1[1] - s2[1];
-            accumulator[2] += s1[2] - s2[2];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
+        for (int x = radius + 1; x < mid_end; x++) {
+            a0 += s1[0] - s2[0];
+            a1 += s1[1] - s2[1];
+            a2 += s1[2] - s2[2];
+            d[0] = (uint16_t) ((a0 + radius) / diameter);
+            d[1] = (uint16_t) ((a1 + radius) / diameter);
+            d[2] = (uint16_t) ((a2 + radius) / diameter);
             s1 += step;
             s2 += step;
             d += step;
         }
-        for (x = desc->src->width - radius; x < desc->src->width; x++) {
-            accumulator[0] += last[0] - s2[0];
-            accumulator[1] += last[1] - s2[1];
-            accumulator[2] += last[2] - s2[2];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
+        for (int x = mid_end; x < width; x++) {
+            a0 += last[0] - s2[0];
+            a1 += last[1] - s2[1];
+            a2 += last[2] - s2[2];
+            d[0] = (uint16_t) ((a0 + radius) / diameter);
+            d[1] = (uint16_t) ((a1 + radius) / diameter);
+            d[2] = (uint16_t) ((a2 + radius) / diameter);
             s2 += step;
             d += step;
         }
@@ -569,7 +602,7 @@ static int blur_v_proc_rgbx64(int id, int index, int jobs, void *data)
     if (desc->radius > (desc->src->height / 2)) {
         radius = desc->src->height / 2;
     }
-    double diameter = (radius * 2) + 1;
+    int diameter = (radius * 2) + 1;
 
     for (x = slice_row_start; x < slice_row_end; x++) {
         uint16_t *first = (uint16_t *) desc->src->planes[0] + (x * step);
@@ -591,9 +624,9 @@ static int blur_v_proc_rgbx64(int id, int index, int jobs, void *data)
             accumulator[0] += s1[0] - first[0];
             accumulator[1] += s1[1] - first[1];
             accumulator[2] += s1[2] - first[2];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
+            d[0] = (uint16_t) ((accumulator[0] + radius) / diameter);
+            d[1] = (uint16_t) ((accumulator[1] + radius) / diameter);
+            d[2] = (uint16_t) ((accumulator[2] + radius) / diameter);
             s1 += linesize;
             d += linesize;
         }
@@ -601,9 +634,9 @@ static int blur_v_proc_rgbx64(int id, int index, int jobs, void *data)
             accumulator[0] += s1[0] - s2[0];
             accumulator[1] += s1[1] - s2[1];
             accumulator[2] += s1[2] - s2[2];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
+            d[0] = (uint16_t) ((accumulator[0] + radius) / diameter);
+            d[1] = (uint16_t) ((accumulator[1] + radius) / diameter);
+            d[2] = (uint16_t) ((accumulator[2] + radius) / diameter);
             s1 += linesize;
             s2 += linesize;
             d += linesize;
@@ -612,9 +645,9 @@ static int blur_v_proc_rgbx64(int id, int index, int jobs, void *data)
             accumulator[0] += last[0] - s2[0];
             accumulator[1] += last[1] - s2[1];
             accumulator[2] += last[2] - s2[2];
-            d[0] = lrint((double) accumulator[0] / diameter);
-            d[1] = lrint((double) accumulator[1] / diameter);
-            d[2] = lrint((double) accumulator[2] / diameter);
+            d[0] = (uint16_t) ((accumulator[0] + radius) / diameter);
+            d[1] = (uint16_t) ((accumulator[1] + radius) / diameter);
+            d[2] = (uint16_t) ((accumulator[2] + radius) / diameter);
             s2 += linesize;
             d += linesize;
         }
