@@ -2,10 +2,10 @@
  * filter_hslrange.c
  * Copyright (C) 2024-2025 Meltytech, LLC
  *
- * This library is free software; you can redistribute it and/or
- * modify it under the terms of the GNU Lesser General Public
- * License as published by the Free Software Foundation; either
- * version 2.1 of the License, or (at your option) any later version.
+ * This library is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published by
+ * the Free Software Foundation; either version 2.1 of the License, or (at your
+ * option) any later version.
  *
  * This library is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -24,6 +24,10 @@
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
+
+#if defined(__SSE2__)
+#include <emmintrin.h>
+#endif
 
 typedef struct
 {
@@ -44,57 +48,103 @@ typedef struct
     float l_scale;
 } sliced_desc;
 
-static void adjust_pixel(float *r, float *g, float *b, sliced_desc *desc)
+static inline long fast_lrint_d(double x)
 {
-    float h, s, l;
-    rgbToHsl(*r, *g, *b, &h, &s, &l);
-    if (s == 0) {
+#if defined(__SSE2__)
+    return (long) _mm_cvtsd_si32(_mm_set_sd(x));
+#else
+    return lrint(x);
+#endif
+}
+
+static inline int adjust_pixel(float *r,
+                               float *g,
+                               float *b,
+                               float hue_center,
+                               float hue_range,
+                               float hue_range_min,
+                               float hue_range_max,
+                               int normal_range,
+                               float blend_threshold,
+                               float blend_range,
+                               float desc_h_shift,
+                               float desc_s_scale,
+                               float desc_l_scale)
+{
+    float rf = *r, gf = *g, bf = *b;
+    float max = MAX(MAX(rf, gf), bf);
+    float min = MIN(MIN(rf, gf), bf);
+    if (max == min) {
         // No color. Do not adjust.
-        return;
+        return 0;
     }
 
-    float hue_distance = 1.0;
-    if (desc->hue_range_max > desc->hue_range_min) {
-        if (h < desc->hue_range_max && h > desc->hue_range_min) {
-            hue_distance = fabs(desc->hue_center - h);
+    float d = max - min;
+    float h;
+    if (max == rf)
+        h = (gf - bf) / d + (gf < bf ? 6 : 0);
+    else if (max == gf)
+        h = (bf - rf) / d + 2;
+    else
+        h = (rf - gf) / d + 4;
+    h /= 6;
+
+    float hue_distance = 1.0f;
+    if (normal_range) {
+        if (h < hue_range_max && h > hue_range_min) {
+            hue_distance = fabsf(hue_center - h);
         }
     } else {
-        // Handle the case were the range wraps around 0
-        if (h < desc->hue_range_max) {
-            hue_distance = fabs(desc->hue_range - (desc->hue_range_max - h));
-        } else if (h > desc->hue_range_min) {
-            hue_distance = fabs(desc->hue_range - (h - desc->hue_range_min));
+        // Handle the case where the range wraps around 0
+        if (h < hue_range_max) {
+            hue_distance = fabsf(hue_range - (hue_range_max - h));
+        } else if (h > hue_range_min) {
+            hue_distance = fabsf(hue_range - (h - hue_range_min));
         }
     }
-    if (hue_distance >= 1.0) {
+    if (hue_distance >= 1.0f) {
         // This sample is outside the range. Do not adjust
-        return;
+        return 0;
     }
 
-    float h_shift = desc->h_shift;
-    float s_scale = desc->s_scale;
-    float l_scale = desc->l_scale;
+    float h_shift = desc_h_shift;
+    float s_scale = desc_s_scale;
+    float l_scale = desc_l_scale;
 
-    if (hue_distance > desc->blend_threshold) {
-        float blend_strength = 1.0 - (hue_distance - desc->blend_threshold) / desc->blend_range;
+    if (hue_distance > blend_threshold) {
+        float blend_strength = 1.0 - (hue_distance - blend_threshold) / blend_range;
         h_shift = h_shift * blend_strength;
-        s_scale = (desc->s_scale * blend_strength) + (1.0 - blend_strength);
-        l_scale = (desc->l_scale * blend_strength) + (1.0 - blend_strength);
+        s_scale = (desc_s_scale * blend_strength) + (1.0 - blend_strength);
+        l_scale = (desc_l_scale * blend_strength) + (1.0 - blend_strength);
     }
 
-    if (h_shift == 0.0 && s_scale == 1.0 && l_scale == 1.0) {
+    if (h_shift == 0.0f && s_scale == 1.0f && l_scale == 1.0f) {
         // No adjustment for this pixel
-        return;
+        return 0;
     }
+
+    float l = (max + min) / 2;
+    float s = (l > 0.5) ? d / (2 - max - min) : d / (max + min);
 
     // Apply the adjustment
     h = h + h_shift;
-    h = fmod(h, 1.0);
+    if (h >= 1.0f) {
+        if (h < 2.0f)
+            h -= 1.0f;
+        else
+            h = (float) fmod(h, 1.0);
+    } else if (h <= -1.0f) {
+        if (h > -2.0f)
+            h += 1.0f;
+        else
+            h = (float) fmod(h, 1.0);
+    }
     s = s * s_scale;
-    s = s < 0.0 ? 0.0 : s > 1.0 ? 1.0 : s;
+    s = s < 0.0f ? 0.0f : s > 1.0f ? 1.0f : s;
     l = l * l_scale;
-    l = l < 0.0 ? 0.0 : l > 1.0 ? 1.0 : l;
+    l = l < 0.0f ? 0.0f : l > 1.0f ? 1.0f : l;
     hslToRgb(h, s, l, r, g, b);
+    return 1;
 }
 
 static int sliced_proc(int id, int index, int jobs, void *data)
@@ -105,46 +155,115 @@ static int sliced_proc(int id, int index, int jobs, void *data)
         slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     int total = desc->width * slice_height;
 
+    const float hue_center = desc->hue_center;
+    const float hue_range = desc->hue_range;
+    const float hue_range_min = desc->hue_range_min;
+    const float hue_range_max = desc->hue_range_max;
+    const int normal_range = (hue_range_max > hue_range_min);
+    const float blend_threshold = desc->blend_threshold;
+    const float blend_range = desc->blend_range;
+    const float h_shift = desc->h_shift;
+    const float s_scale = desc->s_scale;
+    const float l_scale = desc->l_scale;
+
+    float u8_to_f[256];
+    if (desc->format == mlt_image_rgb || desc->format == mlt_image_rgba) {
+        for (int v = 0; v < 256; v++) {
+            u8_to_f[v] = (float) (v / 255.0);
+        }
+    }
+
     switch (desc->format) {
     case mlt_image_rgb: {
         uint8_t *sample = desc->image + slice_line_start * desc->width * 3;
-        for (int i = 0; i < total; i++) {
-            float r = sample[0] / 255.0;
-            float g = sample[1] / 255.0;
-            float b = sample[2] / 255.0;
-            adjust_pixel(&r, &g, &b, desc);
-            sample[0] = lrint(r * 255.0);
-            sample[1] = lrint(g * 255.0);
-            sample[2] = lrint(b * 255.0);
-            sample += 3;
+        for (int i = 0; i < total; i++, sample += 3) {
+            uint8_t r8 = sample[0];
+            uint8_t g8 = sample[1];
+            uint8_t b8 = sample[2];
+            if (r8 == g8 && g8 == b8)
+                continue;
+            float r = u8_to_f[r8];
+            float g = u8_to_f[g8];
+            float b = u8_to_f[b8];
+            if (adjust_pixel(&r,
+                             &g,
+                             &b,
+                             hue_center,
+                             hue_range,
+                             hue_range_min,
+                             hue_range_max,
+                             normal_range,
+                             blend_threshold,
+                             blend_range,
+                             h_shift,
+                             s_scale,
+                             l_scale)) {
+                sample[0] = (uint8_t) fast_lrint_d((double) r * 255.0);
+                sample[1] = (uint8_t) fast_lrint_d((double) g * 255.0);
+                sample[2] = (uint8_t) fast_lrint_d((double) b * 255.0);
+            }
         }
         break;
     }
     case mlt_image_rgba: {
         uint8_t *sample = desc->image + slice_line_start * desc->width * 4;
-        for (int i = 0; i < total; i++) {
-            float r = sample[0] / 255.0;
-            float g = sample[1] / 255.0;
-            float b = sample[2] / 255.0;
-            adjust_pixel(&r, &g, &b, desc);
-            sample[0] = lrint(r * 255.0);
-            sample[1] = lrint(g * 255.0);
-            sample[2] = lrint(b * 255.0);
-            sample += 4;
+        for (int i = 0; i < total; i++, sample += 4) {
+            uint8_t r8 = sample[0];
+            uint8_t g8 = sample[1];
+            uint8_t b8 = sample[2];
+            if (r8 == g8 && g8 == b8)
+                continue;
+            float r = u8_to_f[r8];
+            float g = u8_to_f[g8];
+            float b = u8_to_f[b8];
+            if (adjust_pixel(&r,
+                             &g,
+                             &b,
+                             hue_center,
+                             hue_range,
+                             hue_range_min,
+                             hue_range_max,
+                             normal_range,
+                             blend_threshold,
+                             blend_range,
+                             h_shift,
+                             s_scale,
+                             l_scale)) {
+                sample[0] = (uint8_t) fast_lrint_d((double) r * 255.0);
+                sample[1] = (uint8_t) fast_lrint_d((double) g * 255.0);
+                sample[2] = (uint8_t) fast_lrint_d((double) b * 255.0);
+            }
         }
         break;
     }
     case mlt_image_rgba64: {
         uint16_t *sample = (uint16_t *) desc->image + slice_line_start * desc->width * 4;
-        for (int i = 0; i < total; i++) {
-            float r = sample[0] / 65535.0;
-            float g = sample[1] / 65535.0;
-            float b = sample[2] / 65535.0;
-            adjust_pixel(&r, &g, &b, desc);
-            sample[0] = lrint(r * 65535.0);
-            sample[1] = lrint(g * 65535.0);
-            sample[2] = lrint(b * 65535.0);
-            sample += 4;
+        for (int i = 0; i < total; i++, sample += 4) {
+            uint16_t r16 = sample[0];
+            uint16_t g16 = sample[1];
+            uint16_t b16 = sample[2];
+            if (r16 == g16 && g16 == b16)
+                continue;
+            float r = r16 / 65535.0;
+            float g = g16 / 65535.0;
+            float b = b16 / 65535.0;
+            if (adjust_pixel(&r,
+                             &g,
+                             &b,
+                             hue_center,
+                             hue_range,
+                             hue_range_min,
+                             hue_range_max,
+                             normal_range,
+                             blend_threshold,
+                             blend_range,
+                             h_shift,
+                             s_scale,
+                             l_scale)) {
+                sample[0] = (uint16_t) fast_lrint_d((double) r * 65535.0);
+                sample[1] = (uint16_t) fast_lrint_d((double) g * 65535.0);
+                sample[2] = (uint16_t) fast_lrint_d((double) b * 65535.0);
+            }
         }
         break;
     }
