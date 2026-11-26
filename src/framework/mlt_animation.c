@@ -253,6 +253,7 @@ static void mlt_animation_clean(mlt_animation self)
 
     free(self->data);
     self->data = NULL;
+    self->loop = 0;
     while (self->nodes)
         mlt_animation_drop(self, self->nodes);
 }
@@ -292,7 +293,6 @@ int mlt_animation_parse(
     self->length = length;
     self->fps = fps;
     self->locale = locale;
-    self->loop = 0;
     item.property = mlt_property_init();
     item.frame = item.is_key = 0;
     item.keyframe_type = mlt_keyframe_discrete;
@@ -510,18 +510,52 @@ static animation_node last_node(mlt_animation self)
     return node;
 }
 
-/** Copy a node's item for use as an interpolation control point.
- *
- * \private \memberof mlt_animation_s
- * \param node the node to copy
- * \param shift the number of frames to add to the position
- * \param item the item to fill in
- */
+typedef enum {
+    animation_value_other,
+    animation_value_color,
+    animation_value_rect,
+    animation_value_numeric
+} animation_value_type;
 
-static void control_point(animation_node node, int shift, mlt_animation_item item)
+static animation_value_type value_type(mlt_property start, mlt_property result, mlt_locale_t locale)
 {
-    *item = node->item;
-    item->frame += shift;
+    if (mlt_property_is_color(start))
+        return animation_value_color;
+    // Rectangle keyframes can be strings, so the result determines the type.
+    if (mlt_property_is_rect(result))
+        return animation_value_rect;
+    if (mlt_property_is_numeric(start, locale))
+        return animation_value_numeric;
+    return animation_value_other;
+}
+
+static int endpoints_equal(mlt_animation self,
+                           animation_node first,
+                           animation_node last,
+                           mlt_property start,
+                           mlt_property result)
+{
+    mlt_property first_value = first->item.property;
+    mlt_property last_value = last->item.property;
+    switch (value_type(start, result, self->locale)) {
+    case animation_value_color: {
+        mlt_color a = mlt_property_get_color(first_value, self->fps, self->locale);
+        mlt_color b = mlt_property_get_color(last_value, self->fps, self->locale);
+        return a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
+    }
+    case animation_value_rect: {
+        mlt_rect a = mlt_property_get_rect(first_value, self->locale);
+        mlt_rect b = mlt_property_get_rect(last_value, self->locale);
+        return a.x == b.x && a.y == b.y && a.w == b.w && a.h == b.h && a.o == b.o;
+    }
+    case animation_value_numeric: {
+        double a = mlt_property_get_double(first_value, self->fps, self->locale);
+        double b = mlt_property_get_double(last_value, self->fps, self->locale);
+        return a == b;
+    }
+    default:
+        return 0;
+    }
 }
 
 /** Load an animation item for an absolute position.
@@ -565,38 +599,6 @@ int mlt_animation_get_item(mlt_animation self, mlt_animation_item item, int posi
     if (node) {
         item->keyframe_type = node->item.keyframe_type;
 
-        int use_loop_neighbors = 0;
-        mlt_keyframe_type type = item->keyframe_type;
-        if (type == mlt_keyframe_smooth_loose || type == mlt_keyframe_smooth_natural
-            || type == mlt_keyframe_smooth_tight) {
-            const int needs_loop_neighbor = last && item->property && node->next
-                                            && cycle_position > node->item.frame
-                                            && (!node->prev || !node->next->next);
-            int endpoints_equal = 0;
-            if (needs_loop_neighbor) {
-                mlt_property first_value = first->item.property;
-                mlt_property last_value = last->item.property;
-                mlt_property start = node->item.property;
-                // Match interpolate_item: rects are requested by the output property,
-                // since the keyframe itself can hold a rectangle as text.
-                if (mlt_property_is_color(start)) {
-                    mlt_color a = mlt_property_get_color(first_value, self->fps, self->locale);
-                    mlt_color b = mlt_property_get_color(last_value, self->fps, self->locale);
-                    endpoints_equal = a.r == b.r && a.g == b.g && a.b == b.b && a.a == b.a;
-                } else if (mlt_property_is_rect(item->property)) {
-                    mlt_rect a = mlt_property_get_rect(first_value, self->locale);
-                    mlt_rect b = mlt_property_get_rect(last_value, self->locale);
-                    endpoints_equal = a.x == b.x && a.y == b.y && a.w == b.w && a.h == b.h
-                                      && a.o == b.o;
-                } else if (mlt_property_is_numeric(start, self->locale)) {
-                    double a = mlt_property_get_double(first_value, self->fps, self->locale);
-                    double b = mlt_property_get_double(last_value, self->fps, self->locale);
-                    endpoints_equal = a == b;
-                }
-            }
-            use_loop_neighbors = needs_loop_neighbor && endpoints_equal;
-        }
-
         // Position is before the first keyframe.
         if (cycle_position < node->item.frame) {
             item->is_key = 0;
@@ -622,22 +624,25 @@ int mlt_animation_get_item(mlt_animation self, mlt_animation_item item, int posi
                 mlt_animation_item p[4] = {&points[0], &points[1], &points[2], &points[3]};
                 animation_node before = node->prev ? node->prev : node;
                 animation_node after = node->next->next ? node->next->next : node->next;
-                int before_shift = 0;
-                int after_shift = 0;
+                mlt_keyframe_type type = item->keyframe_type;
+                int use_loop_neighbors
+                    = last && (!node->prev || !node->next->next)
+                      && (type == mlt_keyframe_smooth_loose || type == mlt_keyframe_smooth_natural)
+                      && endpoints_equal(self, first, last, node->item.property, item->property);
+                points[0] = before->item;
+                points[1] = node->item;
+                points[2] = node->next->item;
+                points[3] = after->item;
                 // Use the neighbors across the loop point, shifted by one period, so that
                 // smooth curves pass through the loop point as through an interior keyframe.
                 if (use_loop_neighbors && !node->prev) {
-                    before = last->prev;
-                    before_shift = -period;
+                    points[0] = last->prev->item;
+                    points[0].frame -= period;
                 }
                 if (use_loop_neighbors && !node->next->next) {
-                    after = first->next;
-                    after_shift = period;
+                    points[3] = first->next->item;
+                    points[3].frame += period;
                 }
-                control_point(before, before_shift, p[0]);
-                control_point(node, 0, p[1]);
-                control_point(node->next, 0, p[2]);
-                control_point(after, after_shift, p[3]);
                 item->frame = cycle_position;
                 interpolate_item(item, p, self->fps, self->locale);
             }
@@ -890,9 +895,8 @@ char *mlt_animation_serialize_cut_tf(mlt_animation self,
         while (1) {
             size_t item_len = 0;
 
-            // Seed clipped ranges with the evaluated value. An intact loop instead
-            // starts at its first authored key, even if in precedes it.
-            if (item.frame == in && !keep_loop) {
+            // Seed the range with the evaluated value.
+            if (item.frame == in) {
                 if (mlt_animation_get_item(self, &item, item.frame))
                     break;
 
@@ -1591,9 +1595,10 @@ static int interpolate_item(mlt_animation_item item,
 {
     int error = 0;
     double progress = (double) (item->frame - p[1]->frame) / (double) (p[2]->frame - p[1]->frame);
+    animation_value_type type = value_type(p[1]->property, item->property, locale);
     if (item->keyframe_type == mlt_keyframe_discrete) {
         mlt_property_pass(item->property, p[1]->property);
-    } else if (mlt_property_is_color(p[1]->property)) {
+    } else if (type == animation_value_color) {
         mlt_color value = {0xff, 0xff, 0xff, 0xff};
         mlt_color colors[4];
         mlt_color zero = {0xff, 0xff, 0xff, 0xff};
@@ -1654,7 +1659,7 @@ static int interpolate_item(mlt_animation_item item,
             value = colors[1];
         }
         error = mlt_property_set_color(item->property, value);
-    } else if (mlt_property_is_rect(item->property)) {
+    } else if (type == animation_value_rect) {
         mlt_rect value = {DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN, DBL_MIN};
         mlt_rect points[4];
         mlt_rect zero = {0, 0, 0, 0, 0};
@@ -1717,7 +1722,7 @@ static int interpolate_item(mlt_animation_item item,
             value = points[1];
         }
         error = mlt_property_set_rect(item->property, value);
-    } else if (mlt_property_is_numeric(p[1]->property, locale)) {
+    } else if (type == animation_value_numeric) {
         double value = 0.0;
         double points[4];
         points[0] = p[0] ? mlt_property_get_double(p[0]->property, fps, locale) : 0;
