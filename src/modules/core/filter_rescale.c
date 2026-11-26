@@ -21,10 +21,12 @@
 #include <framework/mlt_frame.h>
 #include <framework/mlt_log.h>
 #include <framework/mlt_profile.h>
+#include <framework/mlt_slices.h>
 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <stddef.h>
 #include <string.h>
 
 /** virtual function declaration for an image scaler
@@ -45,6 +47,52 @@ typedef int (*image_scaler)(mlt_frame frame,
                             int owidth,
                             int oheight);
 
+typedef struct
+{
+    uint8_t *output;
+    const uint8_t *in_middle;
+    int istride;
+    int ostride;
+    int scale_width;
+    int scale_height;
+    int outer;
+    int bottom;
+    int n_rows;
+} scale_slice_desc;
+
+static int scale_yuv_slice(int id, int index, int jobs, void *data)
+{
+    (void) id;
+    const scale_slice_desc *d = (const scale_slice_desc *) data;
+    int start_row;
+    const int slice_rows = mlt_slices_size_slice(jobs, index, d->n_rows, &start_row);
+    const int istride = d->istride;
+    const int ostride = d->ostride;
+    const int scale_width = d->scale_width;
+    const int scale_height = d->scale_height;
+    const int outer = d->outer;
+    const uint8_t *restrict in_middle = d->in_middle;
+    uint8_t *restrict out_line = d->output + (size_t) start_row * ostride;
+    int dy = -d->bottom + start_row * scale_height;
+
+    for (int r = 0; r < slice_rows; r++, dy += scale_height, out_line += ostride) {
+        uint8_t *restrict out_ptr = out_line;
+        const uint8_t *restrict in_line = in_middle + (ptrdiff_t) (dy >> 16) * istride;
+
+        for (int dx = -outer; dx < outer; dx += scale_width) {
+            int base = dx >> 15;
+            out_ptr[0] = in_line[base & ~1];
+            out_ptr[1] = in_line[(base & ~3) + 1];
+            dx += scale_width;
+            base = dx >> 15;
+            out_ptr[2] = in_line[base & ~1];
+            out_ptr[3] = in_line[(base & ~3) + 3];
+            out_ptr += 4;
+        }
+    }
+    return 0;
+}
+
 static int filter_scale(mlt_frame frame,
                         uint8_t **image,
                         mlt_image_format *format,
@@ -53,6 +101,7 @@ static int filter_scale(mlt_frame frame,
                         int owidth,
                         int oheight)
 {
+    (void) format;
     // Create the output image
     uint8_t *output = mlt_pool_alloc(owidth * (oheight + 1) * 2);
 
@@ -61,61 +110,86 @@ static int filter_scale(mlt_frame frame,
     int ostride = owidth * 2;
     iwidth = iwidth - (iwidth % 4);
 
-    // Derived coordinates
-    int dy, dx;
-
     // Calculate ranges
     int out_x_range = owidth / 2;
     int out_y_range = oheight / 2;
     int in_x_range = iwidth / 2;
     int in_y_range = iheight / 2;
 
-    // Output pointers
-    register uint8_t *out_line = output;
-    register uint8_t *out_ptr;
-
     // Calculate a middle pointer
-    uint8_t *in_middle = *image + istride * in_y_range + in_x_range * 2;
-    uint8_t *in_line;
+    const uint8_t *in_middle = *image + (size_t) istride * in_y_range + in_x_range * 2;
 
     // Generate the affine transform scaling values
-    register int scale_width = (iwidth << 16) / owidth;
-    register int scale_height = (iheight << 16) / oheight;
-    register int base = 0;
+    int scale_width = (iwidth << 16) / owidth;
+    int scale_height = (iheight << 16) / oheight;
 
     int outer = out_x_range * scale_width;
     int bottom = out_y_range * scale_height;
+    int n_rows = (bottom > 0 && scale_height > 0) ? ((2 * bottom + scale_height - 1) / scale_height) : 0;
 
-    // Loop for the entirety of our output height.
-    for (dy = -bottom; dy < bottom; dy += scale_height) {
-        // Start at the beginning of the line
-        out_ptr = out_line;
-
-        // Pointer to the middle of the input line
-        in_line = in_middle + (dy >> 16) * istride;
-
-        // Loop for the entirety of our output row.
-        for (dx = -outer; dx < outer; dx += scale_width) {
-            base = dx >> 15;
-            base &= 0xfffffffe;
-            *out_ptr++ = *(in_line + base);
-            base &= 0xfffffffc;
-            *out_ptr++ = *(in_line + base + 1);
-            dx += scale_width;
-            base = dx >> 15;
-            base &= 0xfffffffe;
-            *out_ptr++ = *(in_line + base);
-            base &= 0xfffffffc;
-            *out_ptr++ = *(in_line + base + 3);
-        }
-        // Move to next output line
-        out_line += ostride;
+    if (n_rows > 0) {
+        scale_slice_desc desc = {.output = output,
+                                 .in_middle = in_middle,
+                                 .istride = istride,
+                                 .ostride = ostride,
+                                 .scale_width = scale_width,
+                                 .scale_height = scale_height,
+                                 .outer = outer,
+                                 .bottom = bottom,
+                                 .n_rows = n_rows};
+        mlt_slices_run_normal(0, scale_yuv_slice, &desc);
     }
 
     // Now update the frame
     mlt_frame_set_image(frame, output, owidth * (oheight + 1) * 2, mlt_pool_release);
     *image = output;
 
+    return 0;
+}
+
+typedef struct
+{
+    uint8_t *output;
+    const uint8_t *input;
+    int iwidth;
+    int owidth;
+    int oheight;
+    int ox;
+    int oy;
+} scale_alpha_desc;
+
+static int scale_alpha_slice(int id, int index, int jobs, void *data)
+{
+    (void) id;
+    const scale_alpha_desc *d = (const scale_alpha_desc *) data;
+    int start_row;
+    const int slice_rows = mlt_slices_size_slice(jobs, index, d->oheight, &start_row);
+    const int iwidth = d->iwidth;
+    const int owidth = d->owidth;
+    const int ox = d->ox;
+    const int oy = d->oy;
+    const uint8_t *restrict input = d->input;
+    uint8_t *restrict out_line = d->output + (size_t) start_row * owidth;
+    int y = (oy >> 1) + start_row * oy;
+
+    for (int i = 0; i < slice_rows; i++, y += oy) {
+        const uint8_t *restrict in_line = &input[(size_t) (y >> 16) * iwidth];
+        int x = (ox >> 1);
+        int j = 0;
+        for (; j + 4 <= owidth; j += 4) {
+            out_line[0] = in_line[x >> 16];
+            x += ox;
+            out_line[1] = in_line[x >> 16];
+            x += ox;
+            out_line[2] = in_line[x >> 16];
+            x += ox;
+            out_line[3] = in_line[x >> 16];
+            x += ox;
+            out_line += 4;
+        }
+        for (; j < owidth; j++, x += ox)
+            *out_line++ = in_line[x >> 16];
+    }
     return 0;
 }
 
@@ -126,20 +200,19 @@ static void scale_alpha(mlt_frame frame, int iwidth, int iheight, int owidth, in
     uint8_t *input = mlt_frame_get_alpha(frame);
 
     if (input != NULL) {
-        uint8_t *out_line, *in_line;
-        register int i, j, x, y;
-        register int ox = (iwidth << 16) / owidth;
-        register int oy = (iheight << 16) / oheight;
+        int ox = (iwidth << 16) / owidth;
+        int oy = (iheight << 16) / oheight;
 
         output = mlt_pool_alloc(owidth * oheight);
-        out_line = output;
 
-        // Loop for the entirety of our output height.
-        for (i = 0, y = (oy >> 1); i < oheight; i++, y += oy) {
-            in_line = &input[(y >> 16) * iwidth];
-            for (j = 0, x = (ox >> 1); j < owidth; j++, x += ox)
-                *out_line++ = in_line[x >> 16];
-        }
+        scale_alpha_desc desc = {.output = output,
+                                 .input = input,
+                                 .iwidth = iwidth,
+                                 .owidth = owidth,
+                                 .oheight = oheight,
+                                 .ox = ox,
+                                 .oy = oy};
+        mlt_slices_run_normal(0, scale_alpha_slice, &desc);
 
         // Set it back on the frame
         mlt_frame_set_alpha(frame, output, owidth * oheight, mlt_pool_release);
