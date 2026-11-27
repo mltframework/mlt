@@ -22,6 +22,7 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
+#include <framework/mlt_slices.h>
 
 #include <math.h>
 #include <stdio.h>
@@ -85,14 +86,43 @@ static double lut_value(double value, double lift, double gain, double gamma)
     return value;
 }
 
-static void fill_lgg_lut(int lgg_lut[], double lift, double gain, double gamma)
+static void fill_lgg_lut(uint8_t lgg_lut[], double lift, double gain, double gamma)
 {
     int i;
     double val;
     for (i = 0; i < 256; i++) {
         val = (double) i / 255.0;
-        lgg_lut[i] = (int) (lut_value(val, lift, gain, gamma) * 255.0);
+        lgg_lut[i] = (uint8_t) (int) (lut_value(val, lift, gain, gamma) * 255.0);
     }
+}
+
+typedef struct
+{
+    uint8_t *image;
+    int width;
+    int height;
+    uint8_t lgg_lut[256];
+} lgg_slice_desc;
+
+static int sliced_proc(int id, int index, int jobs, void *data)
+{
+    (void) id;
+    lgg_slice_desc *d = (lgg_slice_desc *) data;
+    int y_start, slice_h = mlt_slices_size_slice(jobs, index, d->height, &y_start);
+    const size_t total = (size_t) slice_h * d->width * 3;
+    uint8_t *p = d->image + (size_t) y_start * d->width * 3;
+    const uint8_t *lut = d->lgg_lut;
+    size_t i = 0;
+    for (; i + 4 <= total; i += 4) {
+        p[i] = lut[p[i]];
+        p[i + 1] = lut[p[i + 1]];
+        p[i + 2] = lut[p[i + 2]];
+        p[i + 3] = lut[p[i + 3]];
+    }
+    for (; i < total; i++) {
+        p[i] = lut[p[i]];
+    }
+    return 0;
 }
 
 /** Do image filtering.
@@ -123,19 +153,12 @@ static int filter_get_image(mlt_frame frame,
         gain = clamp(gain, -0.5, 0.5);
         gamma = clamp(gamma, -1.0, 1.0);
 
-        // Build lut
-        int lgg_lut[256];
-        fill_lgg_lut(lgg_lut, lift, gain, gamma);
-
-        // Filter
-        int i = *width * *height + 1;
-        uint8_t *p = *image;
-        uint8_t *r = *image;
-        while (--i) {
-            *p++ = lgg_lut[*r++];
-            *p++ = lgg_lut[*r++];
-            *p++ = lgg_lut[*r++];
-        }
+        lgg_slice_desc desc;
+        desc.image = *image;
+        desc.width = *width;
+        desc.height = *height;
+        fill_lgg_lut(desc.lgg_lut, lift, gain, gamma);
+        mlt_slices_run_normal(0, sliced_proc, &desc);
     }
 
     return error;

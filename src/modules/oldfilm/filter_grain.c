@@ -22,6 +22,7 @@
 #include <framework/mlt_frame.h>
 #include <framework/mlt_slices.h>
 #include <math.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -36,6 +37,7 @@ typedef struct
     mlt_position pos;
     int min;
     int max_luma;
+    uint8_t base_lut[256];
 } slice_desc;
 
 static int slice_proc(int id, int index, int jobs, void *data)
@@ -44,17 +46,45 @@ static int slice_proc(int id, int index, int jobs, void *data)
     slice_desc *d = (slice_desc *) data;
     int slice_line_start,
         slice_height = mlt_slices_size_slice(jobs, index, d->height, &slice_line_start);
-    uint8_t *p = d->image + slice_line_start * d->width * 2;
+    uint8_t *p = d->image + (size_t) slice_line_start * d->width * 2;
+    const int count = slice_height * d->width;
+    const int noise = d->noise;
+    const int min_luma = d->min;
+    const int max_luma = d->max_luma;
+    const uint8_t *lut = d->base_lut;
 
-    oldfilm_rand_seed seed;
-    oldfilm_init_seed(&seed, d->pos * jobs + index);
-    for (int n = 0; n < slice_height * d->width; n++, p += 2) {
-        if (p[0] > 20) {
-            int pix = CLAMP(((double) p[0] - 127.0) * d->contrast + 127.0 + d->brightness, 0, 255);
-            if (d->noise > 0) {
-                pix -= oldfilm_fast_rand(&seed) % d->noise - d->noise;
+    if (noise > 0) {
+        oldfilm_rand_seed seed;
+        oldfilm_init_seed(&seed, d->pos * jobs + index);
+        unsigned int sx = seed.x;
+        unsigned int sy = seed.y;
+#if defined(__SIZEOF_INT128__)
+        const uint64_t inv_noise = ((UINT64_C(1) << 63) + (uint64_t) noise - 1) / (uint64_t) noise;
+#endif
+        for (int n = 0; n < count; n++, p += 2) {
+            uint8_t y = p[0];
+            if (y > 20) {
+                int pix = lut[y];
+                sx = 18000u * (sx & 65535u) + (sx >> 16);
+                sy = 30903u * (sy & 65535u) + (sy >> 16);
+                int r = (int) ((sx << 16) + (sy & 65535u));
+                int ar = abs(r);
+#if defined(__SIZEOF_INT128__)
+                uint32_t q = (uint32_t) (((unsigned __int128) (uint32_t) ar * inv_noise) >> 63);
+                int rem = ar - (int) (q * (uint32_t) noise);
+#else
+                int rem = ar % noise;
+#endif
+                pix -= rem - noise;
+                p[0] = (uint8_t) CLAMP(pix, min_luma, max_luma);
             }
-            p[0] = CLAMP(pix, d->min, d->max_luma);
+        }
+    } else {
+        for (int n = 0; n < count; n++, p += 2) {
+            uint8_t y = p[0];
+            if (y > 20) {
+                p[0] = (uint8_t) CLAMP((int) lut[y], min_luma, max_luma);
+            }
         }
     }
 
@@ -93,6 +123,10 @@ static int filter_get_image(mlt_frame frame,
             .min = full_range ? 0 : 16,
             .max_luma = full_range ? 255 : 235,
         };
+        for (int i = 0; i < 256; i++) {
+            desc.base_lut[i] = (uint8_t)
+                CLAMP(((double) i - 127.0) * desc.contrast + 127.0 + desc.brightness, 0, 255);
+        }
         mlt_slices_run_normal(0, slice_proc, &desc);
     }
 
