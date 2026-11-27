@@ -26,37 +26,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-static inline int get_Y(uint8_t *pixels, int width, int height, int x, int y, int max_luma)
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
+
+static inline int get_Y(const uint8_t *pixels, int width, int height, int x, int y, int max_luma)
 {
     if (x < 0 || x >= width || y < 0 || y >= height) {
         return max_luma;
     } else {
-        uint8_t *pixel = pixels + y * (width << 1) + (x << 1);
+        const uint8_t *pixel = pixels + y * (width << 1) + (x << 1);
         return *pixel;
     }
-}
-
-static inline int sqrti(int n)
-{
-    int p = 0;
-    int q = 1;
-    int r = n;
-    int h = 0;
-
-    while (q <= n)
-        q = q << 2;
-
-    while (q != 1) {
-        q = q >> 2;
-        h = p + q;
-        p = p >> 1;
-        if (r >= h) {
-            p = p + q;
-            r = r - h;
-        }
-    }
-
-    return p;
 }
 
 typedef struct
@@ -67,79 +48,158 @@ typedef struct
     int height;
     int x_scatter;
     int y_scatter;
-    int min;
     int max_luma;
-    int max_chroma;
-    int invert;
-    int invert_luma;
-    float scale;
-    float mix;
+    int zero_mix;
+    uint8_t luma_lut[1276];
+    uint8_t chroma_lut[256];
 } slice_desc;
+
+static inline void charcoal_pixel_border(
+    const slice_desc *d, int x, int y, uint8_t *p, const uint8_t *q)
+{
+    int m00 = get_Y(d->image, d->width, d->height, x - d->x_scatter, y - d->y_scatter, d->max_luma);
+    int m01 = get_Y(d->image, d->width, d->height, x, y - d->y_scatter, d->max_luma);
+    int m02 = get_Y(d->image, d->width, d->height, x + d->x_scatter, y - d->y_scatter, d->max_luma);
+    int m10 = get_Y(d->image, d->width, d->height, x - d->x_scatter, y, d->max_luma);
+    int m12 = get_Y(d->image, d->width, d->height, x + d->x_scatter, y, d->max_luma);
+    int m20 = get_Y(d->image, d->width, d->height, x - d->x_scatter, y + d->y_scatter, d->max_luma);
+    int m21 = get_Y(d->image, d->width, d->height, x, y + d->y_scatter, d->max_luma);
+    int m22 = get_Y(d->image, d->width, d->height, x + d->x_scatter, y + d->y_scatter, d->max_luma);
+
+    int sum1 = (m22 - m00) + ((m21 - m01) << 1);
+    int sum2 = (m02 - m00) + ((m12 - m10) << 1) + (m22 - m20);
+    int idx = (int) sqrtf((float) (sum1 * sum1 + sum2 * sum2));
+
+    p[0] = d->luma_lut[idx];
+    p[1] = d->chroma_lut[q[1]];
+}
 
 static int slice_proc(int id, int index, int jobs, void *data)
 {
     (void) id; // unused
-    slice_desc *d = (slice_desc *) data;
+    const slice_desc *d = (const slice_desc *) data;
     int slice_line_start,
         slice_height = mlt_slices_size_slice(jobs, index, d->height, &slice_line_start);
-    uint8_t *p = d->dest + slice_line_start * d->width * 2;
-    uint8_t *q = d->image + slice_line_start * d->width * 2;
-    int matrix[3][3];
-    int sum1;
-    int sum2;
-    float sum;
-    int val;
+    const int width = d->width;
+    const int height = d->height;
+    const int xs = d->x_scatter;
+    const int ys = d->y_scatter;
+    const int stride = width << 1;
+    const int xs2 = xs << 1;
+    const uint8_t *luma_lut = d->luma_lut;
+    const uint8_t *chroma_lut = d->chroma_lut;
+    const int has_interior_x = (xs >= 0 && xs * 2 < width);
+    const int x_end = width - xs;
+    const uint8_t zero_chroma = chroma_lut[128];
+
+    uint8_t *p = d->dest + slice_line_start * stride;
+    const uint8_t *q = d->image + slice_line_start * stride;
 
     for (int y = slice_line_start; y < slice_line_start + slice_height; y++) {
-        for (int x = 0; x < d->width; x++) {
-            // Populate the matrix
-            matrix[0][0] = get_Y(d->image,
-                                 d->width,
-                                 d->height,
-                                 x - d->x_scatter,
-                                 y - d->y_scatter,
-                                 d->max_luma);
-            matrix[0][1] = get_Y(d->image, d->width, d->height, x, y - d->y_scatter, d->max_luma);
-            matrix[0][2] = get_Y(d->image,
-                                 d->width,
-                                 d->height,
-                                 x + d->x_scatter,
-                                 y - d->y_scatter,
-                                 d->max_luma);
-            matrix[1][0] = get_Y(d->image, d->width, d->height, x - d->x_scatter, y, d->max_luma);
-            matrix[1][2] = get_Y(d->image, d->width, d->height, x + d->x_scatter, y, d->max_luma);
-            matrix[2][0] = get_Y(d->image,
-                                 d->width,
-                                 d->height,
-                                 x - d->x_scatter,
-                                 y + d->y_scatter,
-                                 d->max_luma);
-            matrix[2][1] = get_Y(d->image, d->width, d->height, x, y + d->y_scatter, d->max_luma);
-            matrix[2][2] = get_Y(d->image,
-                                 d->width,
-                                 d->height,
-                                 x + d->x_scatter,
-                                 y + d->y_scatter,
-                                 d->max_luma);
+        int y_top = y - ys;
+        int y_bot = y + ys;
+        if (!has_interior_x || y_top < 0 || y_top >= height || y_bot < 0 || y_bot >= height) {
+            for (int x = 0; x < width; x++) {
+                charcoal_pixel_border(d, x, y, p, q);
+                p += 2;
+                q += 2;
+            }
+            continue;
+        }
 
-            // Do calculations
-            sum1 = (matrix[2][0] - matrix[0][0]) + ((matrix[2][1] - matrix[0][1]) << 1)
-                   + (matrix[2][2] - matrix[2][0]);
-            sum2 = (matrix[0][2] - matrix[0][0]) + ((matrix[1][2] - matrix[1][0]) << 1)
-                   + (matrix[2][2] - matrix[2][0]);
-            sum = d->scale * sqrti(sum1 * sum1 + sum2 * sum2);
+        // Left border
+        for (int x = 0; x < xs; x++) {
+            charcoal_pixel_border(d, x, y, p, q);
+            p += 2;
+            q += 2;
+        }
 
-            // Assign value
-            *p++ = !d->invert ? (sum >= d->min && sum <= d->max_luma ? d->invert_luma - sum
-                                 : sum < d->min                      ? d->max_luma
-                                                                     : d->min)
-                              : (sum >= d->min && sum <= d->max_luma ? sum
-                                 : sum < d->min                      ? d->min
-                                                                     : d->max_luma);
-            q++;
-            val = 128 + d->mix * (*q++ - 128);
-            val = CLAMP(val, d->min, d->max_chroma);
-            *p++ = val;
+        // Interior: zero bounds checks
+        const uint8_t *row_top = d->image + y_top * stride;
+        const uint8_t *row_mid = q - xs2; // d->image + y * stride
+        const uint8_t *row_bot = d->image + y_bot * stride;
+        int x = xs;
+
+#ifdef __SSE2__
+        const __m128i mask_y = _mm_set1_epi16(0x00FF);
+        const int x_vec_end = x_end - 7;
+        for (; x < x_vec_end; x += 8) {
+            const int off = x << 1;
+            __m128i m00 = _mm_and_si128(_mm_loadu_si128((const __m128i *) (row_top + off - xs2)),
+                                        mask_y);
+            __m128i m01 = _mm_and_si128(_mm_loadu_si128((const __m128i *) (row_top + off)), mask_y);
+            __m128i m02 = _mm_and_si128(_mm_loadu_si128((const __m128i *) (row_top + off + xs2)),
+                                        mask_y);
+            __m128i m10 = _mm_and_si128(_mm_loadu_si128((const __m128i *) (row_mid + off - xs2)),
+                                        mask_y);
+            __m128i m12 = _mm_and_si128(_mm_loadu_si128((const __m128i *) (row_mid + off + xs2)),
+                                        mask_y);
+            __m128i m20 = _mm_and_si128(_mm_loadu_si128((const __m128i *) (row_bot + off - xs2)),
+                                        mask_y);
+            __m128i m21 = _mm_and_si128(_mm_loadu_si128((const __m128i *) (row_bot + off)), mask_y);
+            __m128i m22 = _mm_and_si128(_mm_loadu_si128((const __m128i *) (row_bot + off + xs2)),
+                                        mask_y);
+
+            __m128i sum1 = _mm_add_epi16(_mm_sub_epi16(m22, m00),
+                                         _mm_slli_epi16(_mm_sub_epi16(m21, m01), 1));
+            __m128i sum2 = _mm_add_epi16(_mm_add_epi16(_mm_sub_epi16(m02, m00),
+                                                       _mm_slli_epi16(_mm_sub_epi16(m12, m10), 1)),
+                                         _mm_sub_epi16(m22, m20));
+
+            __m128i lo = _mm_unpacklo_epi16(sum1, sum2);
+            __m128i hi = _mm_unpackhi_epi16(sum1, sum2);
+            __m128i sq_lo = _mm_madd_epi16(lo, lo);
+            __m128i sq_hi = _mm_madd_epi16(hi, hi);
+
+            __m128i idx_lo = _mm_cvttps_epi32(_mm_sqrt_ps(_mm_cvtepi32_ps(sq_lo)));
+            __m128i idx_hi = _mm_cvttps_epi32(_mm_sqrt_ps(_mm_cvtepi32_ps(sq_hi)));
+
+            int32_t idx[8];
+            _mm_storeu_si128((__m128i *) idx, idx_lo);
+            _mm_storeu_si128((__m128i *) (idx + 4), idx_hi);
+
+            if (d->zero_mix) {
+                for (int k = 0; k < 8; k++) {
+                    p[k * 2] = luma_lut[idx[k]];
+                    p[k * 2 + 1] = zero_chroma;
+                }
+            } else {
+                for (int k = 0; k < 8; k++) {
+                    p[k * 2] = luma_lut[idx[k]];
+                    p[k * 2 + 1] = chroma_lut[q[k * 2 + 1]];
+                }
+            }
+            p += 16;
+            q += 16;
+        }
+#endif
+
+        for (; x < x_end; x++) {
+            const int off = x << 1;
+            int m00 = row_top[off - xs2];
+            int m01 = row_top[off];
+            int m02 = row_top[off + xs2];
+            int m10 = row_mid[off - xs2];
+            int m12 = row_mid[off + xs2];
+            int m20 = row_bot[off - xs2];
+            int m21 = row_bot[off];
+            int m22 = row_bot[off + xs2];
+
+            int sum1 = (m22 - m00) + ((m21 - m01) << 1);
+            int sum2 = (m02 - m00) + ((m12 - m10) << 1) + (m22 - m20);
+            int idx = (int) sqrtf((float) (sum1 * sum1 + sum2 * sum2));
+
+            p[0] = luma_lut[idx];
+            p[1] = chroma_lut[q[1]];
+            p += 2;
+            q += 2;
+        }
+
+        // Right border
+        for (int x_r = x_end; x_r < width; x_r++) {
+            charcoal_pixel_border(d, x_r, y, p, q);
+            p += 2;
+            q += 2;
         }
     }
 
@@ -178,21 +238,39 @@ static int filter_get_image(mlt_frame frame,
             y_scatter = MAX(1, lrint(y_scatter * scale_y));
         }
 
-        slice_desc desc
-            = {// We need to create a new frame as this effect modifies the input
-               .image = *image,
-               .dest = mlt_pool_alloc(size),
-               .width = *width,
-               .height = *height,
-               .x_scatter = x_scatter,
-               .y_scatter = y_scatter,
-               .min = full_range ? 0 : 16,
-               .max_luma = full_range ? 255 : 235,
-               .max_chroma = full_range ? 255 : 240,
-               .invert = mlt_properties_anim_get_int(properties, "invert", position, length),
-               .invert_luma = full_range ? 255 : 251,
-               .scale = mlt_properties_anim_get_double(properties, "scale", position, length),
-               .mix = mlt_properties_anim_get_double(properties, "mix", position, length)};
+        int min = full_range ? 0 : 16;
+        int max_luma = full_range ? 255 : 235;
+        int max_chroma = full_range ? 255 : 240;
+        int invert = mlt_properties_anim_get_int(properties, "invert", position, length);
+        int invert_luma = full_range ? 255 : 251;
+        float scale = mlt_properties_anim_get_double(properties, "scale", position, length);
+        float mix = mlt_properties_anim_get_double(properties, "mix", position, length);
+
+        slice_desc desc;
+        // We need to create a new frame as this effect modifies the input
+        desc.image = *image;
+        desc.dest = mlt_pool_alloc(size);
+        desc.width = *width;
+        desc.height = *height;
+        desc.x_scatter = x_scatter;
+        desc.y_scatter = y_scatter;
+        desc.max_luma = max_luma;
+        desc.zero_mix = (mix == 0.0f);
+
+        for (int i = 0; i < 1276; i++) {
+            float sum = scale * i;
+            desc.luma_lut[i] = !invert ? (sum >= min && sum <= max_luma ? invert_luma - sum
+                                          : sum < min                   ? max_luma
+                                                                        : min)
+                                       : (sum >= min && sum <= max_luma ? sum
+                                          : sum < min                   ? min
+                                                                        : max_luma);
+        }
+        for (int i = 0; i < 256; i++) {
+            int val = 128 + mix * (i - 128);
+            desc.chroma_lut[i] = CLAMP(val, min, max_chroma);
+        }
+
         mlt_slices_run_normal(0, slice_proc, &desc);
 
         // Return the created image

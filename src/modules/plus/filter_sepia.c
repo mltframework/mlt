@@ -19,42 +19,31 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
-#include <framework/mlt_slices.h>
 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-typedef struct
-{
-    uint8_t *image;
-    int height;
-    int width;
-    uint8_t u;
-    uint8_t v;
-} slice_desc;
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
 
-static int do_slice_proc(int id, int index, int jobs, void *data)
+static inline void sepia_span(uint8_t *p, int len, uint8_t u, uint8_t v)
 {
-    (void) id; // unused
-    slice_desc *desc = (slice_desc *) data;
-    int slice_line_start,
-        slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
-    int slice_line_end = slice_line_start + slice_height;
-    int line_size = desc->width * 2;
-    int uneven = desc->width % 2;
-    int x, y;
-    for (y = slice_line_start; y < slice_line_end; y++) {
-        uint8_t *p = desc->image + y * line_size;
-        for (x = 0; x < line_size; x += 4) {
-            p[x + 1] = desc->u;
-            p[x + 3] = desc->v;
-        }
-        if (uneven) {
-            p[line_size - 1] = desc->u;
-        }
+    int x = 0;
+#ifdef __SSE2__
+    __m128i mask_y = _mm_set1_epi16(0x00FF);
+    __m128i v_uv = _mm_set1_epi32((int) (((uint32_t) u << 8) | ((uint32_t) v << 24)));
+    for (; x <= len - 16; x += 16) {
+        __m128i vec = _mm_loadu_si128((const __m128i *) (p + x));
+        vec = _mm_or_si128(_mm_and_si128(vec, mask_y), v_uv);
+        _mm_storeu_si128((__m128i *) (p + x), vec);
     }
-    return 0;
+#endif
+    for (; x <= len - 4; x += 4) {
+        p[x + 1] = u;
+        p[x + 3] = v;
+    }
 }
 
 static int filter_get_image(mlt_frame frame,
@@ -76,13 +65,22 @@ static int filter_get_image(mlt_frame frame,
         mlt_properties properties = MLT_FILTER_PROPERTIES(filter);
         mlt_position position = mlt_filter_get_position(filter, frame);
         mlt_position length = mlt_filter_get_length2(filter, frame);
-        slice_desc desc;
-        desc.image = *image;
-        desc.height = *height;
-        desc.width = *width;
-        desc.u = mlt_properties_anim_get_int(properties, "u", position, length);
-        desc.v = mlt_properties_anim_get_int(properties, "v", position, length);
-        mlt_slices_run_normal(0, do_slice_proc, &desc);
+        uint8_t u = (uint8_t) mlt_properties_anim_get_int(properties, "u", position, length);
+        uint8_t v = (uint8_t) mlt_properties_anim_get_int(properties, "v", position, length);
+        int w = *width;
+        int h = *height;
+        int line_size = w * 2;
+
+        if ((w & 1) == 0) {
+            sepia_span(*image, line_size * h, u, v);
+        } else {
+            int even_len = (w - 1) * 2;
+            for (int y = 0; y < h; y++) {
+                uint8_t *p = *image + y * line_size;
+                sepia_span(p, even_len, u, v);
+                p[line_size - 1] = u;
+            }
+        }
     }
 
     return error;

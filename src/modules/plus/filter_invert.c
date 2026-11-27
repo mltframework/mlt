@@ -19,42 +19,54 @@
 
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
-#include <framework/mlt_slices.h>
 
 #include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-typedef struct
-{
-    uint8_t *image;
-    int height;
-    int width;
-    int full_range;
-} slice_desc;
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
 
-static int do_slice_proc(int id, int index, int jobs, void *data)
+static void invert_yuv422(uint8_t *p, int total_bytes, int full_range)
 {
-    (void) id; // unused
-    slice_desc *desc = (slice_desc *) data;
-    int slice_line_start,
-        slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
-    int slice_line_end = slice_line_start + slice_height;
-    int line_size = desc->width * 2;
-    int min = desc->full_range ? 0 : 16;
-    int max_luma = desc->full_range ? 255 : 235;
-    int max_chroma = desc->full_range ? 255 : 240;
-    int invert_luma = desc->full_range ? 255 : 251;
-    int x, y;
-    for (y = slice_line_start; y < slice_line_end; y++) {
-        uint8_t *p = desc->image + y * line_size;
-        for (x = 0; x < line_size; x += 2) {
-            p[x] = CLAMP(invert_luma - p[x], min, max_luma);
-            p[x + 1] = CLAMP(256 - p[x + 1], min, max_chroma);
+    int min = full_range ? 0 : 16;
+    int max_luma = full_range ? 255 : 235;
+    int max_chroma = full_range ? 255 : 240;
+    int invert_luma = full_range ? 255 : 251;
+    int x = 0;
+
+#ifdef __SSE2__
+    if (full_range) {
+        __m128i v255 = _mm_set1_epi8((char) 255);
+        __m128i v_add1 = _mm_set1_epi16((short) 0x0100);
+        for (; x <= total_bytes - 16; x += 16) {
+            __m128i v = _mm_loadu_si128((const __m128i *) (p + x));
+            v = _mm_subs_epu8(v255, v);
+            v = _mm_adds_epu8(v, v_add1);
+            _mm_storeu_si128((__m128i *) (p + x), v);
+        }
+    } else {
+        __m128i v_base = _mm_set1_epi16((short) ((255u << 8) | 251u));
+        __m128i v_add1 = _mm_set1_epi16((short) 0x0100);
+        __m128i v_min = _mm_set1_epi8((char) 16);
+        __m128i v_max = _mm_set1_epi16((short) ((240u << 8) | 235u));
+        for (; x <= total_bytes - 16; x += 16) {
+            __m128i v = _mm_loadu_si128((const __m128i *) (p + x));
+            v = _mm_subs_epu8(v_base, v);
+            v = _mm_adds_epu8(v, v_add1);
+            v = _mm_max_epu8(v, v_min);
+            v = _mm_min_epu8(v, v_max);
+            _mm_storeu_si128((__m128i *) (p + x), v);
         }
     }
-    return 0;
+#endif
+
+    for (; x < total_bytes; x += 2) {
+        p[x] = CLAMP(invert_luma - p[x], min, max_luma);
+        p[x + 1] = CLAMP(256 - p[x + 1], min, max_chroma);
+    }
 }
 
 static int filter_get_image(mlt_frame frame,
@@ -71,12 +83,8 @@ static int filter_get_image(mlt_frame frame,
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
     // Only process if we have no error and a valid color space
     if (error == 0 && *format == mlt_image_yuv422) {
-        slice_desc desc;
-        desc.image = *image;
-        desc.width = *width;
-        desc.height = *height;
-        desc.full_range = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "full_range");
-        mlt_slices_run_normal(0, do_slice_proc, &desc);
+        int full_range = mlt_properties_get_int(MLT_FRAME_PROPERTIES(frame), "full_range");
+        invert_yuv422(*image, *width * *height * 2, full_range);
 
         int mask = mlt_properties_get_int(MLT_FILTER_PROPERTIES(filter), "alpha");
         if (mask) {
