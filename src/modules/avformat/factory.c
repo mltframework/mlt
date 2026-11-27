@@ -37,6 +37,12 @@ extern mlt_filter filter_sws_colortransform_init(mlt_profile,
                                                  char *);
 #endif
 extern mlt_producer producer_avformat_init(mlt_profile profile, const char *service, char *file);
+#ifdef USE_VULKAN
+extern mlt_producer producer_osv_init(mlt_profile profile,
+                                      mlt_service_type type,
+                                      const char *id,
+                                      char *arg);
+#endif
 extern mlt_filter filter_avfilter_init(mlt_profile, mlt_service_type, const char *, char *);
 extern mlt_link link_avdeinterlace_init(mlt_profile, mlt_service_type, const char *, char *);
 extern mlt_link link_avfilter_init(mlt_profile, mlt_service_type, const char *, char *);
@@ -88,6 +94,12 @@ static void *create_service(mlt_profile profile, mlt_service_type type, const ch
         else if (type == mlt_service_consumer_type)
             return consumer_avformat_init(profile, arg);
     }
+#ifdef USE_VULKAN
+    if (!strcmp(id, "osv")) {
+        if (type == mlt_service_producer_type)
+            return producer_osv_init(profile, type, id, arg);
+    }
+#endif
     if (!strcmp(id, "avcolor_space"))
         return filter_avcolour_space_init(arg);
     if (!strcmp(id, "avcolour_space"))
@@ -477,6 +489,10 @@ MLTAVFORMAT_EXPORT MLT_REPOSITORY
                           "avformat-novalidate",
                           metadata,
                           "producer_avformat-novalidate.yml");
+#ifdef USE_VULKAN
+    MLT_REGISTER(mlt_service_producer_type, "osv", create_service);
+    MLT_REGISTER_METADATA(mlt_service_producer_type, "osv", metadata, "producer_osv.yml");
+#endif
     MLT_REGISTER(mlt_service_filter_type, "avcolour_space", create_service);
     MLT_REGISTER(mlt_service_filter_type, "avcolor_space", create_service);
     MLT_REGISTER(mlt_service_filter_type, "avdeinterlace", create_service);
