@@ -385,6 +385,145 @@ static float smoothstep_float(float edge1, float edge2, float a)
     \param field_order -1 = progressive, 0 = lower field first, 1 = top field
    first
 */
+struct luma_slice_context
+{
+    uint8_t *p_dest;
+    uint8_t *p_src;
+    uint8_t *alpha_dest;
+    uint8_t *alpha_src;
+    const uint16_t *luma_bitmap;
+    int luma_width;
+    int blend_width;
+    int blend_height;
+    int stride_src;
+    int stride_dest;
+    int width_src;
+    int width_dest;
+    int32_t x_diff;
+    int32_t y_diff;
+    float field_pos[2];
+    float softness;
+    uint32_t i_softness;
+    int field_count;
+    int is_translucent;
+    int invert;
+    int alpha_over;
+};
+
+static int luma_slice_yuv422(int id, int index, int count, void *context)
+{
+    (void) id;
+    const struct luma_slice_context *ctx = (const struct luma_slice_context *) context;
+    int slice_start,
+        slice_height = mlt_slices_size_slice(count, index, ctx->blend_height, &slice_start);
+    int slice_end = slice_start + slice_height;
+    int field_count = ctx->field_count;
+    int luma_row_stride = ctx->luma_width * field_count;
+    int blend_width = ctx->blend_width;
+    int32_t x_diff = ctx->x_diff;
+    uint32_t i_softness = ctx->i_softness;
+
+    for (int field = 0; field < field_count; field++) {
+        int first_k = (slice_start <= field)
+                          ? 0
+                          : (slice_start - field + field_count - 1) / field_count;
+        int i = field + first_k * field_count;
+        if (i >= slice_end)
+            continue;
+
+        int32_t y_offset = (field << 16) + first_k * ctx->y_diff;
+        uint8_t *p_row = ctx->p_src + i * ctx->stride_src;
+        uint8_t *q_row = ctx->p_dest + i * ctx->stride_dest;
+        int field_stride_src = field_count * ctx->stride_src;
+        int field_stride_dest = field_count * ctx->stride_dest;
+        float fpos = ctx->field_pos[field];
+        uint32_t pos_fixed = (uint32_t) ((1 << 16) * fpos);
+
+        if (ctx->is_translucent) {
+            uint8_t *alpha_dest = ctx->alpha_dest ? ctx->alpha_dest + i * ctx->width_dest : NULL;
+            uint8_t *alpha_src = ctx->alpha_src ? ctx->alpha_src + i * ctx->width_src : NULL;
+            while (i < slice_end) {
+                const uint8_t *p = p_row;
+                uint8_t *q = q_row;
+                const uint16_t *restrict l = ctx->luma_bitmap + (y_offset >> 16) * luma_row_stride;
+                int32_t x_offset = 0;
+                for (int j = 0; j < blend_width; j++) {
+                    float weight = l[x_offset >> 16] / 65535.f;
+                    float value = smoothstep_float(weight, ctx->softness + weight, fpos);
+                    float mix_a = calculate_mix(1.0f - value, alpha_dest ? *alpha_dest : 255);
+                    float mix_b = calculate_mix(value, alpha_src ? *alpha_src : 255);
+                    if (ctx->invert && alpha_src) {
+                        float mix2 = mix_b + mix_a;
+                        if (ctx->alpha_over) {
+                            *alpha_src = 255 * mix2;
+                            if (mix2 != 0.f)
+                                mix_b /= mix2;
+                        } else {
+                            *alpha_src = CLAMP(*alpha_src + 255 * mix_b, 0, 255);
+                        }
+                    } else if (!ctx->invert && alpha_dest) {
+                        float mix2 = mix_b + mix_a;
+                        if (ctx->alpha_over) {
+                            *alpha_dest = 255 * mix2;
+                            if (mix2 != 0.f)
+                                mix_b /= mix2;
+                        } else {
+                            *alpha_dest = CLAMP(*alpha_dest + 255 * mix_b, 0, 255);
+                        }
+                    }
+                    q[0] = sample_mix(q[0], p[0], mix_b);
+                    q[1] = sample_mix(q[1], p[1], mix_b);
+                    p += 2;
+                    q += 2;
+                    if (alpha_dest)
+                        alpha_dest++;
+                    if (alpha_src)
+                        alpha_src++;
+                    x_offset += x_diff;
+                }
+                if (alpha_dest)
+                    alpha_dest += field_count * ctx->width_dest - blend_width;
+                if (alpha_src)
+                    alpha_src += field_count * ctx->width_src - blend_width;
+                y_offset += ctx->y_diff;
+                i += field_count;
+                p_row += field_stride_src;
+                q_row += field_stride_dest;
+            }
+        } else {
+            while (i < slice_end) {
+                const uint8_t *p = p_row;
+                uint8_t *q = q_row;
+                const uint16_t *restrict l = ctx->luma_bitmap + (y_offset >> 16) * luma_row_stride;
+                int32_t x_offset = 0;
+                for (int j = 0; j < blend_width; j++) {
+                    uint32_t weight = l[x_offset >> 16];
+                    if (pos_fixed >= weight) {
+                        if (pos_fixed >= i_softness + weight) {
+                            q[0] = p[0];
+                            q[1] = p[1];
+                        } else {
+                            uint32_t a = ((pos_fixed - weight) << 16) / i_softness;
+                            uint32_t value = (((a * a) >> 16) * ((3 << 16) - (2 * a))) >> 16;
+                            uint32_t inv = (1 << 16) - value;
+                            q[0] = (p[0] * value + q[0] * inv) >> 16;
+                            q[1] = (p[1] * value + q[1] * inv) >> 16;
+                        }
+                    }
+                    p += 2;
+                    q += 2;
+                    x_offset += x_diff;
+                }
+                y_offset += ctx->y_diff;
+                i += field_count;
+                p_row += field_stride_src;
+                q_row += field_stride_dest;
+            }
+        }
+    }
+    return 0;
+}
+
 static void luma_composite_yuv422(mlt_frame a_frame,
                                   mlt_frame b_frame,
                                   int luma_width,
@@ -398,15 +537,13 @@ static void luma_composite_yuv422(mlt_frame a_frame,
                                   int *height,
                                   int invert,
                                   int fix_background_alpha,
-                                  int alpha_over)
+                                  int alpha_over,
+                                  int threads)
 {
     int width_src = *width, height_src = *height;
     int width_dest = *width, height_dest = *height;
     uint8_t *p_src, *p_dest;
     uint8_t *alpha_src, *alpha_dest;
-    int i, j;
-    int stride_src;
-    int stride_dest;
     int is_translucent = 0;
 
     if (mlt_properties_get(&a_frame->parent, "distort"))
@@ -430,110 +567,128 @@ static void luma_composite_yuv422(mlt_frame a_frame,
     if (*width == 0 || *height == 0)
         return;
 
-    // Blend the overlap. Each image keeps its own full width as the row stride.
-    int blend_width = MIN(width_src, width_dest);
-    int blend_height = MIN(height_src, height_dest);
+    struct luma_slice_context ctx = {
+        .p_dest = p_dest,
+        .p_src = p_src,
+        .alpha_dest = alpha_dest,
+        .alpha_src = alpha_src,
+        .luma_bitmap = luma_bitmap,
+        .luma_width = luma_width,
+        .blend_width = MIN(width_src, width_dest),
+        .blend_height = MIN(height_src, height_dest),
+        .stride_src = width_src * 2,
+        .stride_dest = width_dest * 2,
+        .width_src = width_src,
+        .width_dest = width_dest,
+        .x_diff = (luma_width << 16) / *width,
+        .y_diff = (luma_height << 16) / *height,
+        .field_pos = {(pos + ((field_order == 0 ? 1 : 0) * frame_delta * 0.5f)) * (1.f + softness),
+                      (pos + ((field_order == 0 ? 0 : 1) * frame_delta * 0.5f)) * (1.f + softness)},
+        .softness = softness,
+        .i_softness = softness * (1 << 16),
+        .field_count = field_order < 0 ? 1 : 2,
+        .is_translucent = is_translucent,
+        .invert = invert,
+        .alpha_over = alpha_over,
+    };
 
-    stride_src = width_src * 2;
-    stride_dest = width_dest * 2;
+    mlt_slices_run_normal(threads, luma_slice_yuv422, &ctx);
+}
 
-    // Offset the position based on which field we're looking at ...
-    float field_pos[2];
-    field_pos[0] = (pos + ((field_order == 0 ? 1 : 0) * frame_delta * 0.5f)) * (1.f + softness);
-    field_pos[1] = (pos + ((field_order == 0 ? 0 : 1) * frame_delta * 0.5f)) * (1.f + softness);
+static int luma_slice_rgba32(int id, int index, int count, void *context)
+{
+    (void) id;
+    const struct luma_slice_context *ctx = (const struct luma_slice_context *) context;
+    int slice_start,
+        slice_height = mlt_slices_size_slice(count, index, ctx->blend_height, &slice_start);
+    int slice_end = slice_start + slice_height;
+    int field_count = ctx->field_count;
+    int luma_row_stride = ctx->luma_width * field_count;
+    int blend_width = ctx->blend_width;
+    int32_t x_diff = ctx->x_diff;
+    uint32_t i_softness = ctx->i_softness;
 
-    register uint8_t *p;
-    register uint8_t *q;
-    uint16_t *l;
-    int32_t x_diff = (luma_width << 16) / *width;
-    int32_t y_diff = (luma_height << 16) / *height;
-    int32_t x_offset = 0;
-    int32_t y_offset = 0;
-    uint8_t *p_row;
-    uint8_t *q_row;
-    uint32_t i_softness = softness * (1 << 16);
-    int field_count = field_order < 0 ? 1 : 2;
-    int field_stride_src = field_count * stride_src;
-    int field_stride_dest = field_count * stride_dest;
-    int field = 0;
-    float mix_a, mix_b;
+    for (int field = 0; field < field_count; field++) {
+        int first_k = (slice_start <= field)
+                          ? 0
+                          : (slice_start - field + field_count - 1) / field_count;
+        int i = field + first_k * field_count;
+        if (i >= slice_end)
+            continue;
 
-    // composite using luma map
-    while (field < field_count) {
-        p_row = p_src + field * stride_src;
-        q_row = p_dest + field * stride_dest;
-        y_offset = field << 16;
-        i = field;
+        int32_t y_offset = (field << 16) + first_k * ctx->y_diff;
+        uint8_t *p_row = ctx->p_src + i * ctx->stride_src;
+        uint8_t *q_row = ctx->p_dest + i * ctx->stride_dest;
+        int field_stride_src = field_count * ctx->stride_src;
+        int field_stride_dest = field_count * ctx->stride_dest;
+        float fpos = ctx->field_pos[field];
+        uint32_t pos_fixed = (uint32_t) ((1 << 16) * fpos);
 
-        while (i < blend_height) {
-            p = p_row;
-            q = q_row;
-            l = luma_bitmap + (y_offset >> 16) * (luma_width * field_count);
-            x_offset = 0;
-            j = blend_width;
-
-            if (is_translucent) {
-                while (j--) {
+        if (ctx->is_translucent) {
+            while (i < slice_end) {
+                const uint8_t *p = p_row;
+                uint8_t *q = q_row;
+                const uint16_t *restrict l = ctx->luma_bitmap + (y_offset >> 16) * luma_row_stride;
+                int32_t x_offset = 0;
+                for (int j = 0; j < blend_width; j++) {
                     float weight = l[x_offset >> 16] / 65535.f;
-                    float value = smoothstep_float(weight, softness + weight, field_pos[field]);
-                    mix_a = calculate_mix(1.0f - value, alpha_dest ? *alpha_dest : 255);
-                    mix_b = calculate_mix(value, alpha_src ? *alpha_src : 255);
-                    if (invert && alpha_src) {
-                        float mix2 = mix_b + mix_a;
-                        if (alpha_over) {
-                            *alpha_src = 255 * mix2;
-                            if (mix2 != 0.f)
-                                mix_b /= mix2;
+                    float value = smoothstep_float(weight, ctx->softness + weight, fpos);
+                    float mix_a = calculate_mix(1.0f - value, q[3]);
+                    float mix_b = calculate_mix(value, p[3]);
+                    float mix2 = mix_b + mix_a;
+                    if (ctx->alpha_over) {
+                        q[3] = 255 * mix2;
+                        if (mix2 != 0.f)
+                            mix_b /= mix2;
+                    } else {
+                        q[3] = CLAMP(q[3] + 255 * mix_b, 0, 255);
+                    }
+                    q[0] = sample_mix(q[0], p[0], mix_b);
+                    q[1] = sample_mix(q[1], p[1], mix_b);
+                    q[2] = sample_mix(q[2], p[2], mix_b);
+                    p += 4;
+                    q += 4;
+                    x_offset += x_diff;
+                }
+                y_offset += ctx->y_diff;
+                i += field_count;
+                p_row += field_stride_src;
+                q_row += field_stride_dest;
+            }
+        } else {
+            while (i < slice_end) {
+                const uint8_t *p = p_row;
+                uint8_t *q = q_row;
+                const uint16_t *restrict l = ctx->luma_bitmap + (y_offset >> 16) * luma_row_stride;
+                int32_t x_offset = 0;
+                for (int j = 0; j < blend_width; j++) {
+                    uint32_t weight = l[x_offset >> 16];
+                    if (pos_fixed >= weight) {
+                        if (pos_fixed >= i_softness + weight) {
+                            q[0] = p[0];
+                            q[1] = p[1];
+                            q[2] = p[2];
                         } else {
-                            *alpha_src = CLAMP(*alpha_src + 255 * mix_b, 0, 255);
-                        }
-                    } else if (!invert && alpha_dest) {
-                        float mix2 = mix_b + mix_a;
-                        if (alpha_over) {
-                            *alpha_dest = 255 * mix2;
-                            if (mix2 != 0.f)
-                                mix_b /= mix2;
-                        } else {
-                            *alpha_dest = CLAMP(*alpha_dest + 255 * mix_b, 0, 255);
+                            uint32_t a = ((pos_fixed - weight) << 16) / i_softness;
+                            uint32_t value = (((a * a) >> 16) * ((3 << 16) - (2 * a))) >> 16;
+                            uint32_t inv = (1 << 16) - value;
+                            q[0] = (p[0] * value + q[0] * inv) >> 16;
+                            q[1] = (p[1] * value + q[1] * inv) >> 16;
+                            q[2] = (p[2] * value + q[2] * inv) >> 16;
                         }
                     }
-                    *q = sample_mix(*q, *p++, mix_b);
-                    q++;
-                    *q = sample_mix(*q, *p++, mix_b);
-                    q++;
-                    if (alpha_dest)
-                        alpha_dest++;
-                    if (alpha_src)
-                        alpha_src++;
+                    p += 4;
+                    q += 4;
                     x_offset += x_diff;
                 }
-            } else {
-                while (j--) {
-                    uint16_t weight = l[x_offset >> 16];
-                    uint32_t value = smoothstep(weight,
-                                                i_softness + weight,
-                                                (1 << 16) * field_pos[field]);
-                    *q = (*p++ * value + *q * ((1 << 16) - value)) >> 16;
-                    q++;
-                    *q = (*p++ * value + *q * ((1 << 16) - value)) >> 16;
-                    q++;
-                    x_offset += x_diff;
-                }
+                y_offset += ctx->y_diff;
+                i += field_count;
+                p_row += field_stride_src;
+                q_row += field_stride_dest;
             }
-            if (is_translucent) {
-                if (alpha_dest)
-                    alpha_dest += width_dest - blend_width;
-                if (alpha_src)
-                    alpha_src += width_src - blend_width;
-            }
-            y_offset += y_diff;
-            i += field_count;
-            p_row += field_stride_src;
-            q_row += field_stride_dest;
         }
-
-        field++;
     }
+    return 0;
 }
 
 static int luma_composite_rgba32(mlt_frame a_frame,
@@ -548,7 +703,8 @@ static int luma_composite_rgba32(mlt_frame a_frame,
                                  int width,
                                  int height,
                                  int invert,
-                                 int alpha_over)
+                                 int alpha_over,
+                                 int threads)
 {
     if (mlt_properties_get(&a_frame->parent, "distort"))
         mlt_properties_set(&b_frame->parent,
@@ -570,94 +726,28 @@ static int luma_composite_rgba32(mlt_frame a_frame,
 
     int is_translucent = (!mlt_image_is_opaque(&dimg) || !mlt_image_is_opaque(&simg));
 
-    // Offset the position based on which field we're looking at ...
-    float field_pos[2];
-    field_pos[0] = (pos + ((field_order == 0 ? 1 : 0) * frame_delta * 0.5f)) * (1.f + softness);
-    field_pos[1] = (pos + ((field_order == 0 ? 0 : 1) * frame_delta * 0.5f)) * (1.f + softness);
+    struct luma_slice_context ctx = {
+        .p_dest = dimg.planes[0],
+        .p_src = simg.planes[0],
+        .luma_bitmap = luma_bitmap,
+        .luma_width = luma_width,
+        .blend_width = simg.width,
+        .blend_height = simg.height,
+        .stride_src = simg.strides[0],
+        .stride_dest = dimg.strides[0],
+        .x_diff = (luma_width << 16) / dimg.width,
+        .y_diff = (luma_height << 16) / dimg.height,
+        .field_pos = {(pos + ((field_order == 0 ? 1 : 0) * frame_delta * 0.5f)) * (1.f + softness),
+                      (pos + ((field_order == 0 ? 0 : 1) * frame_delta * 0.5f)) * (1.f + softness)},
+        .softness = softness,
+        .i_softness = softness * (1 << 16),
+        .field_count = field_order < 0 ? 1 : 2,
+        .is_translucent = is_translucent,
+        .invert = invert,
+        .alpha_over = alpha_over,
+    };
 
-    register uint8_t *p;
-    register uint8_t *q;
-    uint16_t *l;
-    int32_t x_diff = (luma_width << 16) / dimg.width;
-    int32_t y_diff = (luma_height << 16) / dimg.height;
-    int32_t x_offset = 0;
-    int32_t y_offset = 0;
-    uint8_t *p_row;
-    uint8_t *q_row;
-    uint32_t i_softness = softness * (1 << 16);
-    int field_count = field_order < 0 ? 1 : 2;
-    int field_stride_src = field_count * simg.strides[0];
-    int field_stride_dest = field_count * dimg.strides[0];
-    int field = 0;
-    float mix_a, mix_b;
-
-    // composite using luma map
-    while (field < field_count) {
-        p_row = simg.planes[0] + field * simg.strides[0];
-        q_row = dimg.planes[0] + field * dimg.strides[0];
-        y_offset = field << 16;
-        int i = field;
-
-        while (i < simg.height) {
-            p = p_row;
-            q = q_row;
-            l = luma_bitmap + (y_offset >> 16) * (luma_width * field_count);
-            x_offset = 0;
-            int j = simg.width;
-
-            if (is_translucent) {
-                while (j--) {
-                    float weight = l[x_offset >> 16] / 65535.f;
-                    float value = smoothstep_float(weight, softness + weight, field_pos[field]);
-                    mix_a = calculate_mix(1.0f - value, q[3]);
-                    mix_b = calculate_mix(value, p[3]);
-                    float mix2 = mix_b + mix_a;
-                    if (invert) {
-                        if (alpha_over) {
-                            q[3] = 255 * mix2;
-                            if (mix2 != 0.f)
-                                mix_b /= mix2;
-                        } else {
-                            q[3] = CLAMP(q[3] + 255 * mix_b, 0, 255);
-                        }
-                    } else {
-                        if (alpha_over) {
-                            q[3] = 255 * mix2;
-                            if (mix2 != 0.f)
-                                mix_b /= mix2;
-                        } else {
-                            q[3] = CLAMP(q[3] + 255 * mix_b, 0, 255);
-                        }
-                    }
-                    q[0] = sample_mix(q[0], p[0], mix_b);
-                    q[1] = sample_mix(q[1], p[1], mix_b);
-                    q[2] = sample_mix(q[2], p[2], mix_b);
-                    p += 4;
-                    q += 4;
-                    x_offset += x_diff;
-                }
-            } else {
-                while (j--) {
-                    uint16_t weight = l[x_offset >> 16];
-                    uint32_t value = smoothstep(weight,
-                                                i_softness + weight,
-                                                (1 << 16) * field_pos[field]);
-                    q[0] = (p[0] * value + q[0] * ((1 << 16) - value)) >> 16;
-                    q[1] = (p[1] * value + q[1] * ((1 << 16) - value)) >> 16;
-                    q[2] = (p[2] * value + q[2] * ((1 << 16) - value)) >> 16;
-                    p += 4;
-                    q += 4;
-                    x_offset += x_diff;
-                }
-            }
-            y_offset += y_diff;
-            i += field_count;
-            p_row += field_stride_src;
-            q_row += field_stride_dest;
-        }
-
-        field++;
-    }
+    mlt_slices_run_normal(threads, luma_slice_rgba32, &ctx);
     return 0;
 }
 
@@ -1048,7 +1138,8 @@ static int transition_get_image(mlt_frame a_frame,
                                         *width,
                                         *height,
                                         invert,
-                                        alpha_over);
+                                        alpha_over,
+                                        threads);
         } else if (*format == mlt_image_rgba64) {
             ret = luma_composite_rgba64(!invert ? a_frame : b_frame,
                                         !invert ? b_frame : a_frame,
@@ -1078,7 +1169,8 @@ static int transition_get_image(mlt_frame a_frame,
                                   height,
                                   invert,
                                   fix_background_alpha,
-                                  alpha_over);
+                                  alpha_over,
+                                  threads);
         }
     } else {
         if (mlt_properties_get(&a_frame->parent, "distort"))
