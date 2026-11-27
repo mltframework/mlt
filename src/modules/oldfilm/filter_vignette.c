@@ -206,7 +206,10 @@ static int slice_proc(int id, int index, int jobs, void *data)
 
         /* Right outer span [x_ring_r, width) */
         if (x_ring_r < width) {
-            apply_outer_span(row + (size_t) x_ring_r * 2, width - x_ring_r, outer_y_lut, outer_c_lut);
+            apply_outer_span(row + (size_t) x_ring_r * 2,
+                             width - x_ring_r,
+                             outer_y_lut,
+                             outer_c_lut);
         }
     }
 
@@ -248,8 +251,9 @@ static int filter_get_image(mlt_frame frame,
         /* Precompute 1D delta LUT for integer dx in [inner_dx, outer_dx) */
         int lut_len = outer_dx - inner_dx;
         double stack_lut[1024];
-        double *delta_lut = (lut_len <= 1024) ? stack_lut
-                                              : (double *) malloc((size_t) lut_len * sizeof(double));
+        double *delta_lut = (lut_len <= 1024)
+                                ? stack_lut
+                                : (double *) malloc((size_t) lut_len * sizeof(double));
         if (lut_len > 0 && !delta_lut)
             return 1;
 

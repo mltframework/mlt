@@ -24,9 +24,9 @@
 #include <framework/mlt_slices.h>
 
 #include <math.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
 #include <string.h>
 
 /** virtual function declaration for an image scaler
@@ -125,7 +125,8 @@ static int filter_scale(mlt_frame frame,
 
     int outer = out_x_range * scale_width;
     int bottom = out_y_range * scale_height;
-    int n_rows = (bottom > 0 && scale_height > 0) ? ((2 * bottom + scale_height - 1) / scale_height) : 0;
+    int n_rows = (bottom > 0 && scale_height > 0) ? ((2 * bottom + scale_height - 1) / scale_height)
+                                                  : 0;
 
     if (n_rows > 0) {
         scale_slice_desc desc = {.output = output,

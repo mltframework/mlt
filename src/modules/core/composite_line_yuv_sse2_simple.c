@@ -31,11 +31,8 @@ static inline __m128i sse2_div255_epu16(__m128i v, __m128i c128)
     return _mm_srli_epi16(t, 8);
 }
 
-static inline void sse2_blend_dest_alpha(uint8_t *dest_a,
-                                         __m128i src_a16,
-                                         __m128i zero,
-                                         __m128i c255,
-                                         __m128i c128)
+static inline void sse2_blend_dest_alpha(
+    uint8_t *dest_a, __m128i src_a16, __m128i zero, __m128i c255, __m128i c128)
 {
     __m128i da = _mm_unpacklo_epi8(_mm_loadl_epi64((const __m128i *) dest_a), zero);
     __m128i inv_da = _mm_sub_epi16(c255, da);
@@ -143,8 +140,10 @@ __attribute__((target("avx2"))) static inline __m256i avx2_div255_epu16(__m256i 
     return _mm256_srli_epi16(t, 8);
 }
 
-__attribute__((target("avx2"))) static inline void avx2_blend_dest_alpha(
-    uint8_t *dest_a, __m256i src_a16, __m256i c255, __m256i c128)
+__attribute__((target("avx2"))) static inline void avx2_blend_dest_alpha(uint8_t *dest_a,
+                                                                         __m256i src_a16,
+                                                                         __m256i c255,
+                                                                         __m256i c128)
 {
     __m256i da = _mm256_cvtepu8_epi16(_mm_loadu_si128((const __m128i *) dest_a));
     __m256i inv_da = _mm256_sub_epi16(c255, da);

@@ -25,9 +25,9 @@
 #include <float.h>
 #include <limits.h>
 #include <math.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <stddef.h>
 #include <string.h>
 
 typedef void (*composite_line_fn)(uint8_t *dest,
