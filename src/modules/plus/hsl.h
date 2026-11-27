@@ -18,7 +18,7 @@
 
 #include <framework/mlt_types.h>
 
-static void rgbToHsl(float r, float g, float b, float *h, float *s, float *l)
+static inline void rgbToHsl(float r, float g, float b, float *h, float *s, float *l)
 {
     float max = MAX(MAX(r, g), b);
     float min = MIN(MIN(r, g), b);
@@ -39,7 +39,7 @@ static void rgbToHsl(float r, float g, float b, float *h, float *s, float *l)
     }
 }
 
-static float hueToRgb(float p, float q, float t)
+static inline float hueToRgb(float p, float q, float t)
 {
     if (t < 0)
         t += 1;
@@ -54,7 +54,7 @@ static float hueToRgb(float p, float q, float t)
     return p;
 }
 
-static void hslToRgb(float h, float s, float l, float *r, float *g, float *b)
+static inline void hslToRgb(float h, float s, float l, float *r, float *g, float *b)
 {
     if (0 == s) {
         // No color

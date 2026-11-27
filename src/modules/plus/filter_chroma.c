@@ -13,8 +13,8 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU Lesser General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License
- * along with this program; if not, write to the Free Software Foundation,
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
  */
 
@@ -22,24 +22,71 @@
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_producer.h>
+#include <framework/mlt_slices.h>
 
 #include <stdlib.h>
 #include <string.h>
 
-static inline int in_range(uint8_t v, uint8_t c, int var)
+typedef struct
 {
-    return ((int) v >= c - var) && ((int) v <= c + var);
-}
+    const uint8_t *image;
+    uint8_t *alpha;
+    int width;
+    int height;
+    int u_min;
+    int u_max;
+    int v_min;
+    int v_max;
+    int fresh_alpha;
+} chroma_slice_desc;
 
-static inline uint8_t alpha_value(uint8_t a, uint8_t *p, uint8_t u, uint8_t v, int var, int odd)
+static int sliced_proc(int id, int index, int jobs, void *data)
 {
-    if (odd == 0)
-        return (in_range(*(p + 1), u, var) && in_range(*(p + 3), v, var)) ? 0 : a;
-    else
-        return (in_range((*(p + 1) + *(p + 5)) / 2, u, var)
-                && in_range((*(p + 3) + *(p + 7)) / 2, v, var))
-                   ? 0
-                   : a;
+    (void) id;
+    const chroma_slice_desc *desc = (const chroma_slice_desc *) data;
+    int slice_line_start;
+    int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
+    int pairs = (desc->width * slice_height) / 2;
+    if (pairs <= 0)
+        return 0;
+
+    const uint8_t *restrict p = desc->image + (size_t) slice_line_start * desc->width * 2;
+    uint8_t *restrict alpha = desc->alpha + (size_t) slice_line_start * desc->width;
+    const int u_min = desc->u_min;
+    const int u_max = desc->u_max;
+    const int v_min = desc->v_min;
+    const int v_max = desc->v_max;
+
+    if (desc->fresh_alpha) {
+        for (int i = 0; i < pairs; i++) {
+            int u0 = p[1];
+            int v0 = p[3];
+            int u1 = (u0 + p[5]) >> 1;
+            int v1 = (v0 + p[7]) >> 1;
+            int k0 = (u0 >= u_min) & (u0 <= u_max) & (v0 >= v_min) & (v0 <= v_max);
+            int k1 = (u1 >= u_min) & (u1 <= u_max) & (v1 >= v_min) & (v1 <= v_max);
+            alpha[0] = k0 ? 0 : 255;
+            alpha[1] = k1 ? 0 : 255;
+            alpha += 2;
+            p += 4;
+        }
+    } else {
+        for (int i = 0; i < pairs; i++) {
+            int u0 = p[1];
+            int v0 = p[3];
+            int u1 = (u0 + p[5]) >> 1;
+            int v1 = (v0 + p[7]) >> 1;
+            int k0 = (u0 >= u_min) & (u0 <= u_max) & (v0 >= v_min) & (v0 <= v_max);
+            int k1 = (u1 >= u_min) & (u1 <= u_max) & (v1 >= v_min) & (v1 <= v_max);
+            if (k0)
+                alpha[0] = 0;
+            if (k1)
+                alpha[1] = 0;
+            alpha += 2;
+            p += 4;
+        }
+    }
+    return 0;
 }
 
 /** Get the images and map the chroma to the alpha of the frame.
@@ -71,21 +118,28 @@ static int filter_get_image(mlt_frame frame,
     *format = mlt_image_yuv422;
     if (mlt_frame_get_image(frame, image, format, width, height, writable) == 0) {
         uint8_t *alpha = mlt_frame_get_alpha(frame);
+        int fresh_alpha = 0;
         if (!alpha) {
             int alphasize = *width * *height;
             alpha = mlt_pool_alloc(alphasize);
-            memset(alpha, 255, alphasize);
             mlt_frame_set_alpha(frame, alpha, alphasize, mlt_pool_release);
+            fresh_alpha = 1;
+            if ((*width * *height) & 1) {
+                alpha[alphasize - 1] = 255;
+            }
         }
-        uint8_t *p = *image;
-        int size = *width * *height / 2;
-        while (size--) {
-            *alpha = alpha_value(*alpha, p, u, v, variance, 0);
-            alpha++;
-            *alpha = alpha_value(*alpha, p, u, v, variance, 1);
-            alpha++;
-            p += 4;
-        }
+        chroma_slice_desc desc = {
+            .image = *image,
+            .alpha = alpha,
+            .width = *width,
+            .height = *height,
+            .u_min = (int) u - variance,
+            .u_max = (int) u + variance,
+            .v_min = (int) v - variance,
+            .v_max = (int) v + variance,
+            .fresh_alpha = fresh_alpha,
+        };
+        mlt_slices_run_normal(0, sliced_proc, &desc);
     }
 
     return 0;
