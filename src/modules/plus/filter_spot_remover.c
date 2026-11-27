@@ -140,10 +140,12 @@ static int remove_spot_rgba_slice_proc(int id, int index, int jobs, void *data)
                 const double *tp = topArr + i * 4;
                 const double *bp = botArr + i * 4;
 
-                __m128i x01 = _mm_cvttpd_epi32(_mm_add_pd(_mm_mul_pd(vL01, xr), _mm_mul_pd(vR01, xi)));
-                __m128i x23 = _mm_cvttpd_epi32(_mm_add_pd(_mm_mul_pd(vL23, xr), _mm_mul_pd(vR23, xi)));
-                __m128i y01 = _mm_cvttpd_epi32(
-                    _mm_add_pd(_mm_mul_pd(_mm_loadu_pd(tp), vyR), _mm_mul_pd(_mm_loadu_pd(bp), vyI)));
+                __m128i x01 = _mm_cvttpd_epi32(
+                    _mm_add_pd(_mm_mul_pd(vL01, xr), _mm_mul_pd(vR01, xi)));
+                __m128i x23 = _mm_cvttpd_epi32(
+                    _mm_add_pd(_mm_mul_pd(vL23, xr), _mm_mul_pd(vR23, xi)));
+                __m128i y01 = _mm_cvttpd_epi32(_mm_add_pd(_mm_mul_pd(_mm_loadu_pd(tp), vyR),
+                                                          _mm_mul_pd(_mm_loadu_pd(bp), vyI)));
                 __m128i y23 = _mm_cvttpd_epi32(_mm_add_pd(_mm_mul_pd(_mm_loadu_pd(tp + 2), vyR),
                                                           _mm_mul_pd(_mm_loadu_pd(bp + 2), vyI)));
 
@@ -194,10 +196,12 @@ static int remove_spot_rgba_slice_proc(int id, int index, int jobs, void *data)
                 const double *tp = topArr + i * 4;
                 const double *bp = botArr + i * 4;
 
-                __m128i x01 = _mm_cvttpd_epi32(_mm_add_pd(_mm_mul_pd(vL01, xr), _mm_mul_pd(vR01, xi)));
-                __m128i x23 = _mm_cvttpd_epi32(_mm_add_pd(_mm_mul_pd(vL23, xr), _mm_mul_pd(vR23, xi)));
-                __m128i y01 = _mm_cvttpd_epi32(
-                    _mm_add_pd(_mm_mul_pd(_mm_loadu_pd(tp), vyR), _mm_mul_pd(_mm_loadu_pd(bp), vyI)));
+                __m128i x01 = _mm_cvttpd_epi32(
+                    _mm_add_pd(_mm_mul_pd(vL01, xr), _mm_mul_pd(vR01, xi)));
+                __m128i x23 = _mm_cvttpd_epi32(
+                    _mm_add_pd(_mm_mul_pd(vL23, xr), _mm_mul_pd(vR23, xi)));
+                __m128i y01 = _mm_cvttpd_epi32(_mm_add_pd(_mm_mul_pd(_mm_loadu_pd(tp), vyR),
+                                                          _mm_mul_pd(_mm_loadu_pd(bp), vyI)));
                 __m128i y23 = _mm_cvttpd_epi32(_mm_add_pd(_mm_mul_pd(_mm_loadu_pd(tp + 2), vyR),
                                                           _mm_mul_pd(_mm_loadu_pd(bp + 2), vyI)));
 

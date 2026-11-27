@@ -54,11 +54,8 @@ typedef struct
     uint8_t chroma_lut[256];
 } slice_desc;
 
-static inline void charcoal_pixel_border(const slice_desc *d,
-                                         int x,
-                                         int y,
-                                         uint8_t *p,
-                                         const uint8_t *q)
+static inline void charcoal_pixel_border(
+    const slice_desc *d, int x, int y, uint8_t *p, const uint8_t *q)
 {
     int m00 = get_Y(d->image, d->width, d->height, x - d->x_scatter, y - d->y_scatter, d->max_luma);
     int m01 = get_Y(d->image, d->width, d->height, x, y - d->y_scatter, d->max_luma);
