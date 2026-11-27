@@ -339,68 +339,93 @@ struct sliced_desc
     mlt_image_format format;
 };
 
+#define AFFINE_SLICE_LOOP(INTERP_FN, PIX_T) \
+    do { \
+        const double m00 = ctx.affine.matrix[0][0]; \
+        const double m01 = ctx.affine.matrix[0][1]; \
+        const double m02 = ctx.affine.matrix[0][2]; \
+        const double m10 = ctx.affine.matrix[1][0]; \
+        const double m11 = ctx.affine.matrix[1][1]; \
+        const double m12 = ctx.affine.matrix[1][2]; \
+        const double dz = ctx.dz; \
+        const double x_offset = ctx.x_offset; \
+        const double y_offset = ctx.y_offset; \
+        const double minima = ctx.minima; \
+        const double xmax = ctx.xmax; \
+        const double ymax = ctx.ymax; \
+        const int a_width = ctx.a_width; \
+        const int b_width = ctx.b_width; \
+        const int b_height = ctx.b_height; \
+        const float mix = (float) ctx.mix; \
+        const int b_alpha = ctx.b_alpha; \
+        const int endy = starty + height_slice; \
+        PIX_T *a_image = (PIX_T *) ctx.a_image + starty * (a_width * 4); \
+        PIX_T *b_image = (PIX_T *) ctx.b_image; \
+        double y = ctx.lower_y + (double) starty; \
+        if (dz == 1.0) { \
+            for (int i = starty; i < endy; i++, y++) { \
+                const double m01_y = m01 * y; \
+                const double m11_y = m11 * y; \
+                double x = ctx.lower_x; \
+                for (int j = 0; j < a_width; j++, x++) { \
+                    double dx = (m00 * x + m01_y + m02) + x_offset; \
+                    double dy = (m10 * x + m11_y + m12) + y_offset; \
+                    if (dx >= minima && dx <= xmax && dy >= minima && dy <= ymax) \
+                        INTERP_FN(b_image, \
+                                  b_width, \
+                                  b_height, \
+                                  (float) dx, \
+                                  (float) dy, \
+                                  mix, \
+                                  a_image, \
+                                  b_alpha); \
+                    a_image += 4; \
+                } \
+            } \
+        } else { \
+            for (int i = starty; i < endy; i++, y++) { \
+                const double m01_y = m01 * y; \
+                const double m11_y = m11 * y; \
+                double x = ctx.lower_x; \
+                for (int j = 0; j < a_width; j++, x++) { \
+                    double dx = (m00 * x + m01_y + m02) / dz + x_offset; \
+                    double dy = (m10 * x + m11_y + m12) / dz + y_offset; \
+                    if (dx >= minima && dx <= xmax && dy >= minima && dy <= ymax) \
+                        INTERP_FN(b_image, \
+                                  b_width, \
+                                  b_height, \
+                                  (float) dx, \
+                                  (float) dy, \
+                                  mix, \
+                                  a_image, \
+                                  b_alpha); \
+                    a_image += 4; \
+                } \
+            } \
+        } \
+    } while (0)
+
 static int sliced_proc(int id, int index, int jobs, void *cookie)
 {
     (void) id; // unused
     struct sliced_desc ctx = *((struct sliced_desc *) cookie);
     int starty, height_slice = mlt_slices_size_slice(jobs, index, ctx.a_height, &starty);
-    double x, y;
-    double dx, dy;
-    int i, j;
 
     if (ctx.format == mlt_image_rgba) {
-        uint8_t *a_image = (uint8_t *) ctx.a_image + starty * (ctx.a_width * 4);
-        uint8_t *b_image = (uint8_t *) ctx.b_image;
-        interpp32 interp = interpNN_b32;
         if (ctx.type == interp_bl) {
-            interp = interpBL_b32;
+            AFFINE_SLICE_LOOP(interpBL_b32, uint8_t);
         } else if (ctx.type == interp_bc) {
-            interp = interpBC_b32;
-        }
-        for (i = 0, y = ctx.lower_y; i < ctx.a_height; i++, y++) {
-            if (i >= starty && i < (starty + height_slice)) {
-                for (j = 0, x = ctx.lower_x; j < ctx.a_width; j++, x++) {
-                    dx = MapX(ctx.affine.matrix, x, y) / ctx.dz + ctx.x_offset;
-                    dy = MapY(ctx.affine.matrix, x, y) / ctx.dz + ctx.y_offset;
-                    if (dx >= ctx.minima && dx <= ctx.xmax && dy >= ctx.minima && dy <= ctx.ymax)
-                        interp(b_image,
-                               ctx.b_width,
-                               ctx.b_height,
-                               dx,
-                               dy,
-                               ctx.mix,
-                               a_image,
-                               ctx.b_alpha);
-                    a_image += 4;
-                }
-            }
+            AFFINE_SLICE_LOOP(interpBC_b32, uint8_t);
+        } else {
+            AFFINE_SLICE_LOOP(interpNN_b32, uint8_t);
         }
     } else if (ctx.format == mlt_image_rgba64) {
-        uint16_t *a_image = (uint16_t *) ctx.a_image + starty * (ctx.a_width * 4);
-        uint16_t *b_image = (uint16_t *) ctx.b_image;
-        interpp64 interp = interpNN_b64;
         if (ctx.type == interp_bl) {
-            interp = interpBL_b64;
+            AFFINE_SLICE_LOOP(interpBL_b64, uint16_t);
         } else if (ctx.type == interp_bc) {
-            interp = interpBC_b64;
-        }
-        for (i = 0, y = ctx.lower_y; i < ctx.a_height; i++, y++) {
-            if (i >= starty && i < (starty + height_slice)) {
-                for (j = 0, x = ctx.lower_x; j < ctx.a_width; j++, x++) {
-                    dx = MapX(ctx.affine.matrix, x, y) / ctx.dz + ctx.x_offset;
-                    dy = MapY(ctx.affine.matrix, x, y) / ctx.dz + ctx.y_offset;
-                    if (dx >= ctx.minima && dx <= ctx.xmax && dy >= ctx.minima && dy <= ctx.ymax)
-                        interp(b_image,
-                               ctx.b_width,
-                               ctx.b_height,
-                               dx,
-                               dy,
-                               ctx.mix,
-                               a_image,
-                               ctx.b_alpha);
-                    a_image += 4;
-                }
-            }
+            AFFINE_SLICE_LOOP(interpBC_b64, uint16_t);
+        } else {
+            AFFINE_SLICE_LOOP(interpNN_b64, uint16_t);
         }
     } else {
         mlt_log_error(NULL, "[transition affine] Invalid image format\n");

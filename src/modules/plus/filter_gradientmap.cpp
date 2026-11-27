@@ -164,23 +164,6 @@ static void compute_colors(const std::vector<stop> &gradient, std::vector<mlt_co
     }
 }
 
-static mlt_color gradient_map(
-    const std::vector<mlt_color> &colors, float r, float g, float b, float a)
-{
-    // This is what Krita does, although other methods could be explored.
-    float intensity = r * 0.30 + g * 0.59 + b * 0.11;
-    uint32_t t = intensity * colors.size() + 0.5;
-    if (colors.size() > t) {
-        mlt_color c = colors[t];
-        c.a = a;
-        return c;
-    } else {
-        // Because the colors are sorted by position this is the last of the
-        // gradient stops.
-        return colors.back();
-    }
-}
-
 static int sliced_proc(int id, int index, int jobs, void *data)
 {
     (void) id;
@@ -188,36 +171,63 @@ static int sliced_proc(int id, int index, int jobs, void *data)
     int slice_line_start,
         slice_height = mlt_slices_size_slice(jobs, index, desc->image.height, &slice_line_start);
     int slice_line_end = slice_line_start + slice_height;
+    const mlt_color *col_data = desc->colors->data();
+    const size_t col_size = desc->colors->size();
+    const double col_size_d = static_cast<double>(col_size);
+    const mlt_color back = desc->colors->back();
+
     if (desc->format == mlt_image_rgba) {
+        double r_lut[256], g_lut[256], b_lut[256];
+        for (int v = 0; v < 256; ++v) {
+            float f = static_cast<float>(v / 255.0);
+            r_lut[v] = f * 0.30;
+            g_lut[v] = f * 0.59;
+            b_lut[v] = f * 0.11;
+        }
         int line_size = desc->image.strides[0];
         for (int j = slice_line_start; j < slice_line_end; ++j) {
-            uint8_t *p = desc->image.planes[0] + j * line_size;
+            uint8_t *p = desc->image.planes[0] + static_cast<size_t>(j) * line_size;
             for (int i = 0; i < line_size; i += 4) {
-                float r = (float) p[i] / 255.0;
-                float g = (float) p[i + 1] / 255.0;
-                float b = (float) p[i + 2] / 255.0;
-                float a = (float) p[i + 3];
-                mlt_color c = gradient_map(*desc->colors, r, g, b, a);
-                p[i] = c.r;
-                p[i + 1] = c.g;
-                p[i + 2] = c.b;
-                p[i + 3] = c.a;
+                float intensity = static_cast<float>(r_lut[p[i]] + g_lut[p[i + 1]]
+                                                     + b_lut[p[i + 2]]);
+                uint32_t t = static_cast<uint32_t>(intensity * col_size_d + 0.5);
+                if (t < col_size) {
+                    const mlt_color &c = col_data[t];
+                    p[i] = c.r;
+                    p[i + 1] = c.g;
+                    p[i + 2] = c.b;
+                } else {
+                    p[i] = back.r;
+                    p[i + 1] = back.g;
+                    p[i + 2] = back.b;
+                    p[i + 3] = back.a;
+                }
             }
         }
     } else if (desc->format == mlt_image_rgba64) {
         int line_size = desc->image.strides[0] / 2; // two bytes per word
         for (int j = slice_line_start; j < slice_line_end; ++j) {
-            uint16_t *p = (uint16_t *) desc->image.planes[0] + j * line_size;
+            uint16_t *p = reinterpret_cast<uint16_t *>(desc->image.planes[0])
+                          + static_cast<size_t>(j) * line_size;
             for (int i = 0; i < line_size; i += 4) {
-                float r = (float) p[i] / 65535.0;
-                float g = (float) p[i + 1] / 65535.0;
-                float b = (float) p[i + 2] / 65535.0;
-                float a = (float) p[i + 3] / 257.0;
-                mlt_color c = gradient_map(*desc->colors, r, g, b, a);
-                p[i] = (uint16_t) c.r * 257;
-                p[i + 1] = (uint16_t) c.g * 257;
-                p[i + 2] = (uint16_t) c.b * 257;
-                p[i + 3] = (uint16_t) c.a * 257;
+                float r = static_cast<float>(p[i] / 65535.0);
+                float g = static_cast<float>(p[i + 1] / 65535.0);
+                float b = static_cast<float>(p[i + 2] / 65535.0);
+                float intensity = static_cast<float>(r * 0.30 + g * 0.59 + b * 0.11);
+                uint32_t t = static_cast<uint32_t>(intensity * col_size_d + 0.5);
+                if (t < col_size) {
+                    const mlt_color &c = col_data[t];
+                    uint8_t a = static_cast<uint8_t>(static_cast<float>(p[i + 3] / 257.0));
+                    p[i] = static_cast<uint16_t>(c.r) * 257;
+                    p[i + 1] = static_cast<uint16_t>(c.g) * 257;
+                    p[i + 2] = static_cast<uint16_t>(c.b) * 257;
+                    p[i + 3] = static_cast<uint16_t>(a) * 257;
+                } else {
+                    p[i] = static_cast<uint16_t>(back.r) * 257;
+                    p[i + 1] = static_cast<uint16_t>(back.g) * 257;
+                    p[i + 2] = static_cast<uint16_t>(back.b) * 257;
+                    p[i + 3] = static_cast<uint16_t>(back.a) * 257;
+                }
             }
         }
     }
