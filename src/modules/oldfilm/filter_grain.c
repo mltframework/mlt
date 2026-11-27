@@ -124,10 +124,8 @@ static int filter_get_image(mlt_frame frame,
             .max_luma = full_range ? 255 : 235,
         };
         for (int i = 0; i < 256; i++) {
-            desc.base_lut[i] = (uint8_t) CLAMP(((double) i - 127.0) * desc.contrast + 127.0
-                                                   + desc.brightness,
-                                               0,
-                                               255);
+            desc.base_lut[i] = (uint8_t)
+                CLAMP(((double) i - 127.0) * desc.contrast + 127.0 + desc.brightness, 0, 255);
         }
         mlt_slices_run_normal(0, slice_proc, &desc);
     }

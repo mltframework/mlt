@@ -356,7 +356,8 @@ static void fillMap(PointF *vertices, int count, int width, int height, int inve
             double yi = vertices[i].y;
             double yj = vertices[j].y;
             if ((yi > py) != (yj > py)) {
-                int x = (int) (vertices[i].x + (py - yi) / (yj - yi) * (vertices[j].x - vertices[i].x));
+                int x = (int) (vertices[i].x
+                               + (py - yi) / (yj - yi) * (vertices[j].x - vertices[i].x));
                 int k = nodes++;
                 while (k > 0 && nodeX[k - 1] > x) {
                     nodeX[k] = nodeX[k - 1];
@@ -569,9 +570,10 @@ static int filter_get_image(mlt_frame frame,
                 blur(map, *width, *height, feather, mlt_properties_get_int(unique, "feather_passes"));
             }
 
-            int bpp = (*format == mlt_image_rgba) ? 4
-                      : (*format == mlt_image_rgb) ? 3
-                      : (*format == mlt_image_yuv422) ? 2 : 1;
+            int bpp = (*format == mlt_image_rgba)     ? 4
+                      : (*format == mlt_image_rgb)    ? 3
+                      : (*format == mlt_image_yuv422) ? 2
+                                                      : 1;
             size = (*format == mlt_image_yuv420p) ? (length * 3 / 2) : (length * bpp);
             uint8_t *p = *image;
             uint8_t *q = *image + size;
