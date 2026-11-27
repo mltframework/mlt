@@ -467,6 +467,7 @@ static int time_code_to_frames(mlt_property self, const char *s, double fps)
     int hours = 0, minutes = 0, seconds = 0, frames;
 
     s = copy;
+    int drop = strchr(s, ';') != NULL;
     pos = strrchr(s, ';');
     if (!pos)
         pos = strrchr(s, ':');
@@ -493,7 +494,23 @@ static int time_code_to_frames(mlt_property self, const char *s, double fps)
     }
     free(copy);
 
-    return floor(fps * hours * 3600) + floor(fps * minutes * 60) + ceil(fps * seconds) + frames;
+    if (fps == 30000.0 / 1001.0 || fps == 60000.0 / 1001.0) {
+        // Drop-frame timecode skips 2 frame numbers (4 at 59.94) at the start of every minute
+        // except every tenth minute. Non-drop-frame timecode just counts at 30 or 60.
+        int nominal = lrint(fps);
+        int64_t total_minutes = (int64_t) hours * 60 + minutes;
+        int64_t result = (total_minutes * 60 + seconds) * nominal + frames;
+        if (drop)
+            result -= nominal / 15 * (total_minutes - total_minutes / 10);
+        return (int) result;
+    }
+    if (!drop)
+        fps = lrint(fps); // non-drop-frame timecode counts at the nominal rate
+    if (!(fps > 0.0))
+        fps = 1.0;
+
+    // Use the same multiplication order as the formatter before rounding each field.
+    return floor(hours * 3600.0 * fps) + floor(minutes * 60.0 * fps) + ceil(seconds * fps) + frames;
 }
 
 /** Convert a string to an integer.
