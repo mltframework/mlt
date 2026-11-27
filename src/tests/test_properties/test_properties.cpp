@@ -323,6 +323,9 @@ private Q_SLOTS:
         QCOMPARE(p.get_int("key"), frames);
         p.set("key", frames);
         QCOMPARE(p.get_time("key", mlt_time_smpte_df), timeString);
+
+        p.set("key", "9950:00:00;00");
+        QCOMPARE(p.get_int("key"), 2147050800);
     }
 
     void SetAndGetTimeCodeNonIntFps()
@@ -373,11 +376,16 @@ private Q_SLOTS:
         QCOMPARE(p.get_time("key", mlt_time_smpte_ndf), timeString);
     }
 
-    void TimeCodeRoundTripsAtNtscFps()
+    void TimeCodeRoundTrips()
     {
-        const char *names[] = {"atsc_720p_2997", "atsc_720p_5994", "atsc_720p_2398"};
-        for (const char *name : names) {
-            Profile profile(name);
+        const struct
+        {
+            int numerator;
+            int denominator;
+        } rates[] = {{24000, 1001}, {30000, 1001}, {60000, 1001}, {25, 1}, {1, 4}, {1, 3}};
+        for (const auto &rate : rates) {
+            Profile profile("dv_pal");
+            profile.set_frame_rate(rate.numerator, rate.denominator);
             Properties p;
             p.set("_profile", profile.get_profile(), 0);
             for (int i = 0; i < 200000; ++i) {
