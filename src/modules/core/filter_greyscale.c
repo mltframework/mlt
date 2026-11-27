@@ -23,6 +23,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
+
 /** Do it :-).
 */
 
@@ -37,9 +41,20 @@ static int filter_get_image(mlt_frame frame,
     int error = mlt_frame_get_image(frame, image, format, width, height, 1);
     if (error == 0) {
         uint8_t *p = *image;
-        uint8_t *q = *image + *width * *height * 2;
-        while (p++ != q)
-            *p++ = 128;
+        int total_bytes = *width * *height * 2;
+        int x = 0;
+#ifdef __SSE2__
+        __m128i mask_y = _mm_set1_epi16(0x00FF);
+        __m128i chroma128 = _mm_set1_epi16((short) 0x8000);
+        for (; x <= total_bytes - 16; x += 16) {
+            __m128i v = _mm_loadu_si128((const __m128i *) (p + x));
+            v = _mm_or_si128(_mm_and_si128(v, mask_y), chroma128);
+            _mm_storeu_si128((__m128i *) (p + x), v);
+        }
+#endif
+        for (; x < total_bytes; x += 2) {
+            p[x + 1] = 128;
+        }
     }
     return error;
 }

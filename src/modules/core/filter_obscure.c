@@ -20,9 +20,15 @@
 #include <framework/mlt_filter.h>
 #include <framework/mlt_frame.h>
 #include <framework/mlt_profile.h>
+#include <framework/mlt_slices.h>
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+
+#ifdef __SSE2__
+#include <emmintrin.h>
+#endif
 
 /** Geometry struct.
 */
@@ -140,40 +146,79 @@ static void geometry_calculate(struct geometry_s *output,
 
 static inline void obscure_average(uint8_t *start, int width, int height, int stride)
 {
-    register int y;
-    register int x;
-    register int Y = (*start + *(start + 2)) / 2;
-    register int U = *(start + 1);
-    register int V = *(start + 3);
-    register uint8_t *p;
-    register int components = width >> 1;
+    int Y = (start[0] + start[2]) / 2;
+    int U = start[1];
+    int V = start[3];
+    int components = width >> 1;
+    uint8_t *row = start;
 
-    y = height;
-    while (y--) {
-        p = start;
-        x = components;
-        while (x--) {
-            Y = (Y + *p++) >> 1;
-            U = (U + *p++) >> 1;
-            Y = (Y + *p++) >> 1;
-            V = (V + *p++) >> 1;
+    for (int y = 0; y < height; y++) {
+        const uint8_t *p = row;
+        for (int x = 0; x < components; x++, p += 4) {
+            Y = (Y + p[0]) >> 1;
+            U = (U + p[1]) >> 1;
+            Y = (Y + p[2]) >> 1;
+            V = (V + p[3]) >> 1;
         }
-        start += stride;
+        row += stride;
     }
 
-    start -= height * stride;
-    y = height;
-    while (y--) {
-        p = start;
-        x = components;
-        while (x--) {
-            *p++ = Y;
-            *p++ = U;
-            *p++ = Y;
-            *p++ = V;
+    uint32_t yuyv = (uint32_t) (uint8_t) Y | ((uint32_t) (uint8_t) U << 8)
+                    | ((uint32_t) (uint8_t) Y << 16) | ((uint32_t) (uint8_t) V << 24);
+#ifdef __SSE2__
+    __m128i vyuyv = _mm_set1_epi32((int) yuyv);
+#endif
+    row = start;
+    for (int y = 0; y < height; y++) {
+        uint8_t *p = row;
+        int x = 0;
+#ifdef __SSE2__
+        for (; x <= components - 4; x += 4, p += 16) {
+            _mm_storeu_si128((__m128i *) p, vyuyv);
         }
-        start += stride;
+#endif
+        for (; x < components; x++, p += 4) {
+            memcpy(p, &yuyv, 4);
+        }
+        row += stride;
     }
+}
+
+typedef struct
+{
+    uint8_t *base;
+    int stride;
+    int area_w;
+    int area_h;
+    int mw;
+    int mh;
+    int tile_rows;
+} obscure_slice_desc;
+
+static int obscure_slice_proc(int id, int index, int jobs, void *data)
+{
+    (void) id;
+    const obscure_slice_desc *d = (const obscure_slice_desc *) data;
+    int row_start, row_count = mlt_slices_size_slice(jobs, index, d->tile_rows, &row_start);
+    const int stride = d->stride;
+    const int area_w = d->area_w;
+    const int area_h = d->area_h;
+    const int mw = d->mw;
+    const int mh = d->mh;
+
+    for (int tr = row_start; tr < row_start + row_count; tr++) {
+        int h = tr * mh;
+        int ah = (h + mh > area_h) ? (area_h - h) : mh;
+        if (ah <= 1)
+            continue;
+        uint8_t *row_base = d->base + h * stride;
+        for (int w = 0; w < area_w; w += mw) {
+            int aw = (w + mw > area_w) ? (area_w - w) : mw;
+            if (aw > 1)
+                obscure_average(row_base + (w << 1), aw, ah, stride);
+        }
+    }
+    return 0;
 }
 
 /** The obscurer rendering function...
@@ -181,6 +226,7 @@ static inline void obscure_average(uint8_t *start, int width, int height, int st
 
 static void obscure_render(uint8_t *image, int width, int height, struct geometry_s result)
 {
+    (void) height;
     int area_x = result.x;
     int area_y = result.y;
     int area_w = result.w;
@@ -188,20 +234,25 @@ static void obscure_render(uint8_t *image, int width, int height, struct geometr
 
     int mw = result.mask_w;
     int mh = result.mask_h;
-    int w;
-    int h;
-    int aw;
-    int ah;
 
-    uint8_t *p = image + area_y * width * 2 + area_x * 2;
+    if (area_w <= 1 || area_h <= 1 || mw <= 0 || mh <= 0)
+        return;
 
-    for (w = 0; w < area_w; w += mw) {
-        for (h = 0; h < area_h; h += mh) {
-            aw = w + mw > area_w ? mw - (w + mw - area_w) : mw;
-            ah = h + mh > area_h ? mh - (h + mh - area_h) : mh;
-            if (aw > 1 && ah > 1)
-                obscure_average(p + h * (width << 1) + (w << 1), aw, ah, width << 1);
-        }
+    int tile_rows = (area_h + mh - 1) / mh;
+    obscure_slice_desc desc = {
+        .base = image + area_y * width * 2 + area_x * 2,
+        .stride = width << 1,
+        .area_w = area_w,
+        .area_h = area_h,
+        .mw = mw,
+        .mh = mh,
+        .tile_rows = tile_rows,
+    };
+
+    if (tile_rows >= 4 && area_w * area_h >= 65536) {
+        mlt_slices_run_normal(0, obscure_slice_proc, &desc);
+    } else {
+        obscure_slice_proc(0, 0, 1, &desc);
     }
 }
 
