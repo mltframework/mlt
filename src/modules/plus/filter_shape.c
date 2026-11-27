@@ -65,18 +65,28 @@ static inline double smoothstep(const double e1, const double e2, const double a
 static int slice_alpha_add(int id, int index, int jobs, void *data)
 {
     (void) id; // unused
-    const slice_desc *desc = ((slice_desc *) data);
+    const slice_desc *desc = ((const slice_desc *) data);
     int slice_line_start;
     const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     const int size = desc->width * slice_height;
-    uint8_t *p = desc->alpha + slice_line_start * desc->width * desc->bpp;
-    const uint8_t *q = desc->mask + slice_line_start * desc->width * desc->bpp;
-    const int channel = desc->bpp == 4 ? 3 : 0;
+    const int bpp = desc->bpp;
+    const uint8_t invert_mask = (uint8_t) desc->invert_mask;
+    const uint8_t invert = (uint8_t) desc->invert;
 
-    for (int i = 0; i < size; ++i) {
-        uint32_t a = (uint32_t) (q[i * desc->bpp + channel] ^ desc->invert_mask);
-        p[i * desc->bpp + channel] = ((uint8_t) MIN((uint32_t) p[i * desc->bpp + channel] + a, 255))
-                                     ^ desc->invert;
+    if (bpp == 1) {
+        uint8_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width;
+        const uint8_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width;
+        for (int i = 0; i < size; ++i) {
+            uint32_t a = (uint32_t) (q[i] ^ invert_mask);
+            p[i] = ((uint8_t) MIN((uint32_t) p[i] + a, 255u)) ^ invert;
+        }
+    } else {
+        uint8_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width * 4;
+        const uint8_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width * 4;
+        for (int i = 0; i < size; ++i) {
+            uint32_t a = (uint32_t) (q[i * 4 + 3] ^ invert_mask);
+            p[i * 4 + 3] = ((uint8_t) MIN((uint32_t) p[i * 4 + 3] + a, 255u)) ^ invert;
+        }
     }
 
     return 0;
@@ -85,18 +95,28 @@ static int slice_alpha_add(int id, int index, int jobs, void *data)
 static int slice_alpha_maximum(int id, int index, int jobs, void *data)
 {
     (void) id; // unused
-    const slice_desc *desc = ((slice_desc *) data);
+    const slice_desc *desc = ((const slice_desc *) data);
     int slice_line_start;
     const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     const int size = desc->width * slice_height;
-    uint8_t *p = desc->alpha + slice_line_start * desc->width * desc->bpp;
-    const uint8_t *q = desc->mask + slice_line_start * desc->width * desc->bpp;
-    const int channel = desc->bpp == 4 ? 3 : 0;
+    const int bpp = desc->bpp;
+    const uint8_t invert_mask = (uint8_t) desc->invert_mask;
+    const uint8_t invert = (uint8_t) desc->invert;
 
-    for (int i = 0; i < size; ++i) {
-        p[i * desc->bpp + channel] = MAX(p[i * desc->bpp + channel],
-                                         (q[i * desc->bpp + channel] ^ desc->invert_mask))
-                                     ^ desc->invert;
+    if (bpp == 1) {
+        uint8_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width;
+        const uint8_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width;
+        for (int i = 0; i < size; ++i) {
+            uint8_t a = q[i] ^ invert_mask;
+            p[i] = MAX(p[i], a) ^ invert;
+        }
+    } else {
+        uint8_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width * 4;
+        const uint8_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width * 4;
+        for (int i = 0; i < size; ++i) {
+            uint8_t a = q[i * 4 + 3] ^ invert_mask;
+            p[i * 4 + 3] = MAX(p[i * 4 + 3], a) ^ invert;
+        }
     }
 
     return 0;
@@ -105,18 +125,28 @@ static int slice_alpha_maximum(int id, int index, int jobs, void *data)
 static int slice_alpha_minimum(int id, int index, int jobs, void *data)
 {
     (void) id; // unused
-    const slice_desc *desc = ((slice_desc *) data);
+    const slice_desc *desc = ((const slice_desc *) data);
     int slice_line_start;
     const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     const int size = desc->width * slice_height;
-    uint8_t *p = desc->alpha + slice_line_start * desc->width * desc->bpp;
-    const uint8_t *q = desc->mask + slice_line_start * desc->width * desc->bpp;
-    const int channel = desc->bpp == 4 ? 3 : 0;
+    const int bpp = desc->bpp;
+    const uint8_t invert_mask = (uint8_t) desc->invert_mask;
+    const uint8_t invert = (uint8_t) desc->invert;
 
-    for (int i = 0; i < size; ++i) {
-        p[i * desc->bpp + channel] = MIN(p[i * desc->bpp + channel],
-                                         (q[i * desc->bpp + channel] ^ desc->invert_mask))
-                                     ^ desc->invert;
+    if (bpp == 1) {
+        uint8_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width;
+        const uint8_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width;
+        for (int i = 0; i < size; ++i) {
+            uint8_t a = q[i] ^ invert_mask;
+            p[i] = MIN(p[i], a) ^ invert;
+        }
+    } else {
+        uint8_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width * 4;
+        const uint8_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width * 4;
+        for (int i = 0; i < size; ++i) {
+            uint8_t a = q[i * 4 + 3] ^ invert_mask;
+            p[i * 4 + 3] = MIN(p[i * 4 + 3], a) ^ invert;
+        }
     }
 
     return 0;
@@ -125,17 +155,29 @@ static int slice_alpha_minimum(int id, int index, int jobs, void *data)
 static int slice_alpha_overwrite(int id, int index, int jobs, void *data)
 {
     (void) id; // unused
-    const slice_desc *desc = ((slice_desc *) data);
+    const slice_desc *desc = ((const slice_desc *) data);
     int slice_line_start;
     const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     const int size = desc->width * slice_height;
-    uint8_t *p = desc->alpha + slice_line_start * desc->width * desc->bpp;
-    const uint8_t *q = desc->mask + slice_line_start * desc->width * desc->bpp;
-    const int channel = desc->bpp == 4 ? 3 : 0;
+    const int bpp = desc->bpp;
+    const uint8_t xor_val = (uint8_t) (desc->invert_mask ^ desc->invert);
 
-    for (int i = 0; i < size; ++i) {
-        p[i * desc->bpp + channel] = (q[i * desc->bpp + channel] ^ desc->invert_mask)
-                                     ^ desc->invert;
+    if (bpp == 1) {
+        uint8_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width;
+        const uint8_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width;
+        if (xor_val == 0) {
+            memcpy(p, q, (size_t) size);
+        } else {
+            for (int i = 0; i < size; ++i) {
+                p[i] = q[i] ^ xor_val;
+            }
+        }
+    } else {
+        uint8_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width * 4;
+        const uint8_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width * 4;
+        for (int i = 0; i < size; ++i) {
+            p[i * 4 + 3] = q[i * 4 + 3] ^ xor_val;
+        }
     }
 
     return 0;
@@ -144,18 +186,28 @@ static int slice_alpha_overwrite(int id, int index, int jobs, void *data)
 static int slice_alpha_subtract(int id, int index, int jobs, void *data)
 {
     (void) id; // unused
-    const slice_desc *desc = ((slice_desc *) data);
+    const slice_desc *desc = ((const slice_desc *) data);
     int slice_line_start;
     const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     const int size = desc->width * slice_height;
-    uint8_t *p = desc->alpha + slice_line_start * desc->width * desc->bpp;
-    const uint8_t *q = desc->mask + slice_line_start * desc->width * desc->bpp;
-    const int channel = desc->bpp == 4 ? 3 : 0;
+    const int bpp = desc->bpp;
+    const uint8_t invert_mask = (uint8_t) desc->invert_mask;
+    const uint8_t invert = (uint8_t) desc->invert;
 
-    for (int i = 0; i < size; ++i) {
-        uint8_t a = q[i * desc->bpp + channel] ^ desc->invert_mask;
-        p[i * desc->bpp + channel]
-            = (p[i * desc->bpp + channel] > a ? p[i * desc->bpp + channel] - a : 0) ^ desc->invert;
+    if (bpp == 1) {
+        uint8_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width;
+        const uint8_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width;
+        for (int i = 0; i < size; ++i) {
+            uint8_t a = q[i] ^ invert_mask;
+            p[i] = (p[i] > a ? p[i] - a : 0) ^ invert;
+        }
+    } else {
+        uint8_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width * 4;
+        const uint8_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width * 4;
+        for (int i = 0; i < size; ++i) {
+            uint8_t a = q[i * 4 + 3] ^ invert_mask;
+            p[i * 4 + 3] = (p[i * 4 + 3] > a ? p[i * 4 + 3] - a : 0) ^ invert;
+        }
     }
 
     return 0;
@@ -168,14 +220,31 @@ static int slice_alpha_proc(int id, int index, int jobs, void *data)
     int slice_line_start;
     const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     const int size = desc->width * slice_height;
-    uint8_t *p = desc->alpha + slice_line_start * desc->width * desc->bpp;
-    const uint8_t *q = desc->mask + slice_line_start * desc->width * desc->bpp;
-    const int channel = desc->bpp == 4 ? 3 : 0;
+    const int bpp = desc->bpp;
+    const uint8_t invert = (uint8_t) desc->invert;
 
-    for (int i = 0; i < size; ++i) {
-        double a = (double) (q[i * desc->bpp + channel] ^ desc->invert_mask) / desc->divisor;
-        a = 1.0 - smoothstep(a, a + desc->softness, desc->mix);
-        p[i * desc->bpp + channel] = (uint8_t) (p[i * desc->bpp + channel] * a) ^ desc->invert;
+    double a_lut[256];
+    volatile double divisor = desc->divisor;
+    const double softness = desc->softness;
+    const double mix = desc->mix;
+    const int invert_mask = desc->invert_mask;
+    for (int v = 0; v < 256; ++v) {
+        double a = (double) (v ^ invert_mask) / divisor;
+        a_lut[v] = 1.0 - smoothstep(a, a + softness, mix);
+    }
+
+    if (bpp == 1) {
+        uint8_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width;
+        const uint8_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width;
+        for (int i = 0; i < size; ++i) {
+            p[i] = (uint8_t) (p[i] * a_lut[q[i]]) ^ invert;
+        }
+    } else {
+        uint8_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width * 4;
+        const uint8_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width * 4;
+        for (int i = 0; i < size; ++i) {
+            p[i * 4 + 3] = (uint8_t) (p[i * 4 + 3] * a_lut[q[i * 4 + 3]]) ^ invert;
+        }
     }
 
     return 0;
@@ -188,13 +257,30 @@ static int slice_luma_proc(int id, int index, int jobs, void *data)
     int slice_line_start;
     const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     const int size = desc->width * slice_height;
-    uint8_t *p = desc->alpha + slice_line_start * desc->width;
-    const uint8_t *q = desc->mask + slice_line_start * desc->width * 2;
+    uint8_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width;
+    const uint8_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width * 2;
+    const uint8_t invert = (uint8_t) desc->invert;
 
-    for (int i = 0; i < size; ++i) {
-        double a = ((double) (q[i * 2] ^ desc->invert_mask) - desc->offset) / desc->divisor;
-        a = smoothstep(a, a + desc->softness, desc->mix);
-        p[i] = (uint8_t) (p[i] * a) ^ desc->invert;
+    double a_lut[256];
+    volatile double divisor = desc->divisor;
+    const double offset = desc->offset;
+    const double softness = desc->softness;
+    const double mix = desc->mix;
+    const int invert_mask = desc->invert_mask;
+    for (int v = 0; v < 256; ++v) {
+        double a = ((double) (v ^ invert_mask) - offset) / divisor;
+        a_lut[v] = smoothstep(a, a + softness, mix);
+    }
+
+    int i = 0;
+    for (; i + 4 <= size; i += 4) {
+        p[i + 0] = (uint8_t) (p[i + 0] * a_lut[q[(i + 0) * 2]]) ^ invert;
+        p[i + 1] = (uint8_t) (p[i + 1] * a_lut[q[(i + 1) * 2]]) ^ invert;
+        p[i + 2] = (uint8_t) (p[i + 2] * a_lut[q[(i + 2) * 2]]) ^ invert;
+        p[i + 3] = (uint8_t) (p[i + 3] * a_lut[q[(i + 3) * 2]]) ^ invert;
+    }
+    for (; i < size; ++i) {
+        p[i] = (uint8_t) (p[i] * a_lut[q[i * 2]]) ^ invert;
     }
 
     return 0;
@@ -207,14 +293,14 @@ static int slice_alpha16_add(int id, int index, int jobs, void *data)
     int slice_line_start;
     const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     const int size = desc->width * slice_height;
-    uint16_t *p = desc->alpha + slice_line_start * desc->width * 4;
-    const uint16_t *q = desc->mask + slice_line_start * desc->width * 4;
-    const int invert_mask16 = desc->invert_mask ? 65535 : 0;
-    const int invert16 = desc->invert ? 65535 : 0;
+    uint16_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width * 4;
+    const uint16_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width * 4;
+    const uint16_t invert_mask16 = desc->invert_mask ? 65535 : 0;
+    const uint16_t invert16 = desc->invert ? 65535 : 0;
 
     for (int i = 0; i < size; ++i) {
         uint32_t a = (uint32_t) (q[i * 4 + 3] ^ invert_mask16);
-        p[i * 4 + 3] = ((uint16_t) MIN((uint32_t) p[i * 4 + 3] + a, 65535)) ^ invert16;
+        p[i * 4 + 3] = ((uint16_t) MIN((uint32_t) p[i * 4 + 3] + a, 65535u)) ^ invert16;
     }
 
     return 0;
@@ -227,13 +313,13 @@ static int slice_alpha16_maximum(int id, int index, int jobs, void *data)
     int slice_line_start;
     const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     const int size = desc->width * slice_height;
-    uint16_t *p = desc->alpha + slice_line_start * desc->width * 4;
-    const uint16_t *q = desc->mask + slice_line_start * desc->width * 4;
-    const int invert_mask16 = desc->invert_mask ? 65535 : 0;
-    const int invert16 = desc->invert ? 65535 : 0;
+    uint16_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width * 4;
+    const uint16_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width * 4;
+    const uint16_t invert_mask16 = desc->invert_mask ? 65535 : 0;
+    const uint16_t invert16 = desc->invert ? 65535 : 0;
 
     for (int i = 0; i < size; ++i) {
-        p[i * 4 + 3] = MAX(p[i * 4 + 3], (q[i * 4 + 3] ^ invert_mask16)) ^ invert16;
+        p[i * 4 + 3] = MAX(p[i * 4 + 3], (uint16_t) (q[i * 4 + 3] ^ invert_mask16)) ^ invert16;
     }
 
     return 0;
@@ -246,13 +332,13 @@ static int slice_alpha16_minimum(int id, int index, int jobs, void *data)
     int slice_line_start;
     const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     const int size = desc->width * slice_height;
-    uint16_t *p = desc->alpha + slice_line_start * desc->width * 4;
-    const uint16_t *q = desc->mask + slice_line_start * desc->width * 4;
-    const int invert_mask16 = desc->invert_mask ? 65535 : 0;
-    const int invert16 = desc->invert ? 65535 : 0;
+    uint16_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width * 4;
+    const uint16_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width * 4;
+    const uint16_t invert_mask16 = desc->invert_mask ? 65535 : 0;
+    const uint16_t invert16 = desc->invert ? 65535 : 0;
 
     for (int i = 0; i < size; ++i) {
-        p[i * 4 + 3] = MIN(p[i * 4 + 3], (q[i * 4 + 3] ^ invert_mask16)) ^ invert16;
+        p[i * 4 + 3] = MIN(p[i * 4 + 3], (uint16_t) (q[i * 4 + 3] ^ invert_mask16)) ^ invert16;
     }
 
     return 0;
@@ -265,13 +351,12 @@ static int slice_alpha16_overwrite(int id, int index, int jobs, void *data)
     int slice_line_start;
     const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     const int size = desc->width * slice_height;
-    uint16_t *p = desc->alpha + slice_line_start * desc->width * 4;
-    const uint16_t *q = desc->mask + slice_line_start * desc->width * 4;
-    const int invert_mask16 = desc->invert_mask ? 65535 : 0;
-    const int invert16 = desc->invert ? 65535 : 0;
+    uint16_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width * 4;
+    const uint16_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width * 4;
+    const uint16_t xor_val16 = (desc->invert_mask ? 65535 : 0) ^ (desc->invert ? 65535 : 0);
 
     for (int i = 0; i < size; ++i) {
-        p[i * 4 + 3] = (q[i * 4 + 3] ^ invert_mask16) ^ invert16;
+        p[i * 4 + 3] = q[i * 4 + 3] ^ xor_val16;
     }
 
     return 0;
@@ -284,10 +369,10 @@ static int slice_alpha16_subtract(int id, int index, int jobs, void *data)
     int slice_line_start;
     const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     const int size = desc->width * slice_height;
-    uint16_t *p = desc->alpha + slice_line_start * desc->width * 4;
-    const uint16_t *q = desc->mask + slice_line_start * desc->width * 4;
-    const int invert_mask16 = desc->invert_mask ? 65535 : 0;
-    const int invert16 = desc->invert ? 65535 : 0;
+    uint16_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width * 4;
+    const uint16_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width * 4;
+    const uint16_t invert_mask16 = desc->invert_mask ? 65535 : 0;
+    const uint16_t invert16 = desc->invert ? 65535 : 0;
 
     for (int i = 0; i < size; ++i) {
         uint16_t a = q[i * 4 + 3] ^ invert_mask16;
@@ -304,14 +389,17 @@ static int slice_alpha16_proc(int id, int index, int jobs, void *data)
     int slice_line_start;
     const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     const int size = desc->width * slice_height;
-    uint16_t *p = desc->alpha + slice_line_start * desc->width * 4;
-    const uint16_t *q = desc->mask + slice_line_start * desc->width * 4;
-    const int invert_mask16 = desc->invert_mask ? 65535 : 0;
-    const int invert16 = desc->invert ? 65535 : 0;
+    uint16_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width * 4;
+    const uint16_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width * 4;
+    const uint16_t invert_mask16 = desc->invert_mask ? 65535 : 0;
+    const uint16_t invert16 = desc->invert ? 65535 : 0;
+    const double divisor = desc->divisor;
+    const double softness = desc->softness;
+    const double mix = desc->mix;
 
     for (int i = 0; i < size; ++i) {
-        double a = (double) (q[i * 4 + 3] ^ invert_mask16) / desc->divisor;
-        a = 1.0 - smoothstep(a, a + desc->softness, desc->mix);
+        double a = (double) (q[i * 4 + 3] ^ invert_mask16) / divisor;
+        a = 1.0 - smoothstep(a, a + softness, mix);
         p[i * 4 + 3] = (uint16_t) (p[i * 4 + 3] * a) ^ invert16;
     }
 
@@ -325,17 +413,28 @@ static int slice_luma_rgba_proc(int id, int index, int jobs, void *data)
     int slice_line_start;
     const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     const int size = desc->width * slice_height;
-    uint8_t *p = desc->alpha + slice_line_start * desc->width * 4;
-    const uint8_t *q = desc->mask + slice_line_start * desc->width * 4;
+    uint8_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width * 4;
+    const uint8_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width * 4;
+    const double offset = desc->offset;
+    const double divisor = desc->divisor;
+    const double softness = desc->softness;
+    const double mix = desc->mix;
+    const uint8_t invert = (uint8_t) desc->invert;
 
-    for (int i = 0; i < size; ++i) {
-        // Calculate luma from sRGB
-        double luma = 0.2126 * q[i * 4] + 0.7152 * q[i * 4 + 1] + 0.0722 * q[i * 4 + 2];
-        double a = (luma - desc->offset) / desc->divisor;
-        if (desc->invert_mask)
-            a = 1.0 - a;
-        a = smoothstep(a, a + desc->softness, desc->mix);
-        p[i * 4 + 3] = (uint8_t) (p[i * 4 + 3] * a) ^ desc->invert;
+    if (desc->invert_mask) {
+        for (int i = 0; i < size; ++i) {
+            double luma = 0.2126 * q[i * 4] + 0.7152 * q[i * 4 + 1] + 0.0722 * q[i * 4 + 2];
+            double a = 1.0 - (luma - offset) / divisor;
+            a = smoothstep(a, a + softness, mix);
+            p[i * 4 + 3] = (uint8_t) (p[i * 4 + 3] * a) ^ invert;
+        }
+    } else {
+        for (int i = 0; i < size; ++i) {
+            double luma = 0.2126 * q[i * 4] + 0.7152 * q[i * 4 + 1] + 0.0722 * q[i * 4 + 2];
+            double a = (luma - offset) / divisor;
+            a = smoothstep(a, a + softness, mix);
+            p[i * 4 + 3] = (uint8_t) (p[i * 4 + 3] * a) ^ invert;
+        }
     }
 
     return 0;
@@ -348,17 +447,28 @@ static int slice_luma_rgba64_proc(int id, int index, int jobs, void *data)
     int slice_line_start;
     const int slice_height = mlt_slices_size_slice(jobs, index, desc->height, &slice_line_start);
     const int size = desc->width * slice_height;
-    uint16_t *p = desc->alpha + slice_line_start * desc->width * 4;
-    const uint16_t *q = (const uint16_t *) desc->mask + slice_line_start * desc->width * 4;
+    uint16_t *restrict p = desc->alpha + (size_t) slice_line_start * desc->width * 4;
+    const uint16_t *restrict q = desc->mask + (size_t) slice_line_start * desc->width * 4;
+    const double offset = desc->offset;
+    const double divisor = desc->divisor;
+    const double softness = desc->softness;
+    const double mix = desc->mix;
+    const uint16_t invert16 = desc->invert ? 65535 : 0;
 
-    for (int i = 0; i < size; ++i) {
-        // Calculate luma from sRGB using 16-bit values
-        double luma = 0.2126 * q[i * 4] + 0.7152 * q[i * 4 + 1] + 0.0722 * q[i * 4 + 2];
-        double a = (luma - desc->offset) / desc->divisor;
-        if (desc->invert_mask)
-            a = 1.0 - a;
-        a = smoothstep(a, a + desc->softness, desc->mix);
-        p[i * 4 + 3] = (uint16_t) (p[i * 4 + 3] * a) ^ (desc->invert ? 65535 : 0);
+    if (desc->invert_mask) {
+        for (int i = 0; i < size; ++i) {
+            double luma = 0.2126 * q[i * 4] + 0.7152 * q[i * 4 + 1] + 0.0722 * q[i * 4 + 2];
+            double a = 1.0 - (luma - offset) / divisor;
+            a = smoothstep(a, a + softness, mix);
+            p[i * 4 + 3] = (uint16_t) (p[i * 4 + 3] * a) ^ invert16;
+        }
+    } else {
+        for (int i = 0; i < size; ++i) {
+            double luma = 0.2126 * q[i * 4] + 0.7152 * q[i * 4 + 1] + 0.0722 * q[i * 4 + 2];
+            double a = (luma - offset) / divisor;
+            a = smoothstep(a, a + softness, mix);
+            p[i * 4 + 3] = (uint16_t) (p[i * 4 + 3] * a) ^ invert16;
+        }
     }
 
     return 0;
