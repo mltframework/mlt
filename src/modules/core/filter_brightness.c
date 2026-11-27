@@ -274,7 +274,8 @@ static int filter_get_image(mlt_frame frame,
                 desc.y_lut[i] = (uint8_t) CLAMP((i * m) >> 16, min, max_luma);
                 desc.uv_lut[i] = (uint8_t) CLAMP((i * m + n) >> 16, min, max_chroma);
             }
-        } else if (level != 1.0 && (proc_image.format == mlt_image_rgb || proc_image.format == mlt_image_rgba)) {
+        } else if (level != 1.0
+                   && (proc_image.format == mlt_image_rgb || proc_image.format == mlt_image_rgba)) {
             for (int i = 0; i < 256; i++) {
                 desc.rgb_lut[i] = (uint8_t) CLAMP(round((double) i * level), 0, 255);
             }

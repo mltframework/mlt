@@ -414,7 +414,8 @@ static int luma_slice_yuv422(int id, int index, int count, void *context)
 {
     (void) id;
     const struct luma_slice_context *ctx = (const struct luma_slice_context *) context;
-    int slice_start, slice_height = mlt_slices_size_slice(count, index, ctx->blend_height, &slice_start);
+    int slice_start,
+        slice_height = mlt_slices_size_slice(count, index, ctx->blend_height, &slice_start);
     int slice_end = slice_start + slice_height;
     int field_count = ctx->field_count;
     int luma_row_stride = ctx->luma_width * field_count;
@@ -423,7 +424,9 @@ static int luma_slice_yuv422(int id, int index, int count, void *context)
     uint32_t i_softness = ctx->i_softness;
 
     for (int field = 0; field < field_count; field++) {
-        int first_k = (slice_start <= field) ? 0 : (slice_start - field + field_count - 1) / field_count;
+        int first_k = (slice_start <= field)
+                          ? 0
+                          : (slice_start - field + field_count - 1) / field_count;
         int i = field + first_k * field_count;
         if (i >= slice_end)
             continue;
@@ -437,18 +440,11 @@ static int luma_slice_yuv422(int id, int index, int count, void *context)
         uint32_t pos_fixed = (uint32_t) ((1 << 16) * fpos);
 
         if (ctx->is_translucent) {
-            uint8_t *alpha_dest = ctx->alpha_dest ? ctx->alpha_dest + first_k * ctx->width_dest : NULL;
-            uint8_t *alpha_src = ctx->alpha_src ? ctx->alpha_src + first_k * ctx->width_src : NULL;
-            if (field == 1) {
-                int field0_rows = (ctx->blend_height + 1) / 2;
-                if (alpha_dest)
-                    alpha_dest += field0_rows * ctx->width_dest;
-                if (alpha_src)
-                    alpha_src += field0_rows * ctx->width_src;
-            }
+            uint8_t *alpha_dest = ctx->alpha_dest ? ctx->alpha_dest + i * ctx->width_dest : NULL;
+            uint8_t *alpha_src = ctx->alpha_src ? ctx->alpha_src + i * ctx->width_src : NULL;
             while (i < slice_end) {
-                const uint8_t *restrict p = p_row;
-                uint8_t *restrict q = q_row;
+                const uint8_t *p = p_row;
+                uint8_t *q = q_row;
                 const uint16_t *restrict l = ctx->luma_bitmap + (y_offset >> 16) * luma_row_stride;
                 int32_t x_offset = 0;
                 for (int j = 0; j < blend_width; j++) {
@@ -486,9 +482,9 @@ static int luma_slice_yuv422(int id, int index, int count, void *context)
                     x_offset += x_diff;
                 }
                 if (alpha_dest)
-                    alpha_dest += ctx->width_dest - blend_width;
+                    alpha_dest += field_count * ctx->width_dest - blend_width;
                 if (alpha_src)
-                    alpha_src += ctx->width_src - blend_width;
+                    alpha_src += field_count * ctx->width_src - blend_width;
                 y_offset += ctx->y_diff;
                 i += field_count;
                 p_row += field_stride_src;
@@ -496,8 +492,8 @@ static int luma_slice_yuv422(int id, int index, int count, void *context)
             }
         } else {
             while (i < slice_end) {
-                const uint8_t *restrict p = p_row;
-                uint8_t *restrict q = q_row;
+                const uint8_t *p = p_row;
+                uint8_t *q = q_row;
                 const uint16_t *restrict l = ctx->luma_bitmap + (y_offset >> 16) * luma_row_stride;
                 int32_t x_offset = 0;
                 for (int j = 0; j < blend_width; j++) {
@@ -603,7 +599,8 @@ static int luma_slice_rgba32(int id, int index, int count, void *context)
 {
     (void) id;
     const struct luma_slice_context *ctx = (const struct luma_slice_context *) context;
-    int slice_start, slice_height = mlt_slices_size_slice(count, index, ctx->blend_height, &slice_start);
+    int slice_start,
+        slice_height = mlt_slices_size_slice(count, index, ctx->blend_height, &slice_start);
     int slice_end = slice_start + slice_height;
     int field_count = ctx->field_count;
     int luma_row_stride = ctx->luma_width * field_count;
@@ -612,7 +609,9 @@ static int luma_slice_rgba32(int id, int index, int count, void *context)
     uint32_t i_softness = ctx->i_softness;
 
     for (int field = 0; field < field_count; field++) {
-        int first_k = (slice_start <= field) ? 0 : (slice_start - field + field_count - 1) / field_count;
+        int first_k = (slice_start <= field)
+                          ? 0
+                          : (slice_start - field + field_count - 1) / field_count;
         int i = field + first_k * field_count;
         if (i >= slice_end)
             continue;
@@ -627,8 +626,8 @@ static int luma_slice_rgba32(int id, int index, int count, void *context)
 
         if (ctx->is_translucent) {
             while (i < slice_end) {
-                const uint8_t *restrict p = p_row;
-                uint8_t *restrict q = q_row;
+                const uint8_t *p = p_row;
+                uint8_t *q = q_row;
                 const uint16_t *restrict l = ctx->luma_bitmap + (y_offset >> 16) * luma_row_stride;
                 int32_t x_offset = 0;
                 for (int j = 0; j < blend_width; j++) {
@@ -658,8 +657,8 @@ static int luma_slice_rgba32(int id, int index, int count, void *context)
             }
         } else {
             while (i < slice_end) {
-                const uint8_t *restrict p = p_row;
-                uint8_t *restrict q = q_row;
+                const uint8_t *p = p_row;
+                uint8_t *q = q_row;
                 const uint16_t *restrict l = ctx->luma_bitmap + (y_offset >> 16) * luma_row_stride;
                 int32_t x_offset = 0;
                 for (int j = 0; j < blend_width; j++) {
