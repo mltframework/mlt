@@ -100,8 +100,8 @@ static inline void blend_rgb8_sse2(uint8_t *d, __m128 src_ps, float alpha)
 
 // nearest neighbor
 
-static inline int
-interpNN_b32(uint8_t *s, int w, int h, float x, float y, float o, uint8_t *d, int is_atop)
+static inline int interpNN_b32(
+    uint8_t *s, int w, int h, float x, float y, float o, uint8_t *d, int is_atop)
 {
 #ifdef TEST_XY_LIMITS
     if ((x < 0) || (x >= w) || (y < 0) || (y >= h))
@@ -123,8 +123,8 @@ interpNN_b32(uint8_t *s, int w, int h, float x, float y, float o, uint8_t *d, in
     return 0;
 }
 
-static inline int
-interpNN_b64(uint16_t *s, int w, int h, float x, float y, float o, uint16_t *d, int is_atop)
+static inline int interpNN_b64(
+    uint16_t *s, int w, int h, float x, float y, float o, uint16_t *d, int is_atop)
 {
 #ifdef TEST_XY_LIMITS
     if ((x < 0) || (x >= w) || (y < 0) || (y >= h))
@@ -148,8 +148,8 @@ interpNN_b64(uint16_t *s, int w, int h, float x, float y, float o, uint16_t *d, 
 
 //  bilinear
 
-static inline int
-interpBL_b32(uint8_t *s, int w, int h, float x, float y, float o, uint8_t *d, int is_atop)
+static inline int interpBL_b32(
+    uint8_t *s, int w, int h, float x, float y, float o, uint8_t *d, int is_atop)
 {
 #ifdef TEST_XY_LIMITS
     if ((x < 0) || (x >= w) || (y < 0) || (y >= h))
@@ -222,8 +222,8 @@ interpBL_b32(uint8_t *s, int w, int h, float x, float y, float o, uint8_t *d, in
     return 0;
 }
 
-static inline int
-interpBL_b64(uint16_t *s, int w, int h, float x, float y, float o, uint16_t *d, int is_atop)
+static inline int interpBL_b64(
+    uint16_t *s, int w, int h, float x, float y, float o, uint16_t *d, int is_atop)
 {
 #ifdef TEST_XY_LIMITS
     if ((x < 0) || (x >= w) || (y < 0) || (y >= h))
@@ -274,8 +274,8 @@ interpBL_b64(uint16_t *s, int w, int h, float x, float y, float o, uint16_t *d, 
 
 // bicubic
 
-static inline int
-interpBC_b32(uint8_t *s, int w, int h, float x, float y, float o, uint8_t *d, int is_atop)
+static inline int interpBC_b32(
+    uint8_t *s, int w, int h, float x, float y, float o, uint8_t *d, int is_atop)
 {
     int i, j, b, m, n;
     float p[4], p1[4], p2[4], p3[4], p4[4];
@@ -359,8 +359,8 @@ interpBC_b32(uint8_t *s, int w, int h, float x, float y, float o, uint8_t *d, in
     return 0;
 }
 
-static inline int
-interpBC_b64(uint16_t *s, int w, int h, float x, float y, float o, uint16_t *d, int is_atop)
+static inline int interpBC_b64(
+    uint16_t *s, int w, int h, float x, float y, float o, uint16_t *d, int is_atop)
 {
     int i, j, b, m, n;
     float p[4], p1[4], p2[4], p3[4], p4[4];

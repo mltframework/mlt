@@ -339,58 +339,70 @@ struct sliced_desc
     mlt_image_format format;
 };
 
-#define AFFINE_SLICE_LOOP(INTERP_FN, PIX_T)                                                    \
-    do {                                                                                       \
-        const double m00 = ctx.affine.matrix[0][0];                                            \
-        const double m01 = ctx.affine.matrix[0][1];                                            \
-        const double m02 = ctx.affine.matrix[0][2];                                            \
-        const double m10 = ctx.affine.matrix[1][0];                                            \
-        const double m11 = ctx.affine.matrix[1][1];                                            \
-        const double m12 = ctx.affine.matrix[1][2];                                            \
-        const double dz = ctx.dz;                                                              \
-        const double x_offset = ctx.x_offset;                                                  \
-        const double y_offset = ctx.y_offset;                                                  \
-        const double minima = ctx.minima;                                                      \
-        const double xmax = ctx.xmax;                                                          \
-        const double ymax = ctx.ymax;                                                          \
-        const int a_width = ctx.a_width;                                                       \
-        const int b_width = ctx.b_width;                                                       \
-        const int b_height = ctx.b_height;                                                     \
-        const float mix = (float) ctx.mix;                                                     \
-        const int b_alpha = ctx.b_alpha;                                                       \
-        const int endy = starty + height_slice;                                                \
-        PIX_T *a_image = (PIX_T *) ctx.a_image + starty * (a_width * 4);                       \
-        PIX_T *b_image = (PIX_T *) ctx.b_image;                                                \
-        double y = ctx.lower_y + (double) starty;                                              \
-        if (dz == 1.0) {                                                                       \
-            for (int i = starty; i < endy; i++, y++) {                                         \
-                const double m01_y = m01 * y;                                                  \
-                const double m11_y = m11 * y;                                                  \
-                double x = ctx.lower_x;                                                        \
-                for (int j = 0; j < a_width; j++, x++) {                                       \
-                    double dx = (m00 * x + m01_y + m02) + x_offset;                            \
-                    double dy = (m10 * x + m11_y + m12) + y_offset;                            \
-                    if (dx >= minima && dx <= xmax && dy >= minima && dy <= ymax)              \
-                        INTERP_FN(b_image, b_width, b_height, (float) dx, (float) dy, mix,     \
-                                  a_image, b_alpha);                                           \
-                    a_image += 4;                                                              \
-                }                                                                              \
-            }                                                                                  \
-        } else {                                                                               \
-            for (int i = starty; i < endy; i++, y++) {                                         \
-                const double m01_y = m01 * y;                                                  \
-                const double m11_y = m11 * y;                                                  \
-                double x = ctx.lower_x;                                                        \
-                for (int j = 0; j < a_width; j++, x++) {                                       \
-                    double dx = (m00 * x + m01_y + m02) / dz + x_offset;                       \
-                    double dy = (m10 * x + m11_y + m12) / dz + y_offset;                       \
-                    if (dx >= minima && dx <= xmax && dy >= minima && dy <= ymax)              \
-                        INTERP_FN(b_image, b_width, b_height, (float) dx, (float) dy, mix,     \
-                                  a_image, b_alpha);                                           \
-                    a_image += 4;                                                              \
-                }                                                                              \
-            }                                                                                  \
-        }                                                                                      \
+#define AFFINE_SLICE_LOOP(INTERP_FN, PIX_T) \
+    do { \
+        const double m00 = ctx.affine.matrix[0][0]; \
+        const double m01 = ctx.affine.matrix[0][1]; \
+        const double m02 = ctx.affine.matrix[0][2]; \
+        const double m10 = ctx.affine.matrix[1][0]; \
+        const double m11 = ctx.affine.matrix[1][1]; \
+        const double m12 = ctx.affine.matrix[1][2]; \
+        const double dz = ctx.dz; \
+        const double x_offset = ctx.x_offset; \
+        const double y_offset = ctx.y_offset; \
+        const double minima = ctx.minima; \
+        const double xmax = ctx.xmax; \
+        const double ymax = ctx.ymax; \
+        const int a_width = ctx.a_width; \
+        const int b_width = ctx.b_width; \
+        const int b_height = ctx.b_height; \
+        const float mix = (float) ctx.mix; \
+        const int b_alpha = ctx.b_alpha; \
+        const int endy = starty + height_slice; \
+        PIX_T *a_image = (PIX_T *) ctx.a_image + starty * (a_width * 4); \
+        PIX_T *b_image = (PIX_T *) ctx.b_image; \
+        double y = ctx.lower_y + (double) starty; \
+        if (dz == 1.0) { \
+            for (int i = starty; i < endy; i++, y++) { \
+                const double m01_y = m01 * y; \
+                const double m11_y = m11 * y; \
+                double x = ctx.lower_x; \
+                for (int j = 0; j < a_width; j++, x++) { \
+                    double dx = (m00 * x + m01_y + m02) + x_offset; \
+                    double dy = (m10 * x + m11_y + m12) + y_offset; \
+                    if (dx >= minima && dx <= xmax && dy >= minima && dy <= ymax) \
+                        INTERP_FN(b_image, \
+                                  b_width, \
+                                  b_height, \
+                                  (float) dx, \
+                                  (float) dy, \
+                                  mix, \
+                                  a_image, \
+                                  b_alpha); \
+                    a_image += 4; \
+                } \
+            } \
+        } else { \
+            for (int i = starty; i < endy; i++, y++) { \
+                const double m01_y = m01 * y; \
+                const double m11_y = m11 * y; \
+                double x = ctx.lower_x; \
+                for (int j = 0; j < a_width; j++, x++) { \
+                    double dx = (m00 * x + m01_y + m02) / dz + x_offset; \
+                    double dy = (m10 * x + m11_y + m12) / dz + y_offset; \
+                    if (dx >= minima && dx <= xmax && dy >= minima && dy <= ymax) \
+                        INTERP_FN(b_image, \
+                                  b_width, \
+                                  b_height, \
+                                  (float) dx, \
+                                  (float) dy, \
+                                  mix, \
+                                  a_image, \
+                                  b_alpha); \
+                    a_image += 4; \
+                } \
+            } \
+        } \
     } while (0)
 
 static int sliced_proc(int id, int index, int jobs, void *cookie)
