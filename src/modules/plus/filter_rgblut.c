@@ -79,7 +79,8 @@ static void refresh_channel_lut(uint8_t lut[256], char **cached_str, const char 
 {
     int same = (!force
                 && ((*cached_str == NULL && new_str == NULL)
-                    || (*cached_str != NULL && new_str != NULL && strcmp(*cached_str, new_str) == 0)));
+                    || (*cached_str != NULL && new_str != NULL
+                        && strcmp(*cached_str, new_str) == 0)));
     if (!same) {
         fill_channel_lut(lut, new_str);
         free(*cached_str);
